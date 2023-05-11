@@ -79,6 +79,23 @@
       "realmRoles": [
         "syncer"
       ]
+    },
+    {
+      "username": "user001",
+      "email": "user001@localhost",
+      "enabled": true,
+      "attributes": {
+        "picture": "https://cryptomator.org/img/logo.svg"
+      },
+      "credentials": [
+        {
+          "type": "password",
+          "value": "1234"
+        }
+      ],
+      "realmRoles": [
+        "user"
+      ]
     }
   ],
   "scopeMappings": [
@@ -99,7 +116,9 @@
       "enabled": true,
       "redirectUris": [
         "http://localhost:8080/*",
-        "http://localhost:3000/*"
+        "http://localhost:3000/*",
+        "http://proxyman.local:3000/*",
+        "http://proxyman.local:8080/*"
       ],
       "webOrigins": [
         "+"
@@ -145,7 +164,8 @@
       "name": "Cryptomator App",
       "enabled": true,
       "redirectUris": [
-        "http://127.0.0.1/*"
+        "http://127.0.0.1/*",
+        "http://proxyman.local:8080/*"
       ],
       "webOrigins": [
         "+"
@@ -155,7 +175,35 @@
       "protocol": "openid-connect",
       "attributes": {
         "pkce.code.challenge.method": "S256"
-      }
+      },
+      "directAccessGrantsEnabled": true,
+      "protocolMappers": [
+        {
+          "name": "realm roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "access.token.claim": "true",
+            "claim.name": "realm_access.roles",
+            "jsonType.label": "String",
+            "multivalued": "true"
+          }
+        },
+        {
+          "name": "client roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-client-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "access.token.claim": "true",
+            "claim.name": "resource_access.${client_id}.roles",
+            "jsonType.label": "String",
+            "multivalued": "true",
+            "usermodel.clientRoleMapping.clientId": "cryptomatorhub"
+          }
+        }
+      ]
     }
   ],
   "browserSecurityHeaders": {
