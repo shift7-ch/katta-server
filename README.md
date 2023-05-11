@@ -1,8 +1,16 @@
 [![CI Build](https://github.com/cryptomator/hub/actions/workflows/build.yml/badge.svg)](https://github.com/cryptomator/hub/actions/workflows/build.yml)
 
-# Cryptomator Hub
+# Cipherduck Hub: the secure and easy way to work in teams
 
-Hub consists of these components:
+Cipherduck Hub bring zero-config storage management and zero-knowledge key management for teams and organizations. 
+
+It easily integrates into your existing identity management incl. OpenID Connect, SAML, and LDAP. 
+As usual, your favorite cloud service remains your free choice [^1].
+
+[^1]: Currently, we support AWS S3 and MinIO S3.
+
+Cipherduck consists of Cipherduck Hub and Cipherduck Client. Cipherduck Client is based on [Mountain Duck](https://mountainduck.io/).
+Cipherduck Hub is based on [Cryptomator Hub](https://github.com/cryptomator/hub/), consisting of these components:
 
 ## Web Frontend
 
@@ -15,3 +23,5 @@ During development, run Quarkus from the `backend` dir as explained in [its READ
 ## Custom Keycloak Image
 
 We add a custom theme to the base keycloak image, as explained in [its README file](keycloak/README.md).:
+
+

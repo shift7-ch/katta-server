@@ -30,6 +30,8 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import org.cryptomator.hub.SyncerConfig;
+import org.cryptomator.hub.api.cipherduck.CipherduckConfig;
 import org.cryptomator.hub.entities.AccessToken;
 import org.cryptomator.hub.entities.AuditEventVaultAccessGrant;
 import org.cryptomator.hub.entities.AuditEventVaultCreate;
@@ -69,8 +71,14 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Stream;
 
+import static org.cryptomator.hub.cipherduck.KeycloakCryptomatorVaultsHelper.keycloakGrantAccessToVault;
+import static org.cryptomator.hub.cipherduck.KeycloakCryptomatorVaultsHelper.keycloakRemoveAccessToVault;
+
 @Path("/vaults")
 public class VaultResource {
+
+	@Inject
+	SyncerConfig syncerConfig;
 
 	@Inject
 	JsonWebToken jwt;
@@ -80,6 +88,11 @@ public class VaultResource {
 
 	@Inject
 	LicenseHolder license;
+
+	// / start cipherduck extension
+	@Inject
+	CipherduckConfig cipherduckConfig;
+	// \ end cipherduck extension
 
 	@GET
 	@Path("/accessible")
@@ -167,6 +180,10 @@ public class VaultResource {
 			}
 		}
 
+		// / start cipherduck extension
+		keycloakGrantAccessToVault(syncerConfig, vaultId.toString(), userId, cipherduckConfig.keycloakClientIdCryptomatorVaults());
+		// \ end cipherduck extension
+
 		return addAuthority(vault, user, role);
 	}
 
@@ -192,6 +209,10 @@ public class VaultResource {
 		if (EffectiveGroupMembership.countEffectiveGroupUsers(groupId) - EffectiveVaultAccess.countSeatOccupyingUsersOfGroup(groupId) + EffectiveVaultAccess.countSeatOccupyingUsers() > license.getAvailableSeats()) {
 			throw new PaymentRequiredException("Number of effective vault users greater than or equal to the available license seats");
 		}
+
+		// / start cipherduck extension
+		keycloakGrantAccessToVault(syncerConfig, vaultId.toString(), groupId, cipherduckConfig.keycloakClientIdCryptomatorVaults());
+		// \ end cipherduck extension
 
 		return addAuthority(vault, group, role);
 	}
@@ -227,6 +248,15 @@ public class VaultResource {
 	@APIResponse(responseCode = "403", description = "not a vault owner")
 	public Response removeAuthority(@PathParam("vaultId") UUID vaultId, @PathParam("authorityId") @ValidId String authorityId) {
 		if (VaultAccess.deleteById(new VaultAccess.Id(vaultId, authorityId))) {
+
+			// / start cipherduck extension
+			// Decision: when resetting an account or archiving a vault, access to the bucket doesn't need to be revoked.
+			// - Account reset: same situation as for addUser() and addGroup() before being granted access (masterkey): in the STS case, users can technically already gain access to the data at the storage level if they know/guess the STS endpoint etc, however they cannot decrypt yet.
+			// - Archiving: removeAuthority is not called in this case, so users still can renew access (get new temporary S3 credentials) at the storage level in the STS case.
+			//              However, they cannot get the masterkey any more (in all cases) nor the permanent storage credentials (in the non-STS case).
+			keycloakRemoveAccessToVault(syncerConfig, vaultId.toString(), authorityId, "cryptomatorvaults");
+			// \ end cipherduck extension
+
 			AuditEventVaultMemberRemove.log(jwt.getSubject(), vaultId, authorityId);
 			return Response.status(Response.Status.NO_CONTENT).build();
 		} else {
@@ -362,6 +392,7 @@ public class VaultResource {
 			}
 			token.vaultKey = entry.getValue();
 			token.persist();
+
 			AuditEventVaultAccessGrant.log(jwt.getSubject(), vaultId, userId);
 		}
 		return Response.ok().build();
@@ -430,6 +461,7 @@ public class VaultResource {
 			access.persist();
 			AuditEventVaultCreate.log(currentUser.id, vault.id, vault.name, vault.description);
 			AuditEventVaultMemberAdd.log(currentUser.id, vaultId, currentUser.id, VaultAccess.Role.OWNER);
+
 			return Response.created(URI.create(".")).contentLocation(URI.create(".")).entity(VaultDto.fromEntity(vault)).type(MediaType.APPLICATION_JSON).build();
 		} else {
 			AuditEventVaultUpdate.log(currentUser.id, vault.id, vault.name, vault.description, vault.archived);

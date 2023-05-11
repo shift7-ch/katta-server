@@ -195,6 +195,71 @@ export type VersionDto = {
   keycloakVersion: string;
 }
 
+// / start cipherduck extension
+export type StorageDto = {
+    vaultId: string;
+    storageConfigId: string;
+    vaultConfigToken: string;
+    rootDirHash: string;
+    awsAccessKey: string;
+    awsSecretKey: string;
+    sessionToken: string;
+    region: string;
+}
+
+export type ConfigDto = {
+    keycloakUrl: string;
+    keycloakRealm: string;
+    keycloakClientIdHub: string;
+    keycloakClientIdCryptomator: string;
+    keycloakAuthEndpoint: string;
+    keycloakTokenEndpoint: string;
+    serverTime: string;
+    apiLevel: number;
+    uuid: string;
+}
+
+export type StorageProfileDto = {
+    id: string;
+    name: string;
+    bucketPrefix: string;
+    stsRoleArnClient: string;
+    stsRoleArnHub: string;
+    stsEndpoint: string;
+    region: string;
+    regions: string[];
+    withPathStyleAccessEnabled: boolean;
+    scheme: string;
+    hostname: string;
+    port: number;
+    protocol: string;
+    oauthClientId: string;
+    oauthTokenUrl: string;
+    oauthAuthorizationUrl: string;
+    stsRoleArn: string;
+    stsRoleArn2: string;
+    stsDurationSeconds: number;
+    oAuthTokenExchangeAudience: number;
+}
+
+export type AutomaticAccessGrant = {
+    enabled: boolean,
+    maxWotDepth: number
+}
+
+export type VaultJWEBackendDto = {
+    provider: string;
+
+    defaultPath: string;
+    nickname: string;
+
+    region: string;
+
+    username?: string;
+    password?: string;
+}
+// \ end cipherduck extension
+
 /* Services */
 
 export interface VaultIdHeader extends JWTHeader {
@@ -361,6 +426,27 @@ class VersionService {
   }
 }
 
+// / start cipherduck extension
+class StorageService {
+  public async put(vaultId: string, dto: StorageDto): Promise<void> {
+    return axiosAuth.put(`/storage/${vaultId}/`, dto);
+  }
+}
+class StorageProfileService {
+  public async get(archived?: boolean): Promise<StorageProfileDto[]> {
+    return axiosAuth.get<StorageProfileDto[]>(`/storageprofile?archived=${archived}`)
+    .then(response => response.data);
+  }
+}
+export const axiosUnAuth = AxiosStatic.create(axiosBaseCfg)
+class ConfigService {
+  public async config(): Promise<ConfigDto> {
+      return axiosUnAuth.get('/config')
+        .then(response => response.data);
+    }
+}
+// \ end cipherduck extension
+
 /**
  * Note: Each service can thrown an {@link UnauthorizedError} when the access token is expired!
  */
@@ -371,6 +457,12 @@ const services = {
   devices: new DeviceService(),
   billing: new BillingService(),
   version: new VersionService()
+
+  // / start cipherduck extension
+  ,storage: new StorageService()
+  ,storageprofiles: new StorageProfileService()
+  ,config: new ConfigService()
+  // \ end cipherduck extension
 };
 
 function convertExpectedToBackendError(status: number): BackendError {
