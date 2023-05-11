@@ -69,6 +69,13 @@
         </MenuItems>
       </transition>
     </Menu>
+
+    <!-- / start cipherduck extension -->
+    <button type="button" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-d1 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary" @click="openBookmark()">
+      <ArrowTopRightOnSquareIcon class="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
+      {{ t('vaultList.openInCipherduck') }}
+    </button>
+    <!-- \ end cipherduck extension -->
   </div>
 
   <div v-if="filteredVaults != null && filteredVaults.length > 0" class="mt-5 bg-white shadow overflow-hidden rounded-md">
@@ -83,6 +90,9 @@
                 <div v-if="vault.archived" class="inline-flex items-center rounded-md bg-yellow-400/10 px-2 py-1 text-xs font-medium text-yellow-500 ring-1 ring-inset ring-yellow-400/20">{{ t('vaultList.badge.archived') }}</div>
               </div>
               <p v-if="vault.description && vault.description.length > 0" class="truncate text-sm text-gray-500 mt-2">{{ vault.description }}</p>
+              <!-- / start cipherduck extension -->
+              <p v-if="showVaultIDs && (vault.id.length > 0)" class="truncate text-sm text-gray-500 mt-2">{{ vault.id }}</p>
+              <!-- \ end cipherduck extension -->
             </div>
             <div class="ml-5 shrink-0">
               <ChevronRightIcon class="h-5 w-5 text-gray-400" aria-hidden="true" />
@@ -116,7 +126,7 @@
 
 <script setup lang="ts">
 import { Listbox, ListboxButton, ListboxOption, ListboxOptions, Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/vue';
-import { ArrowPathIcon, ChevronDownIcon, PlusIcon } from '@heroicons/vue/20/solid';
+import { ArrowPathIcon, ArrowTopRightOnSquareIcon, ChevronDownIcon, PlusIcon } from '@heroicons/vue/20/solid';
 import { CheckIcon, ChevronRightIcon, ChevronUpDownIcon } from '@heroicons/vue/24/solid';
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -225,4 +235,15 @@ async function onSelectedVaultUpdate(vault: VaultDto) {
 async function licenseUpdated(license: LicenseUserInfoDto) {
   licenseStatus.value = license;
 }
+
+// / start cipherduck extension
+import { showVaultIDs } from '../common/settings';
+async function openBookmark() {
+  try {
+    window.location.href = `x-cipherduck-action:cipherduck?url=${encodeURIComponent(document.baseURI)}`;
+  } catch (error) {
+    console.error('Opening bookmark from browser failed.', error);
+  }
+}
+// \ end cipherduck extension
 </script>

@@ -14,6 +14,9 @@ import UnlockSuccess from '../components/UnlockSuccess.vue';
 import UserProfile from '../components/UserProfile.vue';
 import VaultDetails from '../components/VaultDetails.vue';
 import VaultList from '../components/VaultList.vue';
+// / start cipherduck extension
+import StorageProfiles from '../components/cipherduck/StorageProfiles.vue';
+// \ end cipherduck extension
 
 const routes: RouteRecordRaw[] = [
   {
@@ -89,6 +92,12 @@ const routes: RouteRecordRaw[] = [
             path: 'auditlog',
             component: AuditLog,
           },
+          // / start cipherduck extension
+          {
+            path: 'storageprofiles',
+            component: StorageProfiles,
+          },
+          // \ end cipherduck extension
         ]
       },
     ]

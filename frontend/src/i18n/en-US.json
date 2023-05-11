@@ -208,7 +208,7 @@
   "recoverVaultDialog.submit": "Recover Vault",
   "recoverVaultDialog.error.formValidationFailed": "Recover Key must not be empty",
   "recoverVaultDialog.error.invalidRecoveryKey": "Invalid Recover Key",
-  
+
   "regenerateAccountKeyDialog.confirmRegenerateAccountKey.title": "Regenerate Account Key",
   "regenerateAccountKeyDialog.confirmRegenerateAccountKey.description": "If you suspect that your old Account Key has been compromised, you can regenerate it. You will then only be able to add new devices with the new Account Key. Your existing devices will remain intact.",
   "regenerateAccountKeyDialog.saveAccountKey.title": "Save Account Key",
@@ -264,5 +264,47 @@
   "vaultList.filter.result.empty.description": "No results using that search term or filter.",
   "vaultList.search.placeholder": "Search…",
   "vaultList.badge.owner": "Owner",
-  "vaultList.badge.archived": "Archived"
+  "vaultList.badge.archived": "Archived",
+
+
+  "CreateVaultS3.enterVaultDetails.storage": "Storage Locations",
+  "CreateVaultS3.enterVaultDetails.region": "Region",
+  "CreateVaultS3.enterVaultDetails.automaticAccessGrant": "Automatically Grant Vault Access",
+  "CreateVaultS3.enterVaultDetails.vaultPermanentAccessKeyId": "Username (S3 AccessKeyId)",
+  "CreateVaultS3.enterVaultDetails.vaultPermanentSecretKey": "Password (S3 SecretKey)",
+  "CreateVaultS3.enterVaultDetails.vaultPermanentBucketName": "S3 Bucket name (existing)",
+  "CreateVaultS3.success.description": "Use the Cipherduck client on your computer to open the vault.",
+  "CreateVaultS3.success.open": "Open vaults in Cipherduck",
+  "CreateVaultS3.error.uploadTemplateFailed": "Upload Vault Template to S3 Bucket failed",
+
+  "vaultList.openInCipherduck": "Open in Cipherduck",
+
+  "nav.profile.storageprofiles": "Admin Storage Locations",
+  "storageProfileList.title": "Storage Locations",
+  "storageProfileList.setup.title": "Cipherduck hub setup",
+  "storageProfileList.setup.description": "Cipherduck hub setup admin documentation",
+  "storageProfileList.search.placeholder": "Search…",
+  "storageProfileList.empty.title": "No storage locations",
+  "storageProfileList.empty.description": "No storage locations",
+  "storageProfileList.filter.result.empty.title": "No storage locations",
+  "storageProfileList.filter.result.empty.description":  "No results using that search term or filter.",
+  "storageprofile.id": "id",
+  "storageprofile.name": "name",
+  "storageprofile.protocol": "protocol",
+  "storageprofile.bucketPrefix": "bucketPrefix",
+  "storageprofile.stsRoleArnClient": "stsRoleArnClient",
+  "storageprofile.stsRoleArnHub": "stsRoleArnHub",
+  "storageprofile.withPathStyleAccessEnabled": "withPathStyleAccessEnabled",
+  "storageprofile.region": "region",
+  "storageprofile.regions": "regions",
+  "storageprofile.scheme": "scheme",
+  "storageprofile.hostname": "hostname",
+  "storageprofile.port": "port",
+  "storageprofile.oauthClientId": "oauthClientId",
+  "storageprofile.oauthTokenUrl": "oauthTokenUrl",
+  "storageprofile.oauthAuthorizationUrl": "oauthAuthorizationUrl",
+  "storageprofile.stsRoleArn": "stsRoleArn",
+  "storageprofile.stsRoleArn2": "stsRoleArn2",
+  "storageprofile.stsDurationSeconds": "stsDurationSeconds",
+  "storageprofile.oAuthTokenExchangeAudience": "oAuthTokenExchangeAudience"
 }
