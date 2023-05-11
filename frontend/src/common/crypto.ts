@@ -2,6 +2,11 @@ import * as miscreant from 'miscreant';
 import { base16, base32, base64, base64url } from 'rfc4648';
 import { JWEBuilder, JWEParser } from './jwe';
 import { CRC32, DB, wordEncoder } from './util';
+
+// / start cipherduck extension
+import { VaultJWEBackendDto, AutomaticAccessGrant } from './backend';
+// \ end cipherduck extension
+
 export class UnwrapKeyError extends Error {
   readonly actualError: any;
 
@@ -29,8 +34,14 @@ export interface VaultConfigHeaderHub {
   devicesResourceUrl: string
 }
 
+// TODO review @overheadhunter should we distinguish between JWEPayload (only key) and VaultJWEPayload (all three)
 interface JWEPayload {
   key: string
+
+  // / start cipherduck extension
+  ,automaticAccessGrant?: AutomaticAccessGrant
+  ,backend?: VaultJWEBackendDto
+  // \ end cipherduck extension
 }
 
 const GCM_NONCE_LEN = 12;
@@ -48,8 +59,25 @@ export class VaultKeys {
 
   readonly masterKey: CryptoKey;
 
-  protected constructor(masterkey: CryptoKey) {
+  // / start cipherduck extension
+  automaticAccessGrant?: AutomaticAccessGrant;
+  storage?: VaultJWEBackendDto;
+  // \ end cipherduck extension
+
+
+
+  protected constructor(masterkey: CryptoKey
+    // / start cipherduck extension
+    ,automaticAccessGrant?: AutomaticAccessGrant
+    ,storage?: VaultJWEBackendDto
+    // \ end cipherduck extension
+  ) {
     this.masterKey = masterkey;
+
+    // / start cipherduck extension
+    this.automaticAccessGrant = automaticAccessGrant;
+    this.storage = storage;
+    // \ end cipherduck extension
   }
 
   /**
@@ -76,8 +104,18 @@ export class VaultKeys {
     try {
       const payload: JWEPayload = await JWEParser.parse(jwe).decryptEcdhEs(userPrivateKey);
       rawKey = base64.parse(payload.key);
+
       const masterkey = crypto.subtle.importKey('raw', rawKey, VaultKeys.MASTERKEY_KEY_DESIGNATION, true, ['sign']);
-      return new VaultKeys(await masterkey);
+      // / start cipherduck extension
+      const automaticAccessGrant = payload.automaticAccessGrant;
+      const backend = payload.backend;
+      // \ end cipherduck extension
+      return new VaultKeys(await masterkey
+      // / start cipherduck extension
+      ,automaticAccessGrant
+      ,backend
+      // \ end cipherduck extension
+      );
     } finally {
       rawKey.fill(0x00);
     }
@@ -226,6 +264,13 @@ export class VaultKeys {
       const payload: JWEPayload = {
         key: base64.stringify(rawkey)
       };
+
+      // / start cipherduck extension
+      if (this.storage != undefined){
+        payload['backend'] = this.storage;
+      }
+      // \ end cipherduck extension
+
       return JWEBuilder.ecdhEs(publicKey).encrypt(payload);
     } finally {
       rawkey.fill(0x00);

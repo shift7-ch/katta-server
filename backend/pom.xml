@@ -5,18 +5,18 @@
   <groupId>org.cryptomator</groupId>
   <artifactId>hub-backend</artifactId>
   <version>1.4.0-SNAPSHOT</version>
-
   <properties>
     <compiler-plugin.version>3.11.0</compiler-plugin.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.jdk.version>17</project.jdk.version>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <quarkus.container-image.group>cryptomator</quarkus.container-image.group>
-    <quarkus.container-image.name>hub</quarkus.container-image.name>
+    <quarkus.container-image.group>shift7-ch</quarkus.container-image.group>
+    <quarkus.container-image.name>cipherduck</quarkus.container-image.name>
     <quarkus.platform.version>3.2.10.Final</quarkus.platform.version>
     <quarkus.jib.base-jvm-image>eclipse-temurin:17-jre</quarkus.jib.base-jvm-image> <!-- irrelevant for -Pnative -->
     <jwt.version>4.4.0</jwt.version>
     <surefire-plugin.version>3.1.2</surefire-plugin.version>
+    <quarkus.smallrye-openapi.store-schema-directory>../frontend/src/openapi</quarkus.smallrye-openapi.store-schema-directory>
   </properties>
 
   <dependencyManagement>
@@ -39,6 +39,21 @@
         <groupId>io.quarkus</groupId>
         <artifactId>quarkus-flyway</artifactId>
         <version>3.3.0</version>
+      </dependency>
+      <!-- https://docs.quarkiverse.io/quarkus-amazon-services/dev/amazon-s3.html#_prerequisites -->
+      <dependency>
+        <groupId>io.quarkus.platform</groupId>
+        <artifactId>quarkus-bom</artifactId>
+        <version>${quarkus.platform.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>io.quarkus.platform</groupId>
+        <artifactId>quarkus-amazon-services-bom</artifactId>
+        <version>${quarkus.platform.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
       </dependency>
     </dependencies>
   </dependencyManagement>
@@ -137,6 +152,22 @@
     <dependency>
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-undertow</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.quarkiverse.amazonservices</groupId>
+      <artifactId>quarkus-amazon-s3</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.quarkiverse.amazonservices</groupId>
+      <artifactId>quarkus-amazon-iam</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>url-connection-client</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>aws-crt-client</artifactId>
     </dependency>
   </dependencies>
 

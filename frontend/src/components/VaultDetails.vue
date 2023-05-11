@@ -18,6 +18,10 @@
       </div>
     </div>
 
+    <!-- / start cipherduck extension -->
+    <p v-if="showVaultIDs && (vault.id.length > 0)" class="truncate text-sm text-gray-500 mt-2">{{ vault.id }}</p>
+    <!-- \ end cipherduck extension -->
+
     <div>
       <h3 class="font-medium text-gray-900">{{ t('vaultDetails.description.header') }}</h3>
       <div class="mt-2 flex items-center justify-between">
@@ -130,9 +134,13 @@
           <button type="button" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary" @click="showEditVaultMetadataDialog()">
             {{ t('vaultDetails.actions.editVaultMetadata') }}
           </button>
+          <!-- / start cipherduck modification -->
+          <!--
           <button type="button" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary" @click="showDownloadVaultTemplateDialog()">
             {{ t('vaultDetails.actions.downloadVaultTemplate') }}
           </button>
+          -->
+          <!-- \ end cipherduck modification -->
           <button type="button" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary" @click="showRecoveryKeyDialog()">
             {{ t('vaultDetails.actions.showRecoveryKey') }}
           </button>
@@ -204,6 +212,10 @@ import ReactivateVaultDialog from './ReactivateVaultDialog.vue';
 import RecoverVaultDialog from './RecoverVaultDialog.vue';
 import RecoveryKeyDialog from './RecoveryKeyDialog.vue';
 import SearchInputGroup from './SearchInputGroup.vue';
+
+// / start cipherduck extension
+import { showVaultIDs } from '../common/settings';
+// \ end cipherduck extension
 
 const { t, d } = useI18n({ useScope: 'global' });
 
@@ -398,10 +410,12 @@ function showEditVaultMetadataDialog() {
   nextTick(() => editVaultMetadataDialog.value?.show());
 }
 
-function showDownloadVaultTemplateDialog() {
-  downloadingVaultTemplate.value = true;
-  nextTick(() => downloadVaultTemplateDialog.value?.show());
-}
+// / start cipherduck modification
+//function showDownloadVaultTemplateDialog() {
+//  downloadingVaultTemplate.value = true;
+//  nextTick(() => downloadVaultTemplateDialog.value?.show());
+//}
+// \ end cipherduck modification -->
 
 function showRecoveryKeyDialog() {
   showingRecoveryKey.value = true;

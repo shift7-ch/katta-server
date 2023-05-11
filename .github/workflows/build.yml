@@ -32,6 +32,21 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
+      # / cipherduck start addition
+      - uses: actions/setup-java@v2
+        with:
+          distribution: 'temurin'
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: 'maven'
+      - name: Generate openapi.json
+        working-directory: backend
+        run: >
+          mvn -B clean compile quarkus:build
+      - name: Check openapi.json
+        working-directory: backend
+        run: >
+          cat ../frontend/src/openapi/openapi.json
+      # \ cipherduck end addition
       - name: Install npm dependencies
         working-directory: frontend
         run: npm install
@@ -41,58 +56,72 @@ jobs:
       - name: Deploy frontend
         working-directory: frontend
         run: npm run dist
-      - name: SonarCloud Scan Frontend
-        uses: SonarSource/sonarcloud-github-action@master
-        with:
-          projectBaseDir: frontend
-          args: >
-            -Dsonar.organization=cryptomator
-            -Dsonar.projectKey=cryptomator_hub_frontend
-            -Dsonar.typescript.tsconfigPath=tsconfig.json
-            -Dsonar.sources=src/
-            -Dsonar.tests=test/
-            -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+# / cipherduck start commented out
+#      - name: SonarCloud Scan Frontend
+#        uses: SonarSource/sonarcloud-github-action@master
+#        with:
+#          projectBaseDir: frontend
+#          args: >
+#            -Dsonar.organization=cryptomator
+#            -Dsonar.projectKey=cryptomator_hub_frontend
+#            -Dsonar.typescript.tsconfigPath=tsconfig.json
+#            -Dsonar.sources=src/
+#            -Dsonar.tests=test/
+#            -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
+#          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+# \ cipherduck end commented out
       - uses: actions/setup-java@v2
         with:
           distribution: 'temurin'
           java-version: ${{ env.JAVA_VERSION }}
           cache: 'maven'
-      - name: Cache SonarCloud packages
-        uses: actions/cache@v2
-        with:
-          path: ~/.sonar/cache
-          key: ${{ runner.os }}-sonar
-          restore-keys: ${{ runner.os }}-sonar
+# / cipherduck start commented out
+#      - name: Cache SonarCloud packages
+#        uses: actions/cache@v2
+#        with:
+#          path: ~/.sonar/cache
+#          key: ${{ runner.os }}-sonar
+#          restore-keys: ${{ runner.os }}-sonar
+# \ cipherduck end commented out
       - name: Build and test backend
         working-directory: backend
         run: >
           mvn -B clean verify
-          org.sonarsource.scanner.maven:sonar-maven-plugin:sonar
-          -Dsonar.projectKey=cryptomator_hub_backend
-          -Dsonar.organization=cryptomator
-          -Dsonar.host.url=https://sonarcloud.io
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+# / cipherduck start commented out
+#          org.sonarsource.scanner.maven:sonar-maven-plugin:sonar
+#          -Dsonar.projectKey=cryptomator_hub_backend
+#          -Dsonar.organization=cryptomator
+#          -Dsonar.host.url=https://sonarcloud.io
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+# \ cipherduck end commented out
       - id: get_tag
-        if: inputs.tag != '' || github.ref_type == 'tag' || contains(github.event.head_commit.message, '[build image]')
+        # / cipherduck start commented out
+        # if: inputs.tag != '' || github.ref_type == 'tag' || contains(github.event.head_commit.message, '[build image]')
+        # \ cipherduck end commented out
         run: |
           if [[ ! -z "${{ inputs.tag }}" ]]; then
             TAG="${{ inputs.tag }}"
           elif [[ ${{ github.ref_type }} == 'tag' || ${{ github.ref_name }} == 'develop' ]]; then
             TAG="${{ github.ref_name }}"
           else
-            TAG="commit-${{ github.sha }}"
+            # / cipherduck start modification
+            #TAG="commit-${{ github.sha }}"
+            # use latest by default as our container registry has limited capacity
+            TAG="latest"
+            # \ cipherduck end modification
           fi
           echo tag=${TAG} >> "$GITHUB_OUTPUT"
       - name: Ensure to use tagged version
         if: startsWith(github.ref, 'refs/tags/')
         run: mvn versions:set --file ./backend/pom.xml -DnewVersion=${GITHUB_REF##*/}
       - name: Build and push container image
-        if: github.event.inputs.tag != '' || startsWith(github.ref, 'refs/tags/') || contains(github.event.head_commit.message, '[build image]')
+        # / cipherduck start commented out
+        #if: github.event.inputs.tag != '' || startsWith(github.ref, 'refs/tags/') || contains(github.event.head_commit.message, '[build image]')
+        # \ cipherduck end commented out
         working-directory: backend
         run: mvn -B clean package -DskipTests
         env:
