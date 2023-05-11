@@ -31,6 +31,8 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import org.cryptomator.hub.SyncerConfig;
+import org.cryptomator.hub.api.cipherduck.CipherduckConfig;
 import org.cryptomator.hub.entities.AccessToken;
 import org.cryptomator.hub.entities.Authority;
 import org.cryptomator.hub.entities.EffectiveVaultAccess;
@@ -65,6 +67,9 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Stream;
 
+import static org.cryptomator.hub.cipherduck.KeycloakCryptomatorVaultsHelper.keycloakGrantAccessToVault;
+import static org.cryptomator.hub.cipherduck.KeycloakCryptomatorVaultsHelper.keycloakRemoveAccessToVault;
+
 @Path("/vaults")
 public class VaultResource {
 
@@ -95,6 +100,14 @@ public class VaultResource {
 
 	@Inject
 	LicenseHolder license;
+
+	// / start cipherduck extension
+	@Inject
+	CipherduckConfig cipherduckConfig;
+
+	@Inject
+	SyncerConfig syncerConfig;
+	// \ end cipherduck extension
 
 	@GET
 	@Path("/accessible")
@@ -171,6 +184,11 @@ public class VaultResource {
 		var usedSeats = effectiveVaultAccessRepo.countSeatOccupyingUsers();
 		if (usedSeats < license.getSeats() // free seats available
 				|| effectiveVaultAccessRepo.isUserOccupyingSeat(userId)) { // or user already sitting
+
+			// / start cipherduck extension
+			keycloakGrantAccessToVault(syncerConfig, vaultId.toString(), userId, cipherduckConfig.keycloakClientIdCryptomatorVaults(), groupRepo);
+			// \ end cipherduck extension
+
 			return addAuthority(vault, user, role);
 		} else {
 			throw new PaymentRequiredException("License seats exceeded. Cannot add more users.");
@@ -199,6 +217,10 @@ public class VaultResource {
 		if (userRepo.countEffectiveGroupUsers(groupId) - effectiveVaultAccessRepo.countSeatOccupyingUsersOfGroup(groupId) + effectiveVaultAccessRepo.countSeatOccupyingUsers() > license.getSeats()) {
 			throw new PaymentRequiredException("Adding this group would exceed available license seats.");
 		}
+
+		// / start cipherduck extension
+		keycloakGrantAccessToVault(syncerConfig, vaultId.toString(), groupId, cipherduckConfig.keycloakClientIdCryptomatorVaults(), groupRepo);
+		// \ end cipherduck extension
 
 		return addAuthority(vault, group, role);
 	}
@@ -235,6 +257,16 @@ public class VaultResource {
 	public Response removeAuthority(@PathParam("vaultId") UUID vaultId, @PathParam("authorityId") @ValidId String authorityId) {
 		if (vaultAccessRepo.deleteById(new VaultAccess.Id(vaultId, authorityId))) {
 			eventLogger.logVaultMemberRemoved(jwt.getSubject(), vaultId, authorityId);
+
+			// / start cipherduck extension
+			// Decision: when resetting an account or archiving a vault, access to the bucket doesn't need to be revoked.
+			// - Account reset: same situation as for addUser() and addGroup() before being granted access (masterkey): in the STS case, users can technically already gain access to the data at the storage level if they know/guess the STS endpoint etc, however they cannot decrypt yet.
+			// - Archiving: removeAuthority is not called in this case, so users still can renew access (get new temporary S3 credentials) at the storage level in the STS case.
+			//              However, they cannot get the masterkey any more (in all cases) nor the permanent storage credentials (in the non-STS case).
+			keycloakRemoveAccessToVault(syncerConfig, vaultId.toString(), authorityId, "cryptomatorvaults", groupRepo);
+			// \ end cipherduck extension
+
+
 			return Response.status(Response.Status.NO_CONTENT).build();
 		} else {
 			throw new NotFoundException();
