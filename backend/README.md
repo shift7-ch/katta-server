@@ -20,6 +20,7 @@ To use proxyman for debgging, add the following lines to `/etc/hosts`:
 ```
 Some browsers do not forward any requests to `localhost`, see [Proxyman Documentation](https://docs.proxyman.io/troubleshooting/couldnt-see-any-request-from-localhost-server) for more information.
 
+TODO: keycloak still on localhost
 
 
 ### Accessing Keycloak (Port 8180)
@@ -29,16 +30,18 @@ During development, Keycloak is started as a Quarkus Dev Service using port 8180
 
 ### Testing rest services via CLI:
 
-First, access the keycloak admin web console and activate direct access grants for the `cryptomator` realm.
+First, access the keycloak admin web console and activate direct access grants for the [`cryptomator` realm](http://localhost:8180/admin/master/console/#/cryptomator/clients/) (under `Settings > Capability Config`).
 
 Then, retrieve an `access_token` from keycloak:
 
 ```
+export HUB_USERNAME=admin
+export HUB_PASSWORD=admin
 export access_token=$(\
-    curl -X POST http://localhost:8180/auth/realms/cryptomator/protocol/openid-connect/token \
+    curl -X POST http://localhost:8180/realms/cryptomator/protocol/openid-connect/token \
     --user admin:admin \
     -H 'content-type: application/x-www-form-urlencoded' \
-    -d 'username=owner&password=owner&grant_type=password' | jq --raw-output '.access_token' \
+    -d "username=${HUB_USERNAME}&password=${HUB_PASSWORD}&grant_type=password&client_id=cryptomator" | jq --raw-output '.access_token' \
 )
 ```
 
@@ -49,6 +52,11 @@ curl -v -X GET \
   http://localhost:8080/users/me \
   -H "Authorization: Bearer "$access_token
 ```
+
+
+### Download OpenAPI specification:
+
+http://localhost:8080/q/openapi?format=json
 
 ## Packaging
 
