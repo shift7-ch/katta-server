@@ -29,6 +29,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import org.cryptomator.hub.SyncerConfig;
 import org.cryptomator.hub.entities.AccessToken;
 import org.cryptomator.hub.entities.AuditEventVaultAccessGrant;
 import org.cryptomator.hub.entities.AuditEventVaultCreate;
@@ -67,8 +68,13 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Stream;
 
+import static org.cryptomator.hub.cipherduck.KeycloakGrantAccessToVault.keycloakGrantAccessToVault;
+
 @Path("/vaults")
 public class VaultResource {
+
+	@Inject
+	SyncerConfig syncerConfig;
 
 	@Inject
 	JsonWebToken jwt;
@@ -166,6 +172,10 @@ public class VaultResource {
 				throw new PaymentRequiredException("Number of effective vault users greater than or equal to the available license seats");
 			}
 		}
+
+		// / start cipherduck extension
+		keycloakGrantAccessToVault(syncerConfig, vaultId.toString(), userId);
+		// \ end cipherduck extension
 
 		return addAuthority(vault, user, role);
 	}
@@ -361,6 +371,12 @@ public class VaultResource {
 
 		try {
 			access.persistAndFlush();
+
+			// / start cipherduck extension
+			// TODO check remove upon DELETE operations?
+			keycloakGrantAccessToVault(syncerConfig, vaultId.toString(), userId);
+			// \ end cipherduck extension
+
 			AuditEventVaultAccessGrant.log(jwt.getSubject(), vaultId, userId);
 			return Response.created(URI.create(".")).build();
 		} catch (ConstraintViolationException e) {

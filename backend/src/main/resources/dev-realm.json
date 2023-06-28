@@ -77,7 +77,8 @@
         }
       ],
       "realmRoles": [
-        "syncer"
+        "syncer",
+        "admin"
       ]
     },
     {

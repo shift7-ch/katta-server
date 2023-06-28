@@ -127,6 +127,14 @@
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-undertow</artifactId>
     </dependency>
+    <dependency>
+      <groupId>commons-io</groupId>
+      <artifactId>commons-io</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.quarkus.qute</groupId>
+      <artifactId>qute-core</artifactId>
+    </dependency>
   </dependencies>
 
   <build>
