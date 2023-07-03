@@ -3,13 +3,16 @@ package org.cryptomator.hub.api;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.quarkus.oidc.OidcConfigurationMetadata;
 import jakarta.annotation.security.PermitAll;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.eclipse.microprofile.openapi.annotations.Operation;
 
+import java.io.IOException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 
@@ -50,6 +53,19 @@ public class ConfigResource {
 		var tokenUri = replacePrefix(oidcConfData.getTokenUri(), trimTrailingSlash(internalRealmUrl), publicRealmUri);
 
 		return new ConfigDto(keycloakPublicUrl, keycloakRealm, keycloakClientIdHub, keycloakClientIdCryptomator, authUri, tokenUri, Instant.now().truncatedTo(ChronoUnit.MILLIS), 0);
+	}
+
+	@GET
+	@Path("/cipherduckprofile")
+	@RolesAllowed("user")
+	@Produces(MediaType.APPLICATION_XML)
+	@Operation(summary = "get cipherduckprofile for this hub")
+	public String cipherduckprofile() throws IOException {
+		// TODO what kind of downstream pattern should we use (https://pubs.opengroup.org/architecture/o-aa-standard/DDD-strategic-patterns.html) - close to cyberduck/mountainduck or de-couple? Which representation: XML/JSON...?
+		// TODO which properties do we need to make configurable and inject?
+		return new String(ConfigResource.class.getResourceAsStream("/cipherduck/S3-MinIO-STS-cryptomator-localhost.cyberduckprofile").readAllBytes());
+		// TODO test AWS
+//		return new String(ConfigResource.class.getResourceAsStream("/cipherduck/S3-AWS-STS-cryptomator-staging.cyberduckprofile").readAllBytes());
 	}
 
 	//visible for testing

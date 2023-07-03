@@ -51,7 +51,8 @@
       "email": "admin@localhost",
       "enabled": true,
       "attributes": {
-        "picture": "https://cryptomator.org/img/logo.svg"
+        "picture": "https://cryptomator.org/img/logo.svg",
+        "vaults": ["cyberduckbucketpolicy"]
       },
       "credentials": [
         {
@@ -86,7 +87,8 @@
       "email": "user001@localhost",
       "enabled": true,
       "attributes": {
-        "picture": "https://cryptomator.org/img/logo.svg"
+        "picture": "https://cryptomator.org/img/logo.svg",
+        "vaults": ["cyberduckbucketpolicy"]
       },
       "credentials": [
         {
