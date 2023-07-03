@@ -181,7 +181,7 @@
       "attributes": {
         "pkce.code.challenge.method": "S256"
       },
-      "directAccessGrantsEnabled": true,
+      "directAccessGrantsEnabled": false,
       "protocolMappers": [
         {
           "name": "realm roles",
@@ -231,7 +231,7 @@
       "consentRequired": false,
       "standardFlowEnabled": true,
       "implicitFlowEnabled": false,
-      "directAccessGrantsEnabled": true,
+      "directAccessGrantsEnabled": false,
       "serviceAccountsEnabled": false,
       "publicClient": false,
       "frontchannelLogout": true,
