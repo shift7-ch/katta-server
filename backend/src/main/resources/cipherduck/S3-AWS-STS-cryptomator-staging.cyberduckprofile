@@ -38,15 +38,13 @@
         <key>OAuth Token Url</key>
         <string>https://login1.staging.cryptomator.cloud/realms/cipherduck/protocol/openid-connect/token</string>
         <key>OAuth Client ID</key>
-        <string>sts.amazonaws.com</string>
-        <key>OAuth Client Secret</key>
-        <string>fZsrJEylFU1J7y7WjKdHdLBDLESKZ888</string>
+        <string>cipherduckclient</string>
         <key>OAuth Redirect Url</key>
         <string>io.cyberduck:oauth</string>
         <key>STS Endpoint</key>
         <string>https://sts.amazonaws.com</string>
         <key>STS RoleArn</key>
-        <string>arn:aws:iam::930717317329:role/login1.staging.cryptomator.cloud-Test-Role</string>
+        <string>arn:aws:iam::930717317329:role/login1.staging.cryptomator.cloud.all-Test-Role</string>
         <key>Username Placeholder</key>
         <string>AccessKeyId retrieved from STS via AssumeRoleWithWebIdentity</string>
         <key>Username Configurable</key>
