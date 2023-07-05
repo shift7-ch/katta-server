@@ -22,7 +22,7 @@ public class KeycloakGrantAccessToVault {
             final UserResource userResource = realm.users().get(userId);
             final UserRepresentation ur = userResource.toRepresentation();
 
-            // TODO do we want to use user attributes? Or should we use groups/....? What happens in federation setting - do attributes come from AD etc. and will there be no conflict?
+            // TODO https://github.com/chenkins/cipherduck-hub/issues/4 do we want to use user attributes? Or should we use groups/....? What happens in federation setting - do attributes come from AD etc. and will there be no conflict?
             Map<String, List<String>> attributes = ur.getAttributes();
             if(attributes == null){
                 attributes = new HashMap<>();
