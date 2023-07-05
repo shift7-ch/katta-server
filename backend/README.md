@@ -21,6 +21,10 @@ To use proxyman for debgging, add the following lines to `/etc/hosts`:
 Some browsers do not forward any requests to `localhost`, see [Proxyman Documentation](https://docs.proxyman.io/troubleshooting/couldnt-see-any-request-from-localhost-server) for more information.
 Caveat: `Proxyman` seems to modify some requests and invalidate JWT signatures. To be confirmed.
 
+```shell
+mvn clean quarkus:dev -Dquarkus.profile=proxyman -Dquarkus.config.profile.parent=dev
+```
+https://quarkus.io/guides/config-reference
 
 ### Accessing Keycloak (Port 8180)
 

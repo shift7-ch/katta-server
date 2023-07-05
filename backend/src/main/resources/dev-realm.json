@@ -38,7 +38,8 @@
         "composites": {
           "client": {
             "realm-management": [
-              "view-users"
+              "view-users",
+              "manage-users"
             ]
           }
         }
@@ -51,8 +52,7 @@
       "email": "admin@localhost",
       "enabled": true,
       "attributes": {
-        "picture": "https://cryptomator.org/img/logo.svg",
-        "vaults": ["cyberduckbucketpolicy"]
+        "picture": "https://cryptomator.org/img/logo.svg"
       },
       "credentials": [
         {
@@ -87,8 +87,7 @@
       "email": "user001@localhost",
       "enabled": true,
       "attributes": {
-        "picture": "https://cryptomator.org/img/logo.svg",
-        "vaults": ["cyberduckbucketpolicy"]
+        "picture": "https://cryptomator.org/img/logo.svg"
       },
       "credentials": [
         {
