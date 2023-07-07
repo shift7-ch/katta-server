@@ -64,8 +64,8 @@ public class ConfigResource {
 		// TODO https://github.com/chenkins/cipherduck-hub/issues/6 what kind of downstream pattern should we use (https://pubs.opengroup.org/architecture/o-aa-standard/DDD-strategic-patterns.html) - close to cyberduck/mountainduck or de-couple? Which representation: XML/JSON...?
 		// DK: I would design the API to return a custom model and not resuse the *.cyberduckprofile XML
 		// TODO https://github.com/chenkins/cipherduck-hub/issues/6 which properties do we need to make configurable and inject?
-//		return new String(ConfigResource.class.getResourceAsStream("/cipherduck/S3-MinIO-STS-cryptomator-localhost.cyberduckprofile").readAllBytes());
-		return new String(ConfigResource.class.getResourceAsStream("/cipherduck/S3-AWS-STS-cryptomator-staging.cyberduckprofile").readAllBytes());
+		return new String(ConfigResource.class.getResourceAsStream("/cipherduck/S3-MinIO-STS-cryptomator-localhost.cyberduckprofile").readAllBytes());
+		//return new String(ConfigResource.class.getResourceAsStream("/cipherduck/S3-AWS-STS-cryptomator-staging.cyberduckprofile").readAllBytes());
 	}
 
 	//visible for testing

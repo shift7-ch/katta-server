@@ -41,8 +41,6 @@
         <string>http://localhost:8180/realms/cryptomator/protocol/openid-connect/token</string>
         <key>OAuth Client ID</key>
         <string>minio</string>
-        <key>OAuth Client Secret</key>
-        <string>eCvxJkjLs5EstIwZTW6oU1LWswWZlhL3</string>
         <key>OAuth Redirect Url</key>
         <string>io.cyberduck:oauth</string>
         <key>STS Endpoint</key>
