@@ -180,7 +180,7 @@
             "aggregate.attrs": "true",
             "userinfo.token.claim": "false",
             "multivalued": "true",
-            "user.attribute": "vaults",
+            "user.attribute": "vault",
             "id.token.claim": "true",
             "access.token.claim": "true",
             "claim.name": "aud"
@@ -242,7 +242,7 @@
             "aggregate.attrs": "true",
             "userinfo.token.claim": "false",
             "multivalued": "true",
-            "user.attribute": "vaults",
+            "user.attribute": "vault",
             "id.token.claim": "true",
             "access.token.claim": "true",
             "claim.name": "aud"
