@@ -27,7 +27,7 @@ public class KeycloakGrantAccessToVault {
             if(attributes == null){
                 attributes = new HashMap<>();
             }
-            attributes.put("vaults", Stream.concat(attributes.getOrDefault("vaults", Collections.EMPTY_LIST).stream(), Stream.of(vaultId)).toList());
+            attributes.put("vault", Stream.concat(attributes.getOrDefault("vault", Collections.EMPTY_LIST).stream(), Stream.of(vaultId)).toList());
             ur.setAttributes(attributes);
             userResource.update(ur);
         }

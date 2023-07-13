@@ -80,23 +80,6 @@
       "realmRoles": [
         "syncer"
       ]
-    },
-    {
-      "username": "user001",
-      "email": "user001@localhost",
-      "enabled": true,
-      "attributes": {
-        "picture": "https://cryptomator.org/img/logo.svg"
-      },
-      "credentials": [
-        {
-          "type": "password",
-          "value": "1234"
-        }
-      ],
-      "realmRoles": [
-        "user"
-      ]
     }
   ],
   "scopeMappings": [
@@ -166,7 +149,7 @@
             "aggregate.attrs": "true",
             "userinfo.token.claim": "false",
             "multivalued": "true",
-            "user.attribute": "vaults",
+            "user.attribute": "vault",
             "id.token.claim": "true",
             "access.token.claim": "true",
             "claim.name": "aud"
@@ -231,7 +214,7 @@
             "aggregate.attrs": "true",
             "userinfo.token.claim": "false",
             "multivalued": "true",
-            "user.attribute": "vaults",
+            "user.attribute": "vault",
             "id.token.claim": "true",
             "access.token.claim": "true",
             "claim.name": "aud"
