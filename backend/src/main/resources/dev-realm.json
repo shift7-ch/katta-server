@@ -79,8 +79,7 @@
         }
       ],
       "realmRoles": [
-        "syncer",
-        "admin"
+        "syncer"
       ]
     },
     {
@@ -173,7 +172,7 @@
           }
         },
         {
-          "name": "minio-policy-mapper",
+          "name": "vaults shared with user in aud claim",
           "protocol": "openid-connect",
           "protocolMapper": "oidc-usermodel-attribute-mapper",
           "consentRequired": false,
@@ -231,11 +230,11 @@
             "claim.name": "resource_access.${client_id}.roles",
             "jsonType.label": "String",
             "multivalued": "true",
-            "usermodel.clientRoleMapping.clientId": "cryptomatorhub"
+            "usermodel.clientRoleMapping.clientId": "cryptomator"
           }
         },
         {
-          "name": "minio-policy-mapper",
+          "name": "vaults shared with user in aud claim",
           "protocol": "openid-connect",
           "protocolMapper": "oidc-usermodel-attribute-mapper",
           "consentRequired": false,
