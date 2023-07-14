@@ -141,7 +141,7 @@
           }
         },
         {
-          "name": "vaults shared with user in aud claim",
+          "name": "vaults shared with user in amr claim",
           "protocol": "openid-connect",
           "protocolMapper": "oidc-usermodel-attribute-mapper",
           "consentRequired": false,
@@ -152,7 +152,7 @@
             "user.attribute": "vault",
             "id.token.claim": "true",
             "access.token.claim": "true",
-            "claim.name": "aud"
+            "claim.name": "amr"
           }
         }
       ]
@@ -206,7 +206,7 @@
           }
         },
         {
-          "name": "vaults shared with user in aud claim",
+          "name": "vaults shared with user in amr claim",
           "protocol": "openid-connect",
           "protocolMapper": "oidc-usermodel-attribute-mapper",
           "consentRequired": false,
@@ -217,7 +217,7 @@
             "user.attribute": "vault",
             "id.token.claim": "true",
             "access.token.claim": "true",
-            "claim.name": "aud"
+            "claim.name": "amr"
           }
         }
       ]
