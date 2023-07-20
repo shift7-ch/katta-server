@@ -3,16 +3,18 @@ package org.cryptomator.hub.api;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.quarkus.oidc.OidcConfigurationMetadata;
 import jakarta.annotation.security.PermitAll;
-import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.UriInfo;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 
 import java.io.IOException;
+import java.net.URI;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 
@@ -55,18 +57,26 @@ public class ConfigResource {
 		return new ConfigDto(keycloakPublicUrl, keycloakRealm, keycloakClientIdHub, keycloakClientIdCryptomator, authUri, tokenUri, Instant.now().truncatedTo(ChronoUnit.MILLIS), 1);
 	}
 
+	// / start cipherduck extension
+	@PermitAll
 	@GET
-	@Path("/cipherduckprofile")
-	@RolesAllowed("user")
+	@Path("/cipherduckhubbookmark")
 	@Produces(MediaType.APPLICATION_XML)
-	@Operation(summary = "get cipherduckprofile for this hub")
-	public String cipherduckprofile() throws IOException {
-		// TODO https://github.com/chenkins/cipherduck-hub/issues/6 what kind of downstream pattern should we use (https://pubs.opengroup.org/architecture/o-aa-standard/DDD-strategic-patterns.html) - close to cyberduck/mountainduck or de-couple? Which representation: XML/JSON...?
-		// DK: I would design the API to return a custom model and not resuse the *.cyberduckprofile XML
-		// TODO https://github.com/chenkins/cipherduck-hub/issues/6 which properties do we need to make configurable and inject?
-		return new String(ConfigResource.class.getResourceAsStream("/cipherduck/S3-MinIO-STS-cryptomator-localhost.cyberduckprofile").readAllBytes());
-		//return new String(ConfigResource.class.getResourceAsStream("/cipherduck/S3-AWS-STS-cryptomator-staging.cyberduckprofile").readAllBytes());
-	}
+	@Operation(summary = "get cipherduck bookmark for this hub")
+	public String cipherduckhubbookmark(@Context UriInfo uriInfo) throws IOException {
+		final URI requestUri = uriInfo.getRequestUri();
+		String template = new String(ConfigResource.class.getResourceAsStream("/cipherduck/hubbookmark.duck").readAllBytes());
+		// nickname
+		template = template.replace("<string>Cipherduck</string>", String.format("<string>Cipherduck (%s://%s:%s)</string>", requestUri.getScheme(), requestUri.getHost(), requestUri.getPort()));
+		// scheme
+		template = template.replace("<string>hub-http</string>", String.format("<string>hub-%s</string>", requestUri.getScheme()));
+		// hostname
+		template = template.replace("<string>localhost</string>", String.format("<string>%s</string>", requestUri.getHost()));
+		// port
+		template = template.replace("<string>8080</string>", String.format("<string>%s</string>", requestUri.getPort()));
+		return template;
+    }
+	// \ end cipherduck extension
 
 	//visible for testing
 	String replacePrefix(String str, String prefix, String replacement) {
