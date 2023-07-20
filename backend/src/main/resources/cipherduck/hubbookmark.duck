@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+    <dict>
+        <key>Protocol</key>
+        <string>hub</string>
+        <key>Provider</key>
+        <string>hub-http</string>
+        <key>Nickname</key>
+        <string>Cipherduck</string>
+        <key>Hostname</key>
+        <string>localhost</string>
+        <key>Port</key>
+        <string>8080</string>
+    </dict>
+</plist>
