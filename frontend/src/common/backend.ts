@@ -190,6 +190,20 @@ export type VersionDto = {
   keycloakVersion: string;
 }
 
+// / start cipherduck extension
+export type StorageDto = {
+    s3type: string;
+    scheme: string;
+    hostname: string;
+    port: string;
+    accessKeyId: string;
+    secretKey: string;
+    vaultId: string;
+    vaultConfigToken: string;
+    rootDirHash: string;
+}
+// \ end cipherduck extension
+
 /* Services */
 
 export interface VaultIdHeader extends JWTHeader {
@@ -345,6 +359,14 @@ class VersionService {
   }
 }
 
+// / start cipherduck extension
+class StorageService {
+  public async put(dto?: StorageDto): Promise<void> {
+    return axiosAuth.put('/storage/', dto);
+  }
+}
+// \ end cipherduck extension
+
 /**
  * Note: Each service can thrown an {@link UnauthorizedError} when the access token is expired!
  */
@@ -355,6 +377,10 @@ const services = {
   devices: new DeviceService(),
   billing: new BillingService(),
   version: new VersionService()
+
+  // / start cipherduck extension
+  ,storage: new StorageService()
+  // \ end cipherduck extension
 };
 
 function convertExpectedToBackendError(status: number): BackendError {

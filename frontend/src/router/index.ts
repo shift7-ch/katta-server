@@ -7,6 +7,7 @@ import AdminSettings from '../components/AdminSettings.vue';
 import AuditLog from '../components/AuditLog.vue';
 import AuthenticatedMain from '../components/AuthenticatedMain.vue';
 import CreateVault from '../components/CreateVault.vue';
+import CreateVaultS3Permanent from '../components/CreateVaultS3Permanent.vue';
 import NotFound from '../components/NotFound.vue';
 import SetupUserKey from '../components/SetupUserKey.vue';
 import UnlockError from '../components/UnlockError.vue';
@@ -54,6 +55,15 @@ const routes: RouteRecordRaw[] = [
         component: CreateVault,
         props: () => ({ recover: false })
       },
+
+      // / start cipherduck extension
+      {
+        path: 'vaults/creates3permanent',
+        component: CreateVaultS3Permanent,
+        props: () => ({ recover: false })
+      },
+      // \ end cipherduck extension
+
       {
         path: 'vaults/recover',
         component: CreateVault,

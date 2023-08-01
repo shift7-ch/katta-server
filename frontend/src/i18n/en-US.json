@@ -107,6 +107,14 @@
   "createVault.success.download": "Download zipped vault folder",
   "createVault.success.return": "Return to vault list",
 
+  "createVault.enterVaultDetails.S3Scheme": "S3 Scheme",
+  "createVault.enterVaultDetails.S3Hostname": "S3 Hostname",
+  "createVault.enterVaultDetails.S3Port": "S3 Port",
+  "createVault.enterVaultDetails.S3AccessKeyId": "S3 Username",
+  "createVault.enterVaultDetails.S3AccessKeyId.description": "AccessKeyId",
+  "createVault.enterVaultDetails.S3SecretKey": "S3 Password",
+  "createVault.enterVaultDetails.S3SecretKey.description": "SecretKey",
+
   "deviceList.empty.message": "No devices",
   "deviceList.empty.description": "To add a device, add a vault from this Hub to the Cryptomator app of the device and unlock it.",
   "deviceList.title": "Authorized Devices and Browsers",
@@ -213,5 +221,7 @@
   "vaultList.filter.result.empty.description": "No results using that search term or filter.",
   "vaultList.search.placeholder": "Search…",
   "vaultList.badge.owner": "Owner",
-  "vaultList.badge.archived": "Archived"
+  "vaultList.badge.archived": "Archived",
+
+  "vaultList.addVault.create.s3.permanent": "Create New S3"
 }

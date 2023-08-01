@@ -27,8 +27,23 @@ export interface VaultConfigHeaderHub {
   authErrorUrl: string
 }
 
+// / start cipherduck extension
+interface JWEPayloadStorage {
+  s3type: string,
+  scheme: string,
+  hostname: string;
+  port: number;
+  username?:string;
+  password?:string
+}
+//  \ end cipherduck extension
+
 interface JWEPayload {
   key: string
+
+  // / start cipherduck extension
+  ,backend?: JWEPayloadStorage
+  // \ end cipherduck extension
 }
 
 const GCM_NONCE_LEN = 12;
@@ -217,13 +232,26 @@ export class VaultKeys {
    * @param userPublicKey The recipient's public key (DER-encoded)
    * @returns a JWE containing this Masterkey
    */
-  public async encryptForUser(userPublicKey: Uint8Array): Promise<string> {
+  public async encryptForUser(userPublicKey: Uint8Array
+      // / start cipherduck extension
+      , storage?: JWEPayloadStorage
+      // \ end cipherduck extension
+
+  ): Promise<string> {
     const publicKey = await crypto.subtle.importKey('spki', userPublicKey, UserKeys.KEY_DESIGNATION, false, []);
     const rawkey = new Uint8Array(await crypto.subtle.exportKey('raw', this.masterKey));
     try {
+
       const payload: JWEPayload = {
         key: base64.stringify(rawkey)
       };
+
+      // / start cipherduck extension
+      if (storage != undefined){
+        payload['backend'] = storage
+      }
+      // \ end cipherduck extension
+
       return JWEBuilder.ecdhEs(publicKey).encrypt(payload);
     } finally {
       rawkey.fill(0x00);
