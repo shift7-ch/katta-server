@@ -126,6 +126,32 @@
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-undertow</artifactId>
     </dependency>
+    <dependency>
+      <groupId>io.minio</groupId>
+      <artifactId>minio</artifactId>
+      <version>8.5.4</version>
+    </dependency>
+    <dependency>
+      <groupId>io.minio</groupId>
+      <artifactId>minio-admin</artifactId>
+      <version>8.5.4</version>
+    </dependency>
+    <dependency>
+      <!-- force version, see https://github.com/minio/minio-java/issues/1298 -->
+      <groupId>com.squareup.okhttp3</groupId>
+      <artifactId>okhttp</artifactId>
+      <version>4.10.0</version>
+    </dependency>
+    <dependency>
+      <groupId>commons-io</groupId>
+      <artifactId>commons-io</artifactId>
+      <version>2.13.0</version>
+    </dependency>
+    <dependency>
+      <groupId>io.quarkus.qute</groupId>
+      <artifactId>qute-core</artifactId>
+      <version>3.0.1.Final</version>
+    </dependency>
   </dependencies>
 
   <build>
