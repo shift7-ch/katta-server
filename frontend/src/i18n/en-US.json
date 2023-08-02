@@ -224,5 +224,6 @@
   "vaultList.badge.archived": "Archived",
 
   "vaultList.addVault.create.s3.permanent": "Create New S3",
-  "cipherduckbookmark.download": "Download cipherduck hub bookmark"
+  "cipherduckbookmark.download": "Download cipherduck hub bookmark",
+  "cipherduckbookmark.open": "Open cipherduck hub bookmark with cipherduck from browser"
 }
