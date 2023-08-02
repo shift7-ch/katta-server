@@ -23,7 +23,17 @@ public final class StorageDto {
     public final String rootDirHash;
 
 
-    public StorageDto(String s3type, String scheme, String hostname, int port, String accessKeyId, String secretKey, String vaultId, String vaultConfigToken, String rootDirHash) {
+    public StorageDto(
+            @JsonProperty("s3type") String s3type,
+            @JsonProperty("scheme") String scheme,
+            @JsonProperty("hostname") String hostname,
+            @JsonProperty("port") int port,
+            @JsonProperty("accessKeyId") String accessKeyId,
+            @JsonProperty("secretKey") String secretKey,
+            @JsonProperty("vaultId") String vaultId,
+            @JsonProperty("vaultConfigToken") String vaultConfigToken,
+            @JsonProperty("rootDirHash") String rootDirHash
+    ) {
         this.s3type = s3type;
         this.scheme = scheme;
         this.hostname = hostname;
