@@ -21,7 +21,11 @@
       <div class="fixed inset-0 z-10 overflow-y-auto">
           <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
               <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                <button type="button" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-d1 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary" @click="downloadVault()">
+                <button type="button" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-d1 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary" @click="openBookmark()">
+                    <ArrowDownTrayIcon class="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
+                    {{ t('cipherduckbookmark.open') }}
+                </button>
+                <button type="button" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-d1 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary" @click="downloadBookmark()">
                     <ArrowDownTrayIcon class="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
                     {{ t('cipherduckbookmark.download') }}
                 </button>
@@ -48,7 +52,7 @@ const open = ref(false);
 const onDownloadError = ref<Error|null>();
 
 
-async function downloadVault() {
+async function downloadBookmark() {
   onDownloadError.value = null;
   try {
     const bookmark = await backend.config.cipherduckhubbookmark();
@@ -56,9 +60,21 @@ async function downloadVault() {
     saveAs(blob, `bookmark.duck`);
     open.value = false;
   } catch (error) {
-    console.error('Downloading vault template failed.', error);
+    console.error('Downloading bookmark failed.', error);
     onDownloadError.value = error instanceof Error ? error : new Error('Unknown Error');
   }
 }
 
+async function openBookmark() {
+  onDownloadError.value = null;
+  try {
+    const bookmark = await backend.config.cipherduckhubbookmark();
+    const location = 'io.mountainduck:cipherduck?bookmark=' +  encodeURIComponent(bookmark['data'])
+    window.location = location;
+    open.value = false;
+  } catch (error) {
+    console.error('Opening bookmark from browser failed.', error);
+    onDownloadError.value = error instanceof Error ? error : new Error('Unknown Error');
+  }
+}
 </script>
