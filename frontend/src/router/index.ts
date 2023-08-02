@@ -16,6 +16,10 @@ import UserProfile from '../components/UserProfile.vue';
 import VaultDetails from '../components/VaultDetails.vue';
 import VaultList from '../components/VaultList.vue';
 
+// / start cipherduck extension
+import CipherduckBookmark from '../components/CipherduckBookmark.vue';
+// \ end cipherduck extension
+
 const routes: RouteRecordRaw[] = [
   {
     path: '/',
@@ -42,6 +46,15 @@ const routes: RouteRecordRaw[] = [
       });
     }
   },
+
+  // / start cipherduck extension
+  {
+      path: '/bookmark',
+      component: CipherduckBookmark,
+      meta: { skipAuth: true },
+  },
+  // \ end cipherduck extension
+
   {
     path: '/app', /* required but unused */
     component: AuthenticatedMain,
