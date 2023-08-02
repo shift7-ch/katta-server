@@ -223,5 +223,6 @@
   "vaultList.badge.owner": "Owner",
   "vaultList.badge.archived": "Archived",
 
-  "vaultList.addVault.create.s3.permanent": "Create New S3"
+  "vaultList.addVault.create.s3.permanent": "Create New S3",
+  "cipherduckbookmark.download": "Download cipherduck hub bookmark"
 }
