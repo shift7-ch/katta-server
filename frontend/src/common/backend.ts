@@ -384,7 +384,8 @@ class StorageService {
 class ConfigService {
   public async cipherduckhubbookmark(): Promise<string> {
     const axiosUnAuth = AxiosStatic.create(axiosBaseCfg);
-    return axiosUnAuth.get('/config/cipherduckhubbookmark');
+    return axiosUnAuth.get('/config/cipherduckhubbookmark')
+      .then(response => response.data);
   }
 }
 // \ end cipherduck extension
