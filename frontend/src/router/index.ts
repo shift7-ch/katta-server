@@ -49,9 +49,9 @@ const routes: RouteRecordRaw[] = [
 
   // / start cipherduck extension
   {
-      path: '/bookmark',
-      component: CipherduckBookmark,
-      meta: { skipAuth: true },
+    path: '/bookmark',
+    component: CipherduckBookmark,
+    meta: { skipAuth: true, skipSetup: true },
   },
   // \ end cipherduck extension
 
@@ -65,18 +65,9 @@ const routes: RouteRecordRaw[] = [
       },
       {
         path: 'vaults/create',
-        component: CreateVault,
+        component: CreateVaultS3Permanent, // cipherduck extension
         props: () => ({ recover: false })
       },
-
-      // / start cipherduck extension
-      {
-        path: 'vaults/creates3permanent',
-        component: CreateVaultS3Permanent,
-        props: () => ({ recover: false })
-      },
-      // \ end cipherduck extension
-
       {
         path: 'vaults/recover',
         component: CreateVault,

@@ -65,52 +65,36 @@
                 <input id="vaultDescription" v-model="vaultDescription" :disabled="processing" type="text" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200"/>
               </div>
 
-              <div class="col-span-6 sm:col-span-4">
-                <label for="password" class="block text-sm font-medium text-gray-700">{{ t('createVault.enterVaultDetails.password') }}</label>
-                <input id="password" v-model="password" :disabled="processing" type="password" minlength="8" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200" :class="{ 'invalid:border-red-300 invalid:text-red-900 focus:invalid:ring-red-500 focus:invalid:border-red-500': onCreateError instanceof FormValidationFailedError }" aria-describedby="password-description" required />
-                <p id="password-description" class="mt-2 text-sm text-gray-500">{{ t('createVault.enterVaultDetails.password.description') }}</p>
-              </div>
-
-              <div class="col-span-6 sm:col-span-4">
-                <label for="passwordConfirmation" class="block text-sm font-medium text-gray-700">{{ t('createVault.enterVaultDetails.passwordConfirmation') }}</label>
-                <input id="passwordConfirmation" v-model="passwordConfirmation" :disabled="processing" type="password" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200" :class="{ 'invalid:border-red-300 invalid:text-red-900 focus:invalid:ring-red-500 focus:invalid:border-red-500': onCreateError instanceof FormValidationFailedError }" aria-describedby="password-confirmation-description" required />
-                <p id="password-confirmation-description" class="mt-2 text-sm text-gray-500">
-                  <span v-if="passwordMatches && passwordConfirmation.length != 0">{{ t('createVault.enterVaultDetails.passwordConfirmation.passwordsMatch') }}</span>
-                  <span v-else-if="!passwordMatches && passwordConfirmation.length != 0">{{ t('createVault.enterVaultDetails.passwordConfirmation.passwordsDoNotMatch') }}</span>
-                  <span v-else>&nbsp;</span>
-                </p>
-              </div>
-
-              <div class="col-span-6 sm:col-span-4">
-                  <label for="vaultDescription" class="block text-sm font-medium text-gray-700">
-                    {{ t('createVault.enterVaultDetails.S3Scheme') }}
-                   </label>
-                  <input id="vaultS3Scheme" v-model="vaultS3Scheme" :disabled="processing" type="text" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200"/>
+              <!-- <div class="col-span-6 sm:col-span-4">
+                <label for="vaultS3Scheme" class="block text-sm font-medium text-gray-700">
+                  {{ t('createVaultS3Permanent.enterVaultDetails.s3Scheme') }}
+                </label>
+                <input id="vaultS3Scheme" v-model="vaultS3Scheme" :disabled="processing" type="text" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200"/>
               </div>
               <div class="col-span-6 sm:col-span-4">
-                    <label for="vaultDescription" class="block text-sm font-medium text-gray-700">
-                      {{ t('createVault.enterVaultDetails.S3Hostname') }}
-                     </label>
-                    <input id="vaultS3Scheme" v-model="vaultS3Hostname" :disabled="processing" type="text" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200"/>
+                <label for="vaultS3Hostname" class="block text-sm font-medium text-gray-700">
+                  {{ t('createVaultS3Permanent.enterVaultDetails.s3Hostname') }}
+                </label>
+                <input id="vaultS3Hostname" v-model="vaultS3Hostname" :disabled="processing" type="text" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200"/>
               </div>
               <div class="col-span-6 sm:col-span-4">
-                  <label for="vaultDescription" class="block text-sm font-medium text-gray-700">
-                    {{ t('createVault.enterVaultDetails.S3Port') }}
-                   </label>
-                  <input id="vaultS3Scheme" v-model="vaultS3Port" :disabled="processing" type="text" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200"/>
+                <label for="vaultS3Port" class="block text-sm font-medium text-gray-700">
+                  {{ t('createVaultS3Permanent.enterVaultDetails.s3Port') }}
+                </label>
+                <input id="vaultS3Port" v-model="vaultS3Port" :disabled="processing" type="number" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200"/>
               </div>
               <div class="col-span-6 sm:col-span-4">
-                  <label for="vaultDescription" class="block text-sm font-medium text-gray-700">
-                    {{ t('createVault.enterVaultDetails.S3AccessKeyId') }}
-                   </label>
-                  <input id="vaultS3AccessKeyId" v-model="vaultS3AccessKeyId" :disabled="processing" type="text" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200"/>
-                  <p id="vaultS3SecretKey-description" class="mt-2 text-sm text-gray-500">{{ t('createVault.enterVaultDetails.S3AccessKeyId.description') }}</p>
+                <label for="vaultS3AccessKeyId" class="block text-sm font-medium text-gray-700">
+                  {{ t('createVaultS3Permanent.enterVaultDetails.s3AccessKeyId') }}
+                </label>
+                <input id="vaultS3AccessKeyId" v-model="vaultS3AccessKeyId" :disabled="processing" type="text" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200"/>
+                <p id="vaultS3SecretKey-description" class="mt-2 text-sm text-gray-500">{{ t('createVaultS3Permanent.enterVaultDetails.s3AccessKeyId.description') }}</p>
               </div>
               <div class="col-span-6 sm:col-span-4">
-                  <label for="vaultS3SecretKey" class="block text-sm font-medium text-gray-700">{{ t('createVault.enterVaultDetails.S3SecretKey') }}</label>
-                  <input id="vaultS3SecretKey" v-model="vaultS3SecretKey" :disabled="processing" type="password" minlength="8" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200" :class="{ 'invalid:border-red-300 invalid:text-red-900 focus:invalid:ring-red-500 focus:invalid:border-red-500': onCreateError instanceof FormValidationFailedError }" aria-describedby="password-description" required />
-                  <p id="vaultS3SecretKey-description" class="mt-2 text-sm text-gray-500">{{ t('createVault.enterVaultDetails.S3SecretKey.description') }}</p>
-              </div>
+                <label for="vaultS3SecretKey" class="block text-sm font-medium text-gray-700">{{ t('createVaultS3Permanent.enterVaultDetails.s3SecretKey') }}</label>
+                <input id="vaultS3SecretKey" v-model="vaultS3SecretKey" :disabled="processing" type="password" minlength="8" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200" :class="{ 'invalid:border-red-300 invalid:text-red-900 focus:invalid:ring-red-500 focus:invalid:border-red-500': onCreateError instanceof FormValidationFailedError }" aria-describedby="password-description" required />
+                <p id="vaultS3SecretKey-description" class="mt-2 text-sm text-gray-500">{{ t('createVaultS3Permanent.enterVaultDetails.s3SecretKey.description') }}</p>
+              </div> -->
             </div>
           </div>
         </div>
@@ -118,9 +102,7 @@
 
       <div class="flex justify-end items-center">
         <div v-if="onCreateError != null">
-          <p v-if="onCreateError instanceof ConflictError" class="text-sm text-red-900 mr-4">{{ t('createVault.error.vaultAlreadyExists') }}</p>
-          <p v-else-if="onCreateError instanceof FormValidationFailedError" class="text-sm text-red-900 mr-4">{{ t('createVault.error.formValidationFailed') }}</p>
-          <p v-else-if="onCreateError instanceof PasswordNotMachingError" class="text-sm text-red-900 mr-4">{{ t('createVault.enterVaultDetails.passwordConfirmation.passwordsDoNotMatch') }}</p>
+          <p v-if="onCreateError instanceof FormValidationFailedError" class="text-sm text-red-900 mr-4">{{ t('createVault.error.formValidationFailed') }}</p>
           <p v-else class="text-sm text-red-900 mr-4">{{ t('common.unexpectedError', [onCreateError.message]) }}</p>
         </div>
         <button type="submit" :disabled="processing" class="flex-none inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-d1 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 disabled:hover:bg-primary disabled:cursor-not-allowed">
@@ -182,8 +164,7 @@
                 {{ t('createVault.showRecoveryKey.submit') }}
               </button>
               <div v-if="onCreateError != null">
-                <p v-if="onCreateError instanceof ConflictError" class="text-sm text-red-900 mt-2">{{ t('createVault.error.vaultAlreadyExists') }}</p>
-                <p v-else class="text-sm text-red-900 mt-2">{{ t('common.unexpectedError', [onCreateError.message]) }}</p>
+                <p class="text-sm text-red-900 mt-2">{{ t('common.unexpectedError', [onCreateError.message]) }}</p>
               </div>
             </div>
           </div>
@@ -204,16 +185,16 @@
           </h3>
           <div class="mt-2">
             <p class="text-sm text-gray-500">
-              {{ t('createVault.success.description') }}
+              {{ t('createVaultS3Permanent.success.description') }}
             </p>
           </div>
         </div>
         <div class="mt-5 sm:mt-6">
-          <button type="button" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-d1 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary" @click="downloadVaultTemplate()">
-            <ArrowDownTrayIcon class="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
-            {{ t('createVault.success.download') }}
+          <button type="button" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-d1 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary" @click="openBookmark()">
+            <ArrowTopRightOnSquareIcon class="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
+            {{ t('createVaultS3Permanent.success.open') }}
           </button>
-          <p v-if="onDownloadTemplateError != null " class="text-sm text-red-900 mr-4">{{ t('createVault.error.downloadTemplateFailed', [onDownloadTemplateError.message]) }}</p> <!-- TODO: not beautiful-->
+          <p v-if="onOpenBookmarkError != null " class="text-sm text-red-900 mr-4">{{ t('createVaultS3Permanent.error.openBookmarkFailed', [onOpenBookmarkError.message]) }}</p> <!-- TODO: not beautiful-->
         </div>
         <div class="mt-2">
           <router-link to="/app/vaults" class="text-sm text-gray-500">
@@ -228,16 +209,14 @@
 <script setup lang="ts">
 import { ClipboardIcon } from '@heroicons/vue/20/solid';
 import { ArrowPathIcon, CheckIcon, KeyIcon } from '@heroicons/vue/24/outline';
-import { ArrowDownTrayIcon } from '@heroicons/vue/24/solid';
-import { saveAs } from 'file-saver';
+import { ArrowTopRightOnSquareIcon } from '@heroicons/vue/24/solid';
 import { base64 } from 'rfc4648';
-import { computed, onMounted, ref } from 'vue';
+import { onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import backend, { ConflictError, StorageDto } from '../common/backend';
+import backend from '../common/backend';
 import { VaultKeys } from '../common/crypto';
 import { debounce } from '../common/util';
 import { VaultConfig } from '../common/vaultconfig';
-
 
 enum State {
   Initial,
@@ -253,33 +232,18 @@ class FormValidationFailedError extends Error {
   }
 }
 
-class EmptyVaultTemplateError extends Error {
-  constructor() {
-    super('Vault template is empty.');
-  }
-}
-
-class PasswordNotMachingError extends Error {
-  constructor() {
-    super('Passwords do not match.');
-  }
-}
-
 const { t } = useI18n({ useScope: 'global' });
 
 const form = ref<HTMLFormElement>();
 
 const onCreateError = ref<Error | null >(null);
 const onRecoverError = ref<Error | null >(null);
-const onDownloadTemplateError = ref<Error | null>(null);
+const onOpenBookmarkError = ref<Error | null>(null);
 
 const state = ref(State.Initial);
 const processing = ref(false);
 const vaultName = ref('');
 const vaultDescription = ref('');
-const password = ref('');
-const passwordConfirmation = ref('');
-const passwordMatches = computed(() => password.value == passwordConfirmation.value);
 const copiedRecoveryKey = ref(false);
 const debouncedCopyFinish = debounce(() => copiedRecoveryKey.value = false, 2000);
 const confirmRecoveryKey = ref(false);
@@ -287,11 +251,9 @@ const vaultKeys = ref<VaultKeys>();
 const recoveryKey = ref<string>('');
 const vaultConfig = ref<VaultConfig>();
 
-
 const vaultS3Scheme = ref('http');
 const vaultS3Hostname = ref('minio');
-const vaultS3Port = ref('9000');
-
+const vaultS3Port = ref(9000);
 const vaultS3AccessKeyId = ref('minioadmin');
 const vaultS3SecretKey = ref('minioadmin');
 
@@ -339,9 +301,6 @@ async function validateVaultDetails() {
   if (!form.value?.checkValidity()) {
     onCreateError.value = new FormValidationFailedError();
     return;
-  } else if (!passwordMatches.value) {
-    onCreateError.value = new PasswordNotMachingError();
-    return;
   }
   if (props.recover) {
     await createVault();
@@ -361,32 +320,25 @@ async function createVault() {
     if (!owner.publicKey) {
       throw new Error('Invalid state');
     }
-
-
-
     const vaultId = crypto.randomUUID();
     vaultConfig.value = await VaultConfig.create(vaultId, vaultKeys.value);
-    const wrapped = await vaultKeys.value.wrap(password.value);
     const ownerJwe = await vaultKeys.value.encryptForUser(base64.parse(owner.publicKey)
-            // / start cipherduck extension
-            ,{
-                s3type: 'minio',
-                scheme: vaultS3Scheme.value,
-                hostname: vaultS3Hostname.value,
-                port: vaultS3Port.value,
-                username: vaultS3AccessKeyId.value,
-                password: vaultS3SecretKey.value
-            }
-            // \ end cipherduck extension
-
+      // / start cipherduck extension
+      ,{
+        s3type: 'minio',
+        scheme: vaultS3Scheme.value,
+        hostname: vaultS3Hostname.value,
+        port: vaultS3Port.value,
+        username: vaultS3AccessKeyId.value,
+        password: vaultS3SecretKey.value
+      }
+      // \ end cipherduck extension
     );
-    await backend.vaults.createVault(vaultId, vaultName.value, vaultDescription.value, wrapped.masterkey, wrapped.iterations, wrapped.salt, wrapped.signaturePublicKey, wrapped.signaturePrivateKey);
-    await backend.vaults.grantAccess(vaultId, owner.id, ownerJwe, vaultKeys.value);
-
+    await backend.vaults.createOrUpdateVault(vaultId, vaultName.value, vaultDescription.value, false);
+    await backend.vaults.grantAccess(vaultId, owner.id, ownerJwe);
     // / start cipherduck extension
     createBucket(vaultId, vaultConfig.value);
     // \ end cipherduck extension
-
     state.value = State.Finished;
   } catch (error) {
     console.error('Creating vault failed.', error);
@@ -402,41 +354,34 @@ async function copyRecoveryKey() {
   debouncedCopyFinish();
 }
 
-async function downloadVaultTemplate() {
-  onDownloadTemplateError.value = null;
+async function openBookmark() {
+  onOpenBookmarkError.value = null;
   try {
-    const blob = await vaultConfig.value?.exportTemplate();
-    if (blob != null) {
-      saveAs(blob, `${vaultName.value}.zip`);
-    } else {
-      throw new EmptyVaultTemplateError();
-    }
+    const bookmark = await backend.config.cipherduckhubbookmark();
+    window.location.href = `io.mountainduck:cipherduck?bookmark=${encodeURIComponent(bookmark)}`;
   } catch (error) {
-    console.error('Exporting vault template failed.', error);
-    onDownloadTemplateError.value = error instanceof Error ? error : new Error('Unknown reason');
+    console.error('Opening bookmark from browser failed.', error);
+    onOpenBookmarkError.value = error instanceof Error ? error : new Error('Unknown Error');
   }
 }
 
-// / start cipherduck extension
 async function createBucket(vaultId: string, vaultConfig: VaultConfig) {
-    // Deprecated use of minio-js client API in browser: https://github.com/minio/minio-js/issues/729#issuecomment-463538649
-    // See also e.g.https://github.com/minio/minio-js-store-app
-
-
-    const rootDirHash = await vaultKeys.value.hashDirectoryId('');
-
-    await backend.storage.put({
-        s3type: 'minio',
-        scheme: vaultS3Scheme.value,
-        hostname : vaultS3Hostname.value,
-        port : vaultS3Port.value,
-        accessKeyId : vaultS3AccessKeyId.value,
-        secretKey : vaultS3SecretKey.value,
-        vaultId : vaultId,
-        vaultConfigToken : vaultConfig.vaultConfigToken,
-        rootDirHash : rootDirHash
-    })
-
+  // Deprecated use of minio-js client API in browser: https://github.com/minio/minio-js/issues/729#issuecomment-463538649
+  // See also: https://github.com/minio/minio-js-store-app
+  if (!vaultKeys.value) {
+    throw new Error('Invalid state');
+  }
+  const rootDirHash = await vaultKeys.value.hashDirectoryId('');
+  await backend.storage.put({
+    s3type: 'minio',
+    scheme: vaultS3Scheme.value,
+    hostname: vaultS3Hostname.value,
+    port: vaultS3Port.value,
+    accessKeyId: vaultS3AccessKeyId.value,
+    secretKey: vaultS3SecretKey.value,
+    vaultId: vaultId,
+    vaultConfigToken: vaultConfig.vaultConfigToken,
+    rootDirHash: rootDirHash
+  });
 }
-// \ start cipherduck extension
 </script>

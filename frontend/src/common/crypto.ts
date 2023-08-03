@@ -233,22 +233,21 @@ export class VaultKeys {
    * @returns a JWE containing this Masterkey
    */
   public async encryptForUser(userPublicKey: Uint8Array
-      // / start cipherduck extension
-      , storage?: JWEPayloadStorage
-      // \ end cipherduck extension
+    // / start cipherduck extension
+    , storage?: JWEPayloadStorage
+    // \ end cipherduck extension
 
   ): Promise<string> {
     const publicKey = await crypto.subtle.importKey('spki', userPublicKey, UserKeys.KEY_DESIGNATION, false, []);
     const rawkey = new Uint8Array(await crypto.subtle.exportKey('raw', this.masterKey));
     try {
-
       const payload: JWEPayload = {
         key: base64.stringify(rawkey)
       };
 
       // / start cipherduck extension
       if (storage != undefined){
-        payload['backend'] = storage
+        payload['backend'] = storage;
       }
       // \ end cipherduck extension
 
