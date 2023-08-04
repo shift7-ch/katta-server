@@ -45,8 +45,8 @@ public class StorageResource {
     @PermitAll
     @Produces(MediaType.APPLICATION_JSON)
     @Transactional
-    @Operation(summary = "lists all devices matching the given ids", description = "lists for each id in the list its corresponding device. Ignores all id's where a device cannot be found")
-    @APIResponse(responseCode = "200")
+    @Operation(summary = "creates bucket and policy", description = "creates an S3 bucket and uploads policy for it.")
+    @APIResponse(responseCode = "200", description = "uploaded storage configuration")
     public void createBucketAndPolicy(StorageDto dto
     ) throws ServerException, InsufficientDataException, ErrorResponseException, URISyntaxException, IOException, NoSuchAlgorithmException, InvalidKeyException, InvalidResponseException, XmlParserException, InternalException {
 
