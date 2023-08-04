@@ -2,7 +2,7 @@
   <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
     <div class="pt-8 pb-4 shrink-0 flex items-center">
       <img src="/logo.svg" class="h-8" alt="Logo"/>
-      <span class="font-headline font-bold text-primary ml-2 pb-px">CRYPTOMATOR HUB</span>
+      <span class="font-headline font-bold text-primary ml-2 pb-px">CIPHERDUCK</span>
     </div>
 
     <div class="relative shadow-xl sm:rounded-2xl sm:overflow-hidden">
