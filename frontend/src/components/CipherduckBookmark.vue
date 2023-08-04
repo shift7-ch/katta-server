@@ -4,7 +4,7 @@
       <div class="flex-1 flex items-center justify-center sm:items-stretch sm:justify-start">
         <router-link to="/app" class="shrink-0 flex items-center">
           <img src="/logo.svg" class="h-8" alt="Logo"/>
-          <span class="font-headline font-bold text-primary ml-2 pb-px">CRYPTOMATOR HUB</span>
+          <span class="font-headline font-bold text-primary ml-2 pb-px">CIPHERDUCK</span>
         </router-link>
       </div>
     </div>
