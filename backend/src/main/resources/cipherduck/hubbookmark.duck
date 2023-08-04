@@ -2,6 +2,8 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
     <dict>
+        <key>UUID</key>
+        <string>c36acf24-e331-4919-9f19-ff52a08e7885</string>
         <key>Protocol</key>
         <string>hub</string>
         <key>Provider</key>
