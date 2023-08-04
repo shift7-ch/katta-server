@@ -10,6 +10,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.UriInfo;
+import org.cryptomator.hub.entities.Settings;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 
@@ -74,6 +75,8 @@ public class ConfigResource {
 		template = template.replace("<string>localhost</string>", String.format("<string>%s</string>", requestUri.getHost()));
 		// port
 		template = template.replace("<string>8080</string>", String.format("<string>%s</string>", requestUri.getPort()));
+		// UUID
+		template = template.replace("<string>c36acf24-e331-4919-9f19-ff52a08e7885</string>", String.format("<string>%s</string>", Settings.get().hubId));
 		return template;
     }
 	// \ end cipherduck extension
