@@ -106,6 +106,12 @@
         <h3 class="font-medium text-gray-900">{{ t('vaultDetails.actions.title') }}</h3>
 
         <div v-if="!vault.archived" class="mt-2 flex flex-col gap-2">
+          <!-- / start cipherduck extension -->
+          <button type="button" class="bg-primary py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-primary-d1 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary" @click="openBookmark()">
+            {{ t('vaultDetails.actions.openInCipherduck') }}
+          </button>
+          <!-- \ end cipherduck extension -->
+
           <div class="flex gap-2">
             <button :disabled="usersRequiringAccessGrant.length == 0" type="button" class="flex-1 bg-primary py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-primary-d1 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 disabled:hover:bg-primary disabled:cursor-not-allowed" @click="showGrantPermissionDialog()">
               {{ t('vaultDetails.actions.updatePermissions') }}
@@ -118,9 +124,9 @@
           <button type="button" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary" @click="showEditVaultMetadataDialog()">
             {{ t('vaultDetails.actions.editVaultMetadata') }}
           </button>
-          <button type="button" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary" @click="showDownloadVaultTemplateDialog()">
+          <!-- <button type="button" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary" @click="showDownloadVaultTemplateDialog()">
             {{ t('vaultDetails.actions.downloadVaultTemplate') }}
-          </button>
+          </button> -->
           <button type="button" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary" @click="showRecoveryKeyDialog()">
             {{ t('vaultDetails.actions.showRecoveryKey') }}
           </button>
@@ -416,4 +422,15 @@ async function removeMember(memberId: string) {
     onUpdateVaultMembershipError.value[memberId] = error instanceof Error ? error : new Error('Unknown Error');
   }
 }
+
+// / start cipherduck extension
+async function openBookmark() {
+  try {
+    const bookmark = await backend.config.cipherduckhubbookmark();
+    window.location.href = `x-cipherduck-action:cipherduck?bookmark=${encodeURIComponent(bookmark)}`;
+  } catch (error) {
+    console.error('Opening bookmark from browser failed.', error);
+  }
+}
+// \ end cipherduck extension
 </script>
