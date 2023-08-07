@@ -165,7 +165,7 @@
       "enabled": true,
       "redirectUris": [
         "http://127.0.0.1/*",
-        "io.mountainduck:oauth",
+        "x-cipherduck-action:oauth",
         "x-cyberduck-action:oauth",
         "http://proxyman.local:8080/*"
       ],
