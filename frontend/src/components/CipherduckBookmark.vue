@@ -59,7 +59,7 @@ async function openBookmark() {
   onDownloadError.value = null;
   try {
     const bookmark = await backend.config.cipherduckhubbookmark();
-    const location = 'io.mountainduck:cipherduck?bookmark=' +  encodeURIComponent(bookmark);
+    const location = 'x-cipherduck-action:cipherduck?bookmark=' +  encodeURIComponent(bookmark);
     window.location.href = location;
     open.value = false;
   } catch (error) {
