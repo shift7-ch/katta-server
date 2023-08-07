@@ -67,6 +67,13 @@
         </MenuItems>
       </transition>
     </Menu>
+
+    <!-- / start cipherduck extension -->
+    <button type="button" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-d1 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary" @click="openBookmark()">
+      <ArrowTopRightOnSquareIcon class="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
+      {{ t('vaultList.openInCipherduck') }}
+    </button>
+    <!-- \ end cipherduck extension -->
   </div>
 
   <div v-if="filteredVaults != null && filteredVaults.length > 0" class="mt-5 bg-white shadow overflow-hidden rounded-md">
@@ -114,7 +121,7 @@
 
 <script setup lang="ts">
 import { Listbox, ListboxButton, ListboxOption, ListboxOptions, Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/vue';
-import { ArrowPathIcon, ChevronDownIcon, PlusIcon } from '@heroicons/vue/20/solid';
+import { ArrowPathIcon, ArrowTopRightOnSquareIcon, ChevronDownIcon, PlusIcon } from '@heroicons/vue/20/solid';
 import { CheckIcon, ChevronRightIcon, ChevronUpDownIcon } from '@heroicons/vue/24/solid';
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -201,4 +208,15 @@ async function onSelectedVaultUpdate(vault: VaultDto) {
     selectedVault.value = vault;
   }
 }
+
+// / start cipherduck extension
+async function openBookmark() {
+  try {
+    const bookmark = await backend.config.cipherduckhubbookmark();
+    window.location.href = `io.mountainduck:cipherduck?bookmark=${encodeURIComponent(bookmark)}`;
+  } catch (error) {
+    console.error('Opening bookmark from browser failed.', error);
+  }
+}
+// \ end cipherduck extension
 </script>
