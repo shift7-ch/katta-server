@@ -41,42 +41,49 @@ jobs:
       - name: Deploy frontend
         working-directory: frontend
         run: npm run dist
-      - name: SonarCloud Scan Frontend
-        uses: SonarSource/sonarcloud-github-action@master
-        with:
-          projectBaseDir: frontend
-          args: >
-            -Dsonar.organization=cryptomator
-            -Dsonar.projectKey=cryptomator_hub_frontend
-            -Dsonar.typescript.tsconfigPath=tsconfig.json
-            -Dsonar.sources=src/
-            -Dsonar.tests=test/
-            -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      # / start cipherduck modification
+      # - name: SonarCloud Scan Frontend
+      #   uses: SonarSource/sonarcloud-github-action@master
+      #   with:
+      #     projectBaseDir: frontend
+      #     args: >
+      #       -Dsonar.organization=cryptomator
+      #       -Dsonar.projectKey=cryptomator_hub_frontend
+      #       -Dsonar.typescript.tsconfigPath=tsconfig.json
+      #       -Dsonar.sources=src/
+      #       -Dsonar.tests=test/
+      #       -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
+      #     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      # \ end cipherduck modification
       - uses: actions/setup-java@v2
         with:
           distribution: 'temurin'
           java-version: ${{ env.JAVA_VERSION }}
           cache: 'maven'
-      - name: Cache SonarCloud packages
-        uses: actions/cache@v2
-        with:
-          path: ~/.sonar/cache
-          key: ${{ runner.os }}-sonar
-          restore-keys: ${{ runner.os }}-sonar
+      # / start cipherduck modification
+      # - name: Cache SonarCloud packages
+      #   uses: actions/cache@v2
+      #   with:
+      #     path: ~/.sonar/cache
+      #     key: ${{ runner.os }}-sonar
+      #     restore-keys: ${{ runner.os }}-sonar
+      # \ start cipherduck modification
       - name: Build and test backend
         working-directory: backend
         run: >
           mvn -B clean verify
-          org.sonarsource.scanner.maven:sonar-maven-plugin:sonar
-          -Dsonar.projectKey=cryptomator_hub_backend
-          -Dsonar.organization=cryptomator
-          -Dsonar.host.url=https://sonarcloud.io
+
+      #    org.sonarsource.scanner.maven:sonar-maven-plugin:sonar
+      #    -Dsonar.projectKey=cryptomator_hub_backend
+      #    -Dsonar.organization=cryptomator
+      #    -Dsonar.host.url=https://sonarcloud.io
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      # / start cipherduck modification
+      #    SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      # \ start cipherduck modification
       - id: get_tag
         if: inputs.tag != '' || github.ref_type == 'tag' || contains(github.event.head_commit.message, '[build image]')
         run: |
