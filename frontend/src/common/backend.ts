@@ -377,7 +377,7 @@ class VersionService {
 
 // / start cipherduck extension
 class StorageService {
-  public async put(dto?: StorageDto): Promise<void> {
+  public async put(dto: StorageDto): Promise<void> {
     return axiosAuth.put('/storage/', dto);
   }
 }
