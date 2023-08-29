@@ -1,4 +1,4 @@
-package org.cryptomator.hub.api;
+package org.cryptomator.hub.api.cipherduck;
 
 import io.minio.MakeBucketArgs;
 import io.minio.MinioClient;
@@ -29,7 +29,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.util.AbstractMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -51,18 +50,18 @@ public class StorageResource {
     ) throws ServerException, InsufficientDataException, ErrorResponseException, URISyntaxException, IOException, NoSuchAlgorithmException, InvalidKeyException, InvalidResponseException, XmlParserException, InternalException {
 
 
-        final String rolePolicy = rolePolicy(dto.vaultId, dto.s3type);
+        final String rolePolicy = rolePolicy(dto.vaultId(), dto.s3type());
 
         makeMinioBucket(
-                dto.vaultId,
+                dto.vaultId(),
                 rolePolicy,
-                dto.scheme,
-                dto.hostname,
-                dto.port,
-                dto.accessKeyId,
-                dto.secretKey,
-                dto.vaultConfigToken,
-                dto.rootDirHash
+                dto.scheme(),
+                dto.hostname(),
+                dto.port(),
+                dto.accessKeyId(),
+                dto.secretKey(),
+                dto.vaultConfigToken(),
+                dto.rootDirHash()
 
         );
     }
