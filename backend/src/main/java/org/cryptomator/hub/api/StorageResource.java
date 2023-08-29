@@ -74,7 +74,7 @@ public class StorageResource {
         String template = IOUtils.toString(StorageResource.class.getResourceAsStream(templateF), StandardCharsets.UTF_8);
         // TODO do we want to use Qute as suggested by Quarkus?
         return Qute.fmt(template, Stream.of(
-                        new AbstractMap.SimpleEntry<>("bucketName", bucketName)
+                        Map.entry("bucketName", bucketName)
                 )
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
     }
