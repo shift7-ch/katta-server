@@ -3,6 +3,9 @@ package org.cryptomator.hub.api.cipherduck;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public record StorageDto(
+        @JsonProperty("protocol")
+        String protocol,
+
         @JsonProperty("s3type")
         String s3type,
         @JsonProperty("scheme")
