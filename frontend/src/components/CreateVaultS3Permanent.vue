@@ -254,6 +254,7 @@ const vaultConfig = ref<VaultConfig>();
 const vaultS3Scheme = ref('http');
 const vaultS3Hostname = ref('minio');
 const vaultS3Port = ref(9000);
+// TODO https://github.com/chenkins/cipherduck-hub/issues/17 UI for username/password?
 const vaultS3AccessKeyId = ref('minioadmin');
 const vaultS3SecretKey = ref('minioadmin');
 
@@ -325,6 +326,7 @@ async function createVault() {
     const ownerJwe = await vaultKeys.value.encryptForUser(base64.parse(owner.publicKey)
       // / start cipherduck extension
       ,{
+        protocol: 's3',
         s3type: 'minio',
         scheme: vaultS3Scheme.value,
         hostname: vaultS3Hostname.value,
