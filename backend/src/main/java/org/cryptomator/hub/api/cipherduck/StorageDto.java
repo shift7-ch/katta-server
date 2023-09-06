@@ -5,7 +5,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public record StorageDto(
         @JsonProperty("protocol")
         String protocol,
-
         @JsonProperty("s3type")
         String s3type,
         @JsonProperty("scheme")
@@ -14,12 +13,14 @@ public record StorageDto(
         String hostname,
         @JsonProperty("port")
         int port,
-        @JsonProperty("accessKeyId")
-        String accessKeyId,
-        @JsonProperty("secretKey")
-        String secretKey,
+        @JsonProperty("oidcProvider")
+        String oidcProvider,
+        @JsonProperty("region")
+        String region,
         @JsonProperty("vaultId")
         String vaultId,
+        @JsonProperty("bucketName")
+        String bucketName,
         @JsonProperty("vaultConfigToken")
         String vaultConfigToken,
         @JsonProperty("rootDirHash")

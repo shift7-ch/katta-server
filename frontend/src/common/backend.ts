@@ -203,9 +203,8 @@ export type StorageDto = {
     scheme: string;
     hostname: string;
     port: string;
-    accessKeyId: string;
-    secretKey: string;
     vaultId: string;
+    bucketName: string,
     vaultConfigToken: string;
     rootDirHash: string;
 }

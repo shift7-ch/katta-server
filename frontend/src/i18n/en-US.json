@@ -241,16 +241,11 @@
   "cipherduckbookmark.download": "Download cipherduck hub bookmark",
   "cipherduckbookmark.open": "Open cipherduck hub bookmark with cipherduck from browser",
   
-  "createVaultS3Permanent.enterVaultDetails.s3Scheme": "S3 Scheme",
-  "createVaultS3Permanent.enterVaultDetails.s3Hostname": "S3 Hostname",
-  "createVaultS3Permanent.enterVaultDetails.s3Port": "S3 Port",
-  "createVaultS3Permanent.enterVaultDetails.s3AccessKeyId": "S3 Username",
-  "createVaultS3Permanent.enterVaultDetails.s3AccessKeyId.description": "AccessKeyId",
-  "createVaultS3Permanent.enterVaultDetails.s3SecretKey": "S3 Password",
-  "createVaultS3Permanent.enterVaultDetails.s3SecretKey.description": "SecretKey",
+  "createVaultS3Permanent.enterVaultDetails.storage": "Vault storage location",
   "createVaultS3Permanent.error.openBookmarkFailed": "Opening boomark from browser failed: {0}",
   "createVaultS3Permanent.success.description": "Use the Cipherduck client on your computer to open the vault.",
   "createVaultS3Permanent.success.open": "Open vaults in Cipherduck",
+
 
   "vaultDetails.actions.openInCipherduck": "Open in Cipherduck",
 
