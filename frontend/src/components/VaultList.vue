@@ -88,6 +88,7 @@
                 <div v-if="vault.archived" class="inline-flex items-center rounded-md bg-yellow-400/10 px-2 py-1 text-xs font-medium text-yellow-500 ring-1 ring-inset ring-yellow-400/20">{{ t('vaultList.badge.archived') }}</div>
               </div>
               <p v-if="vault.description && vault.description.length > 0" class="truncate text-sm text-gray-500 mt-2">{{ vault.description }}</p>
+              <!--p v-if="vault.id.length > 0" class="truncate text-sm text-gray-500 mt-2">{{ vault.id }}</p-->
             </div>
             <div class="ml-5 shrink-0">
               <ChevronRightIcon class="h-5 w-5 text-gray-400" aria-hidden="true" />
