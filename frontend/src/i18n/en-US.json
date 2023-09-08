@@ -241,10 +241,10 @@
   "cipherduckbookmark.download": "Download cipherduck hub bookmark",
   "cipherduckbookmark.open": "Open cipherduck hub bookmark with cipherduck from browser",
   
-  "createVaultS3Permanent.enterVaultDetails.storage": "Vault storage location",
-  "createVaultS3Permanent.error.openBookmarkFailed": "Opening boomark from browser failed: {0}",
-  "createVaultS3Permanent.success.description": "Use the Cipherduck client on your computer to open the vault.",
-  "createVaultS3Permanent.success.open": "Open vaults in Cipherduck",
+  "CreateVaultS3.enterVaultDetails.storage": "Vault storage location",
+  "CreateVaultS3.error.openBookmarkFailed": "Opening boomark from browser failed: {0}",
+  "CreateVaultS3.success.description": "Use the Cipherduck client on your computer to open the vault.",
+  "CreateVaultS3.success.open": "Open vaults in Cipherduck",
 
 
   "vaultDetails.actions.openInCipherduck": "Open in Cipherduck",

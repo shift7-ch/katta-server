@@ -197,14 +197,8 @@ export type VersionDto = {
 
 // / start cipherduck extension
 export type StorageDto = {
-    protocol: string,
-    // s3type required to infer the right SDK for bucket creation
-    s3type: string;
-    scheme: string;
-    hostname: string;
-    port: string;
     vaultId: string;
-    bucketName: string,
+    storageConfigId: string;
     vaultConfigToken: string;
     rootDirHash: string;
 }
