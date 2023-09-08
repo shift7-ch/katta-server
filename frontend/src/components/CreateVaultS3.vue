@@ -50,106 +50,73 @@
 
           <div class="mt-5 md:mt-0 md:col-span-2">
             <div class="grid grid-cols-6 gap-6">
-              <div class="col-span-6 sm:col-span-3">
+                <div class="col-span-6 sm:col-span-3">
                 <label for="vaultName" class="block text-sm font-medium text-gray-700">{{ t('createVault.enterVaultDetails.vaultName') }}</label>
                 <input id="vaultName" v-model="vaultName" :disabled="processing" type="text" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200" :class="{ 'invalid:border-red-300 invalid:text-red-900 focus:invalid:ring-red-500 focus:invalid:border-red-500': onCreateError instanceof FormValidationFailedError }" pattern="^(?! )([^\\\/:*?\x22<>|])*(?<! |\.)$" required />
-              </div>
+                </div>
 
-              <div class="col-span-6 sm:col-span-4">
+                <div class="col-span-6 sm:col-span-4">
                 <label for="vaultDescription" class="block text-sm font-medium text-gray-700">
                   {{ t('createVault.enterVaultDetails.vaultDescription') }}
                   <span class="text-xs text-gray-500">({{ t('common.optional') }})</span></label>
                 <input id="vaultDescription" v-model="vaultDescription" :disabled="processing" type="text" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200"/>
-              </div>
-
-            <div class="col-span-6 sm:col-span-3">
-            <label for="vaultName" class="block text-sm font-medium text-gray-700">{{ t('createVaultS3Permanent.enterVaultDetails.storage') }}</label>
-            <Listbox as="div" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200" v-model="selectedStorage">
-              <ListboxButton class="relative w-full cursor-default rounded-lg bg-white py-2 pl-3 pr-10 text-left shadow-md focus:outline-none focus-visible:border-indigo-500 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 focus-visible:ring-offset-2 focus-visible:ring-offset-orange-300 sm:text-sm">
-                <span class="block truncate text-sm font-medium text-gray-700">{{ selectedStorage.name }}</span>
-                <span
-                  class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2"
-                >
-                  <ChevronUpDownIcon
-                    class="h-5 w-5 text-gray-400"
-                    aria-hidden="true"
-                  />
-                </span>
-              </ListboxButton>
-
-              <transition
-                leave-active-class="transition duration-100 ease-in"
-                leave-from-class="opacity-100"
-                leave-to-class="opacity-0"
-
-              >
-                <div class="col-span-6 sm:col-span-4">
-                <ListboxOptions
-                  class="relative mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm"
-                >
-                  <ListboxOption
-                    v-slot="{ active, selected }"
-                    v-for="config in configs"
-                    :key="config.name"
-                    :value="config"
-                    as="template"
-                  >
-                    <li
-                      :class="[
-                        active ? 'bg-emerald-100 text-emerald-900' : 'text-gray-900',
-                        'relative cursor-default select-none py-2 pl-10 pr-4',
-                      ]"
-                    >
-                      <span
-                        :class="[
-                          selected ? 'font-medium' : 'font-normal',
-                          'block truncate col-span-6 sm:col-span-4',
-                        ]">{{ config.name }}</span>
-                      <span
-                        v-if="selected"
-                        class="absolute inset-y-0 left-0 flex items-center pl-3 text-amber-600"
-                      >
-                        <CheckIcon class="h-5 w-5" aria-hidden="true" />
-                      </span>
-                    </li>
-                  </ListboxOption>
-                </ListboxOptions>
                 </div>
-              </transition>
-            </Listbox>
-            </div>
 
-              <!--Disclosure as="div" class="col-span-6 sm:col-span-4" v-slot="{ open }">
-                <DisclosureButton
-                  class="flex w-full justify-between rounded-lg bg-purple-100 px-4 py-2 text-left text-sm font-medium text-purple-900 hover:bg-purple-200 focus:outline-none focus-visible:ring focus-visible:ring-purple-500 focus-visible:ring-opacity-75"
-                >
-                  <span>S3 endpoint</span>
-                  <ChevronUpIcon
-                    :class="open ? 'rotate-180 transform' : ''"
-                    class="h-5 w-5 text-purple-500"
-                  />
-                </DisclosureButton>
-                <DisclosurePanel class="px-4 pt-4 pb-2 text-sm text-gray-500">
-                  <div class="col-span-6 sm:col-span-4">
-                      <label for="vaultS3Scheme" class="block text-sm font-medium text-gray-700">
-                        {{ t('createVaultS3Permanent.enterVaultDetails.s3Scheme') }}
-                      </label>
-                      <input id="vaultS3Scheme" v-model="vaultS3Scheme" :disabled="processing" type="text" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200"/>
-                    </div>
-                    <div class="col-span-6 sm:col-span-4">
-                      <label for="vaultS3Hostname" class="block text-sm font-medium text-gray-700">
-                        {{ t('createVaultS3Permanent.enterVaultDetails.s3Hostname') }}
-                      </label>
-                      <input id="vaultS3Hostname" v-model="vaultS3Hostname" :disabled="processing" type="text" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200"/>
-                    </div>
-                    <div class="col-span-6 sm:col-span-4">
-                      <label for="vaultS3Port" class="block text-sm font-medium text-gray-700">
-                        {{ t('createVaultS3Permanent.enterVaultDetails.s3Port') }}
-                      </label>
-                      <input id="vaultS3Port" v-model="vaultS3Port" :disabled="processing" type="number" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200"/>
-                    </div>
-                </DisclosurePanel>
-              </Disclosure-->
+                <div class="col-span-6 sm:col-span-3">
+                    <label for="vaultName" class="block text-sm font-medium text-gray-700">{{ t('CreateVaultS3.enterVaultDetails.storage') }}</label>
+                    <Listbox as="div" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200" v-model="selectedStorage">
+                      <ListboxButton class="relative w-full cursor-default rounded-lg bg-white py-2 pl-3 pr-10 text-left shadow-md focus:outline-none focus-visible:border-indigo-500 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 focus-visible:ring-offset-2 focus-visible:ring-offset-orange-300 sm:text-sm">
+                        <span class="block truncate text-sm font-medium text-gray-700">{{ selectedStorage.name }}</span>
+                        <span
+                          class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2"
+                        >
+                          <ChevronUpDownIcon
+                            class="h-5 w-5 text-gray-400"
+                            aria-hidden="true"
+                          />
+                        </span>
+                      </ListboxButton>
+
+                      <transition
+                        leave-active-class="transition duration-100 ease-in"
+                        leave-from-class="opacity-100"
+                        leave-to-class="opacity-0"
+                      >
+                        <div class="col-span-6 sm:col-span-4">
+                        <ListboxOptions
+                          class="relative mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm"
+                        >
+                          <ListboxOption
+                            v-slot="{ active, selected }"
+                            v-for="config in configs"
+                            :key="config.name"
+                            :value="config"
+                            as="template"
+                          >
+                            <li
+                              :class="[
+                                active ? 'bg-emerald-100 text-emerald-900' : 'text-gray-900',
+                                'relative cursor-default select-none py-2 pl-10 pr-4',
+                              ]"
+                            >
+                              <span
+                                :class="[
+                                  selected ? 'font-medium' : 'font-normal',
+                                  'block truncate col-span-6 sm:col-span-4',
+                                ]">{{ config.name }}</span>
+                              <span
+                                v-if="selected"
+                                class="absolute inset-y-0 left-0 flex items-center pl-3 text-amber-600"
+                              >
+                                <CheckIcon class="h-5 w-5" aria-hidden="true" />
+                              </span>
+                            </li>
+                          </ListboxOption>
+                        </ListboxOptions>
+                        </div>
+                      </transition>
+                    </Listbox>
+                </div>
             </div>
           </div>
         </div>
@@ -240,16 +207,16 @@
           </h3>
           <div class="mt-2">
             <p class="text-sm text-gray-500">
-              {{ t('createVaultS3Permanent.success.description') }}
+              {{ t('CreateVaultS3.success.description') }}
             </p>
           </div>
         </div>
         <div class="mt-5 sm:mt-6">
           <button type="button" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-d1 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary" @click="openBookmark()">
             <ArrowTopRightOnSquareIcon class="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
-            {{ t('createVaultS3Permanent.success.open') }}
+            {{ t('CreateVaultS3.success.open') }}
           </button>
-          <p v-if="onOpenBookmarkError != null " class="text-sm text-red-900 mr-4">{{ t('createVaultS3Permanent.error.openBookmarkFailed', [onOpenBookmarkError.message]) }}</p> <!-- TODO: not beautiful-->
+          <p v-if="onOpenBookmarkError != null " class="text-sm text-red-900 mr-4">{{ t('CreateVaultS3.error.openBookmarkFailed', [onOpenBookmarkError.message]) }}</p> <!-- TODO: not beautiful-->
         </div>
         <div class="mt-2">
           <router-link to="/app/vaults" class="text-sm text-gray-500">
@@ -273,24 +240,12 @@ import { VaultKeys } from '../common/crypto';
 import { debounce } from '../common/util';
 import { VaultConfig } from '../common/vaultconfig';
 // / cipherduck extension
-// TODO https://github.com/chenkins/cipherduck-hub/issues/3 cleanup/remove
-//import { fromWebToken } from "@aws-sdk/credential-providers";
-//import { S3Client,ListBucketsCommand,GetObjectCommand, CreateBucketCommand, } from "@aws-sdk/client-s3";
-//import { STSClient,AssumeRoleWithWebIdentityCommand } from "@aws-sdk/client-sts";
-//import { getEndpointPlugin } from "@smithy/middleware-endpoint";
-//import authPromise from '../common/auth';
-import {
-    Disclosure,
-    DisclosureButton,
-    DisclosurePanel,
-} from '@headlessui/vue';
 import {
      Listbox,
      ListboxButton,
      ListboxOptions,
      ListboxOption,
    } from '@headlessui/vue';
-import { ChevronUpIcon } from '@heroicons/vue/20/solid';
 // \ cipherduck extension
 
 enum State {
@@ -327,74 +282,59 @@ const recoveryKey = ref<string>('');
 const vaultConfig = ref<VaultConfig>();
 
 // / cipherduck extension
-// TODO https://github.com/chenkins/cipherduck-hub/issues/3 remove/cleanup
-//const vaultS3Scheme = ref('http');
-//const vaultS3Hostname = ref('minio');
-//const vaultS3Port = ref(9000);
-
-const vaultS3Scheme = ref('https');
-const vaultS3Hostname = ref('s3.amazonaws.com');
-const vaultS3Port = ref(443);
-
-
-const s3type = ref('minio');
-
-
 // TODO https://github.com/chenkins/cipherduck-hub/issues/3 extract to configuration service
 const configs = [
-               {
-                 "id": "http://minio:9000",
-                 "name": "MinIO STS",
-                 // TODO https://github.com/chenkins/cipherduck-hub/issues/15 configurable bucket prefix
-                 "bucketPrefix": "cipherduck",
-                 "s3type": "minio",
+   {
+     "id": "http://minio:9000",
+     "name": "MinIO STS",
+     // TODO https://github.com/chenkins/cipherduck-hub/issues/15 configurable bucket prefix
+     "bucketPrefix": "cipherduck",
+     "s3type": "minio",
 
-                 // We use claim-based OIDC provider in MinIO (MinIO does not distinguish between trust policies and roles, it only has policies)
-                 // see https://min.io/docs/minio/linux/reference/minio-mc/mc-idp-openid.html#syntax
-                 "oidcProvider": null,
-                 "stsRoleArnPrefix": null,
-                 "region": null,
-                 "jwe": {
-                            "protocol": "s3",
-                            "vendor": "s3-sts",
-                            "scheme": "http",
-                            "hostname": "minio",
-                            "port": "9000",
+     // We use claim-based OIDC provider in MinIO (MinIO does not distinguish between trust policies and roles, it only has policies)
+     // see https://min.io/docs/minio/linux/reference/minio-mc/mc-idp-openid.html#syntax
+     "oidcProvider": null,
+     "stsRoleArnPrefix": null,
+     "region": null,
+     "jwe": {
+                "protocol": "s3",
+                "vendor": "s3-sts",
+                "scheme": "http",
+                "hostname": "minio",
+                "port": "9000",
 
-                            "oAuthRedirectUrl": "x-cipherduck-action:oauth",
-                            "stsEndpoint": "http://minio:9000",
-                            "oAuthAuthorizationUrl": "https://login1.staging.cryptomator.cloud/realms/cipherduck/protocol/openid-connect/auth",
-                            "oAuthTokenUrl": "https://login1.staging.cryptomator.cloud/realms/cipherduck/protocol/openid-connect/token",
-                            "oAuthClientId": "cryptomator",
-                            "authorization": "AuthorizationCode",
-                 },
-               },
-               {
-                 "id": "https://sts.amazonaws.com",
-                 "name": "AWS S3",
-                 // TODO https://github.com/chenkins/cipherduck-hub/issues/15 bucket prefix
-                 "bucketPrefix": "cipherduck",
-                 "s3type": "aws",
-                 // oidcProvider required for trust policy
-                 "oidcProvider": "arn:aws:iam::930717317329:oidc-provider/login1.staging.cryptomator.cloud/realms/cipherduck",
-                 // RoleArn required for STS calls (we use bucket name as role name)
-                 "stsRoleArnPrefix":  "arn:aws:iam::930717317329:role/",
-                 // TODO support for multiple regions?
-                 "region": "eu-central-1",
-                 "jwe": {
-                    "protocol": "s3",
-                    "vendor": "s3-sts",
+                "oAuthRedirectUrl": "x-cipherduck-action:oauth",
+                "stsEndpoint": "http://minio:9000",
+                "oAuthAuthorizationUrl": "http://keycloak:8180/realms/cryptomator/protocol/openid-connect/auth",
+                "oAuthTokenUrl": "http://keycloak:8180/realms/cryptomator/protocol/openid-connect/token",
+                "oAuthClientId": "cryptomator",
+                "authorization": "AuthorizationCode",
+     },
+   },
+   {
+     "id": "https://sts.amazonaws.com",
+     "name": "AWS S3",
+     // TODO https://github.com/chenkins/cipherduck-hub/issues/15 bucket prefix
+     "bucketPrefix": "cipherduck",
+     "s3type": "aws",
+     // oidcProvider required for trust policy
+     "oidcProvider": "arn:aws:iam::930717317329:oidc-provider/login1.staging.cryptomator.cloud/realms/cipherduck",
+     // RoleArn required for STS calls (we use bucket name as role name)
+     "stsRoleArnPrefix":  "arn:aws:iam::930717317329:role/",
+     // TODO support for multiple regions?
+     "region": "eu-central-1",
+     "jwe": {
+        "protocol": "s3",
+        "vendor": "s3-sts",
 
-                    "oAuthRedirectUrl": "x-cipherduck-action:oauth",
-                    "oAuthAuthorizationUrl": "https://login1.staging.cryptomator.cloud/realms/cipherduck/protocol/openid-connect/auth",
-                    "oAuthTokenUrl": "https://login1.staging.cryptomator.cloud/realms/cipherduck/protocol/openid-connect/token",
-                    "oAuthClientId": "cryptomator",
-                    "authorization": "AuthorizationCode",
-
-                 },
-               },
-          ];
-
+        "oAuthRedirectUrl": "x-cipherduck-action:oauth",
+        "oAuthAuthorizationUrl": "https://login1.staging.cryptomator.cloud/realms/cipherduck/protocol/openid-connect/auth",
+        "oAuthTokenUrl": "https://login1.staging.cryptomator.cloud/realms/cipherduck/protocol/openid-connect/token",
+        "oAuthClientId": "cryptomator",
+        "authorization": "AuthorizationCode",
+     },
+   },
+];
 const selectedStorage = ref(configs[0]);
 // \ cipherduck extension
 
@@ -481,25 +421,17 @@ async function createVault() {
     await backend.vaults.createOrUpdateVault(vaultId, vaultName.value, vaultDescription.value, false);
     await backend.vaults.grantAccess(vaultId, owner.id, ownerJwe);
     // / start cipherduck extension
-      if (!vaultKeys.value) {
-        throw new Error('Invalid state');
-      }
-      // TODO https://github.com/chenkins/cipherduck-hub/issues/3 what happens if bucket creation fails after successful vault creation?
-      const rootDirHash = await vaultKeys.value.hashDirectoryId('');
-      await backend.storage.put({
-        protocol: 's3',
-        s3type: config["s3type"],
-        scheme: config["jwe"]["scheme"],
-        hostname: config["jwe"]["hostname"],
-        port: config["jwe"]["port"],
-        oidcProvider: config["oidcProvider"],
-        region: config["region"],
+    if (!vaultKeys.value) {
+    throw new Error('Invalid state');
+    }
+    // TODO https://github.com/chenkins/cipherduck-hub/issues/3 what happens if bucket creation fails after successful vault creation? - merge with PUT vault service?
+    const rootDirHash = await vaultKeys.value.hashDirectoryId('');
+    await backend.storage.put({
         vaultId: vaultId,
-        bucketName: bucketName,
+        storageConfigId: config.id,
         vaultConfigToken: vaultConfig.value.vaultConfigToken,
         rootDirHash: rootDirHash
-      });
-
+    });
     // \ end cipherduck extension
     state.value = State.Finished;
   } catch (error) {
