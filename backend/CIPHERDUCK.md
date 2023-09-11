@@ -10,7 +10,7 @@ MinIO
 ```
 export MINIO_IDENTITY_OPENID_CONFIG_URL=https://login1.staging.cryptomator.cloud/realms/cipherduck/.well-known/openid-configuration
 export MINIO_IDENTITY_OPENID_CLIENT_ID=cryptomator
-export MINIO_IDENTITY_OPENID_CLAIM_NAME="amr"
+export MINIO_IDENTITY_OPENID_CLAIM_NAME=amr
 minio server tmp_data --console-address :9001
 ```
 
