@@ -30,6 +30,7 @@ public interface StorageConfig {
     @JsonProperty("s3Type")
     String s3Type();
 
+    // TODO https://github.com/chenkins/cipherduck-hub/issues/3 do not expose!
     @JsonProperty("adminAccessKeyId")
     String adminAccessKeyId();
 

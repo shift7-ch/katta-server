@@ -280,68 +280,14 @@ const confirmRecoveryKey = ref(false);
 const vaultKeys = ref<VaultKeys>();
 const recoveryKey = ref<string>('');
 const vaultConfig = ref<VaultConfig>();
-
-// / cipherduck extension
-// TODO https://github.com/chenkins/cipherduck-hub/issues/3 extract to configuration service
-const configs = [
-   {
-     "id": "http://minio:9000",
-     "name": "MinIO STS",
-     // TODO https://github.com/chenkins/cipherduck-hub/issues/15 configurable bucket prefix
-     "bucketPrefix": "cipherduck",
-     "s3type": "minio",
-
-     // We use claim-based OIDC provider in MinIO (MinIO does not distinguish between trust policies and roles, it only has policies)
-     // see https://min.io/docs/minio/linux/reference/minio-mc/mc-idp-openid.html#syntax
-     "oidcProvider": null,
-     "stsRoleArnPrefix": null,
-     "region": null,
-     "jwe": {
-                "protocol": "s3",
-                "vendor": "s3-sts",
-                "scheme": "http",
-                "hostname": "minio",
-                "port": "9000",
-
-                "oAuthRedirectUrl": "x-cipherduck-action:oauth",
-                "stsEndpoint": "http://minio:9000",
-                "oAuthAuthorizationUrl": "http://keycloak:8180/realms/cryptomator/protocol/openid-connect/auth",
-                "oAuthTokenUrl": "http://keycloak:8180/realms/cryptomator/protocol/openid-connect/token",
-                "oAuthClientId": "cryptomator",
-                "authorization": "AuthorizationCode",
-     },
-   },
-   {
-     "id": "https://sts.amazonaws.com",
-     "name": "AWS S3",
-     // TODO https://github.com/chenkins/cipherduck-hub/issues/15 bucket prefix
-     "bucketPrefix": "cipherduck",
-     "s3type": "aws",
-     // oidcProvider required for trust policy
-     "oidcProvider": "arn:aws:iam::930717317329:oidc-provider/login1.staging.cryptomator.cloud/realms/cipherduck",
-     // RoleArn required for STS calls (we use bucket name as role name)
-     "stsRoleArnPrefix":  "arn:aws:iam::930717317329:role/",
-     // TODO support for multiple regions?
-     "region": "eu-central-1",
-     "jwe": {
-        "protocol": "s3",
-        "vendor": "s3-sts",
-
-        "oAuthRedirectUrl": "x-cipherduck-action:oauth",
-        "oAuthAuthorizationUrl": "https://login1.staging.cryptomator.cloud/realms/cipherduck/protocol/openid-connect/auth",
-        "oAuthTokenUrl": "https://login1.staging.cryptomator.cloud/realms/cipherduck/protocol/openid-connect/token",
-        "oAuthClientId": "cryptomator",
-        "authorization": "AuthorizationCode",
-     },
-   },
-];
-const selectedStorage = ref(configs[0]);
-// \ cipherduck extension
-
 const props = defineProps<{
   recover: boolean
 }>();
 
+// / cipherduck extension
+const selectedStorage = ref('');
+const configs = ref('');
+// \ cipherduck extension
 onMounted(initialize);
 
 async function initialize() {
@@ -352,6 +298,12 @@ async function initialize() {
     recoveryKey.value = await vaultKeys.value.createRecoveryKey();
     state.value = State.EnterVaultDetails;
   }
+  // / cipherduck extension
+  const backends = await backend.storageconfig.get();
+  configs.value = backends.backends;
+  selectedStorage.value = configs.value[0];
+  // \ cipherduck extension
+
 }
 
 async function validateRecoveryKey() {
