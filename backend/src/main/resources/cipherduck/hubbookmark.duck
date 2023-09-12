@@ -7,7 +7,7 @@
         <key>Protocol</key>
         <string>hub</string>
         <key>Provider</key>
-        <string>hub-http</string>
+        <string>provider</string>
         <key>Nickname</key>
         <string>Cipherduck</string>
         <key>Hostname</key>

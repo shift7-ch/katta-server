@@ -58,26 +58,27 @@ public class ConfigResource {
 		return new ConfigDto(keycloakPublicUrl, keycloakRealm, keycloakClientIdHub, keycloakClientIdCryptomator, authUri, tokenUri, Instant.now().truncatedTo(ChronoUnit.MILLIS), 1);
 	}
 
-	// / start cipherduck extension
-	@PermitAll
-	@GET
-	@Path("/cipherduckhubbookmark")
-	@Produces(MediaType.APPLICATION_XML)
-	@Operation(summary = "get cipherduck bookmark for this hub")
-	public String cipherduckhubbookmark(@Context UriInfo uriInfo) throws IOException {
-		final URI requestUri = uriInfo.getRequestUri();
-		String template = new String(ConfigResource.class.getResourceAsStream("/cipherduck/hubbookmark.duck").readAllBytes());
-		// nickname
-		template = template.replace("<string>Cipherduck</string>", String.format("<string>Cipherduck (%s://%s:%s)</string>", requestUri.getScheme(), requestUri.getHost(), requestUri.getPort()));
-		// scheme
-		template = template.replace("<string>hub-http</string>", String.format("<string>hub-%s</string>", requestUri.getScheme()));
-		// hostname
-		template = template.replace("<string>localhost</string>", String.format("<string>%s</string>", requestUri.getHost()));
-		// port
-		template = template.replace("<string>8080</string>", String.format("<string>%s</string>", requestUri.getPort()));
-		// UUID
-		template = template.replace("<string>c36acf24-e331-4919-9f19-ff52a08e7885</string>", String.format("<string>%s</string>", Settings.get().hubId));
-		return template;
+    // / start cipherduck extension
+    @PermitAll
+    @GET
+    @Path("/cipherduckhubbookmark")
+    @Produces(MediaType.APPLICATION_XML)
+    @Operation(summary = "get cipherduck bookmark for this hub")
+    public String cipherduckhubbookmark(@Context UriInfo uriInfo) throws IOException {
+        final URI requestUri = uriInfo.getRequestUri();
+        String template = new String(ConfigResource.class.getResourceAsStream("/cipherduck/hubbookmark.duck").readAllBytes());
+        String hubUrl = String.format("%s://%s:%s", requestUri.getScheme(), requestUri.getHost(), requestUri.getPort());
+        // nickname
+        template = template.replace("<string>Cipherduck</string>", String.format("<string>Cipherduck (%s)</string>", hubUrl));
+        // hostname
+        template = template.replace("<string>localhost</string>", String.format("<string>%s</string>", requestUri.getHost()));
+        // port
+        template = template.replace("<string>8080</string>", String.format("<string>%s</string>", requestUri.getPort()));
+        // UUID
+        template = template.replace("<string>c36acf24-e331-4919-9f19-ff52a08e7885</string>", String.format("<string>%s</string>", Settings.get().hubId));
+        // scheme
+        template = template.replace("<string>provider</string>", String.format("<string>hub-%s</string>", requestUri.getScheme()));
+        return template;
     }
 	// \ end cipherduck extension
 
