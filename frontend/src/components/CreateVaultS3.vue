@@ -362,8 +362,11 @@ async function createVault() {
     const bucketName = config["bucketPrefix"] + vaultId
 
     if(config.hasOwnProperty("stsRoleArnPrefix") && config["stsRoleArnPrefix"]){
+        // TODO https://github.com/chenkins/cipherduck-hub/issues/3 safe - side-effects?
         config["jwe"]["stsRoleArn"] = config["stsRoleArnPrefix"]  + bucketName
     }
+    // TODO https://github.com/chenkins/cipherduck-hub/issues/3 how do we use vendor?
+    config["jwe"]["vendor"] = config["id"];
     // \ end cipherduck extension
     const ownerJwe = await vaultKeys.value.encryptForUser(base64.parse(owner.publicKey)
       // / start cipherduck extension

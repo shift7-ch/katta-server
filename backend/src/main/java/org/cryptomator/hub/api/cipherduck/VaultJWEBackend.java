@@ -5,43 +5,22 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Optional;
 
 public interface VaultJWEBackend {
-    @JsonProperty("protocol")
-    String protocol();
 
-    @JsonProperty("vendor")
-    Optional<String> vendor();
 
-    @JsonProperty("hostname")
-    Optional<String> hostname();
+    // TODO https://github.com/chenkins/cipherduck-hub/issues/4 how generic do we need - which can we put into protocols?
 
-    @JsonProperty("scheme")
-    Optional<String> scheme();
-
-    @JsonProperty("port")
-    Optional<Integer> port();
-
-    // TODO https://github.com/chenkins/cipherduck-hub/issues/3 for permanent credentials?
-    //    @JsonProperty("username")
-    //    String username();
-    //
-    //    @JsonProperty("password")
-    //    String password();
-
+    // (1) storage-specific for protocol
     @JsonProperty("region")
     Optional<String> region();
 
     @JsonProperty("stsEndpoint")
     Optional<String> stsEndpoint();
 
-    @JsonProperty("stsRoleArn")
-    Optional<String> stsRoleArn();
+    @JsonProperty("scheme")
+    Optional<String> scheme();
 
-    @JsonProperty("stsDurationSeconds")
-    Optional<Integer> stsDurationSeconds();
 
-    @JsonProperty("authorization")
-    Optional<String> authorization();
-
+    // (2) hub-specific for protocol
     @JsonProperty("oAuthAuthorizationUrl")
     Optional<String> oauthAuthorizationUrl();
 
@@ -50,6 +29,12 @@ public interface VaultJWEBackend {
 
     @JsonProperty("oAuthClientId")
     Optional<String> oauthClientId();
+
+
+    // (3) hub-independent for protocol
+    // TODO https://github.com/chenkins/cipherduck-hub/issues/3 we don't need them here.
+    @JsonProperty("authorization")
+    Optional<String> authorization();
 
     @JsonProperty("oAuthRedirectUrl")
     Optional<String> oauthRedirectUrl();
@@ -62,4 +47,34 @@ public interface VaultJWEBackend {
 
     @JsonProperty("tokenConfigurable")
     Optional<String> tokenConfigurable();
+
+
+    // (4) for bookmark
+    // TODO https://github.com/chenkins/cipherduck-hub/issues/3 add defaultPath, add UUID? = bucketName
+
+    @JsonProperty("protocol")
+    String protocol();
+
+    // TODO https://github.com/chenkins/cipherduck-hub/issues/3 how do we use vendor - if we can inject (1) and (2) on the fly, we can use separate Protocol/Vendor
+    @JsonProperty("vendor")
+    Optional<String> vendor();
+
+    @JsonProperty("hostname")
+    Optional<String> hostname();
+
+    @JsonProperty("port")
+    Optional<Integer> port();
+
+    // TODO https://github.com/chenkins/cipherduck-hub/issues/3 for permanent credentials?
+    //    @JsonProperty("username")
+    //    String username();
+    //
+    //    @JsonProperty("password")
+    //    String password();
+
+    @JsonProperty("stsRoleArn")
+    Optional<String> stsRoleArn();
+
+    @JsonProperty("stsDurationSeconds")
+    Optional<Integer> stsDurationSeconds();
 }
