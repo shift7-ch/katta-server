@@ -9,7 +9,8 @@
         "s3:ListBucketMultipartUploads",
         "s3:GetBucketVersioning"
       ],
-      "Resource": "arn:aws:s3:::{bucketName}"
+      "Principal": "*",
+      "Resource": "arn:aws:s3:::${jwt:aud}"
     },
     {
       "Effect": "Allow",
@@ -20,7 +21,8 @@
         "s3:ListMultipartUploadParts",
         "s3:AbortMultipartUpload"
       ],
-      "Resource": "arn:aws:s3:::{bucketName}/*"
+      "Principal": "*",
+      "Resource": "arn:aws:s3:::${jwtd:aud}/*"
     }
   ]
 }
