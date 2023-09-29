@@ -10,10 +10,7 @@ public record StorageConfigDto(
         Optional<String> oidcProvider,
         Optional<String> stsRoleArn,
         Optional<String> region,
-        VaultJWEBackend jwe,
+        VaultJWEBackend jwe
 
-        // TODO https://github.com/chenkins/cipherduck-hub/issues/3 only in backend config, do not expose
-        String adminAccessKeyId,
-        String adminSecretKey
 ) implements StorageConfig {
 }
