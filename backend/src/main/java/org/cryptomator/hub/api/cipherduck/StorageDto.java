@@ -10,7 +10,13 @@ public record StorageDto(
         @JsonProperty("vaultConfigToken")
         String vaultConfigToken,
         @JsonProperty("rootDirHash")
-        String rootDirHash
+        String rootDirHash,
+        @JsonProperty("awsAccessKey")
+        String awsAccessKey,
+        @JsonProperty("awsSecretKey")
+        String awsSecretKey,
+        @JsonProperty("sessionToken")
+        String sessionToken
 
 ) {
 

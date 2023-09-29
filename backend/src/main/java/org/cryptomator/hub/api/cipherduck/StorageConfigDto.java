@@ -8,7 +8,7 @@ public record StorageConfigDto(
         String bucketPrefix,
         String s3Type,
         Optional<String> oidcProvider,
-        Optional<String> stsRoleArnPrefix,
+        Optional<String> stsRoleArn,
         Optional<String> region,
         VaultJWEBackend jwe,
 

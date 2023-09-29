@@ -246,6 +246,8 @@ import {
      ListboxOptions,
      ListboxOption,
    } from '@headlessui/vue';
+import { STSClient,AssumeRoleWithWebIdentityCommand } from "@aws-sdk/client-sts";
+import authPromise from '../common/auth';
 // \ cipherduck extension
 
 enum State {
@@ -360,11 +362,6 @@ async function createVault() {
 
     // TODO https://github.com/chenkins/cipherduck-hub/issues/15 bucket prefix
     const bucketName = config["bucketPrefix"] + vaultId
-
-    if(config.hasOwnProperty("stsRoleArnPrefix") && config["stsRoleArnPrefix"]){
-        // TODO https://github.com/chenkins/cipherduck-hub/issues/3 safe - side-effects?
-        config["jwe"]["stsRoleArn"] = config["stsRoleArnPrefix"]  + bucketName
-    }
     // \ end cipherduck extension
     const ownerJwe = await vaultKeys.value.encryptForUser(base64.parse(owner.publicKey)
       // / start cipherduck extension
@@ -375,15 +372,56 @@ async function createVault() {
     await backend.vaults.grantAccess(vaultId, owner.id, ownerJwe);
     // / start cipherduck extension
     if (!vaultKeys.value) {
-    throw new Error('Invalid state');
+       throw new Error('Invalid state');
     }
     // TODO https://github.com/chenkins/cipherduck-hub/issues/3 what happens if bucket creation fails after successful vault creation? - merge with PUT vault service?
+    const token = await authPromise.then(auth => auth.bearerToken());
+    console.log(token)
+    const idtoken = await authPromise.then(auth => auth.idToken());
+    console.log(idtoken)
+
+    // https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/clients/client-sts/classes/stsclient.html
+    const stsClient = new STSClient({
+        region: config["region"],
+        endpoint: config["jwe"]["stsEndpoint"]
+    });
+
+    // https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/clients/client-sts/classes/assumerolewithwebidentitycommand.html
+    // https://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRoleWithWebIdentity.html
+    // TODO https://github.com/chenkins/cipherduck-hub/issues/10 we could further restrict the policy passed to the backend to only the bucket we want to create to have it even safer!
+    const assumeRoleWithWebIdentityArgs = {
+      // Required. The OAuth 2.0 access token or OpenID Connect ID token that is provided by the
+      // identity provider.
+      WebIdentityToken: idtoken,
+      RoleSessionName: vaultId,
+      // Valid Range: Minimum value of 900. Maximum value of 43200.
+      DurationSeconds: 900
+    }
+    // TODO https://github.com/chenkins/cipherduck-hub/issues/41 claim-based authorization for MinIO will be removed with scoped access token - keep for now.
+    if(config["stsRoleArn"]){
+        // Required. ARN of the role that the caller is assuming.
+        assumeRoleWithWebIdentityArgs["RoleArn"] = config["stsRoleArn"];
+    }
+
+
+    const { Credentials } = await stsClient
+        .send(new AssumeRoleWithWebIdentityCommand(assumeRoleWithWebIdentityArgs));
+
+    // https://github.com/awslabs/smithy-typescript/blob/697310da9aec949034f92598f5cefc2cc162ef4d/packages/types/src/identity/awsCredentialIdentity.ts#L24
+    console.log(Credentials.AccessKeyId);
+    console.log(Credentials.SecretAccessKey);
+    console.log(Credentials.SessionToken);
+
     const rootDirHash = await vaultKeys.value.hashDirectoryId('');
     await backend.storage.put({
         vaultId: vaultId,
         storageConfigId: config.id,
         vaultConfigToken: vaultConfig.value.vaultConfigToken,
-        rootDirHash: rootDirHash
+        rootDirHash: rootDirHash,
+        awsAccessKey: Credentials.AccessKeyId,
+        awsSecretKey: Credentials.SecretAccessKey,
+        sessionToken: Credentials.SessionToken
+
     });
     // \ end cipherduck extension
     state.value = State.Finished;
