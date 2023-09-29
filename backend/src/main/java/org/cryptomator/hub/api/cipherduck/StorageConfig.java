@@ -18,8 +18,8 @@ public interface StorageConfig {
     @JsonProperty("oidcProvider")
     Optional<String> oidcProvider();
 
-    @JsonProperty("stsRoleArnPrefix")
-    Optional<String> stsRoleArnPrefix();
+    @JsonProperty("stsRoleArn")
+    Optional<String> stsRoleArn();
 
     @JsonProperty("region")
     Optional<String> region();
@@ -29,13 +29,6 @@ public interface StorageConfig {
 
     @JsonProperty("s3Type")
     String s3Type();
-
-    // TODO https://github.com/chenkins/cipherduck-hub/issues/3 do not expose!
-    @JsonProperty("adminAccessKeyId")
-    String adminAccessKeyId();
-
-    @JsonProperty("adminSecretKey")
-    String adminSecretKey();
 
 }
 
