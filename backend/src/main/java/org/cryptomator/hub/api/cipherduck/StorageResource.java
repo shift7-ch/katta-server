@@ -35,7 +35,7 @@ public class StorageResource {
     @Transactional
     @Operation(summary = "creates bucket and policy", description = "creates an S3 bucket and uploads policy for it.")
     @APIResponse(responseCode = "200", description = "uploaded storage configuration")
-    @APIResponse(responseCode = "400", description = "frischfrommfrei")
+    @APIResponse(responseCode = "400", description = "frischfrommfroehlichfrei")
     public Response createBucket(StorageDto dto) {
 
         Map<String, StorageConfig> storageConfigs = backendsConfig.backends().stream().collect(Collectors.toMap(StorageConfig::id, Function.identity()));
