@@ -18,6 +18,11 @@
       </div>
     </div>
 
+    <!-- / start cipherduck extension -->
+    <!-- TODO flag for debug mode? -->
+    <p v-if="vault.id.length > 0" class="truncate text-sm text-gray-500 mt-2">{{ vault.id }}</p>
+    <!-- \ end cipherduck extension -->
+
     <div>
       <h3 class="font-medium text-gray-900">{{ t('vaultDetails.description.header') }}</h3>
       <div class="mt-2 flex items-center justify-between">
