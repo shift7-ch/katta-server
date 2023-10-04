@@ -12,53 +12,65 @@ Documentation
 * [MinIO Client Reference `mc idp openid`](https://min.io/docs/minio/linux/reference/minio-mc/mc-idp-openid.html)
 * [MinIO Security Token Service `AssumeRoleWithWebIdentity](https://min.io/docs/minio/linux/developers/security-token-service/AssumeRoleWithWebIdentity.html)
 
-#### OIDC provider
-```shell
-export MINIO_IDENTITY_OPENID_CONFIG_URL=https://login1.staging.cryptomator.cloud/realms/cipherduck/.well-known/openid-configuration
-export MINIO_IDENTITY_OPENID_CLIENT_ID=cryptomator
-export MINIO_IDENTITY_OPENID_CLAIM_NAME=amr
-minio server tmp_data --console-address :9001
-```
-
-TODO https://github.com/chenkins/cipherduck-hub/issues/41 with scoped token, this will become:
 
 
-#### Frontend role
-Add role for creating buckets with prefix `cipherduck` and uploading `vault.cryptomator`, 
+#### Policy and OIDC provider for MinIO
+Add role for creating buckets with prefix `cipherduck` and uploading `vault.cryptomator`, as well as RW to access to buckets through `aud` claim in JWT token: 
 see 
-[createbucketpermissionpolicy.json](src%2Fmain%2Fresources%2Fcipherduck%2Fsetup%2Fminio%2Fcreatebucketpermissionpolicy.json).
+[cipherduck.json](src%2Fmain%2Fresources%2Fcipherduck%2Fsetup%2Fminio%2Fcipherduckpolicy.json).
+
+Side-note: MinIO does not allow for multiple OIDC providers with the same client ID:
+
+> mc: <ERROR> Unable to add OpenID IDP config to server. Client ID XYZ is present with multiple OpenID configurations.
+
+This is not a problem as we leave the claim specifying the vault unset or pointing to a non-existing vault.
+
+
 
 
 ```shell
 mc alias set myminio http://127.0.0.1:9000 minioadmin minioadmin
-mc admin policy create myminio cipherduck-createbucket src/main/resources/cipherduck/setup/minio/createbucketpermissionpolicy.json
+mc admin policy create myminio cipherduck src/main/resources/cipherduck/setup/minio/cipherduckpolicy.json
 ```
 
 Add a new OIDC provider using the policy:
 ```shell
 mc idp openid add myminio cryptomator \
+    config_url="http://keycloak:8180/realms/cryptomator/.well-known/openid-configuration" \
+    client_id="cryptomator" \
+    client_secret="ignore-me" \
+    role_policy="cipherduck"
+mc idp openid add myminio cryptomatorhub \
+    config_url="http://keycloak:8180/realms/cryptomator/.well-known/openid-configuration" \
+    client_id="cryptomatorhub" \
+    client_secret="ignore-me" \
+    role_policy="cipherduck" 
+mc admin service restart myminio
+
+
+mc idp openid add myminio cryptomator \
     config_url="https://login1.staging.cryptomator.cloud/realms/cipherduck/.well-known/openid-configuration" \
     client_id="cryptomator" \
     client_secret="ignore-me" \
-    role_policy="cipherduck-createbucket"
+    role_policy="cipherduck"
+mc idp openid add myminio cryptomatorhub \
+    config_url="https://login1.staging.cryptomator.cloud/realms/cipherduck/.well-known/openid-configuration" \
+    client_id="cryptomatorhub" \
+    client_secret="ignore-me" \
+    role_policy="cipherduck"    
 mc admin service restart myminio
-```
-
-Or use environment variables on the default OIDC provider:
-```shell
-export MINIO_IDENTITY_OPENID_CONFIG_URL=https://login1.staging.cryptomator.cloud/realms/cipherduck/.well-known/openid-configuration
-export MINIO_IDENTITY_OPENID_CLIENT_ID=cryptomator
-export MINIO_IDENTITY_OPENID_ROLE_POLICY=cipherduck-createbucket
-minio server tmp_data --console-address :9001
 ```
 
 Extract the policy ARN:
 ```shell
 mc idp openid ls myminio                                                                                                                                                                     feature/cipherduck
-╭──────────────────────────────────────────────────────────────────╮
-│ On?    Name                         RoleARN                      │
-│ 🟢   (default)  arn:minio:iam:::role/IqZpDC5ahW_DCAvZPZA4ACjEnDE │
-╰──────────────────────────────────────────────────────────────────╯
+╭───────────────────────────────────────────────────────────────────────╮
+│ On?       Name                           RoleARN                      │
+│ 🔴        (default)                                                   │
+│ 🟢      cryptomator  arn:minio:iam:::role/IqZpDC5ahW_DCAvZPZA4ACjEnDE │
+│ 🟢   cryptomatorhub  arn:minio:iam:::role/HGKdlY4eFFsXVvJmwlMYMhmbnDE │
+╰───────────────────────────────────────────────────────────────────────╯
+
 
 mc idp openid info myminio                                                                                                                                                                   feature/cipherduck
 ╭───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
@@ -70,15 +82,6 @@ mc idp openid info myminio                                                      
 ╰───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
 ```
 
-TODO https://github.com/chenkins/cipherduck-hub/issues/41 add scopedvaultrole - probably we need to include in the same policy as MinIO 
-uses issuer and client id to decide which policy to evaluate:
-> mc: <ERROR> Unable to add OpenID IDP config to server. Client ID cryptomator is present with multiple OpenID configurations.
-
-This is not a problem if we can leave the claim specifying the vault unset or pointing to a non-existing vault.
-
-### 
-TODO https://github.com/chenkins/cipherduck-hub/issues/41
-[scopedvaultaccesspermissionpolicy.json](src%2Fmain%2Fresources%2Fcipherduck%2Fsetup%2Fminio%2Fscopedvaultaccesspermissionpolicy.json)
 
 ### Hub configuration
 
@@ -133,7 +136,7 @@ Add role for creating buckets with prefix `cipherduck` and uploading `vault.cryp
 see 
 [createbucketpermissionpolicy.json](src%2Fmain%2Fresources%2Fcipherduck%2Fsetup%2Faws%2Fcreatebucketpermissionpolicy.json) 
 and 
-[createbuckettrustpolicy.json](src%2Fmain%2Fresources%2Fcipherduck%2Fsetup%2Faws%2Fcreatebuckettrustpolicy.json).
+[createbuckettrustpolicy.json](./src%2Fmain%2Fresources%2Fcipherduck%2Fsetup%2Faws%2Fcreatebuckettrustpolicy.json).
 
 ```shell
 aws iam create-role --role-name cipherduck-createbucket --assume-role-policy-document file://src/main/resources/cipherduck/setup/createbuckettrustpolicy.json
