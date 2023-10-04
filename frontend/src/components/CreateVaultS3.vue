@@ -389,6 +389,7 @@ async function createVault() {
     // https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/clients/client-sts/classes/assumerolewithwebidentitycommand.html
     // https://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRoleWithWebIdentity.html
     // TODO https://github.com/chenkins/cipherduck-hub/issues/10 we could further restrict the policy passed to the backend to only the bucket we want to create to have it even safer!
+    // TODO https://github.com/chenkins/cipherduck-hub/issues/3 we could further restrict the policy passed to the backend to only the bucket we want to create to have it even safer!
     const assumeRoleWithWebIdentityArgs = {
       // Required. The OAuth 2.0 access token or OpenID Connect ID token that is provided by the
       // identity provider.
@@ -397,11 +398,8 @@ async function createVault() {
       // Valid Range: Minimum value of 900. Maximum value of 43200.
       DurationSeconds: 900
     }
-    // TODO https://github.com/chenkins/cipherduck-hub/issues/41 claim-based authorization for MinIO will be removed with scoped access token - keep for now.
-    if(config["stsRoleArn"]){
-        // Required. ARN of the role that the caller is assuming.
-        assumeRoleWithWebIdentityArgs["RoleArn"] = config["stsRoleArn"];
-    }
+    // Required. ARN of the role that the caller is assuming.
+    assumeRoleWithWebIdentityArgs["RoleArn"] = config["stsRoleArn"];
 
 
     const { Credentials } = await stsClient

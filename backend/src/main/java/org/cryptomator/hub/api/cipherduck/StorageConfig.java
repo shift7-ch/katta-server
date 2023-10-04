@@ -15,6 +15,7 @@ public interface StorageConfig {
     @JsonProperty("bucketPrefix")
     String bucketPrefix();
 
+    // TODO obsolete?
     @JsonProperty("oidcProvider")
     Optional<String> oidcProvider();
 

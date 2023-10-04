@@ -55,6 +55,7 @@ import org.cryptomator.hub.validation.NoHtmlOrScriptChars;
 import org.cryptomator.hub.validation.OnlyBase64Chars;
 import org.cryptomator.hub.validation.ValidId;
 import org.cryptomator.hub.validation.ValidJWS;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.ParameterIn;
@@ -87,6 +88,16 @@ public class VaultResource {
 
 	@Inject
 	LicenseHolder license;
+
+	// / start cipherduck extension
+	@Inject
+	@ConfigProperty(name = "quarkus.oidc.client-id", defaultValue = "")
+	String keycloakClientIdHub;
+
+	@Inject
+	@ConfigProperty(name = "hub.keycloak.oidc.cryptomator-client-id", defaultValue = "")
+	String keycloakClientIdCryptomator;
+	// \ end cipherduck extension
 
 	@GET
 	@Path("/accessible")
@@ -175,7 +186,7 @@ public class VaultResource {
 		}
 
 		// / start cipherduck extension
-		keycloakGrantAccessToVault(syncerConfig, vaultId.toString(), userId);
+		keycloakGrantAccessToVault(syncerConfig, vaultId.toString(), userId, List.of(keycloakClientIdHub, keycloakClientIdCryptomator));
 		// \ end cipherduck extension
 
 		return addAuthority(vault, user, role);
@@ -365,7 +376,7 @@ public class VaultResource {
 
 			// / start cipherduck extension
 			// TODO check remove upon DELETE operations?
-			keycloakGrantAccessToVault(syncerConfig, vaultId.toString(), userId);
+			keycloakGrantAccessToVault(syncerConfig, vaultId.toString(), userId, List.of(keycloakClientIdHub, keycloakClientIdCryptomator));
 			// \ end cipherduck extension
 			
 			AuditEventVaultAccessGrant.log(jwt.getSubject(), vaultId, userId);
