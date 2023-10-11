@@ -186,6 +186,7 @@ public class VaultResource {
 		}
 
 		// / start cipherduck extension
+		// TODO https://github.com/chenkins/cipherduck-hub/issues/10 delete?
 		keycloakGrantAccessToVault(syncerConfig, vaultId.toString(), userId, List.of(keycloakClientIdHub, keycloakClientIdCryptomator));
 		// \ end cipherduck extension
 
@@ -375,7 +376,7 @@ public class VaultResource {
 			token.persist();
 
 			// / start cipherduck extension
-			// TODO check remove upon DELETE operations?
+			// TODO https://github.com/chenkins/cipherduck-hub/issues/10 check remove upon DELETE operations?
 			keycloakGrantAccessToVault(syncerConfig, vaultId.toString(), userId, List.of(keycloakClientIdHub, keycloakClientIdCryptomator));
 			// \ end cipherduck extension
 			

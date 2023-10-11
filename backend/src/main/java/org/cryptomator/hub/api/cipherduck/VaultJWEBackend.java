@@ -7,9 +7,14 @@ import java.util.Optional;
 public interface VaultJWEBackend {
 
 
-    // TODO https://github.com/chenkins/cipherduck-hub/issues/4 how generic do we need - which can we put into protocols?
+    // (1) protocol
+    // (1a) protocol storage-specific
+    @JsonProperty("protocol")
+    Optional<String> protocol();
 
-    // (1) storage-specific for protocol
+    @JsonProperty("vendor")
+    Optional<String> vendor();
+
     @JsonProperty("region")
     Optional<String> region();
 
@@ -19,8 +24,7 @@ public interface VaultJWEBackend {
     @JsonProperty("scheme")
     Optional<String> scheme();
 
-
-    // (2) hub-specific for protocol
+    // (1b) protocol hub-specific
     @JsonProperty("oAuthAuthorizationUrl")
     Optional<String> oauthAuthorizationUrl();
 
@@ -31,8 +35,8 @@ public interface VaultJWEBackend {
     Optional<String> oauthClientId();
 
 
-    // (3) hub-independent for protocol
-    // TODO https://github.com/chenkins/cipherduck-hub/issues/3 we don't need them here.
+    // (1c) protocol hub-independent
+    // TODO https://github.com/chenkins/cipherduck-hub/issues/4 we could hard-code it in client?
     @JsonProperty("authorization")
     Optional<String> authorization();
 
@@ -49,29 +53,26 @@ public interface VaultJWEBackend {
     Optional<String> tokenConfigurable();
 
 
-    // (4) for bookmark
-    // TODO https://github.com/chenkins/cipherduck-hub/issues/3 add defaultPath, add UUID? = bucketName
-
-    @JsonProperty("protocol")
-    String protocol();
-
-    // TODO https://github.com/chenkins/cipherduck-hub/issues/3 how do we use vendor - if we can inject (1) and (2) on the fly, we can use separate Protocol/Vendor
-    @JsonProperty("vendor")
-    Optional<String> vendor();
-
+    // (2) bookmark aka. Host
+    // (2a) bookmark direct fields
+    // TODO https://github.com/chenkins/cipherduck-hub/issues/4 if we inject protocol dynamically, could also go to protocol
     @JsonProperty("hostname")
     Optional<String> hostname();
 
     @JsonProperty("port")
     Optional<Integer> port();
 
-    // TODO https://github.com/chenkins/cipherduck-hub/issues/3 for permanent credentials?
+    @JsonProperty("defaultPath")
+    Optional<String> defaultPath();
+
+    // TODO https://github.com/chenkins/cipherduck-hub/issues/17 for permanent credentials?
     //    @JsonProperty("username")
     //    String username();
     //
     //    @JsonProperty("password")
     //    String password();
 
+    // (2b) boookmark custom properties
     @JsonProperty("stsRoleArn")
     Optional<String> stsRoleArn();
 

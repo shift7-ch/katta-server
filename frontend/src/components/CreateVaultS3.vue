@@ -360,8 +360,7 @@ async function createVault() {
     // / start cipherduck extension
     const config = selectedStorage.value;
 
-    // TODO https://github.com/chenkins/cipherduck-hub/issues/15 bucket prefix
-    const bucketName = config["bucketPrefix"] + vaultId
+    config["jwe"]["defaultPath"] = config["bucketPrefix"] + vaultId;
     // \ end cipherduck extension
     const ownerJwe = await vaultKeys.value.encryptForUser(base64.parse(owner.publicKey)
       // / start cipherduck extension
