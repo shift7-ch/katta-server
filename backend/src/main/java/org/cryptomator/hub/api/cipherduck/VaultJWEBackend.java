@@ -75,6 +75,9 @@ public interface VaultJWEBackend {
     @JsonProperty("stsRoleArn")
     Optional<String> stsRoleArn();
 
+    @JsonProperty("stsRoleArn2")
+    Optional<String> stsRoleArn2();
+
     @JsonProperty("stsDurationSeconds")
     Optional<Integer> stsDurationSeconds();
 }
