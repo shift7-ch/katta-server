@@ -377,8 +377,6 @@ async function createVault() {
     // TODO https://github.com/chenkins/cipherduck-hub/issues/3 what happens if bucket creation fails after successful vault creation? - merge with PUT vault service?
     const token = await authPromise.then(auth => auth.bearerToken());
     console.log(token)
-    const idtoken = await authPromise.then(auth => auth.idToken());
-    console.log(idtoken)
 
     // https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/clients/client-sts/classes/stsclient.html
     const stsClient = new STSClient({
@@ -393,7 +391,7 @@ async function createVault() {
     const assumeRoleWithWebIdentityArgs = {
       // Required. The OAuth 2.0 access token or OpenID Connect ID token that is provided by the
       // identity provider.
-      WebIdentityToken: idtoken,
+      WebIdentityToken: token,
       RoleSessionName: vaultId,
       // Valid Range: Minimum value of 900. Maximum value of 43200.
       DurationSeconds: 900

@@ -4,7 +4,10 @@
     {
       "Effect": "Allow",
       "Principal": {
-        "Federated": "arn:aws:iam::930717317329:oidc-provider/login1.staging.cryptomator.cloud/realms/cipherduck"
+        "Federated": [
+          "arn:aws:iam::930717317329:oidc-provider/testing.hub.cryptomator.org/kc/realms/cipherduck",
+          "arn:aws:iam::930717317329:oidc-provider/login1.staging.cryptomator.cloud/realms/cipherduck"
+        ]
       },
       "Action": "sts:AssumeRoleWithWebIdentity",
       "Condition": {}
