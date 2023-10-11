@@ -16,9 +16,8 @@ Documentation
 #### Policy and OIDC provider for MinIO
 
 Add role for creating buckets with prefix `cipherduck` and uploading `vault.cryptomator`, as well as RW to access to
-buckets through `aud` claim in JWT token:
-see
-[cipherduck.json](src%2Fmain%2Fresources%2Fcipherduck%2Fsetup%2Fminio%2Fcipherduckpolicy.json).
+buckets through `client_id` claim in JWT token. Adapt bucket prefix in 
+* [minio/cipherduck.json](src%2Fmain%2Fresources%2Fcipherduck%2Fsetup%2Fminio%2Fcipherduckpolicy.json).
 
 Side-note: MinIO does not allow for multiple OIDC providers with the same client ID:
 
@@ -34,19 +33,6 @@ mc admin policy create myminio cipherduck src/main/resources/cipherduck/setup/mi
 Add a new OIDC provider using the policy:
 
 ```shell
-mc idp openid add myminio cryptomator \
-    config_url="http://keycloak:8180/realms/cryptomator/.well-known/openid-configuration" \
-    client_id="cryptomator" \
-    client_secret="ignore-me" \
-    role_policy="cipherduck"
-mc idp openid add myminio cryptomatorhub \
-    config_url="http://keycloak:8180/realms/cryptomator/.well-known/openid-configuration" \
-    client_id="cryptomatorhub" \
-    client_secret="ignore-me" \
-    role_policy="cipherduck" 
-mc admin service restart myminio
-
-
 mc idp openid add myminio cryptomator \
     config_url="https://login1.staging.cryptomator.cloud/realms/cipherduck/.well-known/openid-configuration" \
     client_id="cryptomator" \
@@ -93,8 +79,7 @@ AWS
 
 #### Setup AWS: OIDC provider
 
-See
-https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_create_oidc_verify-thumbprint.html
+Documentation: https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_create_oidc_verify-thumbprint.html
 
 ```shell
 openssl s_client -servername login1.staging.cryptomator.cloud -showcerts -connect login1.staging.cryptomator.cloud:443
@@ -158,18 +143,19 @@ aws iam get-open-id-connect-provider --open-id-connect-provider-arn "arn:aws:iam
 
 #### Setup AWS: roles
 
-Add role for creating buckets with prefix `cipherduck` and uploading `vault.cryptomator`,
-see
+Add role for creating buckets with prefix `cipherduck` and uploading `vault.cryptomator`, adapt OIDC provider in trust policy and bucket prefix in permission policy:
 
-* [createbucketpermissionpolicy.json](src%2Fmain%2Fresources%2Fcipherduck%2Fsetup%2Faws%2Fcreatebucketpermissionpolicy.json)
-* [createbuckettrustpolicy.json](./src%2Fmain%2Fresources%2Fcipherduck%2Fsetup%2Faws%2Fcreatebuckettrustpolicy.json)
+* [aws/createbuckettrustpolicy.json](./src%2Fmain%2Fresources%2Fcipherduck%2Fsetup%2Faws%2Fcreatebuckettrustpolicy.json)
+* [aws/createbucketpermissionpolicy.json](src%2Fmain%2Fresources%2Fcipherduck%2Fsetup%2Faws%2Fcreatebucketpermissionpolicy.json)
 
-Add roles for role chaining:
 
-* [cipherduck_chain_01_permissionpolicy.json](src%2Fmain%2Fresources%2Fcipherduck%2Fsetup%2Faws%2Fcipherduck_chain_01_permissionpolicy.json)
-* [cipherduck_chain_01_trustpolicy.json](src%2Fmain%2Fresources%2Fcipherduck%2Fsetup%2Faws%2Fcipherduck_chain_01_trustpolicy.json)
-* [cipherduck_chain_02_permissionpolicy.json](src%2Fmain%2Fresources%2Fcipherduck%2Fsetup%2Faws%2Fcipherduck_chain_02_permissionpolicy.json)
-* [cipherduck_chain_02_trustpolicy.json](src%2Fmain%2Fresources%2Fcipherduck%2Fsetup%2Faws%2Fcipherduck_chain_02_trustpolicy.json)
+Add roles for role chaining, adapt OIDC provider in trust policy and bucket prefix in permission policy:
+
+* [aws/cipherduck_chain_01_trustpolicy.json](src%2Fmain%2Fresources%2Fcipherduck%2Fsetup%2Faws%2Fcipherduck_chain_01_trustpolicy.json)
+* [aws/cipherduck_chain_01_permissionpolicy.json](src%2Fmain%2Fresources%2Fcipherduck%2Fsetup%2Faws%2Fcipherduck_chain_01_permissionpolicy.json)
+* [aws/cipherduck_chain_02_trustpolicy.json](src%2Fmain%2Fresources%2Fcipherduck%2Fsetup%2Faws%2Fcipherduck_chain_02_trustpolicy.json)
+* [aws/cipherduck_chain_02_permissionpolicy.json](src%2Fmain%2Fresources%2Fcipherduck%2Fsetup%2Faws%2Fcipherduck_chain_02_permissionpolicy.json)
+
 
 ```shell
 aws iam create-role --role-name cipherduck-createbucket --assume-role-policy-document file://src/main/resources/cipherduck/setup/aws/createbuckettrustpolicy.json
@@ -207,7 +193,7 @@ aws sts assume-role-with-web-identity --role-arn "arn:aws:iam::930717317329:role
 
 ### Hub configuration
 
-See [application.properties](config%2Fapplication.properties)
+See [application.properties](config%2Fapplication.properties). The configured prefix must match the ones configured in the AWS/MinIO setup. Take the role arns from the AWS/MinIO setup.
 
 
 ### AWS cleanup
