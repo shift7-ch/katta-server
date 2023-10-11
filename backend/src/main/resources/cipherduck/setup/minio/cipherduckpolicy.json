@@ -25,24 +25,26 @@
       "Effect": "Allow",
       "Action": [
         "s3:GetBucketLocation",
+        "s3:GetBucketVersioning",
         "s3:ListBucket",
-        "s3:ListBucketMultipartUploads",
-        "s3:GetBucketVersioning"
+        "s3:ListBucketMultipartUploads"
       ],
-      "Principal": "*",
-      "Resource": "arn:aws:s3:::${jwt:aud}"
+      "Resource": [
+        "arn:aws:s3:::cipherduck${jwt:client_id}"
+      ]
     },
     {
       "Effect": "Allow",
       "Action": [
-        "s3:GetObject",
-        "s3:PutObject",
+        "s3:AbortMultipartUpload",
         "s3:DeleteObject",
+        "s3:GetObject",
         "s3:ListMultipartUploadParts",
-        "s3:AbortMultipartUpload"
+        "s3:PutObject"
       ],
-      "Principal": "*",
-      "Resource": "arn:aws:s3:::${jwtd:aud}/*"
+      "Resource": [
+        "arn:aws:s3:::cipherduck${jwt:client_id}/*"
+      ]
     }
   ]
 }
