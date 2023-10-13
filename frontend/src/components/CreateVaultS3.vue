@@ -361,12 +361,11 @@ async function createVault() {
     const config = selectedStorage.value;
 
     config["jwe"]["defaultPath"] = config["bucketPrefix"] + vaultId;
+
+    vaultKeys.value.storage = config["jwe"];
     // \ end cipherduck extension
-    const ownerJwe = await vaultKeys.value.encryptForUser(base64.parse(owner.publicKey)
-      // / start cipherduck extension
-      , config["jwe"]
-      // \ end cipherduck extension
-    );
+
+    const ownerJwe = await vaultKeys.value.encryptForUser(base64.parse(owner.publicKey));
     await backend.vaults.createOrUpdateVault(vaultId, vaultName.value, vaultDescription.value, false);
     await backend.vaults.grantAccess(vaultId, owner.id, ownerJwe);
     // / start cipherduck extension
