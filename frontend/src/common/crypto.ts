@@ -63,8 +63,22 @@ export class VaultKeys {
 
   readonly masterKey: CryptoKey;
 
-  protected constructor(masterkey: CryptoKey) {
+  // / start cipherduck extension
+  storage?: JWEPayloadStorage;
+  // \ end cipherduck extension
+
+
+
+  protected constructor(masterkey: CryptoKey
+    // / start cipherduck extension
+    ,storage?: JWEPayloadStorage
+    // \ end cipherduck extension
+  ) {
     this.masterKey = masterkey;
+
+    // / start cipherduck extension
+    this.storage = storage;
+    // \ end cipherduck extension
   }
 
   /**
@@ -91,8 +105,16 @@ export class VaultKeys {
     try {
       const payload: JWEPayload = await JWEParser.parse(jwe).decryptEcdhEs(userPrivateKey);
       rawKey = base64.parse(payload.key);
+
       const masterkey = crypto.subtle.importKey('raw', rawKey, VaultKeys.MASTERKEY_KEY_DESIGNATION, true, ['sign']);
-      return new VaultKeys(await masterkey);
+      // / start cipherduck extension
+      const backend = payload.backend;
+      // \ end cipherduck extension
+      return new VaultKeys(await masterkey
+      // / start cipherduck extension
+      ,backend
+      // \ end cipherduck extension
+      );
     } finally {
       rawKey.fill(0x00);
     }
@@ -234,12 +256,7 @@ export class VaultKeys {
    * @param userPublicKey The recipient's public key (DER-encoded)
    * @returns a JWE containing this Masterkey
    */
-  public async encryptForUser(userPublicKey: Uint8Array
-    // / start cipherduck extension
-    , storage?: JWEPayloadStorage
-    // \ end cipherduck extension
-
-  ): Promise<string> {
+  public async encryptForUser(userPublicKey: Uint8Array): Promise<string> {
     const publicKey = await crypto.subtle.importKey('spki', userPublicKey, UserKeys.KEY_DESIGNATION, false, []);
     const rawkey = new Uint8Array(await crypto.subtle.exportKey('raw', this.masterKey));
     try {
@@ -248,8 +265,8 @@ export class VaultKeys {
       };
 
       // / start cipherduck extension
-      if (storage != undefined){
-        payload['backend'] = storage;
+      if (this.storage != undefined){
+        payload['backend'] = this.storage;
       }
       // \ end cipherduck extension
 
