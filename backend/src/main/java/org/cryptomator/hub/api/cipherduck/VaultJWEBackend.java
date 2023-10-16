@@ -7,78 +7,78 @@ import java.util.Optional;
 public interface VaultJWEBackend {
 
 
-    // (1) protocol
-    // (1a) protocol storage-specific
-    @JsonProperty("protocol")
-    Optional<String> protocol();
+	// (1) protocol
+	// (1a) protocol hub-independent
+	@JsonProperty("authorization")
+	Optional<String> authorization();
 
-    @JsonProperty("vendor")
-    Optional<String> vendor();
+	@JsonProperty("oAuthRedirectUrl")
+	Optional<String> oauthRedirectUrl();
 
-    @JsonProperty("region")
-    Optional<String> region();
+	@JsonProperty("usernameConfigurable")
+	Optional<String> usernameConfigurable();
 
-    @JsonProperty("stsEndpoint")
-    Optional<String> stsEndpoint();
+	@JsonProperty("passwordConfigurable")
+	Optional<String> passwordConfigurable();
 
-    @JsonProperty("scheme")
-    Optional<String> scheme();
-
-    // (1b) protocol hub-specific
-    @JsonProperty("oAuthAuthorizationUrl")
-    Optional<String> oauthAuthorizationUrl();
-
-    @JsonProperty("oAuthTokenUrl")
-    Optional<String> oauthTokenUrl();
-
-    @JsonProperty("oAuthClientId")
-    Optional<String> oauthClientId();
+	@JsonProperty("tokenConfigurable")
+	Optional<String> tokenConfigurable();
 
 
-    // (1c) protocol hub-independent
-    // TODO https://github.com/chenkins/cipherduck-hub/issues/4 we could hard-code it in client?
-    @JsonProperty("authorization")
-    Optional<String> authorization();
+	// (1b) protocol hub-specific
+	@JsonProperty("oAuthAuthorizationUrl")
+	Optional<String> oauthAuthorizationUrl();
 
-    @JsonProperty("oAuthRedirectUrl")
-    Optional<String> oauthRedirectUrl();
+	@JsonProperty("oAuthTokenUrl")
+	Optional<String> oauthTokenUrl();
 
-    @JsonProperty("usernameConfigurable")
-    Optional<String> usernameConfigurable();
-
-    @JsonProperty("passwordConfigurable")
-    Optional<String> passwordConfigurable();
-
-    @JsonProperty("tokenConfigurable")
-    Optional<String> tokenConfigurable();
+	@JsonProperty("oAuthClientId")
+	Optional<String> oauthClientId();
 
 
-    // (2) bookmark aka. Host
-    // (2a) bookmark direct fields
-    // TODO https://github.com/chenkins/cipherduck-hub/issues/4 if we inject protocol dynamically, could also go to protocol
-    @JsonProperty("hostname")
-    Optional<String> hostname();
+	// (1c) protocol storage-specific
+	@JsonProperty("protocol")
+	Optional<String> protocol();
 
-    @JsonProperty("port")
-    Optional<Integer> port();
+	@JsonProperty("vendor")
+	Optional<String> vendor();
 
-    @JsonProperty("defaultPath")
-    Optional<String> defaultPath();
+	@JsonProperty("region")
+	Optional<String> region();
 
-    // TODO https://github.com/chenkins/cipherduck-hub/issues/17 for permanent credentials?
-    //    @JsonProperty("username")
-    //    String username();
-    //
-    //    @JsonProperty("password")
-    //    String password();
+	@JsonProperty("stsEndpoint")
+	Optional<String> stsEndpoint();
 
-    // (2b) boookmark custom properties
-    @JsonProperty("stsRoleArn")
-    Optional<String> stsRoleArn();
+	@JsonProperty("scheme")
+	Optional<String> scheme();
 
-    @JsonProperty("stsRoleArn2")
-    Optional<String> stsRoleArn2();
 
-    @JsonProperty("stsDurationSeconds")
-    Optional<Integer> stsDurationSeconds();
+	// (2) bookmark aka. Host
+	// (2a) bookmark direct fields
+	// TODO https://github.com/chenkins/cipherduck-hub/issues/4 if we inject protocol dynamically, could also go to protocol
+	@JsonProperty("hostname")
+	Optional<String> hostname();
+
+	@JsonProperty("port")
+	Optional<Integer> port();
+
+	@JsonProperty("defaultPath")
+	Optional<String> defaultPath();
+
+	// TODO https://github.com/chenkins/cipherduck-hub/issues/17 for permanent credentials?
+	//    @JsonProperty("username")
+	//    String username();
+	//
+	//    @JsonProperty("password")
+	//    String password();
+
+	// (2b) boookmark custom properties
+	@JsonProperty("stsRoleArn")
+	Optional<String> stsRoleArn();
+
+	@JsonProperty("stsRoleArn2")
+	Optional<String> stsRoleArn2();
+
+	@JsonProperty("stsDurationSeconds")
+	Optional<Integer> stsDurationSeconds();
 }
