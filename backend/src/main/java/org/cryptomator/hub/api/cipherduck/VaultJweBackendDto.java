@@ -5,24 +5,26 @@ import java.util.Optional;
 
 public record VaultJweBackendDto(
 		// (1) protocol
-		// (1a) protocol storage-specific
-		Optional<String> protocol,
-		Optional<String> vendor,
-		Optional<String> region,
-		Optional<String> stsEndpoint,
-		Optional<String> scheme,
+		// (1a) protocol hub-independent
+		Optional<String> authorization,
+		Optional<String> oauthRedirectUrl,
+		Optional<String> usernameConfigurable,
+		Optional<String> passwordConfigurable,
+		Optional<String> tokenConfigurable,
 
 		// (1b) protocol hub-specific
 		Optional<String> oauthAuthorizationUrl,
 		Optional<String> oauthTokenUrl,
 		Optional<String> oauthClientId,
 
-		// (1c) protocol hub-independent
-		Optional<String> authorization,
-		Optional<String> oauthRedirectUrl,
-		Optional<String> usernameConfigurable,
-		Optional<String> passwordConfigurable,
-		Optional<String> tokenConfigurable,
+
+		// (1c) protocol storage-specific
+		Optional<String> protocol,
+		Optional<String> vendor,
+		Optional<String> region,
+		Optional<String> stsEndpoint,
+		Optional<String> scheme,
+
 
 		// (2) bookmark aka. Host
 		// (2a) bookmark direct fields
