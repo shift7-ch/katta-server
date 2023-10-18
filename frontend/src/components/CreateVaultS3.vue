@@ -289,6 +289,7 @@ const props = defineProps<{
 // / cipherduck extension
 const selectedStorage = ref('');
 const configs = ref('');
+const hubId = ref('');
 // \ cipherduck extension
 onMounted(initialize);
 
@@ -301,7 +302,8 @@ async function initialize() {
     state.value = State.EnterVaultDetails;
   }
   // / cipherduck extension
-  const backends = await backend.storageconfig.get();
+  const backends = await backend.backendsconfig.get();
+  hubId.value = backends.hubId;
   configs.value = backends.backends;
   selectedStorage.value = configs.value[0];
   // \ cipherduck extension
@@ -361,6 +363,9 @@ async function createVault() {
     const config = selectedStorage.value;
 
     config["jwe"]["defaultPath"] = config["bucketPrefix"] + vaultId;
+    config["jwe"]["uuid"] = vaultId;
+    config["jwe"]["parentUUID"] = hubId;
+    config["jwe"]["nickname"] = vaultName.value;
 
     vaultKeys.value.storage = config["jwe"];
     // \ end cipherduck extension

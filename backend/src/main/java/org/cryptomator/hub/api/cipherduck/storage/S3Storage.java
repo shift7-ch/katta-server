@@ -33,8 +33,7 @@ public class S3Storage {
 		if (storageConfig.jwe().stsEndpoint().isPresent()) {
 			s3Builder = s3Builder
 					.withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(storageConfig.jwe().stsEndpoint().get(), region))
-					// TODO https://github.com/chenkins/cipherduck-hub/issues/3 extract to application.properties?
-					.withPathStyleAccessEnabled(true);
+					.withPathStyleAccessEnabled(storageConfig.withPathStyleAccessEnabled().orElse(false));
 		} else {
 			s3Builder = s3Builder.withRegion(region);
 		}
