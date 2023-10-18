@@ -55,7 +55,6 @@ public interface VaultJWEBackend {
 
 	// (2) bookmark aka. Host
 	// (2a) bookmark direct fields
-	// TODO https://github.com/chenkins/cipherduck-hub/issues/4 if we inject protocol dynamically, could also go to protocol
 	@JsonProperty("hostname")
 	Optional<String> hostname();
 
@@ -65,12 +64,12 @@ public interface VaultJWEBackend {
 	@JsonProperty("defaultPath")
 	Optional<String> defaultPath();
 
-	// TODO https://github.com/chenkins/cipherduck-hub/issues/17 for permanent credentials?
-	//    @JsonProperty("username")
-	//    String username();
-	//
-	//    @JsonProperty("password")
-	//    String password();
+	@JsonProperty("nickname")
+	Optional<String> nickname();
+
+	@JsonProperty("uuid")
+	Optional<String> uuid();
+
 
 	// (2b) boookmark custom properties
 	@JsonProperty("stsRoleArn")
@@ -81,4 +80,15 @@ public interface VaultJWEBackend {
 
 	@JsonProperty("stsDurationSeconds")
 	Optional<Integer> stsDurationSeconds();
+
+	@JsonProperty("parentUUID")
+	Optional<String> parentUUID();
+
+	// (3) keychain credentials
+	// TODO https://github.com/chenkins/cipherduck-hub/issues/17 for permanent credentials?
+	//    @JsonProperty("username")
+	//    String username();
+	//
+	//    @JsonProperty("password")
+	//    String password();
 }

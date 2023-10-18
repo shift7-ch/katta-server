@@ -376,10 +376,10 @@ class StorageService {
     return axiosAuth.put('/storage/', dto);
   }
 }
-class StorageConfigService {
+class BackendsConfigService {
   // TODO https://github.com/chenkins/cipherduck-hub/issues/3 Any -> Dto
   public async get(): Promise<Any> {
-    return axiosAuth.get<Any>('/storageconfig/')
+    return axiosAuth.get<Any>('/backendsconfig/')
     .then(response => response.data);
   }
 }
@@ -405,7 +405,7 @@ const services = {
 
   // / start cipherduck extension
   ,storage: new StorageService()
-  ,storageconfig: new StorageConfigService()
+  ,backendsconfig: new BackendsConfigService()
   ,config: new ConfigService()
   // \ end cipherduck extension
 };
