@@ -290,6 +290,7 @@ const props = defineProps<{
 const selectedStorage = ref('');
 const configs = ref('');
 const hubId = ref('');
+const apiConfig = ref('');
 // \ cipherduck extension
 onMounted(initialize);
 
@@ -306,6 +307,7 @@ async function initialize() {
   hubId.value = backends.hubId;
   configs.value = backends.backends;
   selectedStorage.value = configs.value[0];
+  apiConfig.value = await backend.config.config();
   // \ cipherduck extension
 
 }
@@ -366,6 +368,11 @@ async function createVault() {
     config["jwe"]["uuid"] = vaultId;
     config["jwe"]["parentUUID"] = hubId;
     config["jwe"]["nickname"] = vaultName.value;
+    config["jwe"]["oAuthAuthorizationUrl"] = apiConfig.value.keycloakAuthEndpoint;
+    config["jwe"]["oAuthTokenUrl"] = apiConfig.value.keycloakTokenEndpoint;
+    // N.B. we use client_id="cryptomator" in cipherduck, see discussion https://github.com/chenkins/cipherduck-hub/issues/6
+    config["jwe"]["oAuthClientId"] = apiConfig.value.keycloakClientIdCryptomator;
+
 
     vaultKeys.value.storage = config["jwe"];
     // \ end cipherduck extension

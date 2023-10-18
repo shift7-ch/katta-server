@@ -202,6 +202,17 @@ export type StorageDto = {
     vaultConfigToken: string;
     rootDirHash: string;
 }
+
+export type ConfigDto = {
+    keycloakUrl: string;
+    keycloakRealm: string;
+    keycloakClientIdHub: string;
+    keycloakClientIdCryptomator: string;
+    keycloakAuthEndpoint: string;
+    keycloakTokenEndpoint: string;
+    serverTime: string;
+    apiLevel: number;
+}
 // \ end cipherduck extension
 
 /* Services */
@@ -389,6 +400,11 @@ class ConfigService {
     return axiosUnAuth.get('/config/cipherduckhubbookmark')
       .then(response => response.data);
   }
+  public async config(): Promise<ConfigDto> {
+      const axiosUnAuth = AxiosStatic.create(axiosBaseCfg);
+      return axiosUnAuth.get('/config')
+        .then(response => response.data);
+    }
 }
 // \ end cipherduck extension
 
