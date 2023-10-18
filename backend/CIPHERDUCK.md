@@ -16,7 +16,8 @@ Documentation
 #### Policy and OIDC provider for MinIO
 
 Add role for creating buckets with prefix `cipherduck` and uploading `vault.cryptomator`, as well as RW to access to
-buckets through `client_id` claim in JWT token. Adapt bucket prefix in 
+buckets through `client_id` claim in JWT token. Adapt bucket prefix in
+
 * [minio/cipherduck.json](src%2Fmain%2Fresources%2Fcipherduck%2Fsetup%2Fminio%2Fcipherduckpolicy.json).
 
 Side-note: MinIO does not allow for multiple OIDC providers with the same client ID:
@@ -143,11 +144,11 @@ aws iam get-open-id-connect-provider --open-id-connect-provider-arn "arn:aws:iam
 
 #### Setup AWS: roles
 
-Add role for creating buckets with prefix `cipherduck` and uploading `vault.cryptomator`, adapt OIDC provider in trust policy and bucket prefix in permission policy:
+Add role for creating buckets with prefix `cipherduck` and uploading `vault.cryptomator`, adapt OIDC provider in trust
+policy and bucket prefix in permission policy:
 
 * [aws/createbuckettrustpolicy.json](./src%2Fmain%2Fresources%2Fcipherduck%2Fsetup%2Faws%2Fcreatebuckettrustpolicy.json)
 * [aws/createbucketpermissionpolicy.json](src%2Fmain%2Fresources%2Fcipherduck%2Fsetup%2Faws%2Fcreatebucketpermissionpolicy.json)
-
 
 Add roles for role chaining, adapt OIDC provider in trust policy and bucket prefix in permission policy:
 
@@ -155,7 +156,6 @@ Add roles for role chaining, adapt OIDC provider in trust policy and bucket pref
 * [aws/cipherduck_chain_01_permissionpolicy.json](src%2Fmain%2Fresources%2Fcipherduck%2Fsetup%2Faws%2Fcipherduck_chain_01_permissionpolicy.json)
 * [aws/cipherduck_chain_02_trustpolicy.json](src%2Fmain%2Fresources%2Fcipherduck%2Fsetup%2Faws%2Fcipherduck_chain_02_trustpolicy.json)
 * [aws/cipherduck_chain_02_permissionpolicy.json](src%2Fmain%2Fresources%2Fcipherduck%2Fsetup%2Faws%2Fcipherduck_chain_02_permissionpolicy.json)
-
 
 ```shell
 aws iam create-role --role-name cipherduck-createbucket --assume-role-policy-document file://src/main/resources/cipherduck/setup/aws/createbuckettrustpolicy.json
@@ -193,8 +193,8 @@ aws sts assume-role-with-web-identity --role-arn "arn:aws:iam::930717317329:role
 
 ### Hub configuration
 
-See [application.properties](config%2Fapplication.properties). The configured prefix must match the ones configured in the AWS/MinIO setup. Take the role arns from the AWS/MinIO setup.
-
+See [application.properties](config%2Fapplication.properties). The configured prefix must match the ones configured in
+the AWS/MinIO setup. Take the role arns from the AWS/MinIO setup.
 
 ### AWS cleanup
 
@@ -206,3 +206,117 @@ aws iam delete-role --role-name cipherduck_chain_01
 aws iam delete-role-policy --role-name cipherduck_chain_02 --policy-name cipherduck_chain_02
 aws iam delete-role --role-name cipherduck_chain_02
 ```
+
+Hub Configuration (`application.properties`) and Vault JWE
+----------------------------------------------------------
+
+### Introduction
+
+| Term                                                                | Description                                                    | Usage in Cipherdu^ck                                                                                      |
+|---------------------------------------------------------------------|----------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------|
+| [Bookmark](https://docs.cyberduck.io/cyberduck/bookmarks/)          | Refers to connection profile/profile and adds properties like. | For hubs and vaults.                                                                                      |
+| [Protocol](https://docs.cyberduck.io/protocols/)                    |                                                                | `hub` and `s3-sts`                                                                                        |
+| [Connection Profile](https://docs.cyberduck.io/protocols/profiles/) | Refers to protocol and overrides properties                    | Used internally.                                                                                          |
+| Vault [JWE](https://datatracker.ietf.org/doc/html/rfc7516)          | JSON Web Encryption for encrypted JSON-based data structures   | Contains the vault masterkey for decrypting data plus all information required to create vault bookmarks. |
+
+Note that properties in `application.properties` use dashed notation instead of Camel Case in JWE and Java Dtos,
+see [Quarkus Config Reference Guid](https://quarkus.io/guides/config-reference) for details.
+
+### (0) backend configuration
+
+TODO https://github.com/chenkins/cipherduck-hub/issues/31 do we need both? How do we localization/configuration in
+dropdown?
+
+| Backend property | Description                                 |
+|------------------|---------------------------------------------|
+| `id`             | Technical identifier for a backend          |
+| `name`           | Displayed when choosing type of a new vault |
+
+#### (0a) bucket creation
+
+TODO https://github.com/chenkins/cipherduck-hub/issues/3 how to choose region in frontend?
+
+| Backend property             | Description                                                         |
+|------------------------------|---------------------------------------------------------------------|
+| `bucketPrefix`               | Prefix for all new buckets.                                         |
+| `stsRoleArn`                 | Role for `AssumeRoleWithWebIdentity` when creating buckets.         |
+| `region`                     | Region to create buckets in.                                        |
+| `withPathStyleAccessEnabled` | Configures the client to use path-style access for all S3 requests. |
+
+### (1) protocol
+
+TODO https://github.com/chenkins/cipherduck-hub/issues/6 start with protocol stuff?
+
+#### (1c) protocol storage-specific
+
+In the `jwe` section of the backend configurations, you can specify the connection profile with the following
+properties:
+
+| JWE attribute | Description                                                                  | Example |     | 
+|---------------|------------------------------------------------------------------------------|---------|-----|
+| `protocol`    | &rarr; [Cyberduck Bookmarks](https://docs.cyberduck.io/cyberduck/bookmarks/) |         |     |
+| `vendor`      | &rarr; [Cyberduck Bookmarks](https://docs.cyberduck.io/cyberduck/bookmarks/) |         |     |
+| `region`      | &rarr; [Cyberduck Bookmarks](https://docs.cyberduck.io/cyberduck/bookmarks/) |         |     |
+| `stsEndpoint` | &rarr; [Cyberduck Bookmarks](https://docs.cyberduck.io/cyberduck/bookmarks/) |         |     |
+| `scheme`      | &rarr; [Cyberduck Bookmarks](https://docs.cyberduck.io/cyberduck/bookmarks/) |         |     |
+
+#### (1b) protocol hub-specific
+
+The following hub-specific properties are injected into the vault JWE from  `/api/config` upon vault creation:
+
+| JWE attribute           | Description                                                                                                                                                    | Injected from                                              |
+|-------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------|
+| `oAuthAuthorizationUrl` | &rarr; [Custom connection profile using OpenID Connect provider and AssumeRoleWithWebIdentity STS API](https://docs.cyberduck.io/protocols/profiles/aws_oidc/) | &rarr; `/api/config` &rarr; `keycloakTokenEndpoint`        | 
+| `oAuthTokenUrl`         | &rarr; [Custom connection profile using OpenID Connect provider and AssumeRoleWithWebIdentity STS API](https://docs.cyberduck.io/protocols/profiles/aws_oidc/) | &rarr; `/api/config` &rarr;  `keycloakAuthEndpoint`        |         
+| `oAuthClientId`         | &rarr; [Custom connection profile using OpenID Connect provider and AssumeRoleWithWebIdentity STS API](https://docs.cyberduck.io/protocols/profiles/aws_oidc/) | &rarr; `/api/config` &rarr;  `keycloakClientIdCryptomator` |         
+
+#### (1a) protocol hub-independent
+
+Finally, the following hub-independent properties are ususally present in protocol/profiles used in Cipherduck.
+However, they can be overriden in the `jwe` field of backend configurations in `application.properties` .
+
+| JWE attribute          | Description                                                                           | Defaults in `s3-sts` and `hub` protocols |
+|------------------------|---------------------------------------------------------------------------------------|------------------------------------------|
+| `authorization`        | &rarr; [Cyberduck Connection Profiles](https://docs.cyberduck.io/protocols/profiles/) | `AuthorizationCode`                      |
+| `oAuthRedirectUrl`     | &rarr; [Cyberduck Connection Profiles](https://docs.cyberduck.io/protocols/profiles/) | `x-cipherduck-action:oauth`              |
+| `usernameConfigurable` | &rarr; [Cyberduck Connection Profiles](https://docs.cyberduck.io/protocols/profiles/) | `false`                                  |
+| `passwordConfigurable` | &rarr; [Cyberduck Connection Profiles](https://docs.cyberduck.io/protocols/profiles/) | `false`                                  |
+| `tokenConfigurable`    | &rarr; [Cyberduck Connection Profiles](https://docs.cyberduck.io/protocols/profiles/) | `false`                                  |
+
+### (2) bookmark aka. Host
+
+The following fields ar injected into the Vault JWE upon vault creation.
+
+#### (2a) bookmark direct fields
+
+The following properties go into the corresponding bookmark attributes:
+
+| JWE attribute | Description                                                                  | Origin                  | 
+|---------------|------------------------------------------------------------------------------|-------------------------|
+| `hostname`    | &rarr; [Cyberduck Bookmarks](https://docs.cyberduck.io/cyberduck/bookmarks/) | `backend.jwe.hostname`  |
+| `port`        | &rarr; [Cyberduck Bookmarks](https://docs.cyberduck.io/cyberduck/bookmarks/) | `backend.jwe.port`      |
+| `defaultPath` | &rarr; [Cyberduck Bookmarks](https://docs.cyberduck.io/cyberduck/bookmarks/) | `backend.bucket-prefix` |
+| `nickname`    | &rarr; [Cyberduck Bookmarks](https://docs.cyberduck.io/cyberduck/bookmarks/) | vault name              |
+| `uuid`        | &rarr; [Cyberduck Bookmarks](https://docs.cyberduck.io/cyberduck/bookmarks/) | vault ID                |
+
+#### (2b) boookmark custom properties
+
+The following properties in the `jwe` section of backend configurations go into the  `Custom` properties section of
+vault bookmarks:
+
+| JWE attribute        | Description                                  | 
+|----------------------|----------------------------------------------|
+| `stsRoleArn`         | Role for `AssumeRoleWithWebIdentity` call    |
+| `stsRoleArn2`        | Role for subsequent `AssumeRole` call        |
+| `stsDurationSeconds` | Time to life for the STS token               |
+| `parentUUID`         | Hub ID used to group vault bookmarks by hub. |
+
+### (3) keychain credentials
+
+The following properties in the `jwe` section of backend configurations go into the credentials associated with a vault
+bookmark (they are stored in OS keychain):
+
+| JWE attribute | Description                                | 
+|---------------|--------------------------------------------|
+| `username`    | Username for shared permanent credentials. |
+| `password`    | Password for shared permanent credentials. |

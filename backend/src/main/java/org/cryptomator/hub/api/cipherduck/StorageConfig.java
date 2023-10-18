@@ -15,9 +15,6 @@ public interface StorageConfig {
 	@JsonProperty("bucketPrefix")
 	String bucketPrefix();
 
-	// TODO obsolete?
-	@JsonProperty("oidcProvider")
-	Optional<String> oidcProvider();
 
 	@JsonProperty("stsRoleArn")
 	Optional<String> stsRoleArn();
@@ -25,12 +22,14 @@ public interface StorageConfig {
 	@JsonProperty("region")
 	Optional<String> region();
 
+	@JsonProperty(value = "withPathStyleAccessEnabled", defaultValue = "false", required = false)
+	Optional<Boolean> withPathStyleAccessEnabled();
+
 	@JsonProperty("jwe")
 	VaultJWEBackend jwe();
 
 
-	@JsonProperty(value = "withPathStyleAccessEnabled", defaultValue = "false", required = false)
-	Optional<Boolean> withPathStyleAccessEnabled();
+
 }
 
 
