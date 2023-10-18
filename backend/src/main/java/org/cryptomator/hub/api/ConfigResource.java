@@ -16,8 +16,10 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 
 import java.io.IOException;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Base64;
 
 @Path("/config")
 public class ConfigResource {
@@ -66,19 +68,35 @@ public class ConfigResource {
     @Operation(summary = "get cipherduck bookmark for this hub")
     public String cipherduckhubbookmark(@Context UriInfo uriInfo) throws IOException {
         final URI requestUri = uriInfo.getRequestUri();
-        String template = new String(ConfigResource.class.getResourceAsStream("/cipherduck/hubbookmark.duck").readAllBytes());
+		String profileTemplate = new String(ConfigResource.class.getResourceAsStream("/cipherduck/hubprotocol.cyberduckprofile").readAllBytes());
+
+		// Scheme
+		profileTemplate = profileTemplate.replace("<string>Scheme</string>", String.format("<string>%s</string>", requestUri.getScheme()));
+
+		// N.B. we use client_id="cryptomator" in cipherduck, see discussion https://github.com/chenkins/cipherduck-hub/issues/6
+		profileTemplate = profileTemplate.replace("<string>OAuth Client ID</string>", String.format("<string>%s</string>", getConfig().keycloakClientIdCryptomator()));
+		profileTemplate = profileTemplate.replace("<string>OAuth Authorization Url</string>", String.format("<string>%s</string>", getConfig().authEndpoint()));
+		profileTemplate = profileTemplate.replace("<string>OAuth Token Url</string>", String.format("<string>%s</string>", getConfig().tokenEndpoint()));
+
+
+
+        String bookmarkTemplate = new String(ConfigResource.class.getResourceAsStream("/cipherduck/hubbookmark.duck").readAllBytes());
         String hubUrl = String.format("%s://%s:%s", requestUri.getScheme(), requestUri.getHost(), requestUri.getPort());
         // nickname
-        template = template.replace("<string>Cipherduck</string>", String.format("<string>Cipherduck (%s)</string>", hubUrl));
+        bookmarkTemplate = bookmarkTemplate.replace("<string>Cipherduck</string>", String.format("<string>Cipherduck (%s)</string>", hubUrl));
         // hostname
-        template = template.replace("<string>localhost</string>", String.format("<string>%s</string>", requestUri.getHost()));
+        bookmarkTemplate = bookmarkTemplate.replace("<string>localhost</string>", String.format("<string>%s</string>", requestUri.getHost()));
         // port
-        template = template.replace("<string>8080</string>", String.format("<string>%s</string>", requestUri.getPort()));
+        bookmarkTemplate = bookmarkTemplate.replace("<string>8080</string>", String.format("<string>%s</string>", requestUri.getPort()));
         // UUID
-        template = template.replace("<string>c36acf24-e331-4919-9f19-ff52a08e7885</string>", String.format("<string>%s</string>", Settings.get().hubId));
-        // scheme
-        template = template.replace("<string>provider</string>", String.format("<string>hub-%s</string>", requestUri.getScheme()));
-        return template;
+        bookmarkTemplate = bookmarkTemplate.replace("<string>c36acf24-e331-4919-9f19-ff52a08e7885</string>", String.format("<string>%s</string>", Settings.get().hubId));
+
+		// protocol
+        bookmarkTemplate = bookmarkTemplate.replace("<string>serialized_protocol/string>", String.format("<string>%s</string>", new String(Base64.getEncoder().encode(profileTemplate.getBytes(StandardCharsets.UTF_8)))));
+
+
+
+        return bookmarkTemplate;
     }
 	// \ end cipherduck extension
 

@@ -6,13 +6,13 @@
         <string>c36acf24-e331-4919-9f19-ff52a08e7885</string>
         <key>Protocol</key>
         <string>hub</string>
-        <key>Provider</key>
-        <string>provider</string>
         <key>Nickname</key>
         <string>Cipherduck</string>
         <key>Hostname</key>
         <string>localhost</string>
         <key>Port</key>
         <string>8080</string>
+        <key>serialized_protocol</key>
+        <string>serialized_protocol/string>
     </dict>
 </plist>
