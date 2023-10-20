@@ -26,7 +26,7 @@ public class S3Storage {
 
 		final String bucketName = storageConfig.bucketPrefix() + dto.vaultId();
 		// https://github.com/awsdocs/aws-doc-sdk-examples/blob/main/java/example_code/s3/src/main/java/aws/example/s3/CreateBucket.java
-		final String region = storageConfig.region().orElse("eu_east_1");
+		final String region = dto.region();
 		AmazonS3ClientBuilder s3Builder = AmazonS3ClientBuilder
 				.standard()
 				.withCredentials(new AWSStaticCredentialsProvider(new BasicSessionCredentials(dto.awsAccessKey(), dto.awsSecretKey(), dto.sessionToken())));
