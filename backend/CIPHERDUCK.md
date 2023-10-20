@@ -236,12 +236,13 @@ dropdown?
 
 TODO https://github.com/chenkins/cipherduck-hub/issues/3 how to choose region in frontend?
 
-| Backend property             | Description                                                         |
-|------------------------------|---------------------------------------------------------------------|
-| `bucketPrefix`               | Prefix for all new buckets.                                         |
-| `stsRoleArn`                 | Role for `AssumeRoleWithWebIdentity` when creating buckets.         |
-| `region`                     | Region to create buckets in.                                        |
-| `withPathStyleAccessEnabled` | Configures the client to use path-style access for all S3 requests. |
+| Backend property             | Description                                                             |
+|------------------------------|-------------------------------------------------------------------------|
+| `bucketPrefix`               | Prefix for all new buckets.                                             |
+| `stsRoleArn`                 | Role for `AssumeRoleWithWebIdentity` when creating buckets.             |
+| `region`                     | Default region to create buckets in. Defaults to `us-east-1`            |
+| `regions`                    | Allowed regions to create buckets in. Defaults to full list of regions. |
+| `withPathStyleAccessEnabled` | Configures the client to use path-style access for all S3 requests.     |
 
 ### (1) protocol
 

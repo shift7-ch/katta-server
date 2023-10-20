@@ -11,6 +11,8 @@ import org.cryptomator.hub.entities.Settings;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 
+import java.util.stream.Collectors;
+
 @Path("/backendsconfig")
 public class BackendsConfigResource {
 
@@ -27,7 +29,8 @@ public class BackendsConfigResource {
 	@Operation(summary = "get configs for storage backends", description = "get list of configs for storage backends")
 	@APIResponse(responseCode = "200", description = "uploaded storage configuration")
 	public BackendsConfigDto getBackendsConfig() {
-		return new BackendsConfigDto(Settings.get().hubId, backendsConfig.backends());
+		// workaround for defaultValue not working as expected
+		return new BackendsConfigDto(Settings.get().hubId, backendsConfig.backends().stream().map(b -> new StorageConfigDto(b)).collect(Collectors.toList()));
 	}
 
 
