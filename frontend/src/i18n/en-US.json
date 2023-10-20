@@ -246,8 +246,5 @@
   "CreateVaultS3.success.description": "Use the Cipherduck client on your computer to open the vault.",
   "CreateVaultS3.success.open": "Open vaults in Cipherduck",
 
-
-  "vaultDetails.actions.openInCipherduck": "Open in Cipherduck",
-
   "vaultList.openInCipherduck": "Open in Cipherduck"
 }
