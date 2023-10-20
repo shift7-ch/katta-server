@@ -245,8 +245,6 @@ TODO https://github.com/chenkins/cipherduck-hub/issues/3 how to choose region in
 
 ### (1) protocol
 
-TODO https://github.com/chenkins/cipherduck-hub/issues/6 start with protocol stuff?
-
 #### (1c) protocol storage-specific
 
 In the `jwe` section of the backend configurations, you can specify the connection profile with the following
