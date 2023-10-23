@@ -459,15 +459,36 @@ async function createVault() {
 
     // https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/clients/client-sts/classes/assumerolewithwebidentitycommand.html
     // https://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRoleWithWebIdentity.html
-    // TODO https://github.com/chenkins/cipherduck-hub/issues/10 we could further restrict the policy passed to the backend to only the bucket we want to create to have it even safer!
-    // TODO https://github.com/chenkins/cipherduck-hub/issues/3 we could further restrict the policy passed to the backend to only the bucket we want to create to have it even safer!
     const assumeRoleWithWebIdentityArgs = {
       // Required. The OAuth 2.0 access token or OpenID Connect ID token that is provided by the
       // identity provider.
       WebIdentityToken: token,
       RoleSessionName: vaultId,
       // Valid Range: Minimum value of 900. Maximum value of 43200.
-      DurationSeconds: 900
+      DurationSeconds: 900,
+      Policy: `{
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+            "Effect": "Allow",
+            "Action": [
+              "s3:CreateBucket",
+              "s3:GetBucketPolicy"
+            ],
+            "Resource": "arn:aws:s3:::{}"
+          },
+          {
+            "Effect": "Allow",
+            "Action": [
+              "s3:PutObject"
+            ],
+            "Resource": [
+              "arn:aws:s3:::{}/vault.cryptomator",
+              "arn:aws:s3:::{}/*/"
+            ]
+          }
+        ]
+      }`.replaceAll("{}", config["jwe"]["defaultPath"])
     }
     // Required. ARN of the role that the caller is assuming.
     assumeRoleWithWebIdentityArgs["RoleArn"] = config["stsRoleArn"];
