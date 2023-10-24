@@ -9,6 +9,7 @@ public record StorageConfigDto(
 		String name,
 		String bucketPrefix,
 		Optional<String> stsRoleArn,
+		Optional<String> stsEndpoint,
 		Optional<String> region,
 		Optional<List<String>> regions,
 		VaultJWEBackend jwe,
@@ -17,7 +18,7 @@ public record StorageConfigDto(
 ) implements StorageConfig {
 	public StorageConfigDto(StorageConfig s) {
 		// workaround for defaultValue in JSONPrroperty not working as expected
-		this(s.id(), s.name(), s.bucketPrefix(), s.stsRoleArn(),
+		this(s.id(), s.name(), s.bucketPrefix(), s.stsRoleArn(), s.stsEndpoint(),
 				s.region().isPresent() ? s.region() : Optional.of("us-east-1"),
 				s.regions().isPresent() ? s.regions() : Optional.of(Arrays.asList(
 						"af-south-1",

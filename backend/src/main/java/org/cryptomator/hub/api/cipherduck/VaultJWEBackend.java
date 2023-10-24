@@ -84,11 +84,11 @@ public interface VaultJWEBackend {
 	@JsonProperty("parentUUID")
 	Optional<String> parentUUID();
 
+
 	// (3) keychain credentials
-	// TODO https://github.com/chenkins/cipherduck-hub/issues/17 for permanent credentials?
-	//    @JsonProperty("username")
-	//    String username();
-	//
-	//    @JsonProperty("password")
-	//    String password();
+	@JsonProperty("username")
+	Optional<String> username();
+
+	@JsonProperty("password")
+	Optional<String> password();
 }
