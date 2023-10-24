@@ -30,9 +30,9 @@ public class S3Storage {
 		AmazonS3ClientBuilder s3Builder = AmazonS3ClientBuilder
 				.standard()
 				.withCredentials(new AWSStaticCredentialsProvider(new BasicSessionCredentials(dto.awsAccessKey(), dto.awsSecretKey(), dto.sessionToken())));
-		if (storageConfig.jwe().stsEndpoint().isPresent()) {
+		if (storageConfig.stsEndpoint().isPresent()) {
 			s3Builder = s3Builder
-					.withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(storageConfig.jwe().stsEndpoint().get(), region))
+					.withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(storageConfig.stsEndpoint().get(), region))
 					.withPathStyleAccessEnabled(storageConfig.withPathStyleAccessEnabled().orElse(false));
 		} else {
 			s3Builder = s3Builder.withRegion(region);

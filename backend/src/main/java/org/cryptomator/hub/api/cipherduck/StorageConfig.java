@@ -22,6 +22,9 @@ public interface StorageConfig {
 	@JsonProperty("stsRoleArn")
 	Optional<String> stsRoleArn();
 
+	@JsonProperty("stsEndpoint")
+	Optional<String> stsEndpoint();
+
 	@JsonProperty("region")
 	Optional<String> region();
 
