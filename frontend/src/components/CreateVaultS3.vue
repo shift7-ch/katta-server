@@ -175,6 +175,18 @@
                       </transition>
                     </Listbox>
                 </div>
+                <div v-if="isPermanent" class="col-span-6 sm:col-span-4">
+                    <label for="vaultAccessKeyId" class="block text-sm font-medium text-gray-700">
+                      {{ t('CreateVaultS3.enterVaultDetails.vaultPermanentAccessKeyId') }}
+                    </label>
+                    <input id="vaultAccessKeyId" v-model="vaultAccessKeyId" :disabled="processing" type="text" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200"/>
+                </div>
+                <div v-if="isPermanent" class="col-span-6 sm:col-span-4">
+                    <label for="vaultSecretKey" class="block text-sm font-medium text-gray-700">
+                      {{ t('CreateVaultS3.enterVaultDetails.vaultPermanentSecretKey') }}
+                    </label>
+                    <input id="vaultSecretKey" v-model="vaultSecretKey" :disabled="processing" type="text" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200"/>
+                </div>
             </div>
           </div>
         </div>
@@ -347,10 +359,13 @@ const props = defineProps<{
 // / cipherduck extension
 const selectedStorage = ref('');
 const selectedRegion = ref('');
+const isPermanent = ref('');
 const regions = ref('');
 const configs = ref('');
 const hubId = ref('');
 const apiConfig = ref('');
+const vaultAccessKeyId = ref('');
+const vaultSecretKey = ref('');
 // \ cipherduck extension
 onMounted(initialize);
 
@@ -430,11 +445,17 @@ async function createVault() {
     config["jwe"]["uuid"] = vaultId;
     config["jwe"]["parentUUID"] = hubId;
     config["jwe"]["nickname"] = vaultName.value;
-    config["jwe"]["oAuthAuthorizationUrl"] = apiConfig.value.keycloakAuthEndpoint;
-    config["jwe"]["oAuthTokenUrl"] = apiConfig.value.keycloakTokenEndpoint;
-    // N.B. we use client_id="cryptomator" in cipherduck, see discussion https://github.com/chenkins/cipherduck-hub/issues/6
-    config["jwe"]["oAuthClientId"] = apiConfig.value.keycloakClientIdCryptomator;
 
+    if(config["jwe"]["stsRoleArn"]){
+        config["jwe"]["oAuthAuthorizationUrl"] = apiConfig.value.keycloakAuthEndpoint;
+        config["jwe"]["oAuthTokenUrl"] = apiConfig.value.keycloakTokenEndpoint;
+        // N.B. we use client_id="cryptomator" in cipherduck, see discussion https://github.com/chenkins/cipherduck-hub/issues/6
+        config["jwe"]["oAuthClientId"] = apiConfig.value.keycloakClientIdCryptomator;
+    }
+    else {
+        config["jwe"]["username"] = vaultAccessKeyId.value;
+        config["jwe"]["password"] = vaultSecretKey.value;
+    }
 
     vaultKeys.value.storage = config["jwe"];
     // \ end cipherduck extension
@@ -454,7 +475,7 @@ async function createVault() {
     config["jwe"]["region"] = selectedRegion.value;
     const stsClient = new STSClient({
         region: config["jwe"]["region"],
-        endpoint: config["jwe"]["stsEndpoint"]
+        endpoint: config["stsEndpoint"]
     });
 
     // https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/clients/client-sts/classes/assumerolewithwebidentitycommand.html
@@ -547,6 +568,8 @@ function setRegionsOnSelectStorage(storage){
     console.log('   available regions: ' + storage.regions);
     selectedRegion.value = storage.region;
     console.log('   default region: ' + storage.region);
+    isPermanent.value = !Boolean(selectedStorage.value['jwe']['stsRoleArn'])
+    console.log('   isPermanent: ' + isPermanent.value);
 }
 
 
