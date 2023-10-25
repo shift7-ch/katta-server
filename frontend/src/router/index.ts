@@ -43,15 +43,6 @@ const routes: RouteRecordRaw[] = [
       });
     }
   },
-
-  // / start cipherduck extension
-  {
-    path: '/bookmark',
-    component: CipherduckBookmark,
-    meta: { skipAuth: true, skipSetup: true },
-  },
-  // \ end cipherduck extension
-
   {
     path: '/app', /* required but unused */
     component: AuthenticatedMain,
