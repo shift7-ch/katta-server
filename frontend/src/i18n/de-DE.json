@@ -235,5 +235,17 @@
   "vaultList.filter.result.empty.description.": "Keinen Treffer mit diesem Suchbegriff oder Filter.",
   "vaultList.search.placeholder": "Suche…",
   "vaultList.badge.owner": "Eigentümer",
-  "vaultList.badge.archived": "Archiviert"
+  "vaultList.badge.archived": "Archiviert",
+
+
+  "CreateVaultS3.enterVaultDetails.storage": "Tresor-Speicherbereich",
+  "CreateVaultS3.enterVaultDetails.region": "Region",
+  "CreateVaultS3.enterVaultDetails.vaultPermanentAccessKeyId": "Benutzername (S3 AccessKeyId)",
+  "CreateVaultS3.enterVaultDetails.vaultPermanentSecretKey": "Passwort (S3 SecretKey)",
+  "CreateVaultS3.enterVaultDetails.vaultPermanentBucketName": "S3 Bucket-Name (existing)",
+  "CreateVaultS3.success.description": "Cipherduck auf dem Computer benützen, um den Tresor zu öffnen.",
+  "CreateVaultS3.success.open": "Tresore in Cipherduck öffnen",
+  "CreateVaultS3.success.vaultPermanenDownloadVaultTemplate": "Tresorvorlage herunterladen und manuell in S3-Bucket hochladen.",
+
+  "vaultList.openInCipherduck": "In Cipherduck öffnen"
 }
