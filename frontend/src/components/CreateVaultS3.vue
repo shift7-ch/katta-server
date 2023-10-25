@@ -176,6 +176,12 @@
                     </Listbox>
                 </div>
                 <div v-if="isPermanent" class="col-span-6 sm:col-span-4">
+                    <label for="vaultBucketName" class="block text-sm font-medium text-gray-700">
+                      {{ t('CreateVaultS3.enterVaultDetails.vaultPermanentBucketName') }}
+                    </label>
+                    <input id="vaultBucketName" v-model="vaultBucketName" :disabled="processing" type="text" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200"/>
+                </div>
+                <div v-if="isPermanent" class="col-span-6 sm:col-span-4">
                     <label for="vaultAccessKeyId" class="block text-sm font-medium text-gray-700">
                       {{ t('CreateVaultS3.enterVaultDetails.vaultPermanentAccessKeyId') }}
                     </label>
@@ -288,6 +294,18 @@
           </button>
           <p v-if="onOpenBookmarkError != null " class="text-sm text-red-900 mr-4">{{ t('CreateVaultS3.error.openBookmarkFailed', [onOpenBookmarkError.message]) }}</p> <!-- TODO: not beautiful-->
         </div>
+        <div v-if="isPermanent" class="mt-5 sm:mt-6">
+            <div class="mt-2">
+              <p class="text-sm text-gray-500">
+                {{ t('CreateVaultS3.success.vaultPermanenDownloadVaultTemplate') }}
+              </p>
+            </div>
+          <button type="button" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-d1 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary" @click="downloadVaultTemplate()">
+            <ArrowDownTrayIcon class="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
+            {{ t('createVault.success.download') }}
+          </button>
+          <p v-if="onDownloadTemplateError != null " class="text-sm text-red-900 mr-4">{{ t('createVault.error.downloadTemplateFailed', [onDownloadTemplateError.message]) }}</p> <!-- TODO: not beautiful-->
+        </div>
         <div class="mt-2">
           <router-link to="/app/vaults" class="text-sm text-gray-500">
             {{ t('createVault.success.return') }}
@@ -366,6 +384,7 @@ const hubId = ref('');
 const apiConfig = ref('');
 const vaultAccessKeyId = ref('');
 const vaultSecretKey = ref('');
+const vaultBucketName = ref('');
 // \ cipherduck extension
 onMounted(initialize);
 
@@ -446,7 +465,7 @@ async function createVault() {
     config["jwe"]["parentUUID"] = hubId;
     config["jwe"]["nickname"] = vaultName.value;
 
-    if(config["jwe"]["stsRoleArn"]){
+    if(!isPermanent.value){
         config["jwe"]["oAuthAuthorizationUrl"] = apiConfig.value.keycloakAuthEndpoint;
         config["jwe"]["oAuthTokenUrl"] = apiConfig.value.keycloakTokenEndpoint;
         // N.B. we use client_id="cryptomator" in cipherduck, see discussion https://github.com/chenkins/cipherduck-hub/issues/6
@@ -455,6 +474,7 @@ async function createVault() {
     else {
         config["jwe"]["username"] = vaultAccessKeyId.value;
         config["jwe"]["password"] = vaultSecretKey.value;
+        config["jwe"]["defaultPath"] = vaultBucketName.value;
     }
 
     vaultKeys.value.storage = config["jwe"];
@@ -467,6 +487,11 @@ async function createVault() {
     if (!vaultKeys.value) {
        throw new Error('Invalid state');
     }
+    if(isPermanent.value){
+       state.value = State.Finished;
+       return;
+    }
+
     // TODO https://github.com/chenkins/cipherduck-hub/issues/3 what happens if bucket creation fails after successful vault creation? - merge with PUT vault service?
     const token = await authPromise.then(auth => auth.bearerToken());
     console.log(token)
