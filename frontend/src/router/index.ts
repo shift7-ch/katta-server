@@ -16,9 +16,6 @@ import UserProfile from '../components/UserProfile.vue';
 import VaultDetails from '../components/VaultDetails.vue';
 import VaultList from '../components/VaultList.vue';
 
-// / start cipherduck extension
-import CipherduckBookmark from '../components/CipherduckBookmark.vue';
-// \ end cipherduck extension
 
 const routes: RouteRecordRaw[] = [
   {
