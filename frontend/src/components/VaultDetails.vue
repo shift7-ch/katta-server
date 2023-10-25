@@ -128,9 +128,11 @@
           <button type="button" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary" @click="showEditVaultMetadataDialog()">
             {{ t('vaultDetails.actions.editVaultMetadata') }}
           </button>
+          <!-- / start cipherduck extension -->
           <!-- <button type="button" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary" @click="showDownloadVaultTemplateDialog()">
             {{ t('vaultDetails.actions.downloadVaultTemplate') }}
           </button> -->
+          <!-- \ start cipherduck extension -->
           <button type="button" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary" @click="showRecoveryKeyDialog()">
             {{ t('vaultDetails.actions.showRecoveryKey') }}
           </button>
