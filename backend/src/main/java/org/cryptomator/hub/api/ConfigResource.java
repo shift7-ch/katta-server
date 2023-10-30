@@ -68,19 +68,17 @@ public class ConfigResource {
     @Operation(summary = "get cipherduck bookmark for this hub")
     public String cipherduckhubbookmark(@Context UriInfo uriInfo) throws IOException {
         final URI requestUri = uriInfo.getRequestUri();
-		String profileTemplate = new String(ConfigResource.class.getResourceAsStream("/cipherduck/hubprotocol.cyberduckprofile").readAllBytes());
+		String bookmarkTemplate = new String(ConfigResource.class.getResourceAsStream("/cipherduck/hubbookmark.duck").readAllBytes());
 
 		// Scheme
-		profileTemplate = profileTemplate.replace("<string>Scheme</string>", String.format("<string>%s</string>", requestUri.getScheme()));
+		bookmarkTemplate = bookmarkTemplate.replace("<string>Scheme</string>", String.format("<string>%s</string>", requestUri.getScheme()));
 
 		// N.B. we use client_id="cryptomator" in cipherduck, see discussion https://github.com/chenkins/cipherduck-hub/issues/6
-		profileTemplate = profileTemplate.replace("<string>OAuth Client ID</string>", String.format("<string>%s</string>", getConfig().keycloakClientIdCryptomator()));
-		profileTemplate = profileTemplate.replace("<string>OAuth Authorization Url</string>", String.format("<string>%s</string>", getConfig().authEndpoint()));
-		profileTemplate = profileTemplate.replace("<string>OAuth Token Url</string>", String.format("<string>%s</string>", getConfig().tokenEndpoint()));
+		bookmarkTemplate = bookmarkTemplate.replace("<string>OAuth Client ID</string>", String.format("<string>%s</string>", getConfig().keycloakClientIdCryptomator()));
+		bookmarkTemplate = bookmarkTemplate.replace("<string>OAuth Authorization Url</string>", String.format("<string>%s</string>", getConfig().authEndpoint()));
+		bookmarkTemplate = bookmarkTemplate.replace("<string>OAuth Token Url</string>", String.format("<string>%s</string>", getConfig().tokenEndpoint()));
 
 
-
-        String bookmarkTemplate = new String(ConfigResource.class.getResourceAsStream("/cipherduck/hubbookmark.duck").readAllBytes());
         String hubUrl = String.format("%s://%s:%s", requestUri.getScheme(), requestUri.getHost(), requestUri.getPort());
         // nickname
         bookmarkTemplate = bookmarkTemplate.replace("<string>Cipherduck</string>", String.format("<string>Cipherduck (%s)</string>", hubUrl));
@@ -92,7 +90,7 @@ public class ConfigResource {
         bookmarkTemplate = bookmarkTemplate.replace("<string>c36acf24-e331-4919-9f19-ff52a08e7885</string>", String.format("<string>%s</string>", Settings.get().hubId));
 
 		// protocol
-        bookmarkTemplate = bookmarkTemplate.replace("<string>serialized_protocol/string>", String.format("<string>%s</string>", new String(Base64.getEncoder().encode(profileTemplate.getBytes(StandardCharsets.UTF_8)))));
+        bookmarkTemplate = bookmarkTemplate.replace("<string>serialized_protocol/string>", String.format("<string>%s</string>", new String(Base64.getEncoder().encode(bookmarkTemplate.getBytes(StandardCharsets.UTF_8)))));
 
 
 
