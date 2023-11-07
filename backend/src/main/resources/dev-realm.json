@@ -103,9 +103,7 @@
       "enabled": true,
       "redirectUris": [
         "http://localhost:8080/*",
-        "http://localhost:3000/*",
-        "http://proxyman.local:3000/*",
-        "http://proxyman.local:8080/*"
+        "http://localhost:3000/*"
       ],
       "webOrigins": [
         "+"
@@ -168,10 +166,7 @@
       "enabled": true,
       "redirectUris": [
         "http://127.0.0.1/*",
-        "x-cipherduck-action:oauth",
-        "x-cyberduck-action:oauth",
-        "http://proxyman.local:8080/*",
-        "http://localhost:3000/*"
+        "x-cipherduck-action:oauth"
       ],
       "webOrigins": [
         "+"
