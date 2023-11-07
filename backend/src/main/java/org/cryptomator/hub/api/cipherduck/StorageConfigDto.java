@@ -32,6 +32,8 @@ public record StorageConfigDto(
 						"ap-southeast-2",
 						"ap-southeast-3",
 						"ca-central-1",
+						"cn-north-1",
+						"cn-north-1",
 						"eu-west-1",
 						"eu-west-2",
 						"eu-west-3",
