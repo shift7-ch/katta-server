@@ -33,8 +33,6 @@ export default defineConfig({
     port: 3000,
     strictPort: true,
     proxy: {
-      // uncomment to use proxyman.local setup:
-      //'/api/': 'http://proxyman.local:8080'
       '/api/': 'http://127.0.0.1:8080'
     }
   }
