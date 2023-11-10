@@ -462,7 +462,6 @@ async function createVault() {
 
     config["jwe"]["defaultPath"] = config["bucketPrefix"] + vaultId;
     config["jwe"]["uuid"] = vaultId;
-    config["jwe"]["parentUUID"] = hubId;
     config["jwe"]["nickname"] = vaultName.value;
 
     if(isPermanent.value){
