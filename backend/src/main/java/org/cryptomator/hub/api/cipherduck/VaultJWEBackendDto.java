@@ -72,7 +72,7 @@ public record VaultJWEBackendDto(
 		Optional<String> password) implements VaultJWEBackend {
 
 
-	public VaultJWEBackendDto(VaultJWEBackend s, final String oAuthAuthorizationUrl, final String oAuthTokenUrl, final String oAuthClientId, final String oAuthTokenExchangeAudience) {
+	public VaultJWEBackendDto(VaultJWEBackend s, final String oAuthAuthorizationUrl, final String oAuthTokenUrl, final String oAuthClientId, final String oAuthTokenExchangeAudience, final String hubId) {
 		this(s.authorization(),
 				s.oauthRedirectUrl(),
 				s.usernameConfigurable(),
@@ -94,7 +94,7 @@ public record VaultJWEBackendDto(
 				s.stsRoleArn(),
 				s.stsRoleArn2(),
 				s.stsDurationSeconds(),
-				s.parentUUID(),
+				Optional.of(hubId),
 				Optional.of(oAuthTokenExchangeAudience),
 				s.username(),
 				s.password());
