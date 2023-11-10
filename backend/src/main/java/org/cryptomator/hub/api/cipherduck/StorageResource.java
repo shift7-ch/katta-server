@@ -37,6 +37,9 @@ public class StorageResource {
 	SyncerConfig syncerConfig;
 
 	@Inject
+	CipherduckConfig cipherduckConfig;
+
+	@Inject
 	JsonWebToken jwt;
 
 
@@ -58,8 +61,7 @@ public class StorageResource {
 
 		makeS3Bucket(storageConfig, dto);
 
-		// TODO https://github.com/chenkins/cipherduck-hub/issues/41 hard-coded cryptomatorvaults
-		keycloakPrepareVault(syncerConfig, vaultId.toString(), storageConfig, jwt.getSubject(), "cryptomatorvaults");
+		keycloakPrepareVault(syncerConfig, vaultId.toString(), storageConfig, jwt.getSubject(), cipherduckConfig.keycloakClientIdCryptomatorVaults());
 
 		return Response.created(URI.create(".")).build();
 	}

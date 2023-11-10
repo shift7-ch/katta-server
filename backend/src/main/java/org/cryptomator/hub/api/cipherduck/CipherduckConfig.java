@@ -5,6 +5,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
+// TODO review: backport to ConfigResource.ConfigDto upstream?
 @ApplicationScoped
 public class CipherduckConfig {
 	@Inject
@@ -24,6 +25,10 @@ public class CipherduckConfig {
 	@Inject
 	@ConfigProperty(name = "hub.keycloak.oidc.cryptomator-client-id", defaultValue = "")
 	String keycloakClientIdCryptomator;
+
+	@Inject
+	@ConfigProperty(name = "hub.keycloak.oidc.cryptomator-vaults-client-id", defaultValue = "")
+	String keycloakClientIdCryptomatorVaults;
 
 	@Inject
 	@ConfigProperty(name = "quarkus.oidc.auth-server-url")
@@ -49,6 +54,7 @@ public class CipherduckConfig {
 		}
 
 	}
+
 	public String keycloakClientIdHub() {
 		return keycloakClientIdHub;
 	}
@@ -56,6 +62,11 @@ public class CipherduckConfig {
 	public String keycloakClientIdCryptomator() {
 		return keycloakClientIdCryptomator;
 	}
+
+	public String keycloakClientIdCryptomatorVaults() {
+		return keycloakClientIdCryptomatorVaults;
+	}
+
 	public String publicRealmUri() {
 		return trimTrailingSlash(keycloakPublicUrl + "/realms/" + keycloakRealm);
 	}
