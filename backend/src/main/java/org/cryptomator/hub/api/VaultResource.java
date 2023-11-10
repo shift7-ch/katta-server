@@ -31,6 +31,7 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.cryptomator.hub.SyncerConfig;
+import org.cryptomator.hub.api.cipherduck.CipherduckConfig;
 import org.cryptomator.hub.entities.AccessToken;
 import org.cryptomator.hub.entities.AuditEventVaultAccessGrant;
 import org.cryptomator.hub.entities.AuditEventVaultCreate;
@@ -92,12 +93,7 @@ public class VaultResource {
 
 	// / start cipherduck extension
 	@Inject
-	@ConfigProperty(name = "quarkus.oidc.client-id", defaultValue = "")
-	String keycloakClientIdHub;
-
-	@Inject
-	@ConfigProperty(name = "hub.keycloak.oidc.cryptomator-client-id", defaultValue = "")
-	String keycloakClientIdCryptomator;
+	CipherduckConfig cipherduckConfig;
 	// \ end cipherduck extension
 
 	@GET
@@ -187,8 +183,7 @@ public class VaultResource {
 		}
 
 		// / start cipherduck extension
-
-		keycloakGrantAccessToVault(syncerConfig, vaultId.toString(), userId, "cryptomatorvaults");
+		keycloakGrantAccessToVault(syncerConfig, vaultId.toString(), userId, cipherduckConfig.keycloakClientIdCryptomatorVaults());
 		// \ end cipherduck extension
 
 		return addAuthority(vault, user, role);
@@ -218,7 +213,7 @@ public class VaultResource {
 		}
 
 		// / start cipherduck extension
-		keycloakGrantAccessToVault(syncerConfig, vaultId.toString(), groupId, "cryptomatorvaults");
+		keycloakGrantAccessToVault(syncerConfig, vaultId.toString(), groupId, cipherduckConfig.keycloakClientIdCryptomatorVaults());
 		// \ end cipherduck extension
 
 		return addAuthority(vault, group, role);
@@ -453,7 +448,7 @@ public class VaultResource {
 			AuditEventVaultMemberAdd.log(currentUser.id, vaultId, currentUser.id, VaultAccess.Role.OWNER);
 
 			// / start cipherduck extension
-			keycloakGrantAccessToVault(syncerConfig, vaultId.toString(), currentUser.id, "cryptomatorvaults");
+			keycloakGrantAccessToVault(syncerConfig, vaultId.toString(), currentUser.id, cipherduckConfig.keycloakClientIdCryptomatorVaults());
 			// \ end cipherduck extension
 
 			return Response.created(URI.create(".")).contentLocation(URI.create(".")).entity(VaultDto.fromEntity(vault)).type(MediaType.APPLICATION_JSON).build();
