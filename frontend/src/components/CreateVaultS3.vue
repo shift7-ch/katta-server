@@ -465,13 +465,7 @@ async function createVault() {
     config["jwe"]["parentUUID"] = hubId;
     config["jwe"]["nickname"] = vaultName.value;
 
-    if(!isPermanent.value){
-        config["jwe"]["oAuthAuthorizationUrl"] = apiConfig.value.keycloakAuthEndpoint;
-        config["jwe"]["oAuthTokenUrl"] = apiConfig.value.keycloakTokenEndpoint;
-        // N.B. we use client_id="cryptomator" in cipherduck, see discussion https://github.com/chenkins/cipherduck-hub/issues/6
-        config["jwe"]["oAuthClientId"] = apiConfig.value.keycloakClientIdCryptomator;
-    }
-    else {
+    if(isPermanent.value){
         config["jwe"]["username"] = vaultAccessKeyId.value;
         config["jwe"]["password"] = vaultSecretKey.value;
         config["jwe"]["defaultPath"] = vaultBucketName.value;
@@ -484,9 +478,6 @@ async function createVault() {
     await backend.vaults.createOrUpdateVault(vaultId, vaultName.value, vaultDescription.value, false);
     await backend.vaults.grantAccess(vaultId, owner.id, ownerJwe);
     // / start cipherduck extension
-    if (!vaultKeys.value) {
-       throw new Error('Invalid state');
-    }
     if(isPermanent.value){
        state.value = State.Finished;
        return;
@@ -543,17 +534,13 @@ async function createVault() {
     const { Credentials } = await stsClient
         .send(new AssumeRoleWithWebIdentityCommand(assumeRoleWithWebIdentityArgs));
 
-    // https://github.com/awslabs/smithy-typescript/blob/697310da9aec949034f92598f5cefc2cc162ef4d/packages/types/src/identity/awsCredentialIdentity.ts#L24
-    console.log(Credentials.AccessKeyId);
-    console.log(Credentials.SecretAccessKey);
-    console.log(Credentials.SessionToken);
-
     const rootDirHash = await vaultKeys.value.hashDirectoryId('');
-    await backend.storage.put({
+    await backend.storage.put(vaultId, {
         vaultId: vaultId,
         storageConfigId: config.id,
         vaultConfigToken: vaultConfig.value.vaultConfigToken,
         rootDirHash: rootDirHash,
+        // https://github.com/awslabs/smithy-typescript/blob/697310da9aec949034f92598f5cefc2cc162ef4d/packages/types/src/identity/awsCredentialIdentity.ts#L24
         awsAccessKey: Credentials.AccessKeyId,
         awsSecretKey: Credentials.SecretAccessKey,
         sessionToken: Credentials.SessionToken,
