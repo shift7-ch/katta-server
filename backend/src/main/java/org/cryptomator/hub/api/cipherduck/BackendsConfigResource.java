@@ -33,12 +33,11 @@ public class BackendsConfigResource {
 	@APIResponse(responseCode = "200", description = "uploaded storage configuration")
 	public BackendsConfigDto getBackendsConfig() {
 		return new BackendsConfigDto(Settings.get().hubId, backendsConfig.backends().stream()
-				// TODO https://github.com/chenkins/cipherduck-hub/issues/41 hard-coded cryptomatorvaults
 				.map(b -> new StorageConfigDto(b, new VaultJWEBackendDto(b.jwe(),
 						cipherduckConfig.authEndpoint(),
 						cipherduckConfig.tokenEndpoint(),
 						cipherduckConfig.keycloakClientIdCryptomator(),
-						"cryptomatorvaults",
+						cipherduckConfig.keycloakClientIdCryptomatorVaults(),
 						Settings.get().hubId
 						)))
 				.collect(Collectors.toList()));
