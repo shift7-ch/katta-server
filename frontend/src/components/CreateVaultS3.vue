@@ -193,6 +193,11 @@
                     </label>
                     <input id="vaultSecretKey" v-model="vaultSecretKey" :disabled="processing" type="text" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200"/>
                 </div>
+                <br/>
+                <div class="col-span-6 sm:col-span-3">
+                    <label for="vaultName" class="block text-sm font-medium text-gray-700">{{ t('CreateVaultS3.enterVaultDetails.automaticAccessGrant') }}</label>
+                    <input id="automaticAccessGrant" v-model="automaticAccessGrant" name="automaticAccessGrant" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" required>
+                </div>
             </div>
           </div>
         </div>
@@ -385,6 +390,7 @@ const apiConfig = ref('');
 const vaultAccessKeyId = ref('');
 const vaultSecretKey = ref('');
 const vaultBucketName = ref('');
+const automaticAccessGrant = ref('true');
 // \ cipherduck extension
 onMounted(initialize);
 
@@ -463,6 +469,7 @@ async function createVault() {
     config["jwe"]["defaultPath"] = config["bucketPrefix"] + vaultId;
     config["jwe"]["uuid"] = vaultId;
     config["jwe"]["nickname"] = vaultName.value;
+    config["jwe"]["automaticAccessGrant"] = automaticAccessGrant.value;
 
     if(isPermanent.value){
         config["jwe"]["username"] = vaultAccessKeyId.value;
