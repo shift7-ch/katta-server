@@ -73,6 +73,7 @@ import java.util.UUID;
 import java.util.stream.Stream;
 
 import static org.cryptomator.hub.cipherduck.KeycloakGrantAccessToVault.keycloakGrantAccessToVault;
+import static org.cryptomator.hub.cipherduck.KeycloakGrantAccessToVault.keycloakRemoveAccessToVault;
 
 @Path("/vaults")
 public class VaultResource {
@@ -186,8 +187,8 @@ public class VaultResource {
 		}
 
 		// / start cipherduck extension
-		// TODO https://github.com/chenkins/cipherduck-hub/issues/10 delete?
-		keycloakGrantAccessToVault(syncerConfig, vaultId.toString(), userId, List.of(keycloakClientIdHub, keycloakClientIdCryptomator));
+
+		keycloakGrantAccessToVault(syncerConfig, vaultId.toString(), userId, "cryptomatorvaults");
 		// \ end cipherduck extension
 
 		return addAuthority(vault, user, role);
@@ -215,6 +216,10 @@ public class VaultResource {
 		if (EffectiveGroupMembership.countEffectiveGroupUsers(groupId) - EffectiveVaultAccess.countSeatOccupyingUsersOfGroup(groupId) + EffectiveVaultAccess.countSeatOccupyingUsers() > license.getAvailableSeats()) {
 			throw new PaymentRequiredException("Number of effective vault users greater than or equal to the available license seats");
 		}
+
+		// / start cipherduck extension
+		keycloakGrantAccessToVault(syncerConfig, vaultId.toString(), groupId, "cryptomatorvaults");
+		// \ end cipherduck extension
 
 		return addAuthority(vault, group, role);
 	}
@@ -250,6 +255,9 @@ public class VaultResource {
 	@APIResponse(responseCode = "403", description = "not a vault owner")
 	public Response removeAuthority(@PathParam("vaultId") UUID vaultId, @PathParam("authorityId") @ValidId String authorityId) {
 		if (VaultAccess.deleteById(new VaultAccess.Id(vaultId, authorityId))) {
+			// / start cipherduck extension
+			keycloakRemoveAccessToVault(syncerConfig, vaultId.toString(), authorityId, "cryptomatorvaults");
+			// \ end cipherduck extension
 			AuditEventVaultMemberRemove.log(jwt.getSubject(), vaultId, authorityId);
 			return Response.status(Response.Status.NO_CONTENT).build();
 		} else {
@@ -375,11 +383,6 @@ public class VaultResource {
 			token.vaultKey = entry.getValue();
 			token.persist();
 
-			// / start cipherduck extension
-			// TODO https://github.com/chenkins/cipherduck-hub/issues/10 check remove upon DELETE operations?
-			keycloakGrantAccessToVault(syncerConfig, vaultId.toString(), userId, List.of(keycloakClientIdHub, keycloakClientIdCryptomator));
-			// \ end cipherduck extension
-			
 			AuditEventVaultAccessGrant.log(jwt.getSubject(), vaultId, userId);
 		}
 		return Response.ok().build();
@@ -448,6 +451,11 @@ public class VaultResource {
 			access.persist();
 			AuditEventVaultCreate.log(currentUser.id, vault.id, vault.name, vault.description);
 			AuditEventVaultMemberAdd.log(currentUser.id, vaultId, currentUser.id, VaultAccess.Role.OWNER);
+
+			// / start cipherduck extension
+			keycloakGrantAccessToVault(syncerConfig, vaultId.toString(), currentUser.id, "cryptomatorvaults");
+			// \ end cipherduck extension
+
 			return Response.created(URI.create(".")).contentLocation(URI.create(".")).entity(VaultDto.fromEntity(vault)).type(MediaType.APPLICATION_JSON).build();
 		} else {
 			AuditEventVaultUpdate.log(currentUser.id, vault.id, vault.name, vault.description, vault.archived);
