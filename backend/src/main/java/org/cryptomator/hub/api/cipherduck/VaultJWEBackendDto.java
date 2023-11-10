@@ -69,7 +69,11 @@ public record VaultJWEBackendDto(
 		// (3) keychain credentials
 		Optional<String> username,
 
-		Optional<String> password) implements VaultJWEBackend {
+		Optional<String> password,
+
+		// (4) misc
+		Optional<Boolean> automaticAccessGrant
+) implements VaultJWEBackend {
 
 
 	public VaultJWEBackendDto(VaultJWEBackend s, final String oAuthAuthorizationUrl, final String oAuthTokenUrl, final String oAuthClientId, final String oAuthTokenExchangeAudience, final String hubId) {
@@ -97,6 +101,8 @@ public record VaultJWEBackendDto(
 				Optional.of(hubId),
 				Optional.of(oAuthTokenExchangeAudience),
 				s.username(),
-				s.password());
+				s.password(),
+				s.automaticAccessGrant()
+				);
 	}
 }

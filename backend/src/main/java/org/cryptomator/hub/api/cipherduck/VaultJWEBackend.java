@@ -94,4 +94,8 @@ public interface VaultJWEBackend {
 
 	@JsonProperty("password")
 	Optional<String> password();
+
+	// (4) misc
+	@JsonProperty("automaticAccessGrant")
+	Optional<Boolean> automaticAccessGrant();
 }
