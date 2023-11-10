@@ -20,6 +20,9 @@ public class BackendsConfigResource {
 	@Inject
 	BackendsConfig backendsConfig;
 
+	@Inject
+	CipherduckConfig cipherduckConfig;
+
 
 	@GET
 	@Path("/")
@@ -29,8 +32,10 @@ public class BackendsConfigResource {
 	@Operation(summary = "get configs for storage backends", description = "get list of configs for storage backends")
 	@APIResponse(responseCode = "200", description = "uploaded storage configuration")
 	public BackendsConfigDto getBackendsConfig() {
-		// workaround for defaultValue not working as expected
-		return new BackendsConfigDto(Settings.get().hubId, backendsConfig.backends().stream().map(b -> new StorageConfigDto(b)).collect(Collectors.toList()));
+		return new BackendsConfigDto(Settings.get().hubId, backendsConfig.backends().stream()
+				// TODO https://github.com/chenkins/cipherduck-hub/issues/41 hard-coded cryptomatorvaults
+				.map(b -> new StorageConfigDto(b, new VaultJWEBackendDto(b.jwe(), cipherduckConfig.authEndpoint(), cipherduckConfig.tokenEndpoint(), cipherduckConfig.keycloakClientIdCryptomator(), "cryptomatorvaults")))
+				.collect(Collectors.toList()));
 	}
 
 

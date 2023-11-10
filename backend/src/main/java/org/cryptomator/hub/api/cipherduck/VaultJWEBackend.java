@@ -84,6 +84,9 @@ public interface VaultJWEBackend {
 	@JsonProperty("parentUUID")
 	Optional<String> parentUUID();
 
+	@JsonProperty("oAuthTokenExchangeAudience")
+	Optional<String> oAuthTokenExchangeAudience();
+
 
 	// (3) keychain credentials
 	@JsonProperty("username")

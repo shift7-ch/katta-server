@@ -16,7 +16,7 @@ public record StorageConfigDto(
 		Optional<Boolean> withPathStyleAccessEnabled
 
 ) implements StorageConfig {
-	public StorageConfigDto(StorageConfig s) {
+	public StorageConfigDto(final StorageConfig s, final VaultJWEBackend jwe) {
 		// workaround for defaultValue in JSONPrroperty not working as expected
 		this(s.id(), s.name(), s.bucketPrefix(), s.stsRoleArn(), s.stsEndpoint(),
 				s.region().isPresent() ? s.region() : Optional.of("us-east-1"),
@@ -50,8 +50,7 @@ public record StorageConfigDto(
 						"us-west-1",
 						"us-west-2"
 				)),
-				s.jwe(), s.withPathStyleAccessEnabled());
-
-
+				jwe, s.withPathStyleAccessEnabled());
 	}
+
 }
