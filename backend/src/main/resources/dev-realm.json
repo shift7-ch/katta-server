@@ -316,21 +316,6 @@
             "multivalued": "true",
             "usermodel.clientRoleMapping.clientId": "cryptomatorhub"
           }
-        },
-        {
-          "name": "vaults shared with user in amr claim",
-          "protocol": "openid-connect",
-          "protocolMapper": "oidc-usermodel-attribute-mapper",
-          "consentRequired": false,
-          "config": {
-            "aggregate.attrs": "true",
-            "userinfo.token.claim": "false",
-            "multivalued": "true",
-            "user.attribute": "vault",
-            "id.token.claim": "true",
-            "access.token.claim": "true",
-            "claim.name": "amr"
-          }
         }
       ]
     },
@@ -353,50 +338,7 @@
       "attributes": {
         "pkce.code.challenge.method": "S256"
       },
-      "directAccessGrantsEnabled": false,
-      "protocolMappers": [
-        {
-          "name": "realm roles",
-          "protocol": "openid-connect",
-          "protocolMapper": "oidc-usermodel-realm-role-mapper",
-          "consentRequired": false,
-          "config": {
-            "access.token.claim": "true",
-            "claim.name": "realm_access.roles",
-            "jsonType.label": "String",
-            "multivalued": "true"
-          }
-        },
-        {
-          "name": "client roles",
-          "protocol": "openid-connect",
-          "protocolMapper": "oidc-usermodel-client-role-mapper",
-          "consentRequired": false,
-          "config": {
-            "access.token.claim": "true",
-            "claim.name": "resource_access.${client_id}.roles",
-            "jsonType.label": "String",
-            "multivalued": "true",
-            "usermodel.clientRoleMapping.clientId": "cryptomator"
-          }
-        },
-        {
-          "name": "vaults shared with user in amr claim",
-          "protocol": "openid-connect",
-          "protocolMapper": "oidc-usermodel-attribute-mapper",
-          "consentRequired": false,
-          "config": {
-            "aggregate.attrs": "true",
-            "userinfo.token.claim": "false",
-            "multivalued": "true",
-            "user.attribute": "vault",
-            "id.token.claim": "true",
-            "access.token.claim": "true",
-            "claim.name": "amr"
-          }
-        }
-      ],
-      "directAccessGrantsEnabled": true
+      "directAccessGrantsEnabled": false
     },
     {
       "id": "367e3049-23ee-4714-a7ed-75e61d027d02",

@@ -23,8 +23,6 @@ import java.util.stream.Collectors;
 
 public class KeycloakGrantAccessToVault {
 	// TODO https://github.com/chenkins/cipherduck-hub/issues/41 clean-up dev-realm.json: do we need everything in realm-management?
-	// TODO https://github.com/chenkins/cipherduck-hub/issues/41 clean-up dev-realm.json: where do we need manage-realm?
-	// TODO https://github.com/chenkins/cipherduck-hub/issues/41 crytpomatorvaults not map roles into access token by default - remove those mappers
 
 	private static final Logger LOG = Logger.getLogger(KeycloakGrantAccessToVault.class);
 
