@@ -333,6 +333,7 @@ import { VaultKeys } from '../common/crypto';
 import { debounce } from '../common/util';
 import { VaultConfig } from '../common/vaultconfig';
 // / cipherduck extension
+import { ArrowDownTrayIcon } from '@heroicons/vue/24/outline';
 import {
      Listbox,
      ListboxButton,
@@ -489,9 +490,8 @@ async function createVault() {
        return;
     }
 
-    // TODO https://github.com/chenkins/cipherduck-hub/issues/3 what happens if bucket creation fails after successful vault creation? - merge with PUT vault service?
+    // TODO review what happens if bucket creation fails after successful vault creation? - merge with PUT vault service?
     const token = await authPromise.then(auth => auth.bearerToken());
-    console.log(token)
 
     // https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/clients/client-sts/classes/stsclient.html
     config["jwe"]["region"] = selectedRegion.value;
