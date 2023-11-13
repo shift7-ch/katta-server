@@ -54,11 +54,10 @@ public class StorageResource {
 	@APIResponse(responseCode = "400", description = "Could not create bucket")
 	public Response createBucket(@PathParam("vaultId") UUID vaultId, StorageDto dto) {
 
-		// TODO https://github.com/chenkins/cipherduck-hub/issues/41 prevent overwriting?
-
 		final Map<String, StorageConfig> storageConfigs = backendsConfig.backends().stream().collect(Collectors.toMap(StorageConfig::id, Function.identity()));
 		final StorageConfig storageConfig = storageConfigs.get(dto.storageConfigId());
 
+		// N.B. if the bucket already exists, this will fail, so we do not prevent calling this method several times.
 		makeS3Bucket(storageConfig, dto);
 
 		keycloakPrepareVault(syncerConfig, vaultId.toString(), storageConfig, jwt.getSubject(), cipherduckConfig.keycloakClientIdCryptomatorVaults());
