@@ -29,7 +29,7 @@ public class KeycloakGrantAccessToVault {
 	public static void keycloakPrepareVault(final SyncerConfig syncerConfig, final String vaultId, final StorageConfig storageConfig, final String userOrGroupId, final String clientId) {
 
 		// N.B. quarkus has no means to provide empty string as value, interpreted as no value, see https://github.com/quarkusio/quarkus/issues/2765
-		// TODO better solution than using sentinel string "empty"?
+		// TODO review better solution than using sentinel string "empty"?
 		if ("empty".equals(syncerConfig.getKeycloakUrl())) {
 			LOG.error(String.format("Could not grant access to vault %s for user %s as keycloak URL is not defined.", vaultId, userOrGroupId));
 			return;
@@ -94,7 +94,7 @@ public class KeycloakGrantAccessToVault {
 
 	public static void keycloakGrantAccessToVault(final SyncerConfig syncerConfig, final String vaultId, final String userOrGroupId, final String clientId) {
 		// N.B. quarkus has no means to provide empty string as value, interpreted as no value, see https://github.com/quarkusio/quarkus/issues/2765
-		// TODO better solution than using sentinel string "empty"?
+		// TODO review better solution than using sentinel string "empty"?
 		if ("empty".equals(syncerConfig.getKeycloakUrl())) {
 			LOG.error(String.format("Could not grant access to vault %s for user %s as keycloak URL is not defined.", vaultId, userOrGroupId));
 			return;
@@ -162,7 +162,7 @@ public class KeycloakGrantAccessToVault {
 
 	public static void keycloakRemoveAccessToVault(final SyncerConfig syncerConfig, final String vaultId, final String userOrGroupId, final String clientId) {
 		// N.B. quarkus has no means to provide empty string as value, interpreted as no value, see https://github.com/quarkusio/quarkus/issues/2765
-		// TODO better solution than using sentinel string "empty"?
+		// TODO review better solution than using sentinel string "empty"?
 		if ("empty".equals(syncerConfig.getKeycloakUrl())) {
 			LOG.error(String.format("Could not grant access to vault %s for user %s as keycloak URL is not defined.", vaultId, userOrGroupId));
 			return;
