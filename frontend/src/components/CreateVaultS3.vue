@@ -365,6 +365,7 @@ const form = ref<HTMLFormElement>();
 const onCreateError = ref<Error | null >(null);
 const onRecoverError = ref<Error | null >(null);
 const onOpenBookmarkError = ref<Error | null>(null);
+const onDownloadTemplateError = ref<Error | null>(null);
 
 const state = ref(State.Initial);
 const processing = ref(false);
@@ -595,5 +596,19 @@ function setRegionsOnSelectStorage(storage){
     console.log('   isPermanent: ' + isPermanent.value);
 }
 
+async function downloadVaultTemplate() {
+  onDownloadTemplateError.value = null;
+  try {
+    const blob = await vaultConfig.value?.exportTemplate();
+    if (blob != null) {
+      saveAs(blob, `${vaultName.value}.zip`);
+    } else {
+      throw new EmptyVaultTemplateError();
+    }
+  } catch (error) {
+    console.error('Exporting vault template failed.', error);
+    onDownloadTemplateError.value = error instanceof Error ? error : new Error('Unknown reason');
+  }
+}
 
 </script>
