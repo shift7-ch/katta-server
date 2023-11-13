@@ -557,7 +557,12 @@ async function createVault() {
     state.value = State.Finished;
   } catch (error) {
     console.error('Creating vault failed.', error);
-    onCreateError.value = error instanceof Error ? error : new Error('Unknown reason');
+    if(typeof(error) === 'string'){
+        onCreateError.value = new Error(error);
+    }
+    else {
+        onCreateError.value = error instanceof Error ? error : new Error('Unknown reason');
+    }
   } finally {
     processing.value = false;
   }
