@@ -89,8 +89,7 @@
               </div>
               <p v-if="vault.description && vault.description.length > 0" class="truncate text-sm text-gray-500 mt-2">{{ vault.description }}</p>
               <!-- / start cipherduck extension -->
-              <!-- TODO flag for debug mode? -->
-              <p v-if="vault.id.length > 0" class="truncate text-sm text-gray-500 mt-2">{{ vault.id }}</p>
+              <p v-if="showVaultIDs && (vault.id.length > 0)" class="truncate text-sm text-gray-500 mt-2">{{ vault.id }}</p>
               <!-- \ end cipherduck extension -->
             </div>
             <div class="ml-5 shrink-0">
@@ -214,6 +213,7 @@ async function onSelectedVaultUpdate(vault: VaultDto) {
 }
 
 // / start cipherduck extension
+import { showVaultIDs } from '../common/settings';
 async function openBookmark() {
   try {
     const bookmark = await backend.config.cipherduckhubbookmark();
