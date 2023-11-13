@@ -213,6 +213,65 @@ export type ConfigDto = {
     serverTime: string;
     apiLevel: number;
 }
+
+export type BackendsConfigDto = {
+    hubId: string;
+    backends: StorageConfig[];
+}
+export type StorageConfig = {
+    id: string;
+    name: string;
+    bucketPrefix: string;
+    stsRoleArn: string;
+    stsEndpoint: string;
+    region: string;
+    regions: string[];
+    withPathStyleAccessEnabled: boolean;
+    jwe: VaultJWEBackend;
+}
+export type VaultJWEBackend = {
+    // (1) protocol
+    // (1a) protocol hub-independent
+    authorization: string;
+    oAuthRedirectUrl: string;
+    usernameConfigurable: string;
+    passwordConfigurable: string;
+    tokenConfigurable: string;
+
+    // (1b) protocol hub-specific
+    oAuthAuthorizationUrl: string;
+    oAuthTokenUrl: string;
+    oAuthClientId: string;
+
+    // (1c) protocol storage-specific
+    protocol: string;
+    vendor: string;
+    region: string;
+    stsEndpoint: string;
+    scheme: string;
+
+    // (2) bookmark aka. Host
+    // (2a) bookmark direct fields
+    hostname: string;
+    port: string;
+    defaultPath: string;
+    nickname: string;
+    uuid: string;
+
+    // (2b) boookmark custom properties
+    stsRoleArn: string;
+    stsRoleArn2: string;
+    stsDurationSeconds: string;
+    parentUUID: string;
+    oAuthTokenExchangeAudience: string;
+
+    // (3) keychain credentials
+    username: string;
+    password: string;
+
+    // (4) misc
+    automaticAccessGrant: string;
+}
 // \ end cipherduck extension
 
 /* Services */
@@ -388,9 +447,8 @@ class StorageService {
   }
 }
 class BackendsConfigService {
-  // TODO https://github.com/chenkins/cipherduck-hub/issues/3 Any -> Dto
-  public async get(): Promise<Any> {
-    return axiosAuth.get<Any>('/backendsconfig/')
+  public async get(): Promise<BackendsConfigDto> {
+    return axiosAuth.get<BackendsConfigDto>('/backendsconfig/')
     .then(response => response.data);
   }
 }
