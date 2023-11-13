@@ -11,6 +11,7 @@ import org.cryptomator.hub.entities.Settings;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Path("/backendsconfig")
@@ -34,12 +35,13 @@ public class BackendsConfigResource {
 	public BackendsConfigDto getBackendsConfig() {
 		return new BackendsConfigDto(Settings.get().hubId, backendsConfig.backends().stream()
 				.map(b -> new StorageConfigDto(b, new VaultJWEBackendDto(b.jwe(),
-						cipherduckConfig.authEndpoint(),
-						cipherduckConfig.tokenEndpoint(),
-						cipherduckConfig.keycloakClientIdCryptomator(),
-						cipherduckConfig.keycloakClientIdCryptomatorVaults(),
+						// TODO review: should we make this more explicit - attribute isPermanent?
+						b.jwe().stsRoleArn().isPresent() ? Optional.of(cipherduckConfig.authEndpoint()) : Optional.empty(),
+						b.jwe().stsRoleArn().isPresent() ? Optional.of(cipherduckConfig.tokenEndpoint()) : Optional.empty(),
+						b.jwe().stsRoleArn().isPresent() ? Optional.of(cipherduckConfig.keycloakClientIdCryptomator()) : Optional.empty(),
+						b.jwe().stsRoleArn().isPresent() ? Optional.of(cipherduckConfig.keycloakClientIdCryptomatorVaults()) : Optional.empty(),
 						Settings.get().hubId
-						)))
+				)))
 				.collect(Collectors.toList()));
 	}
 
