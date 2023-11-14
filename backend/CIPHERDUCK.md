@@ -241,9 +241,10 @@ dropdown?
 | Backend property             | Description                                                                                      |
 |------------------------------|--------------------------------------------------------------------------------------------------|
 | `bucketPrefix`               | Prefix for all new buckets.                                                                      |
-| `stsRoleArn`                 | Role for `AssumeRoleWithWebIdentity` when creating buckets.                                      |
+| `stsRoleArnHub`              | Role for `AssumeRoleWithWebIdentity` when creating buckets in hub.                               |
+| `stsRoleArnClient`           | Role for `AssumeRoleWithWebIdentity` when creating buckets in client.                            |
 | `stsEndpoint`                | Endpoint `AssumeRoleWithWebIdentity` when creating buckets. Leave empty for defaults in AWS SDK. |
-| `region`                     | Default region to create buckets in. Defaults to `us-east-1`                                     |
+| `region`                     | Default region to create buckets in. Defaults to `us-east-1` if left empty.                      |
 | `regions`                    | Allowed regions to create buckets in. Defaults to full list of regions.                          |
 | `withPathStyleAccessEnabled` | Configures the client to use path-style access for all S3 requests.                              |
 

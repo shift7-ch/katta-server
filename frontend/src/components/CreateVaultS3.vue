@@ -535,7 +535,7 @@ async function createVault() {
       }`.replaceAll("{}", config["jwe"]["defaultPath"])
     }
     // Required. ARN of the role that the caller is assuming.
-    assumeRoleWithWebIdentityArgs["RoleArn"] = config["stsRoleArn"];
+    assumeRoleWithWebIdentityArgs["RoleArn"] = config["stsRoleArnHub"];
 
 
     const { Credentials } = await stsClient
@@ -592,7 +592,7 @@ function setRegionsOnSelectStorage(storage){
     console.log('   available regions: ' + storage.regions);
     selectedRegion.value = storage.region;
     console.log('   default region: ' + storage.region);
-    isPermanent.value = !Boolean(selectedStorage.value['jwe']['stsRoleArn'])
+    isPermanent.value = !Boolean(selectedStorage.value['stsRoleArnHub'])
     console.log('   isPermanent: ' + isPermanent.value);
 }
 
