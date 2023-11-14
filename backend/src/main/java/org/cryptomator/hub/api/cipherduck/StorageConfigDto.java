@@ -7,8 +7,9 @@ import java.util.Optional;
 public record StorageConfigDto(
 		String id,
 		String name,
-		String bucketPrefix,
-		Optional<String> stsRoleArn,
+		Optional<String> bucketPrefix,
+		Optional<String> stsRoleArnClient,
+		Optional<String> stsRoleArnHub,
 		Optional<String> stsEndpoint,
 		Optional<String> region,
 		Optional<List<String>> regions,
@@ -18,7 +19,7 @@ public record StorageConfigDto(
 ) implements StorageConfig {
 	public StorageConfigDto(final StorageConfig s, final VaultJWEBackend jwe) {
 		// workaround for defaultValue in JSONPrroperty not working as expected
-		this(s.id(), s.name(), s.bucketPrefix(), s.stsRoleArn(), s.stsEndpoint(),
+		this(s.id(), s.name(), s.bucketPrefix(), s.stsRoleArnClient(), s.stsRoleArnHub(), s.stsEndpoint(),
 				s.region().isPresent() ? s.region() : Optional.of("us-east-1"),
 				s.regions().isPresent() ? s.regions() : Optional.of(Arrays.asList(
 						"af-south-1",

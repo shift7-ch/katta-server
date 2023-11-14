@@ -24,7 +24,7 @@ public class S3Storage {
 			final StorageDto dto
 	) {
 
-		final String bucketName = storageConfig.bucketPrefix() + dto.vaultId();
+		final String bucketName = storageConfig.bucketPrefix().get() + dto.vaultId();
 		// https://github.com/awsdocs/aws-doc-sdk-examples/blob/main/java/example_code/s3/src/main/java/aws/example/s3/CreateBucket.java
 		final String region = dto.region();
 		AmazonS3ClientBuilder s3Builder = AmazonS3ClientBuilder
@@ -34,7 +34,7 @@ public class S3Storage {
 			s3Builder = s3Builder
 					.withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(storageConfig.stsEndpoint().get(), region))
 					.withPathStyleAccessEnabled(storageConfig.withPathStyleAccessEnabled().orElse(false));
-		} else {
+		} else if (region != null) {
 			s3Builder = s3Builder.withRegion(region);
 		}
 		final AmazonS3 s3 = s3Builder

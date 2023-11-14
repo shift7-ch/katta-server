@@ -16,11 +16,14 @@ public interface StorageConfig {
 	String name();
 
 	@JsonProperty("bucketPrefix")
-	String bucketPrefix();
+	Optional<String> bucketPrefix();
 
 
-	@JsonProperty("stsRoleArn")
-	Optional<String> stsRoleArn();
+	@JsonProperty("stsRoleArnClient")
+	Optional<String> stsRoleArnClient();
+
+	@JsonProperty("stsRoleArnHub")
+	Optional<String> stsRoleArnHub();
 
 	@JsonProperty("stsEndpoint")
 	Optional<String> stsEndpoint();
