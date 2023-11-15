@@ -41,7 +41,6 @@
               "view-users",
               "view-clients",
               "manage-users",
-              "manage-realm",
               "manage-clients"
             ]
           }
