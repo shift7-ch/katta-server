@@ -484,7 +484,7 @@ async function createVault() {
 
     const ownerJwe = await vaultKeys.value.encryptForUser(base64.parse(owner.publicKey));
     await backend.vaults.createOrUpdateVault(vaultId, vaultName.value, vaultDescription.value, false);
-    await backend.vaults.grantAccess(vaultId, owner.id, ownerJwe);
+    await backend.vaults.grantAccess(vaultId, owner.id, { userId: owner.id, token: ownerJwe });
     // / start cipherduck extension
     if(isPermanent.value){
        state.value = State.Finished;
