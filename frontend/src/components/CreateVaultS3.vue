@@ -64,11 +64,11 @@
 
                 <div class="col-span-6 sm:col-span-3">
                     <label for="vaultName" class="block text-sm font-medium text-gray-700">{{ t('CreateVaultS3.enterVaultDetails.storage') }}</label>
-                    <Listbox as="div" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200" v-model="selectedStorage"
+                    <Listbox as="div" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200" v-model="selectedBackend"
                        @update:modelValue="value => { setRegionsOnSelectStorage(value);}"
                     >
                       <ListboxButton class="relative w-full cursor-default rounded-lg bg-white py-2 pl-3 pr-10 text-left shadow-md focus:outline-none focus-visible:border-indigo-500 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 focus-visible:ring-offset-2 focus-visible:ring-offset-orange-300 sm:text-sm">
-                        <span class="block truncate text-sm font-medium text-gray-700">{{ selectedStorage.name }}</span>
+                        <span class="block truncate text-sm font-medium text-gray-700">{{ selectedBackend.name }}</span>
                         <span
                           class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2"
                         >
@@ -90,9 +90,9 @@
                         >
                           <ListboxOption
                             v-slot="{ active, selected }"
-                            v-for="config in configs"
-                            :key="config.name"
-                            :value="config"
+                            v-for="backend in backends"
+                            :key="backend.name"
+                            :value="backend"
                             as="template"
                           >
                             <li
@@ -105,7 +105,7 @@
                                 :class="[
                                   selected ? 'font-medium' : 'font-normal',
                                   'block truncate col-span-6 sm:col-span-4',
-                                ]">{{ config.name }}</span>
+                                ]">{{ backend.name }}</span>
                               <span
                                 v-if="selected"
                                 class="absolute inset-y-0 left-0 flex items-center pl-3 text-amber-600"
@@ -382,13 +382,12 @@ const props = defineProps<{
 }>();
 
 // / cipherduck extension
-const selectedStorage = ref('');
+const selectedBackend = ref('');
 const selectedRegion = ref('');
 const isPermanent = ref('');
 const regions = ref('');
-const configs = ref('');
+const backends = ref('');
 const hubId = ref('');
-const apiConfig = ref('');
 const vaultAccessKeyId = ref('');
 const vaultSecretKey = ref('');
 const vaultBucketName = ref('');
@@ -405,13 +404,12 @@ async function initialize() {
     state.value = State.EnterVaultDetails;
   }
   // / cipherduck extension
-  const backends = await backend.backendsconfig.get();
-  hubId.value = backends.hubId;
-  configs.value = backends.backends;
-  selectedStorage.value = configs.value[0];
-  setRegionsOnSelectStorage(selectedStorage.value);
-  selectedRegion.value = selectedStorage.value.region;
-  apiConfig.value = await backend.config.config();
+  const backendsconfig = await backend.backendsconfig.get();
+  hubId.value = backendsconfig.hubId;
+  backends.value = backendsconfig.backends;
+  selectedBackend.value = backends.value[0];
+  setRegionsOnSelectStorage(selectedBackend.value);
+  selectedRegion.value = selectedBackend.value.region;
   // \ cipherduck extension
 
 }
@@ -466,7 +464,7 @@ async function createVault() {
     const vaultId = crypto.randomUUID();
     vaultConfig.value = await VaultConfig.create(vaultId, vaultKeys.value);
     // / start cipherduck extension
-    const config = selectedStorage.value;
+    const config = selectedBackend.value;
 
     config["jwe"]["defaultPath"] = config["bucketPrefix"] + vaultId;
     config["jwe"]["uuid"] = vaultId;
@@ -592,7 +590,7 @@ function setRegionsOnSelectStorage(storage){
     console.log('   available regions: ' + storage.regions);
     selectedRegion.value = storage.region;
     console.log('   default region: ' + storage.region);
-    isPermanent.value = !Boolean(selectedStorage.value['stsRoleArnHub'])
+    isPermanent.value = !Boolean(selectedBackend.value['stsRoleArnHub'])
     console.log('   isPermanent: ' + isPermanent.value);
 }
 
