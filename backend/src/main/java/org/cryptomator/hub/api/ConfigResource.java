@@ -16,10 +16,8 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 
 import java.io.IOException;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.Base64;
 
 @Path("/config")
 public class ConfigResource {
@@ -60,18 +58,20 @@ public class ConfigResource {
 		return new ConfigDto(keycloakPublicUrl, keycloakRealm, keycloakClientIdHub, keycloakClientIdCryptomator, authUri, tokenUri, Instant.now().truncatedTo(ChronoUnit.MILLIS), 1);
 	}
 
-    // / start cipherduck extension
-    @PermitAll
-    @GET
-    @Path("/cipherduckhubbookmark")
-    @Produces(MediaType.APPLICATION_XML)
-    @Operation(summary = "get cipherduck bookmark for this hub")
-    public String cipherduckhubbookmark(@Context UriInfo uriInfo) throws IOException {
-        final URI requestUri = uriInfo.getRequestUri();
+	// / start cipherduck extension
+	@PermitAll
+	@GET
+	@Path("/cipherduckhubbookmark")
+	@Produces(MediaType.APPLICATION_XML)
+	@Operation(summary = "get cipherduck bookmark for this hub")
+	public String cipherduckhubbookmark(@Context UriInfo uriInfo) throws IOException {
+		final URI requestUri = uriInfo.getRequestUri();
 		String bookmarkTemplate = new String(ConfigResource.class.getResourceAsStream("/cipherduck/hubbookmark.duck").readAllBytes());
 
-		// Scheme
-		bookmarkTemplate = bookmarkTemplate.replace("<string>Scheme</string>", String.format("<string>%s</string>", requestUri.getScheme()));
+		// Provider: We provide Scheme-specific profiles in Cipherduck client
+		// Bookmark has Provider field to match up with Vendor in Profile!
+		// TODO review is it safe to use requestUri.getScheme()?
+		bookmarkTemplate = bookmarkTemplate.replace("<string>Provider</string>", String.format("<string>hub-%s</string>", requestUri.getScheme().toLowerCase()));
 
 		// N.B. we use client_id="cryptomator" in cipherduck, see discussion https://github.com/chenkins/cipherduck-hub/issues/6
 		bookmarkTemplate = bookmarkTemplate.replace("<string>OAuth Client ID</string>", String.format("<string>%s</string>", getConfig().keycloakClientIdCryptomator()));
@@ -79,23 +79,18 @@ public class ConfigResource {
 		bookmarkTemplate = bookmarkTemplate.replace("<string>OAuth Token Url</string>", String.format("<string>%s</string>", getConfig().tokenEndpoint()));
 
 
-        String hubUrl = String.format("%s://%s:%s", requestUri.getScheme(), requestUri.getHost(), requestUri.getPort());
-        // nickname
-        bookmarkTemplate = bookmarkTemplate.replace("<string>Cipherduck</string>", String.format("<string>Cipherduck (%s)</string>", hubUrl));
-        // hostname
-        bookmarkTemplate = bookmarkTemplate.replace("<string>localhost</string>", String.format("<string>%s</string>", requestUri.getHost()));
-        // port
-        bookmarkTemplate = bookmarkTemplate.replace("<string>8080</string>", String.format("<string>%s</string>", requestUri.getPort()));
-        // UUID
-        bookmarkTemplate = bookmarkTemplate.replace("<string>c36acf24-e331-4919-9f19-ff52a08e7885</string>", String.format("<string>%s</string>", Settings.get().hubId));
+		String hubUrl = String.format("%s://%s:%s", requestUri.getScheme(), requestUri.getHost(), requestUri.getPort());
+		// nickname
+		bookmarkTemplate = bookmarkTemplate.replace("<string>Cipherduck</string>", String.format("<string>Cipherduck (%s)</string>", hubUrl));
+		// hostname
+		bookmarkTemplate = bookmarkTemplate.replace("<string>localhost</string>", String.format("<string>%s</string>", requestUri.getHost()));
+		// port
+		bookmarkTemplate = bookmarkTemplate.replace("<string>8080</string>", String.format("<string>%s</string>", requestUri.getPort()));
+		// UUID
+		bookmarkTemplate = bookmarkTemplate.replace("<string>UUID</string>", String.format("<string>%s</string>", Settings.get().hubId));
 
-		// protocol
-        bookmarkTemplate = bookmarkTemplate.replace("<string>serialized_protocol/string>", String.format("<string>%s</string>", new String(Base64.getEncoder().encode(bookmarkTemplate.getBytes(StandardCharsets.UTF_8)))));
-
-
-
-        return bookmarkTemplate;
-    }
+		return bookmarkTemplate;
+	}
 	// \ end cipherduck extension
 
 	//visible for testing

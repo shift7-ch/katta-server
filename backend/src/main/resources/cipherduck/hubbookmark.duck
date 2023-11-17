@@ -3,9 +3,11 @@
 <plist version="1.0">
     <dict>
         <key>UUID</key>
-        <string>c36acf24-e331-4919-9f19-ff52a08e7885</string>
+        <string>UUID</string>
         <key>Protocol</key>
         <string>hub</string>
+        <key>Provider</key>
+        <string>Provider</string>
         <key>Nickname</key>
         <string>Cipherduck</string>
         <key>Hostname</key>
@@ -14,11 +16,7 @@
         <string>8080</string>
         <key>Custom</key>
         	<dict>
-        		<key>Protocol</key>
-                <string>hub</string>
-                <key>Scheme</key>
-                <string>Scheme</string>
-                 <key>OAuth Authorization Url</key>
+                <key>OAuth Authorization Url</key>
                 <string>OAuth Authorization Url</string>
                 <key>OAuth Token Url</key>
                 <string>OAuth Token Url</string>

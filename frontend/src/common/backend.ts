@@ -230,46 +230,35 @@ export type StorageConfig = {
     jwe: VaultJWEBackend;
 }
 export type VaultJWEBackend = {
-    // (1) protocol
-    // (1a) protocol hub-independent
-    authorization: string;
-    oAuthRedirectUrl: string;
-    usernameConfigurable: string;
-    passwordConfigurable: string;
-    tokenConfigurable: string;
-
-    // (1b) protocol hub-specific
-    oAuthAuthorizationUrl: string;
-    oAuthTokenUrl: string;
-    oAuthClientId: string;
-
-    // (1c) protocol storage-specific
+    // (1) bookmark properties -> 7
     protocol: string;
-    vendor: string;
-    region: string;
-    stsEndpoint: string;
-    scheme: string;
+    provider: string;
 
-    // (2) bookmark aka. Host
-    // (2a) bookmark direct fields
     hostname: string;
     port: string;
     defaultPath: string;
     nickname: string;
     uuid: string;
 
-    // (2b) boookmark custom properties
+    // (2) protocol settings (go into bookmark's custom properties) -> 5
+    oAuthAuthorizationUrl: string;
+    oAuthTokenUrl: string;
+    oAuthClientId: string;
+    stsEndpoint: string;
+    region: string;
+
+    // (3) boookmark custom properties -> 5
     stsRoleArn: string;
     stsRoleArn2: string;
     stsDurationSeconds: string;
     parentUUID: string;
     oAuthTokenExchangeAudience: string;
 
-    // (3) keychain credentials
+    // (4) keychain credentials -> 2
     username: string;
     password: string;
 
-    // (4) misc
+    // (5) misc -> 1
     automaticAccessGrant: string;
 }
 // \ end cipherduck extension

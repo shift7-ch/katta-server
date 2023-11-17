@@ -33,15 +33,23 @@ mc admin policy create myminio cipherduck src/main/resources/cipherduck/setup/mi
 
 Add a new OIDC provider using the policy:
 
+TODO https://github.com/chenkins/cipherduck-hub/issues/41 after introducing cryptomatorvaults client, we can separate
+vault creation and vault access policy in minio
+
 ```shell
 mc idp openid add myminio cryptomator \
-    config_url="https://login1.staging.cryptomator.cloud/realms/cipherduck/.well-known/openid-configuration" \
+    config_url="https://testing.hub.cryptomator.org/kc/realms/cipherduck/.well-known/openid-configuration" \
     client_id="cryptomator" \
     client_secret="ignore-me" \
     role_policy="cipherduck"
 mc idp openid add myminio cryptomatorhub \
-    config_url="https://login1.staging.cryptomator.cloud/realms/cipherduck/.well-known/openid-configuration" \
+    config_url="https://testing.hub.cryptomator.org/kc/realms/cipherduck/.well-known/openid-configuration" \
     client_id="cryptomatorhub" \
+    client_secret="ignore-me" \
+    role_policy="cipherduck"    
+mc idp openid add myminio cryptomatorvaults \
+    config_url="https://testing.hub.cryptomator.org/kc/realms/cipherduck/.well-known/openid-configuration" \
+    client_id="cryptomatorvaults" \
     client_secret="ignore-me" \
     role_policy="cipherduck"    
 mc admin service restart myminio
@@ -237,7 +245,6 @@ dropdown?
 
 #### (0a) bucket creation
 
-
 | Backend property             | Description                                                                                      |
 |------------------------------|--------------------------------------------------------------------------------------------------|
 | `bucketPrefix`               | Prefix for all new buckets.                                                                      |
@@ -248,78 +255,61 @@ dropdown?
 | `regions`                    | Allowed regions to create buckets in. Defaults to full list of regions.                          |
 | `withPathStyleAccessEnabled` | Configures the client to use path-style access for all S3 requests.                              |
 
-### (1) protocol
-
-#### (1c) protocol storage-specific
+### (1) bookmark properties
 
 In the `jwe` section of the backend configurations, you can specify the connection profile with the following
 properties:
 
-| JWE attribute | Description                                                                  | Example |     | 
-|---------------|------------------------------------------------------------------------------|---------|-----|
-| `protocol`    | &rarr; [Cyberduck Bookmarks](https://docs.cyberduck.io/cyberduck/bookmarks/) |         |     |
-| `vendor`      | &rarr; [Cyberduck Bookmarks](https://docs.cyberduck.io/cyberduck/bookmarks/) |         |     |
-| `region`      | &rarr; [Cyberduck Bookmarks](https://docs.cyberduck.io/cyberduck/bookmarks/) |         |     |
-| `stsEndpoint` | &rarr; [Cyberduck Bookmarks](https://docs.cyberduck.io/cyberduck/bookmarks/) |         |     |
-| `scheme`      | &rarr; [Cyberduck Bookmarks](https://docs.cyberduck.io/cyberduck/bookmarks/) |         |     |
+| JWE attribute | Description                                                                  | Source                               | 
+|---------------|------------------------------------------------------------------------------|--------------------------------------|
+| `protocol`    | &rarr; [Cyberduck Bookmarks](https://docs.cyberduck.io/cyberduck/bookmarks/) | `backend.jwe.protocol`               |
+| `provider`    | &rarr; [Cyberduck Bookmarks](https://docs.cyberduck.io/cyberduck/bookmarks/) | `backend.jwe.provider`               |
+| `hostname`    | &rarr; [Cyberduck Bookmarks](https://docs.cyberduck.io/cyberduck/bookmarks/) | `backend.jwe.hostname` or user input |
+| `port`        | &rarr; [Cyberduck Bookmarks](https://docs.cyberduck.io/cyberduck/bookmarks/) | `backend.jwe.port` or user input     |
+| `defaultPath` | &rarr; [Cyberduck Bookmarks](https://docs.cyberduck.io/cyberduck/bookmarks/) | `backend.bucket-prefix`              |
+| `nickname`    | &rarr; [Cyberduck Bookmarks](https://docs.cyberduck.io/cyberduck/bookmarks/) | vault name (user input)              |
+| `uuid`        | &rarr; [Cyberduck Bookmarks](https://docs.cyberduck.io/cyberduck/bookmarks/) | vault ID (generated)                 |
 
-#### (1b) protocol hub-specific
+#### (2) hub-specific protocol settings (go into bookmark's custom properties)
 
 The following hub-specific properties are injected into the vault JWE from  `/api/config` upon vault creation:
 
-| JWE attribute           | Description                                                                                                                                                    | Injected from                                              |
+| JWE attribute           | Description                                                                                                                                                    | Source                                                     |
 |-------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------|
 | `oAuthAuthorizationUrl` | &rarr; [Custom connection profile using OpenID Connect provider and AssumeRoleWithWebIdentity STS API](https://docs.cyberduck.io/protocols/profiles/aws_oidc/) | &rarr; `/api/config` &rarr; `keycloakTokenEndpoint`        | 
 | `oAuthTokenUrl`         | &rarr; [Custom connection profile using OpenID Connect provider and AssumeRoleWithWebIdentity STS API](https://docs.cyberduck.io/protocols/profiles/aws_oidc/) | &rarr; `/api/config` &rarr;  `keycloakAuthEndpoint`        |         
 | `oAuthClientId`         | &rarr; [Custom connection profile using OpenID Connect provider and AssumeRoleWithWebIdentity STS API](https://docs.cyberduck.io/protocols/profiles/aws_oidc/) | &rarr; `/api/config` &rarr;  `keycloakClientIdCryptomator` |         
+| `stsEndpoint`           | &rarr; [Custom connection profile using OpenID Connect provider and AssumeRoleWithWebIdentity STS API](https://docs.cyberduck.io/protocols/profiles/aws_oidc/) | `backend.jwe.sts-endpoint`                                 |    
+| `region`                | &rarr; [Cyberduck Bookmarks](https://docs.cyberduck.io/protocols/profiles/)                                                                                    | user input (dropdown)                                      |
 
-#### (1a) protocol hub-independent
 
-Finally, the following hub-independent properties are ususally present in protocol/profiles used in Cipherduck.
-However, they can be overriden in the `jwe` field of backend configurations in `application.properties` .
 
-| JWE attribute          | Description                                                                           | Defaults in `s3-sts` and `hub` protocols |
-|------------------------|---------------------------------------------------------------------------------------|------------------------------------------|
-| `authorization`        | &rarr; [Cyberduck Connection Profiles](https://docs.cyberduck.io/protocols/profiles/) | `AuthorizationCode`                      |
-| `oAuthRedirectUrl`     | &rarr; [Cyberduck Connection Profiles](https://docs.cyberduck.io/protocols/profiles/) | `x-cipherduck-action:oauth`              |
-| `usernameConfigurable` | &rarr; [Cyberduck Connection Profiles](https://docs.cyberduck.io/protocols/profiles/) | `false`                                  |
-| `passwordConfigurable` | &rarr; [Cyberduck Connection Profiles](https://docs.cyberduck.io/protocols/profiles/) | `false`                                  |
-| `tokenConfigurable`    | &rarr; [Cyberduck Connection Profiles](https://docs.cyberduck.io/protocols/profiles/) | `false`                                  |
-
-### (2) bookmark aka. Host
-
-The following fields ar injected into the Vault JWE upon vault creation.
-
-#### (2a) bookmark direct fields
-
-The following properties go into the corresponding bookmark attributes:
-
-| JWE attribute | Description                                                                  | Origin                  | 
-|---------------|------------------------------------------------------------------------------|-------------------------|
-| `hostname`    | &rarr; [Cyberduck Bookmarks](https://docs.cyberduck.io/cyberduck/bookmarks/) | `backend.jwe.hostname`  |
-| `port`        | &rarr; [Cyberduck Bookmarks](https://docs.cyberduck.io/cyberduck/bookmarks/) | `backend.jwe.port`      |
-| `defaultPath` | &rarr; [Cyberduck Bookmarks](https://docs.cyberduck.io/cyberduck/bookmarks/) | `backend.bucket-prefix` |
-| `nickname`    | &rarr; [Cyberduck Bookmarks](https://docs.cyberduck.io/cyberduck/bookmarks/) | vault name              |
-| `uuid`        | &rarr; [Cyberduck Bookmarks](https://docs.cyberduck.io/cyberduck/bookmarks/) | vault ID                |
-
-#### (2b) boookmark custom properties
+### (3) boookmark custom properties
 
 The following properties in the `jwe` section of backend configurations go into the  `Custom` properties section of
 vault bookmarks:
 
-| JWE attribute        | Description                                  | 
-|----------------------|----------------------------------------------|
-| `stsRoleArn`         | Role for `AssumeRoleWithWebIdentity` call    |
-| `stsRoleArn2`        | Role for subsequent `AssumeRole` call        |
-| `stsDurationSeconds` | Time to life for the STS token               |
-| `parentUUID`         | Hub ID used to group vault bookmarks by hub. |
+| JWE attribute                | Description                                      | Source                                           | 
+|------------------------------|--------------------------------------------------|--------------------------------------------------|
+| `stsRoleArn`                 | Role for `AssumeRoleWithWebIdentity` call        | `backend.jwe.sts-role-arn`                       |
+| `stsRoleArn2`                | Role for subsequent `AssumeRole` call            | `backend.jwe.sts-role-arn2`                      |
+| `stsDurationSeconds`         | Time to life for the STS token                   | `backend.jwe.sts-duration-seconds`               |
+| `parentUUID`                 | Hub ID used to group vault bookmarks by hub.     | hub UUID (injected)                              |
+| `oAuthTokenExchangeAudience` | Client ID for exchanged tokens for STS profiles. | `hub.keycloak.oidc.cryptomator-vaults-client-id` |
 
-### (3) keychain credentials
+### (4) keychain credentials
 
 The following properties in the `jwe` section of backend configurations go into the credentials associated with a vault
 bookmark (they are stored in OS keychain):
 
-| JWE attribute | Description                                | 
-|---------------|--------------------------------------------|
-| `username`    | Username for shared permanent credentials. |
-| `password`    | Password for shared permanent credentials. |
+| JWE attribute | Description                                | Source     | 
+|---------------|--------------------------------------------|------------|
+| `username`    | Username for shared permanent credentials. | user input |
+| `password`    | Password for shared permanent credentials. | user input |
+
+### (5) misc
+
+| JWE attribute          | Description                             | Source              | 
+|------------------------|-----------------------------------------|---------------------|
+| `automaticAccessGrant` | Should access be granted automatically? | user input checkbox |
+
