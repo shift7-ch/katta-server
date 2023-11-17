@@ -5,56 +5,13 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Optional;
 
 public interface VaultJWEBackend {
-
-
-	// (1) protocol
-	// (1a) protocol hub-independent
-	@JsonProperty("authorization")
-	Optional<String> authorization();
-
-	@JsonProperty("oAuthRedirectUrl")
-	Optional<String> oauthRedirectUrl();
-
-	@JsonProperty("usernameConfigurable")
-	Optional<String> usernameConfigurable();
-
-	@JsonProperty("passwordConfigurable")
-	Optional<String> passwordConfigurable();
-
-	@JsonProperty("tokenConfigurable")
-	Optional<String> tokenConfigurable();
-
-
-	// (1b) protocol hub-specific
-	@JsonProperty("oAuthAuthorizationUrl")
-	Optional<String> oauthAuthorizationUrl();
-
-	@JsonProperty("oAuthTokenUrl")
-	Optional<String> oauthTokenUrl();
-
-	@JsonProperty("oAuthClientId")
-	Optional<String> oauthClientId();
-
-
-	// (1c) protocol storage-specific
+	// (1) bookmark properties -> 7
 	@JsonProperty("protocol")
 	Optional<String> protocol();
 
-	@JsonProperty("vendor")
-	Optional<String> vendor();
+	@JsonProperty("provider")
+	Optional<String> provider();
 
-	@JsonProperty("region")
-	Optional<String> region();
-
-	@JsonProperty("stsEndpoint")
-	Optional<String> stsEndpoint();
-
-	@JsonProperty("scheme")
-	Optional<String> scheme();
-
-
-	// (2) bookmark aka. Host
-	// (2a) bookmark direct fields
 	@JsonProperty("hostname")
 	Optional<String> hostname();
 
@@ -70,8 +27,23 @@ public interface VaultJWEBackend {
 	@JsonProperty("uuid")
 	Optional<String> uuid();
 
+	// (2) protocol settings (go into bookmark's custom properties) -> 5
+	@JsonProperty("oAuthAuthorizationUrl")
+	Optional<String> oauthAuthorizationUrl();
 
-	// (2b) boookmark custom properties
+	@JsonProperty("oAuthTokenUrl")
+	Optional<String> oauthTokenUrl();
+
+	@JsonProperty("oAuthClientId")
+	Optional<String> oauthClientId();
+
+	@JsonProperty("stsEndpoint")
+	Optional<String> stsEndpoint();
+
+	@JsonProperty("region")
+	Optional<String> region();
+
+	// (3) boookmark custom properties -> 5
 	@JsonProperty("stsRoleArn")
 	Optional<String> stsRoleArn();
 
@@ -87,15 +59,14 @@ public interface VaultJWEBackend {
 	@JsonProperty("oAuthTokenExchangeAudience")
 	Optional<String> oAuthTokenExchangeAudience();
 
-
-	// (3) keychain credentials
+	// (4) keychain credentials -> 2
 	@JsonProperty("username")
 	Optional<String> username();
 
 	@JsonProperty("password")
 	Optional<String> password();
 
-	// (4) misc
+	// (5) misc -> 1
 	@JsonProperty("automaticAccessGrant")
 	Optional<Boolean> automaticAccessGrant();
 }
