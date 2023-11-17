@@ -1,10 +1,14 @@
 package org.cryptomator.hub.cipherduck;
 
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.ws.rs.core.Response;
 import org.cryptomator.hub.SyncerConfig;
+import org.cryptomator.hub.api.VaultResource;
 import org.cryptomator.hub.api.cipherduck.StorageConfig;
 import org.cryptomator.hub.entities.Group;
+import org.cryptomator.hub.entities.Vault;
 import org.jboss.logging.Logger;
+import org.jboss.resteasy.reactive.ClientWebApplicationException;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientScopeResource;
@@ -19,9 +23,13 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
+@ApplicationScoped
 public class KeycloakGrantAccessToVault {
+
+
 	// TODO https://github.com/chenkins/cipherduck-hub/issues/41 clean-up dev-realm.json: do we need everything in realm-management?
 
 	private static final Logger LOG = Logger.getLogger(KeycloakGrantAccessToVault.class);
@@ -68,7 +76,7 @@ public class KeycloakGrantAccessToVault {
 
 				clientScopeResource.getProtocolMappers().createMapper(Arrays.asList(minioProtocolMapper));
 			}
-			if(aws){
+			if (aws) {
 				ProtocolMapperRepresentation awsProtocolMapper = new ProtocolMapperRepresentation();
 				awsProtocolMapper.setName(String.format("Hard-coded mapper for vault %s (AWS)", vaultId));
 				awsProtocolMapper.setProtocolMapper("oidc-hardcoded-claim-mapper");
@@ -160,6 +168,7 @@ public class KeycloakGrantAccessToVault {
 		}
 	}
 
+
 	public static void keycloakRemoveAccessToVault(final SyncerConfig syncerConfig, final String vaultId, final String userOrGroupId, final String clientId) {
 		// N.B. quarkus has no means to provide empty string as value, interpreted as no value, see https://github.com/quarkusio/quarkus/issues/2765
 		// TODO review better solution than using sentinel string "empty"?
@@ -192,6 +201,39 @@ public class KeycloakGrantAccessToVault {
 				realm.users().get(userOrGroupId).roles().clientLevel(cryptomatorVaultsClientRepresentation.getId()).remove(Collections.singletonList(cryptomatorVaultsClientResource.roles().get(vaultId).toRepresentation()));
 			} else {
 				realm.groups().group(userOrGroupId).roles().clientLevel(cryptomatorVaultsClientRepresentation.getId()).remove(Collections.singletonList(cryptomatorVaultsClientResource.roles().get(vaultId).toRepresentation()));
+			}
+		}
+	}
+
+	// TODO review: this loop might not be safe enough to run in production - should we just disable this feature or remove from code entirely?
+	// Deleting the cryptomatorvaults client also deletes the client roles under the client, however, the client scopes are at the realm level and will not be removed by this procedure.
+	// Although safe, this can quickly become a mess in developing scenarios.
+	public static void keycloakCleanupDanglingCryptomatorVaultsRoles(final SyncerConfig syncerConfig, final String clientId) {
+		Set<String> existingVaultIds = Vault.findAll().<Vault>stream().map(VaultResource.VaultDto::fromEntity).map(vdto -> vdto.id().toString()).collect(Collectors.toSet());
+		try (final Keycloak keycloak = Keycloak.getInstance(syncerConfig.getKeycloakUrl(), syncerConfig.getKeycloakRealm(), syncerConfig.getUsername(), syncerConfig.getPassword(), syncerConfig.getKeycloakClientId())) {
+
+			// https://www.keycloak.org/docs-api/21.1.1/rest-api
+			final RealmResource realm = keycloak.realm(syncerConfig.getKeycloakRealm());
+
+			List<ClientRepresentation> byClientId = realm.clients().findByClientId(clientId);
+			if (byClientId.size() != 1) {
+				throw new RuntimeException(String.format("There are %s clients with clientId %s, expected to found exactly one.", byClientId.size(), clientId));
+			}
+			final ClientRepresentation cryptomatorVaultsClientRepresentation = byClientId.get(0);
+			ClientResource cryptomatorVaultsClientResource = realm.clients().get(cryptomatorVaultsClientRepresentation.getId());
+
+			for (RoleRepresentation roleRepresentation : cryptomatorVaultsClientResource.roles().list()) {
+				final String vaultId = roleRepresentation.getName();
+				if (!existingVaultIds.contains(vaultId)) {
+					cryptomatorVaultsClientResource.roles().deleteRole(vaultId);
+					try {
+						realm.clientScopes().get(vaultId).remove();
+					} catch (ClientWebApplicationException e) {
+						if (LOG.isInfoEnabled()) {
+							LOG.info(String.format("Could not delete client scope %s", vaultId), e);
+						}
+					}
+				}
 			}
 		}
 	}
