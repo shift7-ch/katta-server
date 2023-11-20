@@ -248,6 +248,8 @@
   "CreateVaultS3.success.description": "Use the Cipherduck client on your computer to open the vault.",
   "CreateVaultS3.success.open": "Open vaults in Cipherduck",
   "CreateVaultS3.success.vaultPermanenDownloadVaultTemplate": "Download Vault Template and upload manually to S3 Bucket.",
+  "CreateVaultS3.success.vaultPermanenUploadVaultTemplate": "Upload Vault Template to S3 Bucket.",
+  "CreateVaultS3.error.uploadTemplateFailed": "Upload Vault Template to S3 Bucket failed",
 
   "vaultList.openInCipherduck": "Open in Cipherduck"
 }

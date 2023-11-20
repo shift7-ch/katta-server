@@ -227,6 +227,7 @@ export type StorageConfig = {
     region: string;
     regions: string[];
     withPathStyleAccessEnabled: boolean;
+    s3Endpoint: string;
     jwe: VaultJWEBackend;
 }
 export type VaultJWEBackend = {

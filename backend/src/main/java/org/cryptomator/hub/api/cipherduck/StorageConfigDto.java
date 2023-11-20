@@ -14,7 +14,8 @@ public record StorageConfigDto(
 		Optional<String> region,
 		Optional<List<String>> regions,
 		VaultJWEBackend jwe,
-		Optional<Boolean> withPathStyleAccessEnabled
+		Optional<Boolean> withPathStyleAccessEnabled,
+		Optional<String> s3Endpoint
 
 ) implements StorageConfig {
 	public StorageConfigDto(final StorageConfig s, final VaultJWEBackend jwe) {
@@ -51,7 +52,7 @@ public record StorageConfigDto(
 						"us-west-1",
 						"us-west-2"
 				)),
-				jwe, s.withPathStyleAccessEnabled());
+				jwe, s.withPathStyleAccessEnabled(), s.s3Endpoint());
 	}
 
 }
