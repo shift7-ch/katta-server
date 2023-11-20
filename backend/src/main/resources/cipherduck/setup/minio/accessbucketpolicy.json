@@ -4,26 +4,6 @@
     {
       "Effect": "Allow",
       "Action": [
-        "s3:CreateBucket",
-        "s3:GetBucketPolicy"
-      ],
-      "Resource": [
-        "arn:aws:s3:::cipherduck*/"
-      ]
-    },
-    {
-      "Effect": "Allow",
-      "Action": [
-        "s3:PutObject"
-      ],
-      "Resource": [
-        "arn:aws:s3:::cipherduck*/*/",
-        "arn:aws:s3:::cipherduck*/vault.cryptomator"
-      ]
-    },
-    {
-      "Effect": "Allow",
-      "Action": [
         "s3:GetBucketLocation",
         "s3:GetBucketVersioning",
         "s3:ListBucket",

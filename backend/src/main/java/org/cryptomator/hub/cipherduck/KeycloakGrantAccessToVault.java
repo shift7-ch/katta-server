@@ -29,9 +29,6 @@ import java.util.stream.Collectors;
 @ApplicationScoped
 public class KeycloakGrantAccessToVault {
 
-
-	// TODO https://github.com/chenkins/cipherduck-hub/issues/41 clean-up dev-realm.json: do we need everything in realm-management?
-
 	private static final Logger LOG = Logger.getLogger(KeycloakGrantAccessToVault.class);
 
 	public static void keycloakPrepareVault(final SyncerConfig syncerConfig, final String vaultId, final StorageConfig storageConfig, final String userOrGroupId, final String clientId) {
