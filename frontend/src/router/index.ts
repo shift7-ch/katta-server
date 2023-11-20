@@ -7,7 +7,6 @@ import AdminSettings from '../components/AdminSettings.vue';
 import AuditLog from '../components/AuditLog.vue';
 import AuthenticatedMain from '../components/AuthenticatedMain.vue';
 import CreateVault from '../components/CreateVault.vue';
-import CreateVaultS3 from '../components/CreateVaultS3.vue';
 import InitialSetup from '../components/InitialSetup.vue';
 import NotFound from '../components/NotFound.vue';
 import UnlockError from '../components/UnlockError.vue';
@@ -53,8 +52,7 @@ const routes: RouteRecordRaw[] = [
       },
       {
         path: 'vaults/create',
-        // TODO review should we merge CreateVaultS3 back into CreateVault? Otherwise, we might miss updates in CreateVault.
-        component: CreateVaultS3, // cipherduck extension
+        component: CreateVault,
         props: () => ({ recover: false })
       },
       {
