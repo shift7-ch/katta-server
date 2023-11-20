@@ -305,11 +305,23 @@
                 {{ t('CreateVaultS3.success.vaultPermanenDownloadVaultTemplate') }}
               </p>
             </div>
-          <button type="button" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-d1 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary" @click="downloadVaultTemplate()">
+            <button type="button" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-d1 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary" @click="downloadVaultTemplate()">
+                <ArrowDownTrayIcon class="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
+                {{ t('createVault.success.download') }}
+            </button>
+            <p v-if="onDownloadTemplateError != null " class="text-sm text-red-900 mr-4">{{ t('createVault.error.downloadTemplateFailed', [onDownloadTemplateError.message]) }}</p> <!-- TODO: not beautiful-->
+        </div>
+        <div v-if="isPermanent" class="mt-5 sm:mt-6">
+            <div class="mt-2">
+              <p class="text-sm text-gray-500">
+                {{ t('CreateVaultS3.success.vaultPermanenDownloadVaultTemplate') }}
+              </p>
+            </div>
+          <button type="button" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-d1 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary" @click="uploadVaultTemplate()">
             <ArrowDownTrayIcon class="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
-            {{ t('createVault.success.download') }}
+            {{ t('CreateVaultS3.success.vaultPermanenUploadVaultTemplate') }}
           </button>
-          <p v-if="onDownloadTemplateError != null " class="text-sm text-red-900 mr-4">{{ t('createVault.error.downloadTemplateFailed', [onDownloadTemplateError.message]) }}</p> <!-- TODO: not beautiful-->
+          <p v-if="onUploadTemplateError != null " class="text-sm text-red-900 mr-4">{{ t('CreateVaultS3.error.uploadTemplateFailed') }}{{ onUploadTemplateError.message == null ? '' : ': ' + onUploadTemplateError.message }}</p> <!-- TODO: not beautiful-->
         </div>
         <div class="mt-2">
           <router-link to="/app/vaults" class="text-sm text-gray-500">
@@ -341,6 +353,7 @@ import {
      ListboxOption,
    } from '@headlessui/vue';
 import { STSClient,AssumeRoleWithWebIdentityCommand } from "@aws-sdk/client-sts";
+import { S3Client, PutObjectCommand, ListObjectsV2Command } from "@aws-sdk/client-s3";
 import authPromise from '../common/auth';
 // \ cipherduck extension
 
@@ -392,6 +405,7 @@ const vaultAccessKeyId = ref('');
 const vaultSecretKey = ref('');
 const vaultBucketName = ref('');
 const automaticAccessGrant = ref('true');
+const onUploadTemplateError = ref<Error | null>(null);
 // \ cipherduck extension
 onMounted(initialize);
 
@@ -606,6 +620,58 @@ async function downloadVaultTemplate() {
   } catch (error) {
     console.error('Exporting vault template failed.', error);
     onDownloadTemplateError.value = error instanceof Error ? error : new Error('Unknown reason');
+  }
+}
+
+async function uploadVaultTemplate() {
+  onUploadTemplateError.value = null;
+  try {
+    const config = selectedBackend.value;
+    const client = new S3Client({
+        region: selectedRegion.value,
+        endpoint: config.s3Endpoint,
+        forcePathStyle: true,
+        credentials:{
+            accessKeyId: vaultAccessKeyId.value,
+            secretAccessKey: vaultSecretKey.value
+        }
+    });
+    const commandListObjects = new ListObjectsV2Command({
+        Bucket: vaultBucketName.value,
+        MaxKeys: 1,
+      });
+    const responseListObjects = await client.send(commandListObjects);
+    console.log(responseListObjects);
+    if(responseListObjects.KeyCount != 0){
+        throw new Error('Bucket not empty, cannot upload template. Empty the bucket manually and re-try.');
+    }
+
+    const vaultConfigToken = await vaultConfig.value?.vaultConfigToken;
+    console.log(vaultConfigToken);
+    const rootDirHash = await vaultConfig.value?.rootDirHash;
+    console.log(rootDirHash);
+    
+    const commandPutVaultCryptomator = new PutObjectCommand({
+        Bucket: vaultBucketName.value,
+        Key: 'vault.cryptomator',
+        Body: vaultConfigToken,
+    });
+    console.log(commandPutVaultCryptomator);
+    const responsePutVaultCryptomator = await client.send(commandPutVaultCryptomator);
+    console.log(responsePutVaultCryptomator);
+
+    const commandPutDFolder = new PutObjectCommand({
+        Bucket: vaultBucketName.value,
+        Key: `d/${rootDirHash.substring(0, 2)}/${rootDirHash.substring(2)}`,
+        Body: vaultConfigToken,
+    });
+    console.log(commandPutDFolder);
+    const responsePutDFolder = await client.send(commandPutDFolder);
+    console.log(responsePutDFolder);
+
+  } catch (error) {
+    console.error('Uploading vault template failed.', error);
+    onUploadTemplateError.value = error instanceof Error ? error : new Error('Unknown reason');
   }
 }
 
