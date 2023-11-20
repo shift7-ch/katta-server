@@ -254,6 +254,7 @@ dropdown?
 | `region`                     | Default region to create buckets in. Defaults to `us-east-1` if left empty.                      |
 | `regions`                    | Allowed regions to create buckets in. Defaults to full list of regions.                          |
 | `withPathStyleAccessEnabled` | Configures the client to use path-style access for all S3 requests.                              |
+| `s3Endpoint`                 | Configures the endpoint for template upload (in case of shared (i.e. non-STS) credentials).      |
 
 ### (1) bookmark properties
 

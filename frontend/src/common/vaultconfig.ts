@@ -4,7 +4,9 @@ import { VaultConfigHeaderHub, VaultConfigPayload, VaultKeys } from '../common/c
 
 export class VaultConfig {
   readonly vaultConfigToken: string;
-  private readonly rootDirHash: string;
+  // / cipherduck modification
+  readonly rootDirHash: string;
+  // \ cipherduck modification
 
   private constructor(vaultConfigToken: string, rootDirHash: string) {
     this.vaultConfigToken = vaultConfigToken;

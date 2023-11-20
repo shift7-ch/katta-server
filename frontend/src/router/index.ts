@@ -53,6 +53,7 @@ const routes: RouteRecordRaw[] = [
       },
       {
         path: 'vaults/create',
+        // TODO review should we merge CreateVaultS3 back into CreateVault? Otherwise, we might miss updates in CreateVault.
         component: CreateVaultS3, // cipherduck extension
         props: () => ({ recover: false })
       },

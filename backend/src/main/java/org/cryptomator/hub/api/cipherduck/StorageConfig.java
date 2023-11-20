@@ -38,6 +38,9 @@ public interface StorageConfig {
 	@JsonProperty(value = "withPathStyleAccessEnabled", defaultValue = "false", required = false)
 	Optional<Boolean> withPathStyleAccessEnabled();
 
+	@JsonProperty("s3Endpoint")
+	Optional<String> s3Endpoint();
+
 	@JsonProperty("jwe")
 	VaultJWEBackend jwe();
 
