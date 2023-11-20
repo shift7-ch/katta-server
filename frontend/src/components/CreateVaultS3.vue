@@ -503,7 +503,8 @@ async function createVault() {
        return;
     }
 
-    // TODO review what happens if bucket creation fails after successful vault creation? - merge with PUT vault service?
+    // N.B. the access tokens for cryptomator and cryptomator hub clients do only have realm roles added to them, but not client roles.
+    //      We use client roles for vaults shared with a user. So this setup prevents access tokens from growing with new vaults.
     const token = await authPromise.then(auth => auth.bearerToken());
 
     // https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/clients/client-sts/classes/stsclient.html
@@ -515,6 +516,7 @@ async function createVault() {
 
     // https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/clients/client-sts/classes/assumerolewithwebidentitycommand.html
     // https://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRoleWithWebIdentity.html
+    // N.B. almost zero trust: add inline policy to pass only credentials allowing for creating the specified bucket in the backend
     const assumeRoleWithWebIdentityArgs = {
       // Required. The OAuth 2.0 access token or OpenID Connect ID token that is provided by the
       // identity provider.
@@ -554,6 +556,7 @@ async function createVault() {
         .send(new AssumeRoleWithWebIdentityCommand(assumeRoleWithWebIdentityArgs));
 
     const rootDirHash = await vaultKeys.value.hashDirectoryId('');
+    // TODO review what happens if bucket creation fails after successful vault creation? - merge with PUT vault service?
     await backend.storage.put(vaultId, {
         vaultId: vaultId,
         storageConfigId: config.id,

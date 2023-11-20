@@ -2,8 +2,6 @@ package org.cryptomator.hub.api.cipherduck;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -43,7 +41,6 @@ public interface StorageConfig {
 
 	@JsonProperty("jwe")
 	VaultJWEBackend jwe();
-
 
 
 }

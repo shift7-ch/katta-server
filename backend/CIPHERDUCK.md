@@ -28,12 +28,12 @@ This is not a problem as we leave the claim specifying the vault unset or pointi
 
 ```shell
 mc alias set myminio http://127.0.0.1:9000 minioadmin minioadmin
-mc admin policy create myminio cipherduck src/main/resources/cipherduck/setup/minio/cipherduckpolicy.json
+mc admin policy create myminio cipherduckcreatebucket src/main/resources/cipherduck/setup/minio/createbucketpolicy.json
+mc admin policy create myminio cipherduckaccessbucket src/main/resources/cipherduck/setup/minio/accessbucketpolicy.json
 ```
 
 Add a new OIDC provider using the policy:
 
-TODO https://github.com/chenkins/cipherduck-hub/issues/41 after introducing cryptomatorvaults client, we can separate
 vault creation and vault access policy in minio
 
 ```shell
@@ -41,40 +41,43 @@ mc idp openid add myminio cryptomator \
     config_url="https://testing.hub.cryptomator.org/kc/realms/cipherduck/.well-known/openid-configuration" \
     client_id="cryptomator" \
     client_secret="ignore-me" \
-    role_policy="cipherduck"
+    role_policy="cipherduckcreatebucket"
 mc idp openid add myminio cryptomatorhub \
     config_url="https://testing.hub.cryptomator.org/kc/realms/cipherduck/.well-known/openid-configuration" \
     client_id="cryptomatorhub" \
     client_secret="ignore-me" \
-    role_policy="cipherduck"    
+    role_policy="cipherduckcreatebucket"    
 mc idp openid add myminio cryptomatorvaults \
     config_url="https://testing.hub.cryptomator.org/kc/realms/cipherduck/.well-known/openid-configuration" \
     client_id="cryptomatorvaults" \
     client_secret="ignore-me" \
-    role_policy="cipherduck"    
+    role_policy="cipherduckaccessbucket"    
 mc admin service restart myminio
 ```
 
 Extract the policy ARN:
 
 ```shell
-mc idp openid ls myminio                                                                                                                                                                     feature/cipherduck
-╭───────────────────────────────────────────────────────────────────────╮
-│ On?       Name                           RoleARN                      │
-│ 🔴        (default)                                                   │
-│ 🟢      cryptomator  arn:minio:iam:::role/IqZpDC5ahW_DCAvZPZA4ACjEnDE │
-│ 🟢   cryptomatorhub  arn:minio:iam:::role/HGKdlY4eFFsXVvJmwlMYMhmbnDE │
-╰───────────────────────────────────────────────────────────────────────╯
+mc idp openid ls myminio                                                                                                                                                                                                                                                                                                    feature/cipherduck
+╭──────────────────────────────────────────────────────────────────────────╮
+│ On?        Name                             RoleARN                      │
+│ 🔴           (default)                                                   │
+│ 🟢         cryptomator  arn:minio:iam:::role/IqZpDC5ahW_DCAvZPZA4ACjEnDE │
+│ 🟢      cryptomatorhub  arn:minio:iam:::role/HGKdlY4eFFsXVvJmwlMYMhmbnDE │
+│ 🟢   cryptomatorvaults  arn:minio:iam:::role/Hdms6XDZ6oOpuWYI3gu4gmgHN94 │
+╰──────────────────────────────────────────────────────────────────────────╯
 
 
-mc idp openid info myminio                                                                                                                                                                   feature/cipherduck
-╭───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
-│  client_id: cryptomator  (environment)                                                                                │
-│ config_url: https://login1.staging.cryptomator.cloud/realms/cipherduck/.well-known/openid-configuration  (environment)│
-│     enable: on                                                                                                        │
-│    roleARN: arn:minio:iam:::role/IqZpDC5ahW_DCAvZPZA4ACjEnDE                                                          │
-│role_policy: cryptomator  (environment)                                                                                │
-╰───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+ mc idp openid info myminio cryptomator                                                                                                                                                                                                                                                                                      feature/cipherduck
+╭─────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│    client_id: cryptomator                                                                               │
+│client_secret: ignore-me                                                                                 │
+│   config_url: https://testing.hub.cryptomator.org/kc/realms/cipherduck/.well-known/openid-configuration │
+│       enable: on                                                                                        │
+│      roleARN: arn:minio:iam:::role/IqZpDC5ahW_DCAvZPZA4ACjEnDE                                          │
+│  role_policy: cipherduckcreatebucket                                                                    │
+╰─────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
 ```
 
 ### Hub configuration
