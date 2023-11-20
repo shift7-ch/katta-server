@@ -302,20 +302,22 @@
             "jsonType.label": "String",
             "multivalued": "true"
           }
-        },
-        {
-          "name": "client roles",
-          "protocol": "openid-connect",
-          "protocolMapper": "oidc-usermodel-client-role-mapper",
-          "consentRequired": false,
-          "config": {
-            "access.token.claim": "true",
-            "claim.name": "resource_access.${client_id}.roles",
-            "jsonType.label": "String",
-            "multivalued": "true",
-            "usermodel.clientRoleMapping.clientId": "cryptomatorhub"
-          }
         }
+      ],
+      "defaultClientScopes": [
+        "aud",
+        "web-origins",
+        "phone",
+        "profile",
+        "vaults",
+        "email"
+      ],
+      "optionalClientScopes": [
+        "acr",
+        "address",
+        "roles",
+        "offline_access",
+        "microprofile-jwt"
       ]
     },
     {
@@ -337,7 +339,36 @@
       "attributes": {
         "pkce.code.challenge.method": "S256"
       },
-      "directAccessGrantsEnabled": false
+      "directAccessGrantsEnabled": false,
+      "protocolMappers": [
+        {
+          "name": "realm roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "access.token.claim": "true",
+            "claim.name": "realm_access.roles",
+            "jsonType.label": "String",
+            "multivalued": "true"
+          }
+        }
+      ],
+      "defaultClientScopes": [
+        "aud",
+        "web-origins",
+        "phone",
+        "profile",
+        "vaults",
+        "email"
+      ],
+      "optionalClientScopes": [
+        "acr",
+        "address",
+        "offline_access",
+        "microprofile-jwt",
+        "roles"
+      ]
     },
     {
       "id": "367e3049-23ee-4714-a7ed-75e61d027d02",
