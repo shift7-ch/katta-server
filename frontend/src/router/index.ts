@@ -15,7 +15,6 @@ import UserProfile from '../components/UserProfile.vue';
 import VaultDetails from '../components/VaultDetails.vue';
 import VaultList from '../components/VaultList.vue';
 
-
 const routes: RouteRecordRaw[] = [
   {
     path: '/',
