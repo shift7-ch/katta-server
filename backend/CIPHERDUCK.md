@@ -18,7 +18,7 @@ Documentation
 Add role for creating buckets with prefix `cipherduck` and uploading `vault.cryptomator`, as well as RW to access to
 buckets through `client_id` claim in JWT token. Adapt bucket prefix in
 
-* [minio/cipherduck.json](src%2Fmain%2Fresources%2Fcipherduck%2Fsetup%2Fminio%2Fcipherduckpolicy.json).
+* [minio/cipherduck.json](setup%2Fminio%2Fcipherduckpolicy.json).
 
 Side-note: MinIO does not allow for multiple OIDC providers with the same client ID:
 
@@ -161,15 +161,15 @@ aws iam get-open-id-connect-provider --open-id-connect-provider-arn arn:aws:iam:
 Add role for creating buckets with prefix `cipherduck` and uploading `vault.cryptomator`, adapt OIDC provider in trust
 policy and bucket prefix in permission policy:
 
-* [aws/createbuckettrustpolicy.json](./src%2Fmain%2Fresources%2Fcipherduck%2Fsetup%2Faws%2Fcreatebuckettrustpolicy.json)
-* [aws/createbucketpermissionpolicy.json](src%2Fmain%2Fresources%2Fcipherduck%2Fsetup%2Faws%2Fcreatebucketpermissionpolicy.json)
+* [aws/createbuckettrustpolicy.json](./setup%2Faws%2Fcreatebuckettrustpolicy.json)
+* [aws/createbucketpermissionpolicy.json](setup%2Faws%2Fcreatebucketpermissionpolicy.json)
 
 Add roles for role chaining, adapt OIDC provider in trust policy and bucket prefix in permission policy:
 
-* [aws/cipherduck_chain_01_trustpolicy.json](src%2Fmain%2Fresources%2Fcipherduck%2Fsetup%2Faws%2Fcipherduck_chain_01_trustpolicy.json)
-* [aws/cipherduck_chain_01_permissionpolicy.json](src%2Fmain%2Fresources%2Fcipherduck%2Fsetup%2Faws%2Fcipherduck_chain_01_permissionpolicy.json)
-* [aws/cipherduck_chain_02_trustpolicy.json](src%2Fmain%2Fresources%2Fcipherduck%2Fsetup%2Faws%2Fcipherduck_chain_02_trustpolicy.json)
-* [aws/cipherduck_chain_02_permissionpolicy.json](src%2Fmain%2Fresources%2Fcipherduck%2Fsetup%2Faws%2Fcipherduck_chain_02_permissionpolicy.json)
+* [aws/cipherduck_chain_01_trustpolicy.json](setup%2Faws%2Fcipherduck_chain_01_trustpolicy.json)
+* [aws/cipherduck_chain_01_permissionpolicy.json](setup%2Faws%2Fcipherduck_chain_01_permissionpolicy.json)
+* [aws/cipherduck_chain_02_trustpolicy.json](setup%2Faws%2Fcipherduck_chain_02_trustpolicy.json)
+* [aws/cipherduck_chain_02_permissionpolicy.json](setup%2Faws%2Fcipherduck_chain_02_permissionpolicy.json)
 
 ```shell
 aws iam create-role --role-name cipherduck-createbucket --assume-role-policy-document file://src/main/resources/cipherduck/setup/aws/createbuckettrustpolicy.json
