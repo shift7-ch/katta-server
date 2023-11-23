@@ -201,6 +201,10 @@ export type StorageDto = {
     storageConfigId: string;
     vaultConfigToken: string;
     rootDirHash: string;
+    awsAccessKey: string;
+    awsSecretKey: string;
+    sessionToken: string;
+    region: string;
 }
 
 export type ConfigDto = {
@@ -222,7 +226,8 @@ export type StorageConfig = {
     id: string;
     name: string;
     bucketPrefix: string;
-    stsRoleArn: string;
+    stsRoleArnClient: string;
+    stsRoleArnHub: string;
     stsEndpoint: string;
     region: string;
     regions: string[];

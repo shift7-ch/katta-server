@@ -2,6 +2,11 @@ import * as miscreant from 'miscreant';
 import { base16, base32, base64, base64url } from 'rfc4648';
 import { JWEBuilder, JWEParser } from './jwe';
 import { CRC32, DB, wordEncoder } from './util';
+
+// / start cipherduck extension
+import { VaultJWEBackend } from './backend';
+// \ end cipherduck extension
+
 export class UnwrapKeyError extends Error {
   readonly actualError: any;
 
@@ -29,22 +34,11 @@ export interface VaultConfigHeaderHub {
   devicesResourceUrl: string
 }
 
-// / start cipherduck extension
-interface JWEPayloadStorage {
-  s3type: string,
-  scheme: string,
-  hostname: string;
-  port: number;
-  username?:string;
-  password?:string
-}
-//  \ end cipherduck extension
-
 interface JWEPayload {
   key: string
 
   // / start cipherduck extension
-  ,backend?: JWEPayloadStorage
+  ,backend?: VaultJWEBackend
   // \ end cipherduck extension
 }
 
@@ -64,14 +58,14 @@ export class VaultKeys {
   readonly masterKey: CryptoKey;
 
   // / start cipherduck extension
-  storage?: JWEPayloadStorage;
+  storage?: VaultJWEBackend;
   // \ end cipherduck extension
 
 
 
   protected constructor(masterkey: CryptoKey
     // / start cipherduck extension
-    ,storage?: JWEPayloadStorage
+    ,storage?: VaultJWEBackend
     // \ end cipherduck extension
   ) {
     this.masterKey = masterkey;

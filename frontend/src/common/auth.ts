@@ -45,13 +45,6 @@ class Auth {
     return this.keycloak.token;
   }
 
-
-// / cipherduck extension
-  public idToken(): string {
-    return this.keycloak.idToken;
-  }
-// \ cipherduck extension
-
   public isAdmin(): boolean {
     return this.keycloak.tokenParsed?.realm_access?.roles.includes('admin') ?? false;
   }
