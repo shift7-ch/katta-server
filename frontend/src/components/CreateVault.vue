@@ -73,7 +73,7 @@
                        @update:modelValue="value => { setRegionsOnSelectStorage(value);}"
                     >
                       <ListboxButton class="relative w-full cursor-default rounded-lg bg-white py-2 pl-3 pr-10 text-left shadow-md focus:outline-none focus-visible:border-indigo-500 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 focus-visible:ring-offset-2 focus-visible:ring-offset-orange-300 sm:text-sm">
-                        <span class="block truncate text-sm font-medium text-gray-700">{{ selectedBackend.name }}</span>
+                        <span class="block truncate text-sm font-medium text-gray-700">{{ selectedBackend ? selectedBackend.name : '' }}</span>
                         <span
                           class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2"
                         >
@@ -414,11 +414,12 @@ const props = defineProps<{
 }>();
 
 // / start cipherduck extension
-const selectedBackend = ref('');
-const selectedRegion = ref('');
-const isPermanent = ref('');
-const regions = ref('');
-const backends = ref('');
+import { StorageConfig } from '../common/backend';
+const selectedBackend = ref<StorageConfig | null >(null);
+const selectedRegion = ref<string | undefined>();
+const isPermanent = ref(false);
+const regions = ref<string[] | undefined>();
+const backends = ref<StorageConfig[] | null>(null);
 const hubId = ref('');
 const vaultAccessKeyId = ref('');
 const vaultSecretKey = ref('');
@@ -498,6 +499,9 @@ async function createVault() {
     const vaultId = crypto.randomUUID();
     vaultConfig.value = await VaultConfig.create(vaultId, vaultKeys.value);
     // / start cipherduck extension
+    if (!selectedBackend.value) {
+      throw new Error('Invalid state');
+    }
     const config = selectedBackend.value;
 
     config["jwe"]["defaultPath"] = config["bucketPrefix"] + vaultId;
@@ -523,6 +527,10 @@ async function createVault() {
     if(isPermanent.value){
        state.value = State.Finished;
        return;
+    }
+
+    if (!selectedRegion.value) {
+      throw new Error('Invalid state');
     }
 
     // N.B. the access tokens for cryptomator and cryptomator hub clients do only have realm roles added to them, but not client roles.
@@ -568,16 +576,32 @@ async function createVault() {
             ]
           }
         ]
-      }`.replaceAll("{}", config["jwe"]["defaultPath"])
+      }`.replaceAll("{}", config["jwe"]["defaultPath"]),
+      // Required. ARN of the role that the caller is assuming.
+      RoleArn: config["stsRoleArnHub"]
     }
-    // Required. ARN of the role that the caller is assuming.
-    assumeRoleWithWebIdentityArgs["RoleArn"] = config["stsRoleArnHub"];
 
 
     const { Credentials } = await stsClient
         .send(new AssumeRoleWithWebIdentityCommand(assumeRoleWithWebIdentityArgs));
 
+    if (!Credentials) {
+        throw new Error('Invalid state: Could not assume role with web identity.');
+    }
+    if (!Credentials.AccessKeyId) {
+        throw new Error('Invalid state: Missing AccessKeyId.');
+    }
+    if (!Credentials.SecretAccessKey) {
+        throw new Error('Invalid state: Missing SecretAccessKey.');
+    }
+    if (!Credentials.SessionToken) {
+        throw new Error('Invalid state: Missing SessionToken.');
+    }
+
     const rootDirHash = await vaultKeys.value.hashDirectoryId('');
+    if (!rootDirHash) {
+        throw new Error('Invalid state: rootDirHash missing.');
+    }
     // TODO review what happens if bucket creation fails after successful vault creation? - merge with PUT vault service?
     await backend.storage.put(vaultId, {
         vaultId: vaultId,
@@ -643,12 +667,15 @@ async function openBookmark() {
   }
 }
 
-function setRegionsOnSelectStorage(storage){
+function setRegionsOnSelectStorage(storage: StorageConfig){
     console.log('selected storage ' + storage.name);
     regions.value = storage.regions;
     console.log('   available regions: ' + storage.regions);
     selectedRegion.value = storage.region;
     console.log('   default region: ' + storage.region);
+    if (!selectedBackend.value) {
+      throw new Error('Invalid state.');
+    }
     isPermanent.value = !Boolean(selectedBackend.value['stsRoleArnHub'])
     console.log('   isPermanent: ' + isPermanent.value);
 }
@@ -656,6 +683,9 @@ function setRegionsOnSelectStorage(storage){
 async function uploadVaultTemplate() {
   onUploadTemplateError.value = null;
   try {
+    if (!selectedBackend.value) {
+        throw new Error('Invalid state.');
+    }
     const config = selectedBackend.value;
     const client = new S3Client({
         region: selectedRegion.value,
@@ -680,6 +710,10 @@ async function uploadVaultTemplate() {
     console.log(vaultConfigToken);
     const rootDirHash = await vaultConfig.value?.rootDirHash;
     console.log(rootDirHash);
+
+    if (!rootDirHash) {
+        throw new Error('Invalid state: rootDirHash missing.');
+    }
 
     const commandPutVaultCryptomator = new PutObjectCommand({
         Bucket: vaultBucketName.value,
