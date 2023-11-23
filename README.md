@@ -7,7 +7,7 @@ Cipherduck Hub bring zero-config storage management and zero-knowledge key manag
 It easily integrates into your existing identity management incl. OpenID Connect, SAML, and LDAP. 
 As usual, your favorite cloud service remains your free choice [^1].
 
-[^1]: Currently, we support AWS S3 and MinIO S3. Further cloud services coming soon.
+[^1]: Currently, we support AWS S3 and MinIO S3.
 
 Cipherduck consists of Cipherduck Hub and Cipherduck Client. Cipherduck Client is based on [Mountain Duck](https://mountainduck.io/).
 Cipherduck Hub is based on [Cryptomator Hub](https://github.com/cryptomator/hub/), consisting of these components:
