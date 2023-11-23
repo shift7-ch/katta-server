@@ -127,6 +127,13 @@
           <button type="button" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary" @click="showEditVaultMetadataDialog()">
             {{ t('vaultDetails.actions.editVaultMetadata') }}
           </button>
+          <!-- / start cipherduck modification -->
+          <!--
+          <button type="button" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary" @click="showDownloadVaultTemplateDialog()">
+            {{ t('vaultDetails.actions.downloadVaultTemplate') }}
+          </button>
+          -->
+          <!-- \ end cipherduck modification -->
           <button type="button" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary" @click="showRecoveryKeyDialog()">
             {{ t('vaultDetails.actions.showRecoveryKey') }}
           </button>
@@ -198,6 +205,10 @@ import ReactivateVaultDialog from './ReactivateVaultDialog.vue';
 import RecoverVaultDialog from './RecoverVaultDialog.vue';
 import RecoveryKeyDialog from './RecoveryKeyDialog.vue';
 import SearchInputGroup from './SearchInputGroup.vue';
+
+// / start cipherduck extension
+import { showVaultIDs } from '../common/settings';
+// \ end cipherduck extension
 
 const { t, d } = useI18n({ useScope: 'global' });
 
@@ -388,10 +399,12 @@ function showEditVaultMetadataDialog() {
   nextTick(() => editVaultMetadataDialog.value?.show());
 }
 
-function showDownloadVaultTemplateDialog() {
-  downloadingVaultTemplate.value = true;
-  nextTick(() => downloadVaultTemplateDialog.value?.show());
-}
+// / start cipherduck modification
+//function showDownloadVaultTemplateDialog() {
+//  downloadingVaultTemplate.value = true;
+//  nextTick(() => downloadVaultTemplateDialog.value?.show());
+//}
+// \ end cipherduck modification -->
 
 function showRecoveryKeyDialog() {
   showingRecoveryKey.value = true;
@@ -467,17 +480,5 @@ async function removeMember(memberId: string) {
     onUpdateVaultMembershipError.value[memberId] = error instanceof Error ? error : new Error('Unknown Error');
   }
 }
-
-// / start cipherduck extension
-import { showVaultIDs } from '../common/settings';
-async function openBookmark() {
-  try {
-    const bookmark = await backend.config.cipherduckhubbookmark();
-    window.location.href = `x-cipherduck-action:cipherduck?bookmark=${encodeURIComponent(bookmark)}`;
-  } catch (error) {
-    console.error('Opening bookmark from browser failed.', error);
-  }
-}
-// \ end cipherduck extension
 
 </script>
