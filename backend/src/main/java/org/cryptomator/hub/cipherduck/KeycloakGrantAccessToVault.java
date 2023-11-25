@@ -121,7 +121,7 @@ public class KeycloakGrantAccessToVault {
 			ClientResource cryptomatorVaultsClientResource = realm.clients().get(cryptomatorVaultsClientRepresentation.getId());
 
 			// create client scope <vaultId> (if necessary)
-			if (realm.clientScopes().findAll().stream().filter(clientScopeRepresentation -> clientScopeRepresentation.getId().equals(vaultId)).collect(Collectors.toList()).isEmpty()) {
+			if (realm.clientScopes().findAll().stream().map(clientScopeRepresentation -> clientScopeRepresentation.getId()).noneMatch(vaultId::equals)) {
 				ClientScopeRepresentation vaultClientScope = new ClientScopeRepresentation();
 				vaultClientScope.setId(vaultId);
 				vaultClientScope.setName(vaultId);
@@ -142,7 +142,7 @@ public class KeycloakGrantAccessToVault {
 
 			// create client role <vaultId> (if necessary)
 			// -> requires role_manage-clients
-			if (cryptomatorVaultsClientResource.roles().list().stream().filter(role -> role.getName().equals(vaultId)).collect(Collectors.toList()).isEmpty()) {
+			if (cryptomatorVaultsClientResource.roles().list().stream().map(role -> role.getName()).noneMatch(vaultId::equals)) {
 				RoleRepresentation vaultRole = new RoleRepresentation();
 				vaultRole.setName(vaultId);
 				vaultRole.setDescription(String.format("Role for vault %s", vaultId));
@@ -152,15 +152,15 @@ public class KeycloakGrantAccessToVault {
 			}
 
 			// scope the client scope to the client role for the vault
-			realm.clientScopes().get(vaultId).getScopeMappings().clientLevel(cryptomatorVaultsClientRepresentation.getId()).add(Collections.singletonList(cryptomatorVaultsClientResource.roles().get(vaultId).toRepresentation()));
+			realm.clientScopes().get(vaultId).getScopeMappings().clientLevel(cryptomatorVaultsClientRepresentation.getId()).add(List.of(cryptomatorVaultsClientResource.roles().get(vaultId).toRepresentation()));
 
 
 			// add client role to user/group
 			// -> requires role_manage-users
 			if (!isGroup) {
-				realm.users().get(userOrGroupId).roles().clientLevel(cryptomatorVaultsClientRepresentation.getId()).add(Collections.singletonList(cryptomatorVaultsClientResource.roles().get(vaultId).toRepresentation()));
+				realm.users().get(userOrGroupId).roles().clientLevel(cryptomatorVaultsClientRepresentation.getId()).add(List.of(cryptomatorVaultsClientResource.roles().get(vaultId).toRepresentation()));
 			} else {
-				realm.groups().group(userOrGroupId).roles().clientLevel(cryptomatorVaultsClientRepresentation.getId()).add(Collections.singletonList(cryptomatorVaultsClientResource.roles().get(vaultId).toRepresentation()));
+				realm.groups().group(userOrGroupId).roles().clientLevel(cryptomatorVaultsClientRepresentation.getId()).add(List.of(cryptomatorVaultsClientResource.roles().get(vaultId).toRepresentation()));
 			}
 		}
 	}
@@ -174,8 +174,7 @@ public class KeycloakGrantAccessToVault {
 			return;
 		}
 
-		var group = Group.<Group>findByIdOptional(userOrGroupId);
-		final boolean isGroup = group.isPresent();
+		final boolean isGroup = Group.findByIdOptional(userOrGroupId).isPresent();
 
 		try (final Keycloak keycloak = Keycloak.getInstance(syncerConfig.getKeycloakUrl(), syncerConfig.getKeycloakRealm(), syncerConfig.getUsername(), syncerConfig.getPassword(), syncerConfig.getKeycloakClientId())) {
 
@@ -195,9 +194,9 @@ public class KeycloakGrantAccessToVault {
 			// remove client role from user/group
 			// -> requires role_manage-users
 			if (!isGroup) {
-				realm.users().get(userOrGroupId).roles().clientLevel(cryptomatorVaultsClientRepresentation.getId()).remove(Collections.singletonList(cryptomatorVaultsClientResource.roles().get(vaultId).toRepresentation()));
+				realm.users().get(userOrGroupId).roles().clientLevel(cryptomatorVaultsClientRepresentation.getId()).remove(List.of(cryptomatorVaultsClientResource.roles().get(vaultId).toRepresentation()));
 			} else {
-				realm.groups().group(userOrGroupId).roles().clientLevel(cryptomatorVaultsClientRepresentation.getId()).remove(Collections.singletonList(cryptomatorVaultsClientResource.roles().get(vaultId).toRepresentation()));
+				realm.groups().group(userOrGroupId).roles().clientLevel(cryptomatorVaultsClientRepresentation.getId()).remove(List.of(cryptomatorVaultsClientResource.roles().get(vaultId).toRepresentation()));
 			}
 		}
 	}
