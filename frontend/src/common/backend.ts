@@ -447,14 +447,13 @@ class BackendsConfigService {
     .then(response => response.data);
   }
 }
+export const axiosUnAuth = AxiosStatic.create(axiosBaseCfg)
 class ConfigService {
   public async cipherduckhubbookmark(): Promise<string> {
-    const axiosUnAuth = AxiosStatic.create(axiosBaseCfg);
     return axiosUnAuth.get('/config/cipherduckhubbookmark')
       .then(response => response.data);
   }
   public async config(): Promise<ConfigDto> {
-      const axiosUnAuth = AxiosStatic.create(axiosBaseCfg);
       return axiosUnAuth.get('/config')
         .then(response => response.data);
     }
