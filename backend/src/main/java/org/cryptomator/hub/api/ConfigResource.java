@@ -66,7 +66,35 @@ public class ConfigResource {
 	@Operation(summary = "get cipherduck bookmark for this hub")
 	public String cipherduckhubbookmark(@Context UriInfo uriInfo) throws IOException {
 		final URI requestUri = uriInfo.getRequestUri();
-		String bookmarkTemplate = new String(ConfigResource.class.getResourceAsStream("/cipherduck/hubbookmark.duck").readAllBytes());
+		String bookmarkTemplate = """
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+	<dict>
+		<key>UUID</key>
+		<string>UUID</string>
+		<key>Protocol</key>
+		<string>hub</string>
+		<key>Provider</key>
+		<string>Provider</string>
+		<key>Nickname</key>
+		<string>Cipherduck</string>
+		<key>Hostname</key>
+		<string>localhost</string>
+		<key>Port</key>
+		<string>8080</string>
+		<key>Custom</key>
+			<dict>
+				<key>OAuth Authorization Url</key>
+				<string>OAuth Authorization Url</string>
+				<key>OAuth Token Url</key>
+				<string>OAuth Token Url</string>
+				<key>OAuth Client ID</key>
+				<string>OAuth Client ID</string>
+			</dict>
+	</dict>
+</plist>
+""";
 
 		// Provider: We provide Scheme-specific profiles in Cipherduck client
 		// Bookmark has Provider field to match up with Vendor in Profile!
