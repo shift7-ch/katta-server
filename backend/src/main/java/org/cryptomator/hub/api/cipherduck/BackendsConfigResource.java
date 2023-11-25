@@ -36,10 +36,10 @@ public class BackendsConfigResource {
 		return new BackendsConfigDto(Settings.get().hubId, backendsConfig.backends().stream()
 				.map(b -> new StorageConfigDto(b, new VaultJWEBackendDto(b.jwe(),
 						// TODO review: should we make this more explicit - attribute isPermanent?
-						b.jwe().stsRoleArn().isPresent() ? Optional.of(cipherduckConfig.authEndpoint()) : Optional.empty(),
-						b.jwe().stsRoleArn().isPresent() ? Optional.of(cipherduckConfig.tokenEndpoint()) : Optional.empty(),
-						b.jwe().stsRoleArn().isPresent() ? Optional.of(cipherduckConfig.keycloakClientIdCryptomator()) : Optional.empty(),
-						b.jwe().stsRoleArn().isPresent() ? Optional.of(cipherduckConfig.keycloakClientIdCryptomatorVaults()) : Optional.empty(),
+						b.jwe().stsRoleArn().map(ignored -> cipherduckConfig.authEndpoint()),
+						b.jwe().stsRoleArn().map(ignored -> cipherduckConfig.tokenEndpoint()),
+						b.jwe().stsRoleArn().map(ignored -> cipherduckConfig.keycloakClientIdCryptomator()),
+						b.jwe().stsRoleArn().map(ignored -> cipherduckConfig.keycloakClientIdCryptomatorVaults()),
 						Settings.get().hubId
 				)))
 				.collect(Collectors.toList()));
