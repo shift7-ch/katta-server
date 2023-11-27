@@ -12,7 +12,7 @@
       ],
       "Condition": {
         "ForAnyValue:StringEquals": {
-          "sts:TransitiveTagKeys": "${aws:RequestTag/VaultR}"
+          "sts:TransitiveTagKeys": "${aws:RequestTag/VaultRequested}"
         }
       }
     }
