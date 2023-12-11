@@ -216,8 +216,7 @@ async function onSelectedVaultUpdate(vault: VaultDto) {
 import { showVaultIDs } from '../common/settings';
 async function openBookmark() {
   try {
-    const bookmark = await backend.config.cipherduckhubbookmark();
-    window.location.href = `x-cipherduck-action:cipherduck?bookmark=${encodeURIComponent(bookmark)}`;
+    window.location.href = `x-cipherduck-action:cipherduck?url=${encodeURIComponent(location.origin)}`;
   } catch (error) {
     console.error('Opening bookmark from browser failed.', error);
   }
