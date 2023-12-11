@@ -659,8 +659,7 @@ async function downloadVaultTemplate() {
 async function openBookmark() {
   onOpenBookmarkError.value = null;
   try {
-    const bookmark = await backend.config.cipherduckhubbookmark();
-    window.location.href = `x-cipherduck-action:cipherduck?bookmark=${encodeURIComponent(bookmark)}`;
+    window.location.href = `x-cipherduck-action:cipherduck?url=${encodeURIComponent(location.origin)}`;
   } catch (error) {
     console.error('Opening bookmark from browser failed.', error);
     onOpenBookmarkError.value = error instanceof Error ? error : new Error('Unknown Error');
