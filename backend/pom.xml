@@ -11,8 +11,8 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.jdk.version>17</project.jdk.version>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <quarkus.container-image.group>cryptomator</quarkus.container-image.group>
-    <quarkus.container-image.name>hub</quarkus.container-image.name>
+    <quarkus.container-image.group>shift7-ch</quarkus.container-image.group>
+    <quarkus.container-image.name>cipherduck</quarkus.container-image.name>
     <quarkus.platform.version>3.4.3</quarkus.platform.version>
     <quarkus.jib.base-jvm-image>eclipse-temurin:17-jre</quarkus.jib.base-jvm-image> <!-- irrelevant for -Pnative -->
     <jwt.version>4.4.0</jwt.version>
