@@ -439,9 +439,9 @@ async function initialize() {
     state.value = State.EnterVaultDetails;
   }
   // / start cipherduck extension
-  const backendsconfig = await backend.backendsconfig.get();
-  hubId.value = backendsconfig.hubId;
-  backends.value = backendsconfig.backends;
+  const storageprofile = await backend.storageprofile.get();
+  hubId.value = storageprofile.hubId;
+  backends.value = storageprofile.backends;
   selectedBackend.value = backends.value[0];
   setRegionsOnSelectStorage(selectedBackend.value);
   selectedRegion.value = selectedBackend.value.region;

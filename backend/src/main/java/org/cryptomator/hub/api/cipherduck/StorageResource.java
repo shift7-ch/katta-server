@@ -31,9 +31,6 @@ public class StorageResource {
 	private static final Logger LOG = Logger.getLogger(StorageResource.class);
 
 	@Inject
-	BackendsConfig backendsConfig;
-
-	@Inject
 	SyncerConfig syncerConfig;
 
 	@Inject
@@ -52,15 +49,15 @@ public class StorageResource {
 	@Operation(summary = "creates bucket and policy", description = "creates an S3 bucket and uploads policy for it.")
 	@APIResponse(responseCode = "200", description = "uploaded storage configuration")
 	@APIResponse(responseCode = "400", description = "Could not create bucket")
-	public Response createBucket(@PathParam("vaultId") UUID vaultId, StorageDto dto) {
+	public Response createBucket(@PathParam("vaultId") UUID vaultId, StorageDto storage) {
 
-		final Map<String, StorageConfig> storageConfigs = backendsConfig.backends().stream().collect(Collectors.toMap(StorageConfig::id, Function.identity()));
-		final StorageConfig storageConfig = storageConfigs.get(dto.storageConfigId());
+		final Map<String, StorageProfileDto> storageConfigs = cipherduckConfig.inMemoryStorageConfigs.stream().collect(Collectors.toMap(StorageProfileDto::id, Function.identity()));
+		final StorageProfileDto storageProfile = storageConfigs.get(storage.storageConfigId());
 
 		// N.B. if the bucket already exists, this will fail, so we do not prevent calling this method several times.
-		makeS3Bucket(storageConfig, dto);
+		makeS3Bucket(storageProfile, storage);
 
-		keycloakPrepareVault(syncerConfig, vaultId.toString(), storageConfig, jwt.getSubject(), cipherduckConfig.keycloakClientIdCryptomatorVaults());
+		keycloakPrepareVault(syncerConfig, vaultId.toString(), storageProfile, jwt.getSubject(), cipherduckConfig.keycloakClientIdCryptomatorVaults());
 
 		return Response.created(URI.create(".")).build();
 	}

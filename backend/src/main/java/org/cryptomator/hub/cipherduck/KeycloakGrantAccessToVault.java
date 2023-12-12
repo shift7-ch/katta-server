@@ -4,7 +4,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.ws.rs.core.Response;
 import org.cryptomator.hub.SyncerConfig;
 import org.cryptomator.hub.api.VaultResource;
-import org.cryptomator.hub.api.cipherduck.StorageConfig;
+import org.cryptomator.hub.api.cipherduck.StorageProfileDto;
 import org.cryptomator.hub.entities.Group;
 import org.cryptomator.hub.entities.Vault;
 import org.jboss.logging.Logger;
@@ -19,7 +19,6 @@ import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,7 +30,7 @@ public class KeycloakGrantAccessToVault {
 
 	private static final Logger LOG = Logger.getLogger(KeycloakGrantAccessToVault.class);
 
-	public static void keycloakPrepareVault(final SyncerConfig syncerConfig, final String vaultId, final StorageConfig storageConfig, final String userOrGroupId, final String clientId) {
+	public static void keycloakPrepareVault(final SyncerConfig syncerConfig, final String vaultId, final StorageProfileDto storageConfig, final String userOrGroupId, final String clientId) {
 
 		// N.B. quarkus has no means to provide empty string as value, interpreted as no value, see https://github.com/quarkusio/quarkus/issues/2765
 		// TODO review better solution than using sentinel string "empty"?
@@ -45,8 +44,8 @@ public class KeycloakGrantAccessToVault {
 			// https://www.keycloak.org/docs-api/21.1.1/rest-api
 			final RealmResource realm = keycloak.realm(syncerConfig.getKeycloakRealm());
 
-			final boolean minio = storageConfig.jwe().stsRoleArn().isPresent() && storageConfig.jwe().stsRoleArn2().isEmpty();
-			final boolean aws = storageConfig.jwe().stsRoleArn().isPresent() && storageConfig.jwe().stsRoleArn2().isPresent();
+			final boolean minio = storageConfig.stsRoleArn()!=null && storageConfig.stsRoleArn2() ==null;
+			final boolean aws = storageConfig.stsRoleArn() !=null && storageConfig.stsRoleArn2() != null;
 
 			ClientScopeResource clientScopeResource = realm.clientScopes().get(vaultId);
 

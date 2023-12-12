@@ -218,7 +218,7 @@ export type ConfigDto = {
     apiLevel: number;
 }
 
-export type BackendsConfigDto = {
+export type StorageProfileDto = {
     hubId: string;
     backends: StorageConfig[];
 }
@@ -441,9 +441,9 @@ class StorageService {
     return axiosAuth.put(`/storage/${vaultId}/`, dto);
   }
 }
-class BackendsConfigService {
-  public async get(): Promise<BackendsConfigDto> {
-    return axiosAuth.get<BackendsConfigDto>('/backendsconfig/')
+class StorageProfileService {
+  public async get(): Promise<StorageProfileDto> {
+    return axiosAuth.get<StorageProfileDto>('/storageprofile/')
     .then(response => response.data);
   }
 }
@@ -473,7 +473,7 @@ const services = {
 
   // / start cipherduck extension
   ,storage: new StorageService()
-  ,backendsconfig: new BackendsConfigService()
+  ,storageprofiles: new StorageProfileService()
   ,config: new ConfigService()
   // \ end cipherduck extension
 };

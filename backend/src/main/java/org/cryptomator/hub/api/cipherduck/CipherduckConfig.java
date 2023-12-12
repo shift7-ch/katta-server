@@ -5,6 +5,9 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
+import java.util.ArrayList;
+import java.util.List;
+
 // TODO review: backport to ConfigResource.ConfigDto upstream?
 @ApplicationScoped
 public class CipherduckConfig {
@@ -36,6 +39,8 @@ public class CipherduckConfig {
 
 	@Inject
 	OidcConfigurationMetadata oidcConfData;
+
+	public List<StorageProfileDto> inMemoryStorageConfigs = new ArrayList<>();
 
 	String replacePrefix(String str, String prefix, String replacement) {
 		int index = str.indexOf(prefix);
