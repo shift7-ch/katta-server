@@ -28,8 +28,8 @@ This is not a problem as we leave the claim specifying the vault unset or pointi
 
 ```shell
 mc alias set myminio http://127.0.0.1:9000 minioadmin minioadmin
-mc admin policy create myminio cipherduckcreatebucket src/main/resources/cipherduck/setup/minio/createbucketpolicy.json
-mc admin policy create myminio cipherduckaccessbucket src/main/resources/cipherduck/setup/minio/accessbucketpolicy.json
+mc admin policy create myminio cipherduckcreatebucket src/main/resources/cipherduck/setup/minio_sts/createbucketpolicy.json
+mc admin policy create myminio cipherduckaccessbucket src/main/resources/cipherduck/setup/minio_sts/accessbucketpolicy.json
 ```
 
 Add a new OIDC provider using the policy:
@@ -58,7 +58,7 @@ mc admin service restart myminio
 Extract the policy ARN:
 
 ```shell
-mc idp openid ls myminio                                                                                                                                                                                                                                                                                                    feature/cipherduck
+mc idp openid ls myminio 
 ╭──────────────────────────────────────────────────────────────────────────╮
 │ On?        Name                             RoleARN                      │
 │ 🔴           (default)                                                   │
@@ -68,7 +68,7 @@ mc idp openid ls myminio                                                        
 ╰──────────────────────────────────────────────────────────────────────────╯
 
 
- mc idp openid info myminio cryptomator                                                                                                                                                                                                                                                                                      feature/cipherduck
+ mc idp openid info myminio cryptomator
 ╭─────────────────────────────────────────────────────────────────────────────────────────────────────────╮
 │    client_id: cryptomator                                                                               │
 │client_secret: ignore-me                                                                                 │
@@ -177,17 +177,17 @@ Add roles for role chaining, adapt OIDC provider in trust policy and bucket pref
 * [aws/cipherduck_chain_02_permissionpolicy.json](setup%2Faws%2Fcipherduck_chain_02_permissionpolicy.json)
 
 ```shell
-aws iam create-role --role-name cipherduck-createbucket --assume-role-policy-document file://src/main/resources/cipherduck/setup/aws/createbuckettrustpolicy.json
-aws iam put-role-policy --role-name cipherduck-createbucket --policy-name cipherduck-createbucket --policy-document file://src/main/resources/cipherduck/setup/aws/createbucketpermissionpolicy.json
+aws iam create-role --role-name cipherduck-createbucket --assume-role-policy-document file://src/main/resources/cipherduck/setup/aws_stscreatebuckettrustpolicy.json
+aws iam put-role-policy --role-name cipherduck-createbucket --policy-name cipherduck-createbucket --policy-document file://src/main/resources/cipherduck/setup/aws_stscreatebucketpermissionpolicy.json
 
 
-aws iam create-role --role-name cipherduck_chain_01 --assume-role-policy-document file://src/main/resources/cipherduck/setup/aws/cipherduck_chain_01_trustpolicy.json
-aws iam put-role-policy --role-name cipherduck_chain_01 --policy-name cipherduck_chain_01 --policy-document file://src/main/resources/cipherduck/setup/aws/cipherduck_chain_01_permissionpolicy.json
+aws iam create-role --role-name cipherduck_chain_01 --assume-role-policy-document file://src/main/resources/cipherduck/setup/aws_stscipherduck_chain_01_trustpolicy.json
+aws iam put-role-policy --role-name cipherduck_chain_01 --policy-name cipherduck_chain_01 --policy-document file://src/main/resources/cipherduck/setup/aws_stscipherduck_chain_01_permissionpolicy.json
 
 sleep 10;
 
-aws iam create-role --role-name cipherduck_chain_02 --assume-role-policy-document file://src/main/resources/cipherduck/setup/aws/cipherduck_chain_02_trustpolicy.json
-aws iam put-role-policy --role-name cipherduck_chain_02 --policy-name cipherduck_chain_02 --policy-document file://src/main/resources/cipherduck/setup/aws/cipherduck_chain_02_permissionpolicy.json
+aws iam create-role --role-name cipherduck_chain_02 --assume-role-policy-document file://src/main/resources/cipherduck/setup/aws_stscipherduck_chain_02_trustpolicy.json
+aws iam put-role-policy --role-name cipherduck_chain_02 --policy-name cipherduck_chain_02 --policy-document file://src/main/resources/cipherduck/setup/aws_stscipherduck_chain_02_permissionpolicy.json
 ```
 
 Checking roles:
@@ -240,6 +240,20 @@ Hub Configuration (`application.properties`) and Vault JWE
 
 Note that properties in `application.properties` use dashed notation instead of Camel Case in JWE and Java Dtos,
 see [Quarkus Config Reference Guid](https://quarkus.io/guides/config-reference) for details.
+
+
+
+```
+curl -X PUT http://localhost:8080/api/storageprofile/ -d @setup/minio_sts/minio_sts_profile.json -v  -H "Content-Type: application/json"
+curl -X PUT http://localhost:8080/api/storageprofile/ -d @setup/minio_static/minio_static_profile.json -v  -H "Content-Type: application/json"
+curl -X PUT http://localhost:8080/api/storageprofile/ -d @setup/aws_static/aws_static_profile.json -v  -H "Content-Type: application/json"
+curl -X PUT http://localhost:8080/api/storageprofile/ -d @setup/aws_sts/aws_sts_profile.json -v  -H "Content-Type: application/json"
+curl  http://localhost:8080/api/storageprofile/
+```
+
+
+
+
 
 ### (0) backend configuration
 

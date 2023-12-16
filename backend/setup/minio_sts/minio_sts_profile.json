@@ -1,5 +1,4 @@
 {
-  "id": "8fe86719022530493c3c1b852a2c0b6748781f69",
   "name": "MinIO S3 STS",
   "bucketPrefix": "cipherduck",
   "region": "eu-central-1",
@@ -17,6 +16,7 @@
   "stsRoleArnHub": "arn:minio:iam:::role/HGKdlY4eFFsXVvJmwlMYMhmbnDE",
   "stsRoleArnClient": "arn:minio:iam:::role/IqZpDC5ahW_DCAvZPZA4ACjEnDE",
   "stsEndpoint": "http://minio:9000",
+
   "protocol": "s3-sts",
   "scheme": "http",
   "hostname": "minio",

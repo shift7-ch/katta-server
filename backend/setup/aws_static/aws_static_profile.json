@@ -1,0 +1,5 @@
+{
+  "name": "AWS S3 static",
+  "region": "eu-central-1",
+  "protocol": "s3"
+}

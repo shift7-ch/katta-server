@@ -2,11 +2,13 @@ package org.cryptomator.hub.api.cipherduck;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.util.UUID;
+
 public record StorageDto(
 		@JsonProperty("vaultId")
 		String vaultId,
 		@JsonProperty("storageConfigId")
-		String storageConfigId,
+		UUID storageConfigId,
 		@JsonProperty("vaultConfigToken")
 		String vaultConfigToken,
 		@JsonProperty("rootDirHash")

@@ -4,7 +4,7 @@ import { JWEBuilder, JWEParser } from './jwe';
 import { CRC32, DB, wordEncoder } from './util';
 
 // / start cipherduck extension
-import { VaultJWEBackend } from './backend';
+import { VaultJWEBackendDto } from './backend';
 // \ end cipherduck extension
 
 export class UnwrapKeyError extends Error {
@@ -38,7 +38,7 @@ interface JWEPayload {
   key: string
 
   // / start cipherduck extension
-  ,backend?: VaultJWEBackend
+  ,backend?: VaultJWEBackendDto
   // \ end cipherduck extension
 }
 
@@ -58,14 +58,14 @@ export class VaultKeys {
   readonly masterKey: CryptoKey;
 
   // / start cipherduck extension
-  storage?: VaultJWEBackend;
+  storage?: VaultJWEBackendDto;
   // \ end cipherduck extension
 
 
 
   protected constructor(masterkey: CryptoKey
     // / start cipherduck extension
-    ,storage?: VaultJWEBackend
+    ,storage?: VaultJWEBackendDto
     // \ end cipherduck extension
   ) {
     this.masterKey = masterkey;

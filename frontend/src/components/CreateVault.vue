@@ -357,6 +357,7 @@ import { VaultKeys } from '../common/crypto';
 import { debounce } from '../common/util';
 import { VaultConfig } from '../common/vaultconfig';
 // / start cipherduck extension
+import { StorageProfileDto, VaultJWEBackendDto } from '../common/backend';
 import {
      Listbox,
      ListboxButton,
@@ -414,13 +415,11 @@ const props = defineProps<{
 }>();
 
 // / start cipherduck extension
-import { StorageConfig } from '../common/backend';
-const selectedBackend = ref<StorageConfig | null >(null);
+const selectedBackend = ref<StorageProfileDto | null >(null);
 const selectedRegion = ref<string | undefined>();
 const isPermanent = ref(false);
 const regions = ref<string[] | undefined>();
-const backends = ref<StorageConfig[] | null>(null);
-const hubId = ref('');
+const backends = ref<StorageProfileDto[] | null>(null);
 const vaultAccessKeyId = ref('');
 const vaultSecretKey = ref('');
 const vaultBucketName = ref('');
@@ -439,9 +438,7 @@ async function initialize() {
     state.value = State.EnterVaultDetails;
   }
   // / start cipherduck extension
-  const storageprofile = await backend.storageprofile.get();
-  hubId.value = storageprofile.hubId;
-  backends.value = storageprofile.backends;
+  backends.value = await backend.storageprofiles.get();
   selectedBackend.value = backends.value[0];
   setRegionsOnSelectStorage(selectedBackend.value);
   selectedRegion.value = selectedBackend.value.region;
@@ -502,20 +499,25 @@ async function createVault() {
     if (!selectedBackend.value) {
       throw new Error('Invalid state');
     }
-    const config = selectedBackend.value;
-
-    config["jwe"]["defaultPath"] = config["bucketPrefix"] + vaultId;
-    config["jwe"]["uuid"] = vaultId;
-    config["jwe"]["nickname"] = vaultName.value;
-    config["jwe"]["automaticAccessGrant"] = automaticAccessGrant.value;
-
+    if (!selectedRegion.value) {
+      throw new Error('Invalid state');
+    }
+    const apiconfig = await backend.config.config();
+    const storage: VaultJWEBackendDto = {
+        "provider": selectedBackend.value.id,
+        "defaultPath": selectedBackend.value.bucketPrefix + vaultId,
+        "uuid": vaultId,
+        "nickname": vaultName.value,
+        "region": selectedRegion.value,
+        "automaticAccessGrant": automaticAccessGrant.value
+    }
     if(isPermanent.value){
-        config["jwe"]["username"] = vaultAccessKeyId.value;
-        config["jwe"]["password"] = vaultSecretKey.value;
-        config["jwe"]["defaultPath"] = vaultBucketName.value;
+        storage.username = vaultAccessKeyId.value;
+        storage.password = vaultSecretKey.value;
+        storage.defaultPath = vaultBucketName.value;
     }
 
-    vaultKeys.value.storage = config["jwe"];
+    vaultKeys.value.storage = storage;
     // \ end cipherduck extension
 
     const ownerJwe = await vaultKeys.value.encryptForUser(base64.parse(owner.publicKey));
@@ -529,19 +531,17 @@ async function createVault() {
        return;
     }
 
-    if (!selectedRegion.value) {
-      throw new Error('Invalid state');
-    }
+
 
     // N.B. the access tokens for cryptomator and cryptomator hub clients do only have realm roles added to them, but not client roles.
     //      We use client roles for vaults shared with a user. So this setup prevents access tokens from growing with new vaults.
     const token = await authPromise.then(auth => auth.bearerToken());
 
     // https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/clients/client-sts/classes/stsclient.html
-    config["jwe"]["region"] = selectedRegion.value;
+
     const stsClient = new STSClient({
-        region: config["jwe"]["region"],
-        endpoint: config["stsEndpoint"]
+        region: selectedRegion.value,
+        endpoint: selectedBackend.value.stsEndpoint
     });
 
     // https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/clients/client-sts/classes/assumerolewithwebidentitycommand.html
@@ -576,9 +576,9 @@ async function createVault() {
             ]
           }
         ]
-      }`.replaceAll("{}", config["jwe"]["defaultPath"]),
+      }`.replaceAll("{}", storage.defaultPath),
       // Required. ARN of the role that the caller is assuming.
-      RoleArn: config["stsRoleArnHub"]
+      RoleArn: selectedBackend.value.stsRoleArnHub
     }
 
 
@@ -605,7 +605,7 @@ async function createVault() {
     // TODO review what happens if bucket creation fails after successful vault creation? - merge with PUT vault service?
     await backend.storage.put(vaultId, {
         vaultId: vaultId,
-        storageConfigId: config.id,
+        storageConfigId: selectedBackend.value.id,
         vaultConfigToken: vaultConfig.value.vaultConfigToken,
         rootDirHash: rootDirHash,
         // https://github.com/awslabs/smithy-typescript/blob/697310da9aec949034f92598f5cefc2cc162ef4d/packages/types/src/identity/awsCredentialIdentity.ts#L24
@@ -666,7 +666,7 @@ async function openBookmark() {
   }
 }
 
-function setRegionsOnSelectStorage(storage: StorageConfig){
+function setRegionsOnSelectStorage(storage: StorageProfileDto){
     console.log('selected storage ' + storage.name);
     regions.value = storage.regions;
     console.log('   available regions: ' + storage.regions);
@@ -685,10 +685,10 @@ async function uploadVaultTemplate() {
     if (!selectedBackend.value) {
         throw new Error('Invalid state.');
     }
-    const config = selectedBackend.value;
+    const endpoint = (selectedBackend.value.scheme && selectedBackend.value.hostname && selectedBackend.value.port) ? `${selectedBackend.value.scheme}://${selectedBackend.value.hostname}:${selectedBackend.value.port}` : null;
     const client = new S3Client({
         region: selectedRegion.value,
-        endpoint: config.s3Endpoint,
+        endpoint: endpoint,
         forcePathStyle: true,
         credentials:{
             accessKeyId: vaultAccessKeyId.value,

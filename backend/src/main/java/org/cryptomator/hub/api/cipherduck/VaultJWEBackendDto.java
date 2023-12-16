@@ -1,42 +1,38 @@
 package org.cryptomator.hub.api.cipherduck;
 
-import java.util.Optional;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
+// TODO https://github.com/shift7-ch/cipherduck-hub/issues/4 (R3) move to client altogether?
 
-// TODO we actually don't need it here - only for code generation in client
+/**
+ * Part of vault JWE specifying the vault bookmark.
+ * Allows to create a bookmark in the client referencing the vendor in the storage profiles.
+ * This Java record is unused in hub, only its ts counterpart in `backend.ts`.
+ * It will used in Cipherduck client in the OpenAPI generator.
+ */
 public record VaultJWEBackendDto(
 
-		// (1) bookmark properties -> 7
-		String provider, // references vendor in backend config
-		Optional<String> defaultPath,
-		Optional<String> nickname,
-		Optional<String> uuid,
+		@JsonProperty(value = "provider", required = true)
+		// references vendor in VaultJWEBackendDto (coming from id in StorageProfileDto)
+		String provider,
+		@JsonProperty(value = "defaultPath", required = true)
+		String defaultPath,
+		@JsonProperty(value = "nickname", required = true)
+		String nickname,
+		@JsonProperty(value = "uuid", required = true)
+		String uuid,
+		@JsonProperty(value = "region", required = true)
+		String region,
 
-		// if overridden in bookmark
-		Optional<String> region,
 
+		@JsonProperty(value = "username")
+		// for non-STS
+		String username,
+		@JsonProperty(value = "password")
+		// for non-STS
+		String password,
 
-		// (4) keychain credentials -> 2
-		Optional<String> username,
-
-		Optional<String> password,
-
-		// (5) misc -> 1
-		Optional<Boolean> automaticAccessGrant
+		@JsonProperty(value = "automaticAccessGrant", required = true)
+		Boolean automaticAccessGrant
 ) {
-
-
-//	public VaultJWEBackendDto(VaultJWEBackend s, final Optional<String> oAuthAuthorizationUrl, final Optional<String> oAuthTokenUrl, final Optional<String> oAuthClientId, final Optional<String> oAuthTokenExchangeAudience, final String hubId) {
-//		this(
-//				s.protocol(), s.provider(), s.defaultPath(), s.nickname(), s.uuid(), s.hostname(), s.port(), oAuthClientId, oAuthTokenUrl, oAuthAuthorizationUrl, s.stsEndpoint(), s.region(),
-//				s.stsRoleArn(),
-//				s.stsRoleArn2(),
-//				s.stsDurationSeconds(),
-//				Optional.of(hubId),
-//				oAuthTokenExchangeAudience,
-//				s.username(),
-//				s.password(),
-//				s.automaticAccessGrant()
-//		);
-//	}
 }

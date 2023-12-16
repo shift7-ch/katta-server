@@ -1,0 +1,15 @@
+{
+  "name": "AWS S3 STS",
+  "bucketPrefix": "cipherduck",
+  "stsRoleArnHub": "arn:aws:iam::930717317329:role/cipherduck-createbucket",
+  "stsRoleArnClient": "arn:aws:iam::930717317329:role/cipherduck-createbucket",
+  "region": "eu-west-1",
+  "regions": [
+    "eu-west-1",
+    "eu-west-2",
+    "eu-west-3"
+  ],
+  "protocol": "s3-sts",
+  "stsRoleArn": "arn:aws:iam::930717317329:role/cipherduck_chain_01",
+  "stsRoleArn2": "arn:aws:iam::930717317329:role/cipherduck_chain_02"
+}

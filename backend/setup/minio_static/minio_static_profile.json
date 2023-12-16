@@ -1,0 +1,9 @@
+{
+  "name": "MinIO S3 static",
+  "s3Endpoint": "http://minio:9000",
+  "protocol": "s3",
+  "withPathStyleAccessEnabled": "true",
+  "hostname": "minio",
+  "port": "9000",
+  "scheme": "http"
+}

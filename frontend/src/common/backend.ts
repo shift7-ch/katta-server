@@ -216,13 +216,10 @@ export type ConfigDto = {
     keycloakTokenEndpoint: string;
     serverTime: string;
     apiLevel: number;
+    uuid: string;
 }
 
 export type StorageProfileDto = {
-    hubId: string;
-    backends: StorageConfig[];
-}
-export type StorageConfig = {
     id: string;
     name: string;
     bucketPrefix: string;
@@ -232,39 +229,31 @@ export type StorageConfig = {
     region: string;
     regions: string[];
     withPathStyleAccessEnabled: boolean;
-    s3Endpoint: string;
-    jwe: VaultJWEBackend;
-}
-export type VaultJWEBackend = {
-    // (1) bookmark properties -> 7
+    scheme: string;
+    hostname: string;
+    port: number;
     protocol: string;
+    oauthClientId: string;
+    oauthTokenUrl: string;
+    oauthAuthorizationUrl: string;
+    stsRoleArn: string;
+    stsRoleArn2: string;
+    stsDurationSeconds: number;
+    oAuthTokenExchangeAudience: number;
+}
+
+export type VaultJWEBackendDto = {
     provider: string;
 
-    hostname: string;
-    port: string;
     defaultPath: string;
     nickname: string;
     uuid: string;
 
-    // (2) protocol settings (go into bookmark's custom properties) -> 5
-    oAuthAuthorizationUrl: string;
-    oAuthTokenUrl: string;
-    oAuthClientId: string;
-    stsEndpoint: string;
     region: string;
 
-    // (3) boookmark custom properties -> 5
-    stsRoleArn: string;
-    stsRoleArn2: string;
-    stsDurationSeconds: string;
-    parentUUID: string;
-    oAuthTokenExchangeAudience: string;
+    username?: string;
+    password?: string;
 
-    // (4) keychain credentials -> 2
-    username: string;
-    password: string;
-
-    // (5) misc -> 1
     automaticAccessGrant: string;
 }
 // \ end cipherduck extension
@@ -442,17 +431,13 @@ class StorageService {
   }
 }
 class StorageProfileService {
-  public async get(): Promise<StorageProfileDto> {
-    return axiosAuth.get<StorageProfileDto>('/storageprofile/')
+  public async get(): Promise<StorageProfileDto[]> {
+    return axiosAuth.get<StorageProfileDto[]>('/storageprofile/')
     .then(response => response.data);
   }
 }
 export const axiosUnAuth = AxiosStatic.create(axiosBaseCfg)
 class ConfigService {
-  public async cipherduckhubbookmark(): Promise<string> {
-    return axiosUnAuth.get('/config/cipherduckhubbookmark')
-      .then(response => response.data);
-  }
   public async config(): Promise<ConfigDto> {
       return axiosUnAuth.get('/config')
         .then(response => response.data);

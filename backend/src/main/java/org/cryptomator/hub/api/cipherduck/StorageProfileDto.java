@@ -1,85 +1,108 @@
 package org.cryptomator.hub.api.cipherduck;
 
+import com.amazonaws.regions.Regions;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonValue;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 
+
+// TODO https://github.com/shift7-ch/cipherduck-hub/issues/4 (R3) update documentation
 public class StorageProfileDto {
-	// TODO auto-generate in DB -
-	// clients will use this as vendor in profile and provider in vault bookmark
+	public enum Protocol {
+		s3("s3"),
+		s3sts("s3-sts");
+		private final String protocol;
+
+		private Protocol(final String protocol){
+			this.protocol = protocol;
+		}
+		@JsonValue
+		public String getProtocol() {
+			return protocol;
+		}
+
+	}
+
+
+	// (1) bucket creation
+	// TODO https://github.com/shift7-ch/cipherduck-hub/issues/4 (R3) auto-generate in DB
+
 	@JsonProperty(value = "id", required = true)
-			String id;
+	UUID id; // clients will use this as vendor in profile and provider in vault bookmark
 
 	@JsonProperty(value = "name", required = true)
 	String name;
 
-	@JsonProperty("bucketPrefix")
-	String bucketPrefix;
+	@JsonProperty(value = "bucketPrefix")
+	String bucketPrefix; // not required if we  do not create bucket (non-STS case)
 
 	@JsonProperty("stsRoleArnClient")
-	String stsRoleArnClient;
+	String stsRoleArnClient; // not required if we  do not create bucket (non-STS case)
 
-	@JsonProperty("stsRoleArnHub")
+	@JsonProperty("stsRoleArnHub") // not required if we  do not create bucket (non-STS case)
 	String stsRoleArnHub;
 
 	@JsonProperty("stsEndpoint")
-	String stsEndpoint;
+	String stsEndpoint; // not required if we  do not create bucket (non-STS case)
 
-	@JsonProperty("region")
-	String region;
+	@JsonProperty(value = "region")
+	String region = "us-east-1";  // default region selected in the frontend/client
 
 	@JsonProperty(value = "regions")
-	List<String> regions;
+	List<String> regions = Arrays.stream(Regions.values()).map(r -> r.getName()).toList(); // defaults to full list injected
 
 
-	@JsonProperty(value = "withPathStyleAccessEnabled", defaultValue = "false")
-	Boolean withPathStyleAccessEnabled;
+	@JsonProperty(value = "withPathStyleAccessEnabled")
+	Boolean withPathStyleAccessEnabled = false; // not required if we  do not create bucket (non-STS case)
 
+
+	// (2) bucket creation and client profile
 	@JsonProperty("scheme")
-	String scheme;
+	String scheme; // defaults to AWS
 
 	@JsonProperty("hostname")
-	String hostname;
+	String hostname;  // defaults to AWS
 
-	@JsonProperty("port")
+	@JsonProperty("port") // defaults to AWS
 	Integer port;
 
-	@JsonProperty(value = "protocol", required = true)
-	String protocol;
+	@JsonProperty(value = "protocol")
+	Protocol protocol = Protocol.s3sts;
 
 
-
-	// (2) protocol withtings (go into bookmark's custom properties) -> 5
+	// (3) client profile
 	@JsonProperty(value = "oauthClientId")
-	String oauthClientId; // injected from hub config
+	String oauthClientId; // injected from hub config if STS
 
 	@JsonProperty(value = "oauthTokenUrl")
-	String oauthTokenUrl; // injected from hub config
+	String oauthTokenUrl; // injected from hub config if STS
 
 	@JsonProperty(value = "oauthAuthorizationUrl")
-	String oauthAuthorizationUrl; // injected from hub config
+	String oauthAuthorizationUrl; // injected from hub config if STS
 
 
-	// (3) boookmark custom properties -> 5
+	// (3) client profile custom properties
 	@JsonProperty(value = "stsRoleArn")
-	String stsRoleArn; // X
+	String stsRoleArn; // token exchange
 
 	@JsonProperty(value = "stsRoleArn2")
-	String stsRoleArn2; // X
+	String stsRoleArn2; // role chaining AWS STS
 
-	// TODO default?
 	@JsonProperty(value = "stsDurationSeconds")
-	Integer stsDurationSeconds; // X
+	Integer stsDurationSeconds = 900;
 
 	@JsonProperty(value = "oAuthTokenExchangeAudience")
 	String oAuthTokenExchangeAudience; // injected from hub config
 
 
-	public String id() {
+	public UUID id() {
 		return id;
 	}
 
-	public StorageProfileDto withId(String id) {
+	public StorageProfileDto withId(UUID id) {
 		this.id = id;
 		return this;
 	}
@@ -183,11 +206,11 @@ public class StorageProfileDto {
 		return this;
 	}
 
-	public String protocol() {
+	public Protocol protocol() {
 		return protocol;
 	}
 
-	public StorageProfileDto withProtocol(String protocol) {
+	public StorageProfileDto withProtocol(Protocol protocol) {
 		this.protocol = protocol;
 		return this;
 	}
