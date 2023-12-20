@@ -1,6 +1,6 @@
 {
+  "id":"71B910E0-2ECC-46DE-A871-8DB28549677E",
   "name": "MinIO S3 static",
-  "s3Endpoint": "http://minio:9000",
   "protocol": "s3",
   "withPathStyleAccessEnabled": "true",
   "hostname": "minio",

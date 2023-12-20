@@ -3,22 +3,29 @@ package org.cryptomator.hub.api.cipherduck;
 import com.amazonaws.regions.Regions;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
+import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
 
-// TODO https://github.com/shift7-ch/cipherduck-hub/issues/4 (R3) update documentation
-public class StorageProfileDto {
+@Entity
+@Table(name = "storage_profile")
+public class StorageProfileDto extends PanacheEntityBase {
 	public enum Protocol {
 		s3("s3"),
 		s3sts("s3-sts");
 		private final String protocol;
 
-		private Protocol(final String protocol){
+		private Protocol(final String protocol) {
 			this.protocol = protocol;
 		}
+
 		@JsonValue
 		public String getProtocol() {
 			return protocol;
@@ -27,53 +34,52 @@ public class StorageProfileDto {
 	}
 
 
-	// (1) bucket creation
-	// TODO https://github.com/shift7-ch/cipherduck-hub/issues/4 (R3) auto-generate in DB
-
+	@Id
+	@Column(name = "id", nullable = false)
 	@JsonProperty(value = "id", required = true)
 	UUID id; // clients will use this as vendor in profile and provider in vault bookmark
 
 	@JsonProperty(value = "name", required = true)
 	String name;
 
-	@JsonProperty(value = "bucketPrefix")
-	String bucketPrefix; // not required if we  do not create bucket (non-STS case)
-
-	@JsonProperty("stsRoleArnClient")
-	String stsRoleArnClient; // not required if we  do not create bucket (non-STS case)
-
-	@JsonProperty("stsRoleArnHub") // not required if we  do not create bucket (non-STS case)
-	String stsRoleArnHub;
-
-	@JsonProperty("stsEndpoint")
-	String stsEndpoint; // not required if we  do not create bucket (non-STS case)
-
-	@JsonProperty(value = "region")
-	String region = "us-east-1";  // default region selected in the frontend/client
-
-	@JsonProperty(value = "regions")
-	List<String> regions = Arrays.stream(Regions.values()).map(r -> r.getName()).toList(); // defaults to full list injected
-
-
-	@JsonProperty(value = "withPathStyleAccessEnabled")
-	Boolean withPathStyleAccessEnabled = false; // not required if we  do not create bucket (non-STS case)
-
-
-	// (2) bucket creation and client profile
+	// (1) bucket creation, template upload and client profile
 	@JsonProperty("scheme")
 	String scheme; // defaults to AWS
 
 	@JsonProperty("hostname")
 	String hostname;  // defaults to AWS
 
-	@JsonProperty("port") // defaults to AWS
-	Integer port;
+	@JsonProperty("port")
+	Integer port; // defaults to AWS
 
-	@JsonProperty(value = "protocol")
-	Protocol protocol = Protocol.s3sts;
+	@JsonProperty(value = "region")
+	String region = "us-east-1";  // default region selected in the frontend/client
+
+	@JsonProperty(value = "regions")
+	List<String> regions = Arrays.stream(Regions.values()).map(r -> r.getName()).toList(); // defaults to full AWS list
+
+	@JsonProperty(value = "withPathStyleAccessEnabled")
+	Boolean withPathStyleAccessEnabled = false;
+
+
+	// (2) bucket creation only (i.e. STS-case)
+	@JsonProperty(value = "bucketPrefix")
+	String bucketPrefix;
+
+	@JsonProperty("stsRoleArnClient")
+	String stsRoleArnClient;
+
+	@JsonProperty("stsRoleArnHub")
+	String stsRoleArnHub;
+
+	@JsonProperty("stsEndpoint")
+	String stsEndpoint; // defaults to AWS
 
 
 	// (3) client profile
+	// (3a) client profile attributes
+	@JsonProperty(value = "protocol")
+	Protocol protocol = Protocol.s3sts;
 	@JsonProperty(value = "oauthClientId")
 	String oauthClientId; // injected from hub config if STS
 
@@ -84,7 +90,7 @@ public class StorageProfileDto {
 	String oauthAuthorizationUrl; // injected from hub config if STS
 
 
-	// (3) client profile custom properties
+	// (3b) client profile custom properties
 	@JsonProperty(value = "stsRoleArn")
 	String stsRoleArn; // token exchange
 

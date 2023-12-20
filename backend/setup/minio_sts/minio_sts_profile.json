@@ -1,4 +1,5 @@
 {
+  "id": "732D43FA-3716-46C4-B931-66EA5405EF1C",
   "name": "MinIO S3 STS",
   "bucketPrefix": "cipherduck",
   "region": "eu-central-1",

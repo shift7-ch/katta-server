@@ -13,14 +13,14 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public record VaultJWEBackendDto(
 
 		@JsonProperty(value = "provider", required = true)
-		// references vendor in VaultJWEBackendDto (coming from id in StorageProfileDto)
+		// references id in StorageProfileDto (aka. vendor in client profile)
 		String provider,
 		@JsonProperty(value = "defaultPath", required = true)
 		String defaultPath,
 		@JsonProperty(value = "nickname", required = true)
 		String nickname,
 		@JsonProperty(value = "uuid", required = true)
-		String uuid,
+		String uuid, // vault UUID, will be used as bookmark UUID
 		@JsonProperty(value = "region", required = true)
 		String region,
 

@@ -51,7 +51,7 @@ public class StorageResource {
 	@APIResponse(responseCode = "400", description = "Could not create bucket")
 	public Response createBucket(@PathParam("vaultId") UUID vaultId, StorageDto storage) {
 
-		final Map<UUID, StorageProfileDto> storageConfigs = cipherduckConfig.inMemoryStorageConfigs.stream().collect(Collectors.toMap(StorageProfileDto::id, Function.identity()));
+		final Map<UUID, StorageProfileDto> storageConfigs = StorageProfileDto.findAll().<StorageProfileDto>stream().collect(Collectors.toMap(StorageProfileDto::id, Function.identity()));
 		final StorageProfileDto storageProfile = storageConfigs.get(storage.storageConfigId());
 
 		// N.B. if the bucket already exists, this will fail, so we do not prevent calling this method several times.

@@ -40,8 +40,6 @@ public class CipherduckConfig {
 	@Inject
 	OidcConfigurationMetadata oidcConfData;
 
-	public List<StorageProfileDto> inMemoryStorageConfigs = new ArrayList<>();
-
 	String replacePrefix(String str, String prefix, String replacement) {
 		int index = str.indexOf(prefix);
 		if (index == 0) {

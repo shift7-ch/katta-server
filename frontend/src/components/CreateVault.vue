@@ -689,7 +689,7 @@ async function uploadVaultTemplate() {
     const client = new S3Client({
         region: selectedRegion.value,
         endpoint: endpoint,
-        forcePathStyle: true,
+        forcePathStyle: selectedBackend.value.withPathStyleAccessEnabled,
         credentials:{
             accessKeyId: vaultAccessKeyId.value,
             secretAccessKey: vaultSecretKey.value
