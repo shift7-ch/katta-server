@@ -1,7 +1,7 @@
 {
   "id":"71B910E0-2ECC-46DE-A871-8DB28549677E",
   "name": "MinIO S3 static",
-  "protocol": "s3",
+  "protocol": "s3-hub",
   "withPathStyleAccessEnabled": "true",
   "hostname": "minio",
   "port": "9000",

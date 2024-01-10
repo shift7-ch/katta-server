@@ -2,5 +2,5 @@
   "id": "72736C19-283C-49D3-80A5-AB74B5202543",
   "name": "AWS S3 static",
   "region": "eu-central-1",
-  "protocol": "s3"
+  "protocol": "s3-hub"
 }

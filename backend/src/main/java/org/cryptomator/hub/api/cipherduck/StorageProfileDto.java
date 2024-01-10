@@ -18,8 +18,8 @@ import java.util.UUID;
 @Table(name = "storage_profile")
 public class StorageProfileDto extends PanacheEntityBase {
 	public enum Protocol {
-		s3("s3"),
-		s3sts("s3-sts");
+		s3("s3-hub"),
+		s3sts("s3-hub-sts");
 		private final String protocol;
 
 		private Protocol(final String protocol) {
@@ -98,7 +98,7 @@ public class StorageProfileDto extends PanacheEntityBase {
 	String stsRoleArn2; // role chaining AWS STS
 
 	@JsonProperty(value = "stsDurationSeconds")
-	Integer stsDurationSeconds = 900;
+	Integer stsDurationSeconds = null;
 
 	@JsonProperty(value = "oAuthTokenExchangeAudience")
 	String oAuthTokenExchangeAudience; // injected from hub config
