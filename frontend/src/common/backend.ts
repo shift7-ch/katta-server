@@ -242,6 +242,11 @@ export type StorageProfileDto = {
     oAuthTokenExchangeAudience: number;
 }
 
+export type AutomaticAccessGrant = {
+    enabled: boolean,
+    maxWotDepth: number
+}
+
 export type VaultJWEBackendDto = {
     provider: string;
 
@@ -254,7 +259,7 @@ export type VaultJWEBackendDto = {
     username?: string;
     password?: string;
 
-    automaticAccessGrant: string;
+    automaticAccessGrant: AutomaticAccessGrant;
 }
 // \ end cipherduck extension
 

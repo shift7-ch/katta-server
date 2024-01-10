@@ -512,7 +512,10 @@ async function createVault() {
         "uuid": vaultId,
         "nickname": vaultName.value,
         "region": selectedRegion.value,
-        "automaticAccessGrant": automaticAccessGrant.value
+        "automaticAccessGrant": {
+            "enabled": automaticAccessGrant.value,
+            "maxWotDepth": -1
+        }
     }
     if(isPermanent.value){
         storage.username = vaultAccessKeyId.value;

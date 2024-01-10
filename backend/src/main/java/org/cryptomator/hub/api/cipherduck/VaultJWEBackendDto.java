@@ -33,6 +33,7 @@ public record VaultJWEBackendDto(
 		String password,
 
 		@JsonProperty(value = "automaticAccessGrant", required = true)
-		Boolean automaticAccessGrant
+		AutomaticAccessGrant automaticAccessGrant
+
 ) {
 }
