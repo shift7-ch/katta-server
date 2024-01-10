@@ -248,9 +248,15 @@ public class VaultResource {
 	@APIResponse(responseCode = "403", description = "not a vault owner")
 	public Response removeAuthority(@PathParam("vaultId") UUID vaultId, @PathParam("authorityId") @ValidId String authorityId) {
 		if (VaultAccess.deleteById(new VaultAccess.Id(vaultId, authorityId))) {
+
 			// / start cipherduck extension
+			// Decision: when resetting an account or archiving a vault, access to the bucket doesn't need to be revoked.
+			// - Account reset: same situation as for addUser() and addGroup() before being granted access (masterkey): in the STS case, users can technically already gain access to the data at the storage level if they know/guess the STS endpoint etc, however they cannot decrypt yet.
+			// - Archiving: removeAuthority is not called in this case, so users still can renew access (get new temporary S3 credentials) at the storage level in the STS case.
+			//              However, they cannot get the masterkey any more (in all cases) nor the permanent storage credentials (in the non-STS case).
 			keycloakRemoveAccessToVault(syncerConfig, vaultId.toString(), authorityId, "cryptomatorvaults");
 			// \ end cipherduck extension
+
 			AuditEventVaultMemberRemove.log(jwt.getSubject(), vaultId, authorityId);
 			return Response.status(Response.Status.NO_CONTENT).build();
 		} else {
