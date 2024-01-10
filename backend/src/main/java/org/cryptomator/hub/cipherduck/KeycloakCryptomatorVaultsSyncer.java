@@ -18,7 +18,7 @@ public class KeycloakCryptomatorVaultsSyncer {
 
 	@Scheduled(every = "{hub.keycloak.syncer-period}")
 	void sync() {
-		KeycloakGrantAccessToVault.keycloakCleanupDanglingCryptomatorVaultsRoles(syncerConfig, cipherduckConfig.keycloakClientIdCryptomatorVaults());
+		KeycloakCryptomatorVaultsHelper.keycloakCleanupDanglingCryptomatorVaultsRoles(syncerConfig, cipherduckConfig.keycloakClientIdCryptomatorVaults());
 	}
 
 }

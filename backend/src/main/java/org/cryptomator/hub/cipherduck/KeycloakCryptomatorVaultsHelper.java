@@ -26,9 +26,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @ApplicationScoped
-public class KeycloakGrantAccessToVault {
+public class KeycloakCryptomatorVaultsHelper {
 
-	private static final Logger LOG = Logger.getLogger(KeycloakGrantAccessToVault.class);
+	private static final Logger LOG = Logger.getLogger(KeycloakCryptomatorVaultsHelper.class);
 
 	public static void keycloakPrepareVault(final SyncerConfig syncerConfig, final String vaultId, final StorageProfileDto storageConfig, final String userOrGroupId, final String clientId) {
 

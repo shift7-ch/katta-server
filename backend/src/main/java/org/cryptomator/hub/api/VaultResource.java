@@ -56,13 +56,11 @@ import org.cryptomator.hub.validation.NoHtmlOrScriptChars;
 import org.cryptomator.hub.validation.OnlyBase64Chars;
 import org.cryptomator.hub.validation.ValidId;
 import org.cryptomator.hub.validation.ValidJWS;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.ParameterIn;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
-import org.hibernate.exception.ConstraintViolationException;
 
 import java.net.URI;
 import java.time.Instant;
@@ -73,8 +71,8 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Stream;
 
-import static org.cryptomator.hub.cipherduck.KeycloakGrantAccessToVault.keycloakGrantAccessToVault;
-import static org.cryptomator.hub.cipherduck.KeycloakGrantAccessToVault.keycloakRemoveAccessToVault;
+import static org.cryptomator.hub.cipherduck.KeycloakCryptomatorVaultsHelper.keycloakGrantAccessToVault;
+import static org.cryptomator.hub.cipherduck.KeycloakCryptomatorVaultsHelper.keycloakRemoveAccessToVault;
 
 @Path("/vaults")
 public class VaultResource {
