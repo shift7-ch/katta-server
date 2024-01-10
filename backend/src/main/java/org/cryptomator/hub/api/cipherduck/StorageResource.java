@@ -23,7 +23,7 @@ import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static org.cryptomator.hub.api.cipherduck.storage.S3Storage.makeS3Bucket;
+import static org.cryptomator.hub.api.cipherduck.storage.S3StorageHelper.makeS3Bucket;
 import static org.cryptomator.hub.cipherduck.KeycloakGrantAccessToVault.keycloakPrepareVault;
 
 @Path("/storage")

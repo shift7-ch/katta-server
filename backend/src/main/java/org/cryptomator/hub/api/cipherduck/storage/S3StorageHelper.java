@@ -10,14 +10,13 @@ import com.amazonaws.services.s3.model.PutObjectRequest;
 import jakarta.ws.rs.ClientErrorException;
 import jakarta.ws.rs.core.Response;
 import org.apache.commons.io.IOUtils;
-import org.cryptomator.hub.api.cipherduck.StorageProfileDto;
 import org.cryptomator.hub.api.cipherduck.StorageDto;
+import org.cryptomator.hub.api.cipherduck.StorageProfileDto;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 
-public class S3Storage {
-
+public class S3StorageHelper {
 
 	public static void makeS3Bucket(
 			final StorageProfileDto storageConfig,
@@ -30,10 +29,10 @@ public class S3Storage {
 		AmazonS3ClientBuilder s3Builder = AmazonS3ClientBuilder
 				.standard()
 				.withCredentials(new AWSStaticCredentialsProvider(new BasicSessionCredentials(dto.awsAccessKey(), dto.awsSecretKey(), dto.sessionToken())));
-		if (storageConfig.stsEndpoint()!=null) {
+		if (storageConfig.stsEndpoint() != null) {
 			s3Builder = s3Builder
 					.withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(storageConfig.stsEndpoint(), region))
-					.withPathStyleAccessEnabled(storageConfig.withPathStyleAccessEnabled() != null ?storageConfig.withPathStyleAccessEnabled() : false);
+					.withPathStyleAccessEnabled(storageConfig.withPathStyleAccessEnabled() != null ? storageConfig.withPathStyleAccessEnabled() : false);
 		} else if (region != null) {
 			s3Builder = s3Builder.withRegion(region);
 		}
