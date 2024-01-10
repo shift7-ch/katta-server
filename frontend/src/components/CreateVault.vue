@@ -328,7 +328,7 @@
         <div v-if="isPermanent" class="mt-5 sm:mt-6">
             <div class="mt-2">
               <p class="text-sm text-gray-500">
-                {{ t('CreateVaultS3.success.vaultPermanenDownloadVaultTemplate') }}
+                {{ t('CreateVaultS3.success.vaultPermanenUploadVaultTemplate') }}
               </p>
             </div>
           <button type="button" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-d1 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary" @click="uploadVaultTemplate()">
