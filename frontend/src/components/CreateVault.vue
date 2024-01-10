@@ -506,7 +506,6 @@ async function createVault() {
     if (!selectedRegion.value) {
       throw new Error('Invalid state');
     }
-    const apiconfig = await backend.config.config();
     const storage: VaultJWEBackendDto = {
         "provider": selectedBackend.value.id,
         "defaultPath": selectedBackend.value.bucketPrefix + vaultId,
@@ -689,7 +688,7 @@ async function uploadVaultTemplate() {
     if (!selectedBackend.value) {
         throw new Error('Invalid state.');
     }
-    const endpoint = (selectedBackend.value.scheme && selectedBackend.value.hostname && selectedBackend.value.port) ? `${selectedBackend.value.scheme}://${selectedBackend.value.hostname}:${selectedBackend.value.port}` : null;
+    const endpoint = (selectedBackend.value.scheme && selectedBackend.value.hostname && selectedBackend.value.port) ? `${selectedBackend.value.scheme}://${selectedBackend.value.hostname}:${selectedBackend.value.port}` : undefined;
     const client = new S3Client({
         region: selectedRegion.value,
         endpoint: endpoint,
