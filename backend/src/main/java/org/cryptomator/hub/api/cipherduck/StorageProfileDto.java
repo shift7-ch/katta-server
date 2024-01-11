@@ -83,6 +83,7 @@ public class StorageProfileDto extends PanacheEntityBase {
 	// (3a) client profile attributes
 	@JsonProperty(value = "protocol")
 	Protocol protocol = Protocol.s3sts;
+
 	@JsonProperty(value = "oauthClientId")
 	String oauthClientId; // injected from hub config if STS
 

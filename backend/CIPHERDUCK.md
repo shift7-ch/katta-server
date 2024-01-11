@@ -241,8 +241,6 @@ Hub Configuration (`application.properties`) and Vault JWE
 Note that properties in `application.properties` use dashed notation instead of Camel Case in JWE and Java Dtos,
 see [Quarkus Config Reference Guid](https://quarkus.io/guides/config-reference) for details.
 
-
-
 ```
 curl -X PUT http://localhost:8080/api/storageprofile/ -d @setup/minio_sts/minio_sts_profile.json -v  -H "Content-Type: application/json"
 curl -X PUT http://localhost:8080/api/storageprofile/ -d @setup/minio_static/minio_static_profile.json -v  -H "Content-Type: application/json"
@@ -251,14 +249,9 @@ curl -X PUT http://localhost:8080/api/storageprofile/ -d @setup/aws_sts/aws_sts_
 curl  http://localhost:8080/api/storageprofile/
 ```
 
-
-
-
-
 ### (0) backend configuration
 
-TODO https://github.com/chenkins/cipherduck-hub/issues/31 do we need both? How do we localization/configuration in
-dropdown?
+TODO https://github.com/chenkins/cipherduck-hub/issues/31 do we need both? How do we localization in dropdown?
 
 | Backend property | Description                                 |
 |------------------|---------------------------------------------|
@@ -304,8 +297,6 @@ The following hub-specific properties are injected into the vault JWE from  `/ap
 | `oAuthClientId`         | &rarr; [Custom connection profile using OpenID Connect provider and AssumeRoleWithWebIdentity STS API](https://docs.cyberduck.io/protocols/profiles/aws_oidc/) | &rarr; `/api/config` &rarr;  `keycloakClientIdCryptomator` |         
 | `stsEndpoint`           | &rarr; [Custom connection profile using OpenID Connect provider and AssumeRoleWithWebIdentity STS API](https://docs.cyberduck.io/protocols/profiles/aws_oidc/) | `backend.jwe.sts-endpoint`                                 |    
 | `region`                | &rarr; [Cyberduck Bookmarks](https://docs.cyberduck.io/protocols/profiles/)                                                                                    | user input (dropdown)                                      |
-
-
 
 ### (3) boookmark custom properties
 
