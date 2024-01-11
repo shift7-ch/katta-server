@@ -17,6 +17,7 @@ CREATE TABLE "storage_profile"
     "stsRoleArnClient"  VARCHAR,
     "stsRoleArnHub"     VARCHAR,
     "stsEndpoint"       VARCHAR,
+    "versioningEnabled" bool,
 
 
 	-- (3) client profile

@@ -427,7 +427,7 @@ const backends = ref<StorageProfileDto[] | null>(null);
 const vaultAccessKeyId = ref('');
 const vaultSecretKey = ref('');
 const vaultBucketName = ref('');
-const automaticAccessGrant = ref('true');
+const automaticAccessGrant = ref<boolean>(true);
 const onOpenBookmarkError = ref<Error | null>(null);
 const onUploadTemplateError = ref<Error | null>(null);
 // \ end cipherduck extension

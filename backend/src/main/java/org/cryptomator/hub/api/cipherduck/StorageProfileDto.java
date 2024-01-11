@@ -75,6 +75,9 @@ public class StorageProfileDto extends PanacheEntityBase {
 	@JsonProperty("stsEndpoint")
 	String stsEndpoint; // defaults to AWS
 
+	@JsonProperty(value = "bucketVersioning")
+	Boolean bucketVersioning = true;
+
 
 	// (3) client profile
 	// (3a) client profile attributes
@@ -155,6 +158,15 @@ public class StorageProfileDto extends PanacheEntityBase {
 
 	public StorageProfileDto withStsEndpoint(String stsEndpoint) {
 		this.stsEndpoint = stsEndpoint;
+		return this;
+	}
+
+	public Boolean bucketVersioning() {
+		return bucketVersioning;
+	}
+
+	public StorageProfileDto withBucketVersioning(Boolean bucketVersioning) {
+		this.bucketVersioning = bucketVersioning;
 		return this;
 	}
 
