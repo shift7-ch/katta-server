@@ -23,16 +23,12 @@ import java.util.stream.Collectors;
 @Path("/storageprofile")
 public class StorageProfileResource {
 
-
 	@Inject
 	CipherduckConfig cipherduckConfig;
 
-
 	@PUT
 	@Path("/")
-	// TODO https://github.com/shift7-ch/cipherduck-hub/issues/4 (R3) restrict to admin after refctoring is done
-	//	@RolesAllowed("admin")
-	@PermitAll
+	@RolesAllowed("admin")
 	@Transactional
 	@Consumes(MediaType.APPLICATION_JSON)
 	public Response uploadStorageProfile(StorageProfileDto c) {
@@ -51,12 +47,9 @@ public class StorageProfileResource {
 		}
 	}
 
-
 	@GET
 	@Path("/")
-	// TODO https://github.com/shift7-ch/cipherduck-hub/issues/4 (R3) restrict to user after refctoring is done
-	//	@RolesAllowed("user")
-	@PermitAll
+	@RolesAllowed("user")
 	@Produces(MediaType.APPLICATION_JSON)
 	@Transactional
 	@Operation(summary = "get configs for storage backends", description = "get list of configs for storage backends")
@@ -89,6 +82,4 @@ public class StorageProfileResource {
 		// N.B. temporary workaround to have VaultJWEBackendDto exposed in openapi.json for now....
 		return null;
 	}
-
-
 }
