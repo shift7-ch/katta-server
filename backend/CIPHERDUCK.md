@@ -97,6 +97,7 @@ Documentation: https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_provide
 openssl s_client -servername testing.hub.cryptomator.org -showcerts -connect testing.hub.cryptomator.org:443 > testing.hub.cryptomator.org.crt
 
 vi testing.hub.cryptomator.org.crt ...
+(remove the irrelevant parts from the chain)
 
 cat testing.hub.cryptomator.org.crt
 -----BEGIN CERTIFICATE-----
@@ -242,11 +243,13 @@ Note that properties in `application.properties` use dashed notation instead of 
 see [Quarkus Config Reference Guid](https://quarkus.io/guides/config-reference) for details.
 
 ```
-curl -X PUT http://localhost:8080/api/storageprofile/ -d @setup/minio_sts/minio_sts_profile.json -v  -H "Content-Type: application/json"
-curl -X PUT http://localhost:8080/api/storageprofile/ -d @setup/minio_static/minio_static_profile.json -v  -H "Content-Type: application/json"
-curl -X PUT http://localhost:8080/api/storageprofile/ -d @setup/aws_static/aws_static_profile.json -v  -H "Content-Type: application/json"
-curl -X PUT http://localhost:8080/api/storageprofile/ -d @setup/aws_sts/aws_sts_profile.json -v  -H "Content-Type: application/json"
-curl  http://localhost:8080/api/storageprofile/
+# https://github.com/cryptomator/hub-cli
+hub login --client-id=cryptomator authorization-code --api-base http://localhost:8080/api | tee ACCESS_TOKEN.txt; export ACCESS_TOKEN=$(cat ACCESS_TOKEN.txt| tail -1)
+curl -X PUT http://localhost:8080/api/storageprofile/ -d @setup/minio_sts/minio_sts_profile.json -v  -H "Content-Type: application/json" -H "Authorization: Bearer $ACCESS_TOKEN"
+curl -X PUT http://localhost:8080/api/storageprofile/ -d @setup/minio_static/minio_static_profile.json -v  -H "Content-Type: application/json" -H "Authorization: Bearer $ACCESS_TOKEN"
+curl -X PUT http://localhost:8080/api/storageprofile/ -d @setup/aws_static/aws_static_profile.json -v  -H "Content-Type: application/json" -H "Authorization: Bearer $ACCESS_TOKEN"
+curl -X PUT http://localhost:8080/api/storageprofile/ -d @setup/aws_sts/aws_sts_profile.json -v  -H "Content-Type: application/json" -H "Authorization: Bearer $ACCESS_TOKEN"
+curl  http://localhost:8080/api/storageprofile/ -H "Authorization: Bearer $ACCESS_TOKEN"
 ```
 
 ### (0) backend configuration
