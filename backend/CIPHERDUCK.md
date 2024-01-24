@@ -32,23 +32,23 @@ mc admin policy create myminio cipherduckcreatebucket src/main/resources/cipherd
 mc admin policy create myminio cipherduckaccessbucket src/main/resources/cipherduck/setup/minio_sts/accessbucketpolicy.json
 ```
 
-Add a new OIDC provider using the policy:
-
-vault creation and vault access policy in minio
+Add a new OIDC provider, vault creation and vault access policy in MinIO:
 
 ```shell
+WELL_KNOWN=https://testing.hub.cryptomator.org/kc/realms/cipherduck/.well-known/openid-configuration
+#WELL_KNOWN=http://localhost:8180/realms/cryptomator/.well-known/openid-configuration
 mc idp openid add myminio cryptomator \
-    config_url="https://testing.hub.cryptomator.org/kc/realms/cipherduck/.well-known/openid-configuration" \
+    config_url="$WELL_KNOWN" \
     client_id="cryptomator" \
     client_secret="ignore-me" \
     role_policy="cipherduckcreatebucket"
 mc idp openid add myminio cryptomatorhub \
-    config_url="https://testing.hub.cryptomator.org/kc/realms/cipherduck/.well-known/openid-configuration" \
+    config_url="$WELL_KNOWN" \
     client_id="cryptomatorhub" \
     client_secret="ignore-me" \
     role_policy="cipherduckcreatebucket"    
 mc idp openid add myminio cryptomatorvaults \
-    config_url="https://testing.hub.cryptomator.org/kc/realms/cipherduck/.well-known/openid-configuration" \
+    config_url="$WELL_KNOWN" \
     client_id="cryptomatorvaults" \
     client_secret="ignore-me" \
     role_policy="cipherduckaccessbucket"    

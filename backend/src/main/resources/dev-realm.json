@@ -302,14 +302,24 @@
             "jsonType.label": "String",
             "multivalued": "true"
           }
+        },
+        {
+          "name": "aud",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "cryptomatorhub",
+            "id.token.claim": "false",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "false"
+          }
         }
       ],
       "defaultClientScopes": [
-        "aud",
         "web-origins",
         "phone",
         "profile",
-        "vaults",
         "email"
       ],
       "optionalClientScopes": [
@@ -352,14 +362,24 @@
             "jsonType.label": "String",
             "multivalued": "true"
           }
+        },
+        {
+          "name": "aud",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "cryptomator",
+            "id.token.claim": "false",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "false"
+          }
         }
       ],
       "defaultClientScopes": [
-        "aud",
         "web-origins",
         "phone",
         "profile",
-        "vaults",
         "email"
       ],
       "optionalClientScopes": [
