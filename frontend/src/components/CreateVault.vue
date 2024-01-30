@@ -733,8 +733,8 @@ async function uploadVaultTemplate() {
 
     const commandPutDFolder = new PutObjectCommand({
         Bucket: vaultBucketName.value,
-        Key: `d/${rootDirHash.substring(0, 2)}/${rootDirHash.substring(2)}`,
-        Body: vaultConfigToken,
+        Key: `d/${rootDirHash.substring(0, 2)}/${rootDirHash.substring(2)}/`,
+        Body: '',
     });
     console.log(commandPutDFolder);
     const responsePutDFolder = await client.send(commandPutDFolder);
