@@ -246,9 +246,6 @@
   "CreateVaultS3.enterVaultDetails.vaultPermanentBucketName": "S3 Bucket-Name (existent)",
   "CreateVaultS3.success.description": "Cipherduck auf dem Computer benützen, um den Tresor zu öffnen.",
   "CreateVaultS3.success.open": "Tresore in Cipherduck öffnen",
-  "CreateVaultS3.success.vaultPermanenDownloadVaultTemplate": "Tresorvorlage herunterladen und manuell nack S3-Bucket hochladen.",
-  "CreateVaultS3.success.vaultPermanenUploadVaultTemplate": "Tresorvorlage nach S3-Bucket hochladen.",
-  "CreateVaultS3.error.uploadTemplateFailed": "Hochladen Tresorvorlage nach S3-Bucket fehlgeschlagen.",
 
   "vaultList.openInCipherduck": "In Cipherduck öffnen"
 }

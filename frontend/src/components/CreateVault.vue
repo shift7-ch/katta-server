@@ -181,22 +181,22 @@
                     </Listbox>
                 </div>
                 <div v-if="isPermanent" class="col-span-6 sm:col-span-4">
-                    <label for="vaultBucketName" class="block text-sm font-medium text-gray-700">
-                      {{ t('CreateVaultS3.enterVaultDetails.vaultPermanentBucketName') }}
-                    </label>
-                    <input id="vaultBucketName" v-model="vaultBucketName" :disabled="processing" type="text" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200"/>
-                </div>
-                <div v-if="isPermanent" class="col-span-6 sm:col-span-4">
                     <label for="vaultAccessKeyId" class="block text-sm font-medium text-gray-700">
                       {{ t('CreateVaultS3.enterVaultDetails.vaultPermanentAccessKeyId') }}
                     </label>
-                    <input id="vaultAccessKeyId" v-model="vaultAccessKeyId" :disabled="processing" type="text" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200"/>
+                    <input id="vaultAccessKeyId" v-model="vaultAccessKeyId" :disabled="processing" type="text" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200" :class="{ 'invalid:border-red-300 invalid:text-red-900 focus:invalid:ring-red-500 focus:invalid:border-red-500': onCreateError instanceof FormValidationFailedError }" required/>
                 </div>
                 <div v-if="isPermanent" class="col-span-6 sm:col-span-4">
                     <label for="vaultSecretKey" class="block text-sm font-medium text-gray-700">
                       {{ t('CreateVaultS3.enterVaultDetails.vaultPermanentSecretKey') }}
                     </label>
-                    <input id="vaultSecretKey" v-model="vaultSecretKey" :disabled="processing" type="text" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200"/>
+                    <input id="vaultSecretKey" v-model="vaultSecretKey" :disabled="processing" type="text" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200" :class="{ 'invalid:border-red-300 invalid:text-red-900 focus:invalid:ring-red-500 focus:invalid:border-red-500': onCreateError instanceof FormValidationFailedError }" required/>
+                </div>
+                <div v-if="isPermanent" class="col-span-6 sm:col-span-4">
+                    <label for="vaultBucketName" class="block text-sm font-medium text-gray-700">
+                      {{ t('CreateVaultS3.enterVaultDetails.vaultPermanentBucketName') }}
+                    </label>
+                    <input id="vaultBucketName" v-model="vaultBucketName" :disabled="processing" type="text" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200" :class="{ 'invalid:border-red-300 invalid:text-red-900 focus:invalid:ring-red-500 focus:invalid:border-red-500': onCreateError instanceof FormValidationFailedError }" required/>
                 </div>
                 <br/>
                 <div class="col-span-6 sm:col-span-3">
@@ -308,34 +308,6 @@
             {{ t('CreateVaultS3.success.open') }}
           </button>
           <p v-if="onOpenBookmarkError != null " class="text-sm text-red-900 mr-4">{{ t('CreateVaultS3.error.openBookmarkFailed', [onOpenBookmarkError.message]) }}</p> <!-- TODO: not beautiful-->
-        </div>
-        <div v-if="isPermanent" class="mt-5 sm:mt-6">
-            <div class="mt-2">
-              <p class="text-sm text-gray-500">
-                {{ t('CreateVaultS3.success.vaultPermanenDownloadVaultTemplate') }}
-              </p>
-            </div>
-            <!-- \ end cipherduck extension -->
-
-            <button type="button" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-d1 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary" @click="downloadVaultTemplate()">
-                <ArrowDownTrayIcon class="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
-                {{ t('createVault.success.download') }}
-            </button>
-            <p v-if="onDownloadTemplateError != null " class="text-sm text-red-900 mr-4">{{ t('createVault.error.downloadTemplateFailed', [onDownloadTemplateError.message]) }}</p> <!-- TODO: not beautiful-->
-        </div>
-
-        <!-- / start cipherduck extension -->
-        <div v-if="isPermanent" class="mt-5 sm:mt-6">
-            <div class="mt-2">
-              <p class="text-sm text-gray-500">
-                {{ t('CreateVaultS3.success.vaultPermanenUploadVaultTemplate') }}
-              </p>
-            </div>
-          <button type="button" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-d1 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary" @click="uploadVaultTemplate()">
-            <ArrowDownTrayIcon class="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
-            {{ t('CreateVaultS3.success.vaultPermanenUploadVaultTemplate') }}
-          </button>
-          <p v-if="onUploadTemplateError != null " class="text-sm text-red-900 mr-4">{{ t('CreateVaultS3.error.uploadTemplateFailed') }}{{ onUploadTemplateError.message == null ? '' : ': ' + onUploadTemplateError.message }}</p> <!-- TODO: not beautiful-->
         </div>
         <!-- \ end cipherduck extension -->
         <div class="mt-2">
@@ -479,6 +451,64 @@ async function validateVaultDetails() {
     onCreateError.value = new FormValidationFailedError();
     return;
   }
+  // / start cipherduck extension
+    console.log("validateS3");
+    if(!selectedBackend.value){
+        // TODO https://github.com/shift7-ch/cipherduck-hub/issues/31 localization
+        onCreateError.value = new Error('Select a vault storage location.');
+        return
+    }
+    if(!vaultAccessKeyId.value){
+        // TODO https://github.com/shift7-ch/cipherduck-hub/issues/31 localization
+        onCreateError.value = new Error('Enter the username and re-try.');
+        return;
+    }
+    if(!vaultSecretKey.value){
+        // TODO https://github.com/shift7-ch/cipherduck-hub/issues/31 localization
+        onCreateError.value = new Error('Enter the password and re-try.');
+        return;
+    }
+    if(!vaultBucketName.value){
+        // TODO https://github.com/shift7-ch/cipherduck-hub/issues/31 localization
+        onCreateError.value = new Error('Enter the bucket name and re-try.');
+        return;
+    }
+    const endpoint = (selectedBackend.value.scheme && selectedBackend.value.hostname && selectedBackend.value.port) ? `${selectedBackend.value.scheme}://${selectedBackend.value.hostname}:${selectedBackend.value.port}` : undefined;
+
+    try{
+        const client = new S3Client({
+           region: selectedRegion.value,
+           endpoint: endpoint,
+           forcePathStyle: selectedBackend.value.withPathStyleAccessEnabled,
+           credentials:{
+               accessKeyId: vaultAccessKeyId.value,
+               secretAccessKey: vaultSecretKey.value
+           }
+        });
+        const commandListObjects = new ListObjectsV2Command({
+           Bucket: vaultBucketName.value,
+           MaxKeys: 1,
+        });
+        const responseListObjects = await client.send(commandListObjects);
+        console.log(responseListObjects);
+        if(responseListObjects.KeyCount != 0){
+            // TODO https://github.com/shift7-ch/cipherduck-hub/issues/31 localization
+            onCreateError.value = new Error('Bucket not empty, cannot upload template. Empty the bucket manually and re-try.');
+            return;
+        }
+    } catch (error) {
+        console.log(error);
+        // TODO review: is this safe across different browsers?
+        if((error instanceof TypeError) && (error.message.indexOf("NetworkError") !== -1)){
+            // TODO https://github.com/shift7-ch/cipherduck-hub/issues/31 localization
+            onCreateError.value = new Error(error.message + " Check your bucket CORS settings.");
+        }
+        else{
+          onCreateError.value = error;
+        }
+        return;
+    }
+    // \ end cipherduck extension
   if (props.recover) {
     await createVault();
   } else {
