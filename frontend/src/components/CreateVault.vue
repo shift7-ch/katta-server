@@ -323,8 +323,10 @@
 <script setup lang="ts">
 import { ClipboardIcon } from '@heroicons/vue/20/solid';
 import { ArrowPathIcon, CheckIcon, KeyIcon } from '@heroicons/vue/24/outline';
-import { ArrowDownTrayIcon } from '@heroicons/vue/24/solid';
-import { saveAs } from 'file-saver';
+// / start cipherduck extension
+// import { ArrowDownTrayIcon } from '@heroicons/vue/24/solid';
+// import { saveAs } from 'file-saver';
+// \ end cipherduck extension
 import { base64 } from 'rfc4648';
 import { onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -343,7 +345,7 @@ import {
 import { ChevronUpDownIcon } from '@heroicons/vue/24/outline';
 import { ArrowTopRightOnSquareIcon } from '@heroicons/vue/24/solid';
 import { STSClient,AssumeRoleWithWebIdentityCommand } from "@aws-sdk/client-sts";
-import { S3Client, PutObjectCommand, ListObjectsV2Command } from "@aws-sdk/client-s3";
+import { S3Client, ListObjectsV2Command } from "@aws-sdk/client-s3";
 import authPromise from '../common/auth';
 // \ end cipherduck extension
 
@@ -361,11 +363,13 @@ class FormValidationFailedError extends Error {
   }
 }
 
-class EmptyVaultTemplateError extends Error {
-  constructor() {
-    super('Vault template is empty.');
-  }
-}
+// / start cipherduck extension
+// class EmptyVaultTemplateError extends Error {
+//   constructor() {
+//     super('Vault template is empty.');
+//   }
+// }
+// \ end cipherduck extension
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -373,7 +377,9 @@ const form = ref<HTMLFormElement>();
 
 const onCreateError = ref<Error | null >(null);
 const onRecoverError = ref<Error | null >(null);
-const onDownloadTemplateError = ref<Error | null>(null);
+// / start cipherduck extension
+// const onDownloadTemplateError = ref<Error | null>(null);
+// \ end cipherduck extension
 
 const state = ref(State.Initial);
 const processing = ref(false);
@@ -401,7 +407,6 @@ const vaultSecretKey = ref('');
 const vaultBucketName = ref('');
 const automaticAccessGrant = ref<boolean>(true);
 const onOpenBookmarkError = ref<Error | null>(null);
-const onUploadTemplateError = ref<Error | null>(null);
 // \ end cipherduck extension
 onMounted(initialize);
 
@@ -485,6 +490,7 @@ async function validateVaultDetails() {
                secretAccessKey: vaultSecretKey.value
            }
         });
+        // TODO actually, we should check write permissions!
         const commandListObjects = new ListObjectsV2Command({
            Bucket: vaultBucketName.value,
            MaxKeys: 1,
@@ -678,22 +684,22 @@ async function copyRecoveryKey() {
   debouncedCopyFinish();
 }
 
-async function downloadVaultTemplate() {
-  onDownloadTemplateError.value = null;
-  try {
-    const blob = await vaultConfig.value?.exportTemplate();
-    if (blob != null) {
-      saveAs(blob, `${vaultName.value}.zip`);
-    } else {
-      throw new EmptyVaultTemplateError();
-    }
-  } catch (error) {
-    console.error('Exporting vault template failed.', error);
-    onDownloadTemplateError.value = error instanceof Error ? error : new Error('Unknown reason');
-  }
-}
-
 // / start cipherduck extension
+// async function downloadVaultTemplate() {// 
+//   onDownloadTemplateError.value = null;// 
+//   try {// 
+//     const blob = await vaultConfig.value?.exportTemplate();// 
+//     if (blob != null) {// 
+//       saveAs(blob, `${vaultName.value}.zip`);// 
+//     } else {// 
+//       throw new EmptyVaultTemplateError();// 
+//     }// 
+//   } catch (error) {// 
+//     console.error('Exporting vault template failed.', error);// 
+//     onDownloadTemplateError.value = error instanceof Error ? error : new Error('Unknown reason');// 
+//   }// 
+// }// 
+
 async function openBookmark() {
   onOpenBookmarkError.value = null;
   try {
@@ -715,65 +721,6 @@ function setRegionsOnSelectStorage(storage: StorageProfileDto){
     }
     isPermanent.value = !Boolean(selectedBackend.value['stsRoleArnHub'])
     console.log('   isPermanent: ' + isPermanent.value);
-}
-
-async function uploadVaultTemplate() {
-  onUploadTemplateError.value = null;
-  try {
-    if (!selectedBackend.value) {
-        throw new Error('Invalid state.');
-    }
-    const endpoint = (selectedBackend.value.scheme && selectedBackend.value.hostname && selectedBackend.value.port) ? `${selectedBackend.value.scheme}://${selectedBackend.value.hostname}:${selectedBackend.value.port}` : undefined;
-    const client = new S3Client({
-        region: selectedRegion.value,
-        endpoint: endpoint,
-        forcePathStyle: selectedBackend.value.withPathStyleAccessEnabled,
-        credentials:{
-            accessKeyId: vaultAccessKeyId.value,
-            secretAccessKey: vaultSecretKey.value
-        }
-    });
-    const commandListObjects = new ListObjectsV2Command({
-        Bucket: vaultBucketName.value,
-        MaxKeys: 1,
-      });
-    const responseListObjects = await client.send(commandListObjects);
-    console.log(responseListObjects);
-    if(responseListObjects.KeyCount != 0){
-        throw new Error('Bucket not empty, cannot upload template. Empty the bucket manually and re-try.');
-    }
-
-    const vaultConfigToken = await vaultConfig.value?.vaultConfigToken;
-    console.log(vaultConfigToken);
-    const rootDirHash = await vaultConfig.value?.rootDirHash;
-    console.log(rootDirHash);
-
-    if (!rootDirHash) {
-        throw new Error('Invalid state: rootDirHash missing.');
-    }
-
-    const commandPutVaultCryptomator = new PutObjectCommand({
-        Bucket: vaultBucketName.value,
-        Key: 'vault.cryptomator',
-        Body: vaultConfigToken,
-    });
-    console.log(commandPutVaultCryptomator);
-    const responsePutVaultCryptomator = await client.send(commandPutVaultCryptomator);
-    console.log(responsePutVaultCryptomator);
-
-    const commandPutDFolder = new PutObjectCommand({
-        Bucket: vaultBucketName.value,
-        Key: `d/${rootDirHash.substring(0, 2)}/${rootDirHash.substring(2)}/`,
-        Body: '',
-    });
-    console.log(commandPutDFolder);
-    const responsePutDFolder = await client.send(commandPutDFolder);
-    console.log(responsePutDFolder);
-
-  } catch (error) {
-    console.error('Uploading vault template failed.', error);
-    onUploadTemplateError.value = error instanceof Error ? error : new Error('Unknown reason');
-  }
 }
 // \ end cipherduck extension
 
