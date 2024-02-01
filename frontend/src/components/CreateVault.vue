@@ -512,7 +512,7 @@ async function validateVaultDetails() {
             // TODO review: is this safe across different browsers?
             if((error instanceof TypeError) && (error.message.indexOf("NetworkError") !== -1)){
                 // TODO https://github.com/shift7-ch/cipherduck-hub/issues/31 localization
-                onCreateError.value = new Error(error.message + " Check your bucket CORS settings.");
+                onCreateError.value = new Error(error.message + " Check your bucket name and bucket CORS settings.");
             }
             else{
               onCreateError.value = error;
