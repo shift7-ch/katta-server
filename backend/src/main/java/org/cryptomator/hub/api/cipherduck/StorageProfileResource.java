@@ -1,14 +1,16 @@
 package org.cryptomator.hub.api.cipherduck;
 
-import jakarta.annotation.security.PermitAll;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.ClientErrorException;
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -18,6 +20,7 @@ import org.hibernate.exception.ConstraintViolationException;
 
 import java.net.URI;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Path("/storageprofile")
@@ -32,6 +35,7 @@ public class StorageProfileResource {
 	@Transactional
 	@Consumes(MediaType.APPLICATION_JSON)
 	public Response uploadStorageProfile(StorageProfileDto c) {
+		// TODO https://github.com/shift7-ch/cipherduck-hub/issues/4 (R3) generate ID! Must be unique - on the other hand, we might need to ID for testing purposes or do we not?
 		// TODO https://github.com/shift7-ch/cipherduck-hub/issues/4 (R3) protocol-specific validations?
 		switch (c.protocol) {
 			case s3:
@@ -68,6 +72,35 @@ public class StorageProfileResource {
 			}
 		}
 		return storageProfiles;
+	}
+
+	@GET
+	@Path("/{profileId}")
+	@RolesAllowed("admin")
+	@Produces(MediaType.APPLICATION_JSON)
+	@Transactional
+	@Operation(summary = "gets a storage profile")
+	@APIResponse(responseCode = "200")
+	@APIResponse(responseCode = "403", description = "not an admin")
+	public StorageProfileDto get(@PathParam("profileId") UUID profileId) {
+		return StorageProfileDto.<StorageProfileDto>findByIdOptional(profileId).orElseThrow(NotFoundException::new);
+	}
+
+	@DELETE
+	@Path("/{profileId}")
+	@RolesAllowed("admin")
+	@Transactional
+	@Produces(MediaType.APPLICATION_JSON)
+	@Operation(summary = "archive a storage profile")
+	@APIResponse(responseCode = "204", description = "storage profile archived")
+	@APIResponse(responseCode = "403", description = "not an admin")
+	public Response archive(@PathParam("profileId") UUID profileId) {
+		// TODO https://github.com/shift7-ch/cipherduck-hub/issues/4 (R3) archive flag instead - we must not delete storage profiles!
+		if (StorageProfileDto.deleteById(profileId)) {
+			return Response.status(Response.Status.NO_CONTENT).build();
+		} else {
+			throw new NotFoundException();
+		}
 	}
 
 	// TODO https://github.com/shift7-ch/cipherduck-hub/issues/4 (R3) refactor into meta service for getting which values are required for which protocol?
