@@ -461,62 +461,64 @@ async function validateVaultDetails() {
     return;
   }
   // / start cipherduck extension
-    console.log("validateS3");
-    if(!selectedBackend.value){
-        // TODO https://github.com/shift7-ch/cipherduck-hub/issues/31 localization
-        onCreateError.value = new Error('Select a vault storage location.');
-        return
-    }
-    if(!vaultAccessKeyId.value){
-        // TODO https://github.com/shift7-ch/cipherduck-hub/issues/31 localization
-        onCreateError.value = new Error('Enter the username and re-try.');
-        return;
-    }
-    if(!vaultSecretKey.value){
-        // TODO https://github.com/shift7-ch/cipherduck-hub/issues/31 localization
-        onCreateError.value = new Error('Enter the password and re-try.');
-        return;
-    }
-    if(!vaultBucketName.value){
-        // TODO https://github.com/shift7-ch/cipherduck-hub/issues/31 localization
-        onCreateError.value = new Error('Enter the bucket name and re-try.');
-        return;
-    }
-    const endpoint = (selectedBackend.value.scheme && selectedBackend.value.hostname && selectedBackend.value.port) ? `${selectedBackend.value.scheme}://${selectedBackend.value.hostname}:${selectedBackend.value.port}` : undefined;
-
-    try{
-        const client = new S3Client({
-           region: selectedRegion.value,
-           endpoint: endpoint,
-           forcePathStyle: selectedBackend.value.withPathStyleAccessEnabled,
-           credentials:{
-               accessKeyId: vaultAccessKeyId.value,
-               secretAccessKey: vaultSecretKey.value
-           }
-        });
-        // TODO actually, we should check write permissions!
-        const commandListObjects = new ListObjectsV2Command({
-           Bucket: vaultBucketName.value,
-           MaxKeys: 1,
-        });
-        const responseListObjects = await client.send(commandListObjects);
-        console.log(responseListObjects);
-        if(responseListObjects.KeyCount != 0){
+    if(isPermanent.value){
+        console.log("validateS3");
+        if(!selectedBackend.value){
             // TODO https://github.com/shift7-ch/cipherduck-hub/issues/31 localization
-            onCreateError.value = new Error('Bucket not empty, cannot upload template. Empty the bucket manually and re-try.');
+            onCreateError.value = new Error('Select a vault storage location.');
+            return
+        }
+        if(!vaultAccessKeyId.value){
+            // TODO https://github.com/shift7-ch/cipherduck-hub/issues/31 localization
+            onCreateError.value = new Error('Enter the username and re-try.');
             return;
         }
-    } catch (error) {
-        console.log(error);
-        // TODO review: is this safe across different browsers?
-        if((error instanceof TypeError) && (error.message.indexOf("NetworkError") !== -1)){
+        if(!vaultSecretKey.value){
             // TODO https://github.com/shift7-ch/cipherduck-hub/issues/31 localization
-            onCreateError.value = new Error(error.message + " Check your bucket CORS settings.");
+            onCreateError.value = new Error('Enter the password and re-try.');
+            return;
         }
-        else{
-          onCreateError.value = error;
+        if(!vaultBucketName.value){
+            // TODO https://github.com/shift7-ch/cipherduck-hub/issues/31 localization
+            onCreateError.value = new Error('Enter the bucket name and re-try.');
+            return;
         }
-        return;
+        const endpoint = (selectedBackend.value.scheme && selectedBackend.value.hostname && selectedBackend.value.port) ? `${selectedBackend.value.scheme}://${selectedBackend.value.hostname}:${selectedBackend.value.port}` : undefined;
+
+        try{
+            const client = new S3Client({
+               region: selectedRegion.value,
+               endpoint: endpoint,
+               forcePathStyle: selectedBackend.value.withPathStyleAccessEnabled,
+               credentials:{
+                   accessKeyId: vaultAccessKeyId.value,
+                   secretAccessKey: vaultSecretKey.value
+               }
+            });
+            // TODO actually, we should check write permissions!
+            const commandListObjects = new ListObjectsV2Command({
+               Bucket: vaultBucketName.value,
+               MaxKeys: 1,
+            });
+            const responseListObjects = await client.send(commandListObjects);
+            console.log(responseListObjects);
+            if(responseListObjects.KeyCount != 0){
+                // TODO https://github.com/shift7-ch/cipherduck-hub/issues/31 localization
+                onCreateError.value = new Error('Bucket not empty, cannot upload template. Empty the bucket manually and re-try.');
+                return;
+            }
+        } catch (error) {
+            console.log(error);
+            // TODO review: is this safe across different browsers?
+            if((error instanceof TypeError) && (error.message.indexOf("NetworkError") !== -1)){
+                // TODO https://github.com/shift7-ch/cipherduck-hub/issues/31 localization
+                onCreateError.value = new Error(error.message + " Check your bucket CORS settings.");
+            }
+            else{
+              onCreateError.value = error;
+            }
+            return;
+        }
     }
     // \ end cipherduck extension
   if (props.recover) {
