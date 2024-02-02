@@ -213,6 +213,7 @@
         <div v-if="onCreateError != null">
           <p v-if="onCreateError instanceof FormValidationFailedError" class="text-sm text-red-900 mr-4">{{ t('createVault.error.formValidationFailed') }}</p>
           <p v-else class="text-sm text-red-900 mr-4">{{ t('common.unexpectedError', [onCreateError.message]) }}</p>
+          <pre v-if="onCreateError instanceof ErrorWithCodeHint" class="text-sm text-red-900 mr-4"><code>{{ onCreateError.codehint }}</code></pre>
         </div>
         <button type="submit" :disabled="processing" class="flex-none inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-d1 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 disabled:hover:bg-primary disabled:cursor-not-allowed">
           {{ t('common.next') }}
@@ -411,6 +412,13 @@ const vaultBucketName = ref('');
 const automaticAccessGrant = ref<boolean>(true);
 const onOpenBookmarkError = ref<Error | null>(null);
 const onUploadTemplateError = ref<Error | null>(null);
+
+class ErrorWithCodeHint extends Error {
+  constructor(message, codehint) {
+    super(message);
+    this.codehint = codehint;
+  }
+}
 // \ end cipherduck extension
 onMounted(initialize);
 
@@ -495,7 +503,7 @@ async function validateVaultDetails() {
                    secretAccessKey: vaultSecretKey.value
                }
             });
-            // TODO actually, we should check write permissions!
+            // TODO https://github.com/shift7-ch/cipherduck-hub/issues/17 actually, we should check write permissions!
             const commandListObjects = new ListObjectsV2Command({
                Bucket: vaultBucketName.value,
                MaxKeys: 1,
@@ -509,10 +517,34 @@ async function validateVaultDetails() {
             }
         } catch (error) {
             console.log(error);
-            // TODO review: is this safe across different browsers?
+            // TODO review: is checking on "NetworkError" safe across different browsers?
             if((error instanceof TypeError) && (error.message.indexOf("NetworkError") !== -1)){
                 // TODO https://github.com/shift7-ch/cipherduck-hub/issues/31 localization
-                onCreateError.value = new Error(error.message + " Check your bucket name and bucket CORS settings.");
+                onCreateError.value = new ErrorWithCodeHint(error.message + " Check your bucket CORS settings.", `
+                aws s3api put-bucket-cors --endpoint-url ${endpoint} --bucket ${vaultBucketName.value} --cors-configuration file://cors.json
+
+                cors.json:
+                {
+                  "CORSRules": [
+                           {
+                               "AllowedHeaders": [
+                                   "*"
+                               ],
+                               "AllowedMethods": [
+                                   "GET",
+                                   "PUT"
+                               ],
+                               "AllowedOrigins": [
+                                   "${document.baseURI}"
+                               ],
+                               "ExposeHeaders": [
+                                   "ETag"
+                               ],
+                               "MaxAgeSeconds": 3600
+                           }
+                       ]
+                }
+                `);
             }
             else{
               onCreateError.value = error;
