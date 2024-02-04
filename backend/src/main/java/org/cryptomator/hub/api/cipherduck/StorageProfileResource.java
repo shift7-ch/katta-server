@@ -76,7 +76,7 @@ public class StorageProfileResource {
 
 	@GET
 	@Path("/{profileId}")
-	@RolesAllowed("admin")
+	@RolesAllowed("user")
 	@Produces(MediaType.APPLICATION_JSON)
 	@Transactional
 	@Operation(summary = "gets a storage profile")
