@@ -451,10 +451,6 @@ public class VaultResource {
 			AuditEventVaultCreate.log(currentUser.id, vault.id, vault.name, vault.description);
 			AuditEventVaultMemberAdd.log(currentUser.id, vaultId, currentUser.id, VaultAccess.Role.OWNER);
 
-			// / start cipherduck extension
-			keycloakGrantAccessToVault(syncerConfig, vaultId.toString(), currentUser.id, cipherduckConfig.keycloakClientIdCryptomatorVaults());
-			// \ end cipherduck extension
-
 			return Response.created(URI.create(".")).contentLocation(URI.create(".")).entity(VaultDto.fromEntity(vault)).type(MediaType.APPLICATION_JSON).build();
 		} else {
 			AuditEventVaultUpdate.log(currentUser.id, vault.id, vault.name, vault.description, vault.archived);

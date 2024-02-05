@@ -414,7 +414,7 @@ const onOpenBookmarkError = ref<Error | null>(null);
 const onUploadTemplateError = ref<Error | null>(null);
 
 class ErrorWithCodeHint extends Error {
-  constructor(message, codehint) {
+  constructor(public message: string, public codehint: string) {
     super(message);
     this.codehint = codehint;
   }
@@ -598,6 +598,97 @@ async function createVault() {
     }
 
     vaultKeys.value.storage = storage;
+
+    // Decision 2024-02-01 upload vault template/create bucket before creating vault in hub and uploading JWE. This is the most delicate operation. No further rollback for now.
+    if(isPermanent.value){
+       await uploadVaultTemplate();
+    }
+    else {
+        // N.B. the access tokens for cryptomator and cryptomator hub clients do only have realm roles added to them, but not client roles.
+        //      We use client roles for vaults shared with a user. So this setup prevents access tokens from growing with new vaults.
+        const token = await authPromise.then(auth => auth.bearerToken());
+
+        // https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/clients/client-sts/classes/stsclient.html
+
+        const stsClient = new STSClient({
+            region: selectedRegion.value,
+            endpoint: selectedBackend.value.stsEndpoint
+        });
+
+        // https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/clients/client-sts/classes/assumerolewithwebidentitycommand.html
+        // https://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRoleWithWebIdentity.html
+        // N.B. almost zero trust: add inline policy to pass only credentials allowing for creating the specified bucket in the backend
+        const assumeRoleWithWebIdentityArgs = {
+          // Required. The OAuth 2.0 access token or OpenID Connect ID token that is provided by the
+          // identity provider.
+          WebIdentityToken: token,
+          RoleSessionName: vaultId,
+          // Valid Range: Minimum value of 900. Maximum value of 43200.
+          DurationSeconds: 900,
+          Policy: `{
+            "Version": "2012-10-17",
+            "Statement": [
+              {
+                "Effect": "Allow",
+                "Action": [
+                  "s3:CreateBucket",
+                  "s3:GetBucketPolicy",
+                  "s3:PutBucketVersioning",
+                  "s3:GetBucketVersioning"
+                ],
+                "Resource": "arn:aws:s3:::{}"
+              },
+              {
+                "Effect": "Allow",
+                "Action": [
+                  "s3:PutObject"
+                ],
+                "Resource": [
+                  "arn:aws:s3:::{}/vault.cryptomator",
+                  "arn:aws:s3:::{}/*/"
+                ]
+              }
+            ]
+          }`.replaceAll("{}", storage.defaultPath),
+          // Required. ARN of the role that the caller is assuming.
+          RoleArn: selectedBackend.value.stsRoleArnHub
+        }
+
+
+        const { Credentials } = await stsClient
+            .send(new AssumeRoleWithWebIdentityCommand(assumeRoleWithWebIdentityArgs));
+
+        if (!Credentials) {
+            throw new Error('Invalid state: Could not assume role with web identity.');
+        }
+        if (!Credentials.AccessKeyId) {
+            throw new Error('Invalid state: Missing AccessKeyId.');
+        }
+        if (!Credentials.SecretAccessKey) {
+            throw new Error('Invalid state: Missing SecretAccessKey.');
+        }
+        if (!Credentials.SessionToken) {
+            throw new Error('Invalid state: Missing SessionToken.');
+        }
+
+        const rootDirHash = await vaultKeys.value.hashDirectoryId('');
+        if (!rootDirHash) {
+            throw new Error('Invalid state: rootDirHash missing.');
+        }
+        // TODO review what happens if bucket creation fails after successful vault creation? - merge with PUT vault service?
+        await backend.storage.put(vaultId, {
+            vaultId: vaultId,
+            storageConfigId: selectedBackend.value.id,
+            vaultConfigToken: vaultConfig.value.vaultConfigToken,
+            rootDirHash: rootDirHash,
+            // https://github.com/awslabs/smithy-typescript/blob/697310da9aec949034f92598f5cefc2cc162ef4d/packages/types/src/identity/awsCredentialIdentity.ts#L24
+            awsAccessKey: Credentials.AccessKeyId,
+            awsSecretKey: Credentials.SecretAccessKey,
+            sessionToken: Credentials.SessionToken,
+            region: selectedRegion.value
+
+        });
+    }
     // \ end cipherduck extension
 
     const ownerJwe = await vaultKeys.value.encryptForUser(base64.parse(owner.publicKey));
@@ -605,100 +696,7 @@ async function createVault() {
     await backend.vaults.grantAccess(vaultId, { userId: owner.id, token: ownerJwe });
     
     
-    // / start cipherduck extension
-    if(isPermanent.value){
-       await uploadVaultTemplate();
-       state.value = State.Finished;
-       return;
-    }
 
-
-
-    // N.B. the access tokens for cryptomator and cryptomator hub clients do only have realm roles added to them, but not client roles.
-    //      We use client roles for vaults shared with a user. So this setup prevents access tokens from growing with new vaults.
-    const token = await authPromise.then(auth => auth.bearerToken());
-
-    // https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/clients/client-sts/classes/stsclient.html
-
-    const stsClient = new STSClient({
-        region: selectedRegion.value,
-        endpoint: selectedBackend.value.stsEndpoint
-    });
-
-    // https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/clients/client-sts/classes/assumerolewithwebidentitycommand.html
-    // https://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRoleWithWebIdentity.html
-    // N.B. almost zero trust: add inline policy to pass only credentials allowing for creating the specified bucket in the backend
-    const assumeRoleWithWebIdentityArgs = {
-      // Required. The OAuth 2.0 access token or OpenID Connect ID token that is provided by the
-      // identity provider.
-      WebIdentityToken: token,
-      RoleSessionName: vaultId,
-      // Valid Range: Minimum value of 900. Maximum value of 43200.
-      DurationSeconds: 900,
-      Policy: `{
-        "Version": "2012-10-17",
-        "Statement": [
-          {
-            "Effect": "Allow",
-            "Action": [
-              "s3:CreateBucket",
-              "s3:GetBucketPolicy",
-              "s3:PutBucketVersioning",
-              "s3:GetBucketVersioning"
-            ],
-            "Resource": "arn:aws:s3:::{}"
-          },
-          {
-            "Effect": "Allow",
-            "Action": [
-              "s3:PutObject"
-            ],
-            "Resource": [
-              "arn:aws:s3:::{}/vault.cryptomator",
-              "arn:aws:s3:::{}/*/"
-            ]
-          }
-        ]
-      }`.replaceAll("{}", storage.defaultPath),
-      // Required. ARN of the role that the caller is assuming.
-      RoleArn: selectedBackend.value.stsRoleArnHub
-    }
-
-
-    const { Credentials } = await stsClient
-        .send(new AssumeRoleWithWebIdentityCommand(assumeRoleWithWebIdentityArgs));
-
-    if (!Credentials) {
-        throw new Error('Invalid state: Could not assume role with web identity.');
-    }
-    if (!Credentials.AccessKeyId) {
-        throw new Error('Invalid state: Missing AccessKeyId.');
-    }
-    if (!Credentials.SecretAccessKey) {
-        throw new Error('Invalid state: Missing SecretAccessKey.');
-    }
-    if (!Credentials.SessionToken) {
-        throw new Error('Invalid state: Missing SessionToken.');
-    }
-
-    const rootDirHash = await vaultKeys.value.hashDirectoryId('');
-    if (!rootDirHash) {
-        throw new Error('Invalid state: rootDirHash missing.');
-    }
-    // TODO review what happens if bucket creation fails after successful vault creation? - merge with PUT vault service?
-    await backend.storage.put(vaultId, {
-        vaultId: vaultId,
-        storageConfigId: selectedBackend.value.id,
-        vaultConfigToken: vaultConfig.value.vaultConfigToken,
-        rootDirHash: rootDirHash,
-        // https://github.com/awslabs/smithy-typescript/blob/697310da9aec949034f92598f5cefc2cc162ef4d/packages/types/src/identity/awsCredentialIdentity.ts#L24
-        awsAccessKey: Credentials.AccessKeyId,
-        awsSecretKey: Credentials.SecretAccessKey,
-        sessionToken: Credentials.SessionToken,
-        region: selectedRegion.value
-
-    });
-    // \ end cipherduck extension
     
     state.value = State.Finished;
   } catch (error) {
