@@ -23,17 +23,11 @@ public record VaultJWEBackendDto(
 		String uuid, // vault UUID, will be used as bookmark UUID
 		@JsonProperty(value = "region", required = true)
 		String region,
-
-
 		@JsonProperty(value = "username")
 		// for non-STS
 		String username,
 		@JsonProperty(value = "password")
 		// for non-STS
-		String password,
-
-		@JsonProperty(value = "automaticAccessGrant", required = true)
-		AutomaticAccessGrant automaticAccessGrant
-
+		String password
 ) {
 }

@@ -585,19 +585,19 @@ async function createVault() {
         "defaultPath": selectedBackend.value.bucketPrefix + vaultId,
         "uuid": vaultId,
         "nickname": vaultName.value,
-        "region": selectedRegion.value,
-        "automaticAccessGrant": {
-            "enabled": automaticAccessGrant.value,
-            "maxWotDepth": -1
-        }
+        "region": selectedRegion.value
     }
+    vaultKeys.value.automaticAccessGrant = {
+        "enabled": automaticAccessGrant.value,
+        "maxWotDepth": -1
+    };
     if(isPermanent.value){
         storage.username = vaultAccessKeyId.value;
         storage.password = vaultSecretKey.value;
         storage.defaultPath = vaultBucketName.value;
     }
-
     vaultKeys.value.storage = storage;
+
 
     // Decision 2024-02-01 upload vault template/create bucket before creating vault in hub and uploading JWE. This is the most delicate operation. No further rollback for now.
     if(isPermanent.value){

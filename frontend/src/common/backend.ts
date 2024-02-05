@@ -258,8 +258,6 @@ export type VaultJWEBackendDto = {
 
     username?: string;
     password?: string;
-
-    automaticAccessGrant: AutomaticAccessGrant;
 }
 // \ end cipherduck extension
 

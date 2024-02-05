@@ -4,7 +4,7 @@ import { JWEBuilder, JWEParser } from './jwe';
 import { CRC32, DB, wordEncoder } from './util';
 
 // / start cipherduck extension
-import { VaultJWEBackendDto } from './backend';
+import { VaultJWEBackendDto, AutomaticAccessGrant } from './backend';
 // \ end cipherduck extension
 
 export class UnwrapKeyError extends Error {
@@ -34,10 +34,12 @@ export interface VaultConfigHeaderHub {
   devicesResourceUrl: string
 }
 
+// TODO @overheadhunter review should we distinguish between JWEPayload (only key) and VaultJWEPayload (all three)
 interface JWEPayload {
   key: string
 
   // / start cipherduck extension
+  ,automaticAccessGrant?: AutomaticAccessGrant
   ,backend?: VaultJWEBackendDto
   // \ end cipherduck extension
 }
@@ -58,6 +60,7 @@ export class VaultKeys {
   readonly masterKey: CryptoKey;
 
   // / start cipherduck extension
+  automaticAccessGrant?: AutomaticAccessGrant;
   storage?: VaultJWEBackendDto;
   // \ end cipherduck extension
 
@@ -65,12 +68,14 @@ export class VaultKeys {
 
   protected constructor(masterkey: CryptoKey
     // / start cipherduck extension
+    ,automaticAccessGrant?: AutomaticAccessGrant
     ,storage?: VaultJWEBackendDto
     // \ end cipherduck extension
   ) {
     this.masterKey = masterkey;
 
     // / start cipherduck extension
+    this.automaticAccessGrant = automaticAccessGrant;
     this.storage = storage;
     // \ end cipherduck extension
   }
@@ -102,10 +107,12 @@ export class VaultKeys {
 
       const masterkey = crypto.subtle.importKey('raw', rawKey, VaultKeys.MASTERKEY_KEY_DESIGNATION, true, ['sign']);
       // / start cipherduck extension
+      const automaticAccessGrant = payload.automaticAccessGrant;
       const backend = payload.backend;
       // \ end cipherduck extension
       return new VaultKeys(await masterkey
       // / start cipherduck extension
+      ,automaticAccessGrant
       ,backend
       // \ end cipherduck extension
       );
