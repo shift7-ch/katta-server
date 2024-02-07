@@ -71,8 +71,6 @@ public class StorageProfileDto extends PanacheEntityBase {
 	Boolean withPathStyleAccessEnabled = false;
 
 
-
-
 	//======================================================================
 	// (3) client profile
 	//======================================================================
@@ -109,7 +107,7 @@ public class StorageProfileDto extends PanacheEntityBase {
 	String region = "us-east-1";
 
 	@JsonProperty(value = "regions", required = true)
-	@Schema(description = "List of selectable regions in the frontend/client to create bucket in.", defaultValue = "full list from AWS SDK")
+	@Schema(description = "List of selectable regions in the frontend/client to create bucket in. Defaults to full list from AWS SDK.")
 	List<String> regions = Arrays.stream(Regions.values()).map(r -> r.getName()).toList();
 
 	@JsonProperty(value = "bucketPrefix", required = true)
@@ -140,7 +138,7 @@ public class StorageProfileDto extends PanacheEntityBase {
 	String stsRoleArn;
 
 	@JsonProperty(value = "stsRoleArn2", required = false)
-	@Schema(description = "roleArn to assume for STS AssumeRole in role chaining (AWS only, not MinIO)",example = "arn:aws:iam::930717317329:role/cipherduck_chain_02")
+	@Schema(description = "roleArn to assume for STS AssumeRole in role chaining (AWS only, not MinIO)", example = "arn:aws:iam::930717317329:role/cipherduck_chain_02")
 	String stsRoleArn2;
 
 	@JsonProperty(value = "stsDurationSeconds", required = false)
