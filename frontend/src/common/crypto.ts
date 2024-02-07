@@ -34,7 +34,7 @@ export interface VaultConfigHeaderHub {
   devicesResourceUrl: string
 }
 
-// TODO @overheadhunter review should we distinguish between JWEPayload (only key) and VaultJWEPayload (all three)
+// TODO review @overheadhunter should we distinguish between JWEPayload (only key) and VaultJWEPayload (all three)
 interface JWEPayload {
   key: string
 

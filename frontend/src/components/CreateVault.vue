@@ -125,7 +125,7 @@
                     </Listbox>
                 </div>
                 <br/>
-                <div class="col-span-6 sm:col-span-3">
+                <div v-if="!isPermanent" class="col-span-6 sm:col-span-3">
                     <label for="vaultName" class="block text-sm font-medium text-gray-700">{{ t('CreateVaultS3.enterVaultDetails.region') }}</label>
                     <Listbox as="div" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200" v-model="selectedRegion">
                       <ListboxButton class="relative w-full cursor-default rounded-lg bg-white py-2 pl-3 pr-10 text-left shadow-md focus:outline-none focus-visible:border-indigo-500 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 focus-visible:ring-offset-2 focus-visible:ring-offset-orange-300 sm:text-sm">
@@ -349,8 +349,9 @@ import {
 import { ChevronUpDownIcon } from '@heroicons/vue/24/outline';
 import { ArrowTopRightOnSquareIcon } from '@heroicons/vue/24/solid';
 import { STSClient,AssumeRoleWithWebIdentityCommand } from "@aws-sdk/client-sts";
-import { S3Client, PutObjectCommand, ListObjectsV2Command } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, ListObjectsV2Command, GetBucketLocationCommand } from "@aws-sdk/client-s3";
 import authPromise from '../common/auth';
+import {AxiosError} from 'axios';
 // \ end cipherduck extension
 
 enum State {
@@ -495,6 +496,31 @@ async function validateVaultDetails() {
 
         try{
             const client = new S3Client({
+               region: "us-east-1", // must not be empty, despite documentation saying optional (SDK rejects before even sending out request) TODO review TODO https://github.com/shift7-ch/cipherduck-hub/issues/6 test with AWS
+               endpoint: endpoint,
+               forcePathStyle: selectedBackend.value.withPathStyleAccessEnabled,
+               credentials:{
+                   accessKeyId: vaultAccessKeyId.value,
+                   secretAccessKey: vaultSecretKey.value
+               }
+            });
+            const command = new GetBucketLocationCommand({
+               Bucket: vaultBucketName.value
+             });
+            const response = await client.send(command);
+            selectedRegion.value = response.LocationConstraint
+            if(selectedRegion.value === undefined){ // MinIO returns undefined
+                selectedRegion.value = "us-east-1"; // must not be empty, despite documentation saying optional (SDK rejects before even sending out request)
+            }
+            console.log(`GetBucketLocation returned region ${selectedRegion.value}`);
+        } catch (error) {
+            console.log(error);
+            onCreateError.value = new Error(error);
+            return;
+        }
+
+        try{
+            const client = new S3Client({
                region: selectedRegion.value,
                endpoint: endpoint,
                forcePathStyle: selectedBackend.value.withPathStyleAccessEnabled,
@@ -517,7 +543,7 @@ async function validateVaultDetails() {
             }
         } catch (error) {
             console.log(error);
-            // TODO review: is checking on "NetworkError" safe across different browsers?
+            // TODO https://github.com/shift7-ch/cipherduck-hub/issues/6: is checking on "NetworkError" safe across different browsers?
             if((error instanceof TypeError) && (error.message.indexOf("NetworkError") !== -1)){
                 // TODO https://github.com/shift7-ch/cipherduck-hub/issues/31 localization
                 onCreateError.value = new ErrorWithCodeHint(error.message + " Check your bucket CORS settings.", `
@@ -675,7 +701,6 @@ async function createVault() {
         if (!rootDirHash) {
             throw new Error('Invalid state: rootDirHash missing.');
         }
-        // TODO review what happens if bucket creation fails after successful vault creation? - merge with PUT vault service?
         await backend.storage.put(vaultId, {
             vaultId: vaultId,
             storageConfigId: selectedBackend.value.id,
@@ -706,8 +731,14 @@ async function createVault() {
     if(typeof(error) === 'string'){
         onCreateError.value = new Error(error);
     }
+    else if(error instanceof AxiosError){
+      onCreateError.value = new Error(`${error.message} (${error.response.statusText}). Details: ${error.response.data.details}`)
+    }
+    else if(error instanceof Error){
+        onCreateError.value = error;
+    }
     else {
-        onCreateError.value = error instanceof Error ? error : new Error('Unknown reason');
+        onCreateError.value = new Error('Unknown reason');
     }
     // \ end cipherduck extension
   } finally {

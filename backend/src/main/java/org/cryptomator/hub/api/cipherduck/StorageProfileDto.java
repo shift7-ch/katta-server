@@ -55,15 +55,15 @@ public class StorageProfileDto extends PanacheEntityBase {
 	String name;
 
 	@JsonProperty(value = "scheme", defaultValue = "https")
-	@Schema(description = "Scheme of S3 endpoint for template upload/bucket creation.", example = "https", defaultValue = "https")
+	@Schema(description = "Scheme of S3 endpoint for template upload/bucket creation.", example = "https", defaultValue = "null (=default for protocol, i.e. https in most cases)")
 	String scheme;
 
 	@JsonProperty("hostname")
-	@Schema(description = "Hostname S3 endpoint for template upload/bucket creation.", example = "s3-us-gov-west-1.amazonaws.com", defaultValue = "AWS SDK default")
+	@Schema(description = "Hostname S3 endpoint for template upload/bucket creation.", example = "s3-us-gov-west-1.amazonaws.com", defaultValue = "null (=AWS SDK default)")
 	String hostname;
 
 	@JsonProperty("port")
-	@Schema(description = "Port S3 endpoint for template upload/bucket creation.", example = "443", defaultValue = "Default port for scheme")
+	@Schema(description = "Port S3 endpoint for template upload/bucket creation.", example = "443", defaultValue = "null (=default port for scheme)")
 	Integer port;
 
 	@JsonProperty(value = "withPathStyleAccessEnabled")
@@ -106,7 +106,7 @@ public class StorageProfileDto extends PanacheEntityBase {
 	//======================================================================
 	@JsonProperty(value = "region", required = true, defaultValue = "us-east-1")
 	@Schema(description = "Default region selected in the frontend/client to create bucket in.", example = "443", defaultValue = "us-east-1")
-	String region;
+	String region = "us-east-1";
 
 	@JsonProperty(value = "regions", required = true)
 	@Schema(description = "List of selectable regions in the frontend/client to create bucket in.", defaultValue = "full list from AWS SDK")
@@ -125,12 +125,12 @@ public class StorageProfileDto extends PanacheEntityBase {
 	String stsRoleArnHub;
 
 	@JsonProperty("stsEndpoint")
-	@Schema(description = "STS endpoint to use for AssumeRoleWithWebIdentity and AssumeRole for getting a temporary access token passed to the backend", defaultValue = "AWS SDK default")
-	String stsEndpoint;
+	@Schema(description = "STS endpoint to use for AssumeRoleWithWebIdentity and AssumeRole for getting a temporary access token passed to the backend", defaultValue = "null (=AWS SDK default)")
+	String stsEndpoint = null;
 
 	@JsonProperty(value = "bucketVersioning", defaultValue = "true")
 	@Schema(description = "Enable bucket versioning upon bucket creation", defaultValue = "true")
-	Boolean bucketVersioning;
+	Boolean bucketVersioning = true;
 
 	//----------------------------------------------------------------------
 	// (3b) STS client profile custom properties
@@ -144,7 +144,7 @@ public class StorageProfileDto extends PanacheEntityBase {
 	String stsRoleArn2;
 
 	@JsonProperty(value = "stsDurationSeconds", required = false)
-	@Schema(description = "Token lifetime for STS tokens assumed", defaultValue = "AWS/MinIO defaults")
+	@Schema(description = "Token lifetime for STS tokens assumed", defaultValue = "null (=AWS/MinIO defaults)")
 	Integer stsDurationSeconds = null;
 
 	public UUID id() {
