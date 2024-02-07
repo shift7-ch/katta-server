@@ -34,8 +34,7 @@ public class StorageProfileResource {
 	@RolesAllowed("admin")
 	@Transactional
 	@Consumes(MediaType.APPLICATION_JSON)
-	public Response uploadStorageProfile(StorageProfileDto c) {
-		// TODO https://github.com/shift7-ch/cipherduck-hub/issues/4 (R3) generate ID! Must be unique - on the other hand, we might need to ID for testing purposes or do we not?
+	public Response uploadStorageProfile(final StorageProfileDto c) {
 		// TODO https://github.com/shift7-ch/cipherduck-hub/issues/4 (R3) protocol-specific validations?
 		switch (c.protocol) {
 			case s3:
@@ -60,17 +59,18 @@ public class StorageProfileResource {
 	@APIResponse(responseCode = "200", description = "uploaded storage configuration")
 	public List<StorageProfileDto> getStorageProfiles() {
 		List<StorageProfileDto> storageProfiles = StorageProfileDto.findAll().<StorageProfileDto>stream().collect(Collectors.toList());
-		for (StorageProfileDto storageProfileDto : storageProfiles) {
-			// inject OAuth endpoints if STS
-			if (storageProfileDto.stsRoleArn() != null) {
-				storageProfileDto
-						.withOauthAuthorizationUrl(cipherduckConfig.authEndpoint())
-						.withOauthTokenUrl(cipherduckConfig.tokenEndpoint())
-						.withOauthClientId(cipherduckConfig.keycloakClientIdCryptomator())
-						.withoAuthTokenExchangeAudience(cipherduckConfig.keycloakClientIdCryptomatorVaults())
-				;
-			}
-		}
+		// TODO bad design smell - we can get it from /api/config
+//		for (StorageProfileDto storageProfileDto : storageProfiles) {
+//			// inject OAuth endpoints if STS
+//			if (storageProfileDto.stsRoleArn() != null) {
+//				storageProfileDto
+//						.withOauthAuthorizationUrl(cipherduckConfig.authEndpoint())
+//						.withOauthTokenUrl(cipherduckConfig.tokenEndpoint())
+//						.withOauthClientId(cipherduckConfig.keycloakClientIdCryptomator())
+//						.withoAuthTokenExchangeAudience(cipherduckConfig.keycloakClientIdCryptomatorVaults())
+//				;
+//			}
+//		}
 		return storageProfiles;
 	}
 

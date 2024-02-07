@@ -13,12 +13,28 @@ Documentation
 * [MinIO Client Reference `mc idp openid`](https://min.io/docs/minio/linux/reference/minio-mc/mc-idp-openid.html)
 * [MinIO Security Token Service `AssumeRoleWithWebIdentity](https://min.io/docs/minio/linux/developers/security-token-service/AssumeRoleWithWebIdentity.html)
 
+```
+minio server data --console-address :9001
+```
+
+Or containerized:
+
+```
+export MINIO_ROOT_USER=
+export MINIO_ROOT_PASSWORD=
+export MINIO_API_CORS_ALLOW_ORIGIN=testing.hub.cryptomator.org
+docker run -p 9000:9000 -p 9001:9001 -e MINIO_ROOT_USER=$MINIO_ROOT_USER -e MINIO_ROOT_PASSWORD=$MINIO_ROOT_PASSWORD -e MINIO_API_CORS_ALLOW_ORIGIN=$MINIO_API_CORS_ALLOW_ORIGIN quay.io/minio/minio server /data --console-address ":9001"
+```
+
+Side-note: MinIO does not support bucket CORS API,
+see [MinIO - Unsupported S3 Bucket APIs](https://min.io/docs/minio/linux/operations/concepts/thresholds.html#unsupported-s3-bucket-apis)
+
 #### Policy and OIDC provider for MinIO
 
 Add role for creating buckets with prefix `cipherduck` and uploading `vault.cryptomator`, as well as RW to access to
 buckets through `client_id` claim in JWT token. Adapt bucket prefix in
 
-* [minio/cipherduck.json](setup%2Fminio%2Fcipherduckpolicy.json).
+* [setup/minio_sts/createbucketpolicy.json](setup%2Fminio_sts%2Fcreatebucketpolicy.json)
 
 Side-note: MinIO does not allow for multiple OIDC providers with the same client ID:
 
@@ -28,8 +44,8 @@ This is not a problem as we leave the claim specifying the vault unset or pointi
 
 ```shell
 mc alias set myminio http://127.0.0.1:9000 minioadmin minioadmin
-mc admin policy create myminio cipherduckcreatebucket src/main/resources/cipherduck/setup/minio_sts/createbucketpolicy.json
-mc admin policy create myminio cipherduckaccessbucket src/main/resources/cipherduck/setup/minio_sts/accessbucketpolicy.json
+mc admin policy create myminio cipherduckcreatebucket setup/minio_sts/createbucketpolicy.json
+mc admin policy create myminio cipherduckaccessbucket setup/minio_sts/accessbucketpolicy.json
 ```
 
 Add a new OIDC provider, vault creation and vault access policy in MinIO:
@@ -227,7 +243,7 @@ aws iam delete-role-policy --role-name cipherduck_chain_02 --policy-name cipherd
 aws iam delete-role --role-name cipherduck_chain_02
 ```
 
-Hub Configuration (`application.properties`) and Vault JWE
+Storage Profiles
 ----------------------------------------------------------
 
 ### Introduction
@@ -240,93 +256,41 @@ Hub Configuration (`application.properties`) and Vault JWE
 | Vault [JWE](https://datatracker.ietf.org/doc/html/rfc7516)          | JSON Web Encryption for encrypted JSON-based data structures   | Contains the vault masterkey for decrypting data plus all information required to create vault bookmarks. |
 
 Note that properties in `application.properties` use dashed notation instead of Camel Case in JWE and Java Dtos,
-see [Quarkus Config Reference Guid](https://quarkus.io/guides/config-reference) for details.
+see [Quarkus Config Reference Guide](https://quarkus.io/guides/config-reference) for details.
+
+### API documentation
+
+See http://localhost:8080/q/openapi?format=json or http://localhost:8080/q/swagger-ui/
+
+### Examples
+
+* [aws_sts_profile.json](setup%2Faws_sts%2Faws_sts_profile.json)
+* [minio_sts_profile.json](setup%2Fminio_sts%2Fminio_sts_profile.json)
+* [aws_static_profile.json](setup%2Faws_static%2Faws_static_profile.json)
+* [minio_static_profile.json](setup%2Fminio_static%2Fminio_static_profile.json)
+
+### Upload storage profiles
+
+You need to be a hub admin user. If direct access grant is enabled:
 
 ```
-# https://github.com/cryptomator/hub-cli
-hub login --client-id=cryptomator authorization-code --api-base http://localhost:8080/api | tee ACCESS_TOKEN.txt; export ACCESS_TOKEN=$(cat ACCESS_TOKEN.txt| tail -1)
-curl -X PUT http://localhost:8080/api/storageprofile/ -d @setup/minio_sts/minio_sts_profile.json -v  -H "Content-Type: application/json" -H "Authorization: Bearer $ACCESS_TOKEN"
-curl -X PUT http://localhost:8080/api/storageprofile/ -d @setup/minio_static/minio_static_profile.json -v  -H "Content-Type: application/json" -H "Authorization: Bearer $ACCESS_TOKEN"
-curl -X PUT http://localhost:8080/api/storageprofile/ -d @setup/aws_static/aws_static_profile.json -v  -H "Content-Type: application/json" -H "Authorization: Bearer $ACCESS_TOKEN"
-curl -X PUT http://localhost:8080/api/storageprofile/ -d @setup/aws_sts/aws_sts_profile.json -v  -H "Content-Type: application/json" -H "Authorization: Bearer $ACCESS_TOKEN"
-curl  http://localhost:8080/api/storageprofile/ -H "Authorization: Bearer $ACCESS_TOKEN"
+export HUB_API_BASE=http://localhost:8080/api
+export ACCESS_TOKEN=`curl -v -X POST http://localhost:8180/realms/cryptomator/protocol/openid-connect/token \
+     -H "Content-Type: application/x-www-form-urlencoded" \
+     -d "client_id=cryptomator" \
+     -d "grant_type=password" \
+     -d "username=admin" \
+     -d "password=admin" | jq ".access_token" | tr -d '"'`
+curl -X PUT $HUB_API_BASE/storageprofile/ -d @setup/minio_sts/minio_sts_profile.json -v  -H "Content-Type: application/json" -H "Authorization: Bearer $ACCESS_TOKEN"
+curl -X PUT $HUB_API_BASE/storageprofile/ -d @setup/minio_static/minio_static_profile.json -v  -H "Content-Type: application/json" -H "Authorization: Bearer $ACCESS_TOKEN"
+curl -X PUT $HUB_API_BASE/storageprofile/ -d @setup/aws_static/aws_static_profile.json -v  -H "Content-Type: application/json" -H "Authorization: Bearer $ACCESS_TOKEN"
+curl -X PUT $HUB_API_BASE/storageprofile/ -d @setup/aws_sts/aws_sts_profile.json -v  -H "Content-Type: application/json" -H "Authorization: Bearer $ACCESS_TOKEN"
+curl  $HUB_API_BASE/storageprofile/ -H "Authorization: Bearer $ACCESS_TOKEN"
 ```
 
-### (0) backend configuration
+Else, use [hub-cli](https://github.com/cryptomator/hub-cli) to get the access token with Authorization Code flow:
 
-TODO https://github.com/chenkins/cipherduck-hub/issues/31 do we need both? How do we localization in dropdown?
-
-| Backend property | Description                                 |
-|------------------|---------------------------------------------|
-| `id`             | Technical identifier for a backend          |
-| `name`           | Displayed when choosing type of a new vault |
-
-#### (0a) bucket creation
-
-| Backend property             | Description                                                                                      |
-|------------------------------|--------------------------------------------------------------------------------------------------|
-| `bucketPrefix`               | Prefix for all new buckets.                                                                      |
-| `stsRoleArnHub`              | Role for `AssumeRoleWithWebIdentity` when creating buckets in hub.                               |
-| `stsRoleArnClient`           | Role for `AssumeRoleWithWebIdentity` when creating buckets in client.                            |
-| `stsEndpoint`                | Endpoint `AssumeRoleWithWebIdentity` when creating buckets. Leave empty for defaults in AWS SDK. |
-| `region`                     | Default region to create buckets in. Defaults to `us-east-1` if left empty.                      |
-| `regions`                    | Allowed regions to create buckets in. Defaults to full list of regions.                          |
-| `withPathStyleAccessEnabled` | Configures the client to use path-style access for all S3 requests.                              |
-| `s3Endpoint`                 | Configures the endpoint for template upload (in case of shared (i.e. non-STS) credentials).      |
-
-### (1) bookmark properties
-
-In the `jwe` section of the backend configurations, you can specify the connection profile with the following
-properties:
-
-| JWE attribute | Description                                                                  | Source                               | 
-|---------------|------------------------------------------------------------------------------|--------------------------------------|
-| `protocol`    | &rarr; [Cyberduck Bookmarks](https://docs.cyberduck.io/cyberduck/bookmarks/) | `backend.jwe.protocol`               |
-| `provider`    | &rarr; [Cyberduck Bookmarks](https://docs.cyberduck.io/cyberduck/bookmarks/) | `backend.jwe.provider`               |
-| `hostname`    | &rarr; [Cyberduck Bookmarks](https://docs.cyberduck.io/cyberduck/bookmarks/) | `backend.jwe.hostname` or user input |
-| `port`        | &rarr; [Cyberduck Bookmarks](https://docs.cyberduck.io/cyberduck/bookmarks/) | `backend.jwe.port` or user input     |
-| `defaultPath` | &rarr; [Cyberduck Bookmarks](https://docs.cyberduck.io/cyberduck/bookmarks/) | `backend.bucket-prefix`              |
-| `nickname`    | &rarr; [Cyberduck Bookmarks](https://docs.cyberduck.io/cyberduck/bookmarks/) | vault name (user input)              |
-| `uuid`        | &rarr; [Cyberduck Bookmarks](https://docs.cyberduck.io/cyberduck/bookmarks/) | vault ID (generated)                 |
-
-#### (2) hub-specific protocol settings (go into bookmark's custom properties)
-
-The following hub-specific properties are injected into the vault JWE from  `/api/config` upon vault creation:
-
-| JWE attribute           | Description                                                                                                                                                    | Source                                                     |
-|-------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------|
-| `oAuthAuthorizationUrl` | &rarr; [Custom connection profile using OpenID Connect provider and AssumeRoleWithWebIdentity STS API](https://docs.cyberduck.io/protocols/profiles/aws_oidc/) | &rarr; `/api/config` &rarr; `keycloakTokenEndpoint`        | 
-| `oAuthTokenUrl`         | &rarr; [Custom connection profile using OpenID Connect provider and AssumeRoleWithWebIdentity STS API](https://docs.cyberduck.io/protocols/profiles/aws_oidc/) | &rarr; `/api/config` &rarr;  `keycloakAuthEndpoint`        |         
-| `oAuthClientId`         | &rarr; [Custom connection profile using OpenID Connect provider and AssumeRoleWithWebIdentity STS API](https://docs.cyberduck.io/protocols/profiles/aws_oidc/) | &rarr; `/api/config` &rarr;  `keycloakClientIdCryptomator` |         
-| `stsEndpoint`           | &rarr; [Custom connection profile using OpenID Connect provider and AssumeRoleWithWebIdentity STS API](https://docs.cyberduck.io/protocols/profiles/aws_oidc/) | `backend.jwe.sts-endpoint`                                 |    
-| `region`                | &rarr; [Cyberduck Bookmarks](https://docs.cyberduck.io/protocols/profiles/)                                                                                    | user input (dropdown)                                      |
-
-### (3) boookmark custom properties
-
-The following properties in the `jwe` section of backend configurations go into the  `Custom` properties section of
-vault bookmarks:
-
-| JWE attribute                | Description                                      | Source                                           | 
-|------------------------------|--------------------------------------------------|--------------------------------------------------|
-| `stsRoleArn`                 | Role for `AssumeRoleWithWebIdentity` call        | `backend.jwe.sts-role-arn`                       |
-| `stsRoleArn2`                | Role for subsequent `AssumeRole` call            | `backend.jwe.sts-role-arn2`                      |
-| `stsDurationSeconds`         | Time to life for the STS token                   | `backend.jwe.sts-duration-seconds`               |
-| `parentUUID`                 | Hub ID used to group vault bookmarks by hub.     | hub UUID (injected)                              |
-| `oAuthTokenExchangeAudience` | Client ID for exchanged tokens for STS profiles. | `hub.keycloak.oidc.cryptomator-vaults-client-id` |
-
-### (4) keychain credentials
-
-The following properties in the `jwe` section of backend configurations go into the credentials associated with a vault
-bookmark (they are stored in OS keychain):
-
-| JWE attribute | Description                                | Source     | 
-|---------------|--------------------------------------------|------------|
-| `username`    | Username for shared permanent credentials. | user input |
-| `password`    | Password for shared permanent credentials. | user input |
-
-### (5) misc
-
-| JWE attribute          | Description                             | Source              | 
-|------------------------|-----------------------------------------|---------------------|
-| `automaticAccessGrant` | Should access be granted automatically? | user input checkbox |
+```
+hub login --client-id=cryptomator authorization-code --api-base $HUB_API_BASE | tee ACCESS_TOKEN.txt; export ACCESS_TOKEN=$(cat ACCESS_TOKEN.txt| tail -1)
+```
 

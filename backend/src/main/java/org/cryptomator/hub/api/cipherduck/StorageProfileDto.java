@@ -8,12 +8,15 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
-
+// pro-memoria @Schema
+// - "required" is taken from @JSONProperty
+// - "defaultValue" needs to be repeated
 @Entity
 @Table(name = "storage_profile")
 public class StorageProfileDto extends PanacheEntityBase {
@@ -33,80 +36,116 @@ public class StorageProfileDto extends PanacheEntityBase {
 
 	}
 
+	//======================================================================
+	// (1) STS and permanent:
+	// - metadata (STS and permanent)
+	// - bucket creation frontend/desktop client (STS)
+	// - template upload (STS and permanent)
+	// - client profile (STS and permanent)
+	//======================================================================
 
 	@Id
 	@Column(name = "id", nullable = false)
 	@JsonProperty(value = "id", required = true)
-	UUID id; // clients will use this as vendor in profile and provider in vault bookmark
+	@Schema(description = "Technical identifier for a storage profile. Must be unique UUID. Clients will use this as vendor in profile and provider in vault bookmark")
+	UUID id;
 
 	@JsonProperty(value = "name", required = true)
+	@Schema(description = "Displayed when choosing type of a new vault in dropdown.")
 	String name;
 
-	// (1) bucket creation, template upload and client profile
-	@JsonProperty("scheme")
-	String scheme; // defaults to AWS
+	@JsonProperty(value = "scheme", defaultValue = "https")
+	@Schema(description = "Scheme of S3 endpoint for template upload/bucket creation.", example = "https", defaultValue = "https")
+	String scheme;
 
 	@JsonProperty("hostname")
-	String hostname;  // defaults to AWS
+	@Schema(description = "Hostname S3 endpoint for template upload/bucket creation.", example = "s3-us-gov-west-1.amazonaws.com", defaultValue = "AWS SDK default")
+	String hostname;
 
 	@JsonProperty("port")
-	Integer port; // defaults to AWS
-
-	@JsonProperty(value = "region")
-	String region = "us-east-1";  // default region selected in the frontend/client
-
-	@JsonProperty(value = "regions")
-	List<String> regions = Arrays.stream(Regions.values()).map(r -> r.getName()).toList(); // defaults to full AWS list
+	@Schema(description = "Port S3 endpoint for template upload/bucket creation.", example = "443", defaultValue = "Default port for scheme")
+	Integer port;
 
 	@JsonProperty(value = "withPathStyleAccessEnabled")
+	@Schema(description = "Whether to use path style for S3 endpoint for template upload/bucket creation.", example = "false", defaultValue = "false")
 	Boolean withPathStyleAccessEnabled = false;
 
 
-	// (2) bucket creation only (i.e. STS-case)
-	@JsonProperty(value = "bucketPrefix")
+
+
+	//======================================================================
+	// (3) client profile
+	//======================================================================
+
+	//----------------------------------------------------------------------
+	// (3a) STS and permanent client profile attributes
+	//----------------------------------------------------------------------
+	@JsonProperty(value = "protocol", required = true)
+	@Schema(description = "Storage protocol: s3-hub (permanent credentials) or s3-hub-sts (STS)", defaultValue = "s3-hub-sts")
+	Protocol protocol = Protocol.s3sts;
+
+	//----------------------------------------------------------------------
+	// (3a) STS client profile attributes
+	//----------------------------------------------------------------------
+//	@JsonProperty(value = "oauthClientId")
+//	String oauthClientId; // injected from hub config if STS
+//
+//	@JsonProperty(value = "oauthTokenUrl")
+//	@Schema(description = "", readOnly = true)
+//	String oauthTokenUrl; // injected from hub config if STS
+//
+//	@JsonProperty(value = "oauthAuthorizationUrl")
+//	String oauthAuthorizationUrl; // injected from hub config if STS
+
+	//	@JsonProperty(value = "oAuthTokenExchangeAudience")
+//	String oAuthTokenExchangeAudience; // injected from hub config
+
+
+	//======================================================================
+	// (2) STS only: bucket creation
+	//======================================================================
+	@JsonProperty(value = "region", required = true, defaultValue = "us-east-1")
+	@Schema(description = "Default region selected in the frontend/client to create bucket in.", example = "443", defaultValue = "us-east-1")
+	String region;
+
+	@JsonProperty(value = "regions", required = true)
+	@Schema(description = "List of selectable regions in the frontend/client to create bucket in.", defaultValue = "full list from AWS SDK")
+	List<String> regions = Arrays.stream(Regions.values()).map(r -> r.getName()).toList();
+
+	@JsonProperty(value = "bucketPrefix", required = true)
+	@Schema(description = "Buckets are create with name <bucket prefix><vault UUID>.", example = "cipherduck")
 	String bucketPrefix;
 
-	@JsonProperty("stsRoleArnClient")
+	@JsonProperty(value = "stsRoleArnClient", required = true)
+	@Schema(description = "STS role for clients to assume to create buckets. Will be the same as stsRoleArnHub for AWS, different for MinIO.", example = "arn:aws:iam::<ACCOUNT ID>:role/cipherduck-createbucket")
 	String stsRoleArnClient;
 
-	@JsonProperty("stsRoleArnHub")
+	@JsonProperty(value = "stsRoleArnHub", required = true)
+	@Schema(description = "STS role for frontend to assume to create buckets (used with inline policy and passed to hub backend). Will be the same as stsRoleArnClient for AWS, different for MinIO.", example = "arn:aws:iam::<ACCOUNT ID>:role/cipherduck-createbucket")
 	String stsRoleArnHub;
 
 	@JsonProperty("stsEndpoint")
-	String stsEndpoint; // defaults to AWS
+	@Schema(description = "STS endpoint to use for AssumeRoleWithWebIdentity and AssumeRole for getting a temporary access token passed to the backend", defaultValue = "AWS SDK default")
+	String stsEndpoint;
 
-	@JsonProperty(value = "bucketVersioning")
-	Boolean bucketVersioning = true;
+	@JsonProperty(value = "bucketVersioning", defaultValue = "true")
+	@Schema(description = "Enable bucket versioning upon bucket creation", defaultValue = "true")
+	Boolean bucketVersioning;
 
+	//----------------------------------------------------------------------
+	// (3b) STS client profile custom properties
+	//----------------------------------------------------------------------
+	@JsonProperty(value = "stsRoleArn", required = true)
+	@Schema(description = "roleArn to for STS AssumeRoleWithWebIdentity (AWS and MinIO)", example = "arn:aws:iam::930717317329:role/cipherduck_chain_01")
+	String stsRoleArn;
 
-	// (3) client profile
-	// (3a) client profile attributes
-	@JsonProperty(value = "protocol")
-	Protocol protocol = Protocol.s3sts;
+	@JsonProperty(value = "stsRoleArn2", required = false)
+	@Schema(description = "roleArn to assume for STS AssumeRole in role chaining (AWS only, not MinIO)",example = "arn:aws:iam::930717317329:role/cipherduck_chain_02")
+	String stsRoleArn2;
 
-	@JsonProperty(value = "oauthClientId")
-	String oauthClientId; // injected from hub config if STS
-
-	@JsonProperty(value = "oauthTokenUrl")
-	String oauthTokenUrl; // injected from hub config if STS
-
-	@JsonProperty(value = "oauthAuthorizationUrl")
-	String oauthAuthorizationUrl; // injected from hub config if STS
-
-
-	// (3b) client profile custom properties
-	@JsonProperty(value = "stsRoleArn")
-	String stsRoleArn; // token exchange
-
-	@JsonProperty(value = "stsRoleArn2")
-	String stsRoleArn2; // role chaining AWS STS
-
-	@JsonProperty(value = "stsDurationSeconds")
+	@JsonProperty(value = "stsDurationSeconds", required = false)
+	@Schema(description = "Token lifetime for STS tokens assumed", defaultValue = "AWS/MinIO defaults")
 	Integer stsDurationSeconds = null;
-
-	@JsonProperty(value = "oAuthTokenExchangeAudience")
-	String oAuthTokenExchangeAudience; // injected from hub config
-
 
 	public UUID id() {
 		return id;
@@ -235,32 +274,32 @@ public class StorageProfileDto extends PanacheEntityBase {
 	}
 
 
-	public String oauthClientId() {
-		return oauthClientId;
-	}
-
-	public StorageProfileDto withOauthClientId(String oauthClientId) {
-		this.oauthClientId = oauthClientId;
-		return this;
-	}
-
-	public String oauthTokenUrl() {
-		return oauthTokenUrl;
-	}
-
-	public StorageProfileDto withOauthTokenUrl(String oauthTokenUrl) {
-		this.oauthTokenUrl = oauthTokenUrl;
-		return this;
-	}
-
-	public String oauthAuthorizationUrl() {
-		return oauthAuthorizationUrl;
-	}
-
-	public StorageProfileDto withOauthAuthorizationUrl(String oauthAuthorizationUrl) {
-		this.oauthAuthorizationUrl = oauthAuthorizationUrl;
-		return this;
-	}
+//	public String oauthClientId() {
+//		return oauthClientId;
+//	}
+//
+//	public StorageProfileDto withOauthClientId(String oauthClientId) {
+//		this.oauthClientId = oauthClientId;
+//		return this;
+//	}
+//
+//	public String oauthTokenUrl() {
+//		return oauthTokenUrl;
+//	}
+//
+//	public StorageProfileDto withOauthTokenUrl(String oauthTokenUrl) {
+//		this.oauthTokenUrl = oauthTokenUrl;
+//		return this;
+//	}
+//
+//	public String oauthAuthorizationUrl() {
+//		return oauthAuthorizationUrl;
+//	}
+//
+//	public StorageProfileDto withOauthAuthorizationUrl(String oauthAuthorizationUrl) {
+//		this.oauthAuthorizationUrl = oauthAuthorizationUrl;
+//		return this;
+//	}
 
 	public String stsRoleArn() {
 		return stsRoleArn;
@@ -289,12 +328,12 @@ public class StorageProfileDto extends PanacheEntityBase {
 		return this;
 	}
 
-	public String oAuthTokenExchangeAudience() {
-		return oAuthTokenExchangeAudience;
-	}
-
-	public StorageProfileDto withoAuthTokenExchangeAudience(String oAuthTokenExchangeAudience) {
-		this.oAuthTokenExchangeAudience = oAuthTokenExchangeAudience;
-		return this;
-	}
+//	public String oAuthTokenExchangeAudience() {
+//		return oAuthTokenExchangeAudience;
+//	}
+//
+//	public StorageProfileDto withoAuthTokenExchangeAudience(String oAuthTokenExchangeAudience) {
+//		this.oAuthTokenExchangeAudience = oAuthTokenExchangeAudience;
+//		return this;
+//	}
 }
