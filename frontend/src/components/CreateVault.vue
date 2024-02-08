@@ -732,7 +732,14 @@ async function createVault() {
         onCreateError.value = new Error(error);
     }
     else if(error instanceof AxiosError){
-      onCreateError.value = new Error(`${error.message} (${error.response.statusText}). Details: ${error.response.data.details}`)
+      var msg = `${error.message} (${error.response.statusText}).`;
+      if(error.response.status === 409){
+        msg += ` Details: Bucket ${vaultKeys.value.storage.defaultPath} already exists or no permission to list.`;
+      }
+      else if(error.response.data.details !== undefined){
+        msg += ` Details: ${error.response.data.details}.`;
+      }
+      onCreateError.value = new Error(msg);
     }
     else if(error instanceof Error){
         onCreateError.value = error;
