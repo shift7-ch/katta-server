@@ -58,20 +58,7 @@ public class StorageProfileResource {
 	@Operation(summary = "get configs for storage backends", description = "get list of configs for storage backends")
 	@APIResponse(responseCode = "200", description = "uploaded storage configuration")
 	public List<StorageProfileDto> getStorageProfiles() {
-		List<StorageProfileDto> storageProfiles = StorageProfileDto.findAll().<StorageProfileDto>stream().collect(Collectors.toList());
-		// TODO bad design smell - we can get it from /api/config
-//		for (StorageProfileDto storageProfileDto : storageProfiles) {
-//			// inject OAuth endpoints if STS
-//			if (storageProfileDto.stsRoleArn() != null) {
-//				storageProfileDto
-//						.withOauthAuthorizationUrl(cipherduckConfig.authEndpoint())
-//						.withOauthTokenUrl(cipherduckConfig.tokenEndpoint())
-//						.withOauthClientId(cipherduckConfig.keycloakClientIdCryptomator())
-//						.withoAuthTokenExchangeAudience(cipherduckConfig.keycloakClientIdCryptomatorVaults())
-//				;
-//			}
-//		}
-		return storageProfiles;
+		return StorageProfileDto.findAll().<StorageProfileDto>stream().collect(Collectors.toList());
 	}
 
 	@GET

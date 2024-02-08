@@ -33,6 +33,12 @@ public class ConfigResource {
 	@ConfigProperty(name = "hub.keycloak.oidc.cryptomator-client-id", defaultValue = "")
 	String keycloakClientIdCryptomator;
 
+	// / start cipherduck extension
+	@Inject
+	@ConfigProperty(name = "hub.keycloak.oidc.cryptomator-vaults-client-id", defaultValue = "")
+	String keycloakClientIdCryptomatorVaults;
+	// \ end cipherduck extension
+
 	@Inject
 	@ConfigProperty(name = "quarkus.oidc.auth-server-url")
 	String internalRealmUrl;
@@ -52,6 +58,7 @@ public class ConfigResource {
 
 		return new ConfigDto(keycloakPublicUrl, keycloakRealm, keycloakClientIdHub, keycloakClientIdCryptomator, authUri, tokenUri, Instant.now().truncatedTo(ChronoUnit.MILLIS), 1
 				// / start cipherduck extension
+				, keycloakClientIdCryptomatorVaults
 				, Settings.get().hubId
 				// \ end cipherduck extension
 		);
@@ -83,6 +90,7 @@ public class ConfigResource {
 							@JsonProperty("keycloakAuthEndpoint") String authEndpoint, @JsonProperty("keycloakTokenEndpoint") String tokenEndpoint,
 							@JsonProperty("serverTime") Instant serverTime, @JsonProperty("apiLevel") Integer apiLevel
 			// / start cipherduck extension
+			, @JsonProperty("keycloakClientIdCryptomatorVaults") String keycloakClientIdCryptomatorVaults
 			, @JsonProperty("uuid") String uuid
 			// \ end cipherduck extension
 	) {

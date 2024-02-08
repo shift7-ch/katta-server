@@ -20,7 +20,7 @@ import java.util.UUID;
 @Entity
 @Table(name = "storage_profile")
 public class StorageProfileDto extends PanacheEntityBase {
-	public enum Protocol {
+	public static enum Protocol {
 		s3("s3-hub"),
 		s3sts("s3-hub-sts");
 		private final String protocol;
@@ -79,25 +79,8 @@ public class StorageProfileDto extends PanacheEntityBase {
 	// (3a) STS and permanent client profile attributes
 	//----------------------------------------------------------------------
 	@JsonProperty(value = "protocol", required = true)
-	@Schema(description = "Storage protocol: s3-hub (permanent credentials) or s3-hub-sts (STS)", defaultValue = "s3-hub-sts")
+	@Schema(description = "Storage protocol: s3-hub (permanent credentials) or s3-hub-sts (STS). Defaults to s3-hub-sts.")
 	Protocol protocol = Protocol.s3sts;
-
-	//----------------------------------------------------------------------
-	// (3a) STS client profile attributes
-	//----------------------------------------------------------------------
-//	@JsonProperty(value = "oauthClientId")
-//	String oauthClientId; // injected from hub config if STS
-//
-//	@JsonProperty(value = "oauthTokenUrl")
-//	@Schema(description = "", readOnly = true)
-//	String oauthTokenUrl; // injected from hub config if STS
-//
-//	@JsonProperty(value = "oauthAuthorizationUrl")
-//	String oauthAuthorizationUrl; // injected from hub config if STS
-
-	//	@JsonProperty(value = "oAuthTokenExchangeAudience")
-//	String oAuthTokenExchangeAudience; // injected from hub config
-
 
 	//======================================================================
 	// (2) STS only: bucket creation
@@ -271,34 +254,6 @@ public class StorageProfileDto extends PanacheEntityBase {
 		return this;
 	}
 
-
-//	public String oauthClientId() {
-//		return oauthClientId;
-//	}
-//
-//	public StorageProfileDto withOauthClientId(String oauthClientId) {
-//		this.oauthClientId = oauthClientId;
-//		return this;
-//	}
-//
-//	public String oauthTokenUrl() {
-//		return oauthTokenUrl;
-//	}
-//
-//	public StorageProfileDto withOauthTokenUrl(String oauthTokenUrl) {
-//		this.oauthTokenUrl = oauthTokenUrl;
-//		return this;
-//	}
-//
-//	public String oauthAuthorizationUrl() {
-//		return oauthAuthorizationUrl;
-//	}
-//
-//	public StorageProfileDto withOauthAuthorizationUrl(String oauthAuthorizationUrl) {
-//		this.oauthAuthorizationUrl = oauthAuthorizationUrl;
-//		return this;
-//	}
-
 	public String stsRoleArn() {
 		return stsRoleArn;
 	}
@@ -325,13 +280,4 @@ public class StorageProfileDto extends PanacheEntityBase {
 		this.stsDurationSeconds = stsDurationSeconds;
 		return this;
 	}
-
-//	public String oAuthTokenExchangeAudience() {
-//		return oAuthTokenExchangeAudience;
-//	}
-//
-//	public StorageProfileDto withoAuthTokenExchangeAudience(String oAuthTokenExchangeAudience) {
-//		this.oAuthTokenExchangeAudience = oAuthTokenExchangeAudience;
-//		return this;
-//	}
 }
