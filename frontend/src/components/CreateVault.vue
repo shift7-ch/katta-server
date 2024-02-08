@@ -529,7 +529,7 @@ async function validateVaultDetails() {
                    secretAccessKey: vaultSecretKey.value
                }
             });
-            // TODO https://github.com/shift7-ch/cipherduck-hub/issues/17 actually, we should check write permissions!
+            // TODO https://github.com/shift7-ch/cipherduck-hub/issues/17 actually, we should check write permissions! https://docs.aws.amazon.com/AmazonS3/latest/API/API_HeadObject.html seems not to support for this - it only checks s3:GetObjectPermission: To use HEAD, you must have the s3:GetObject permission.
             const commandListObjects = new ListObjectsV2Command({
                Bucket: vaultBucketName.value,
                MaxKeys: 1,
@@ -543,7 +543,7 @@ async function validateVaultDetails() {
             }
         } catch (error) {
             console.log(error);
-            // TODO https://github.com/shift7-ch/cipherduck-hub/issues/6: is checking on "NetworkError" safe across different browsers?
+            // TODO https://github.com/shift7-ch/cipherduck-hub/issues/6: is checking on "NetworkError" safe across different browsers? Use https://docs.aws.amazon.com/AmazonS3/latest/API/RESTOPTIONSobject.html instead?
             if((error instanceof TypeError) && (error.message.indexOf("NetworkError") !== -1)){
                 // TODO https://github.com/shift7-ch/cipherduck-hub/issues/31 localization
                 onCreateError.value = new ErrorWithCodeHint(error.message + " Check your bucket CORS settings.", `
@@ -731,12 +731,18 @@ async function createVault() {
     if(typeof(error) === 'string'){
         onCreateError.value = new Error(error);
     }
-    else if(error instanceof AxiosError){
-      var msg = `${error.message} (${error.response.statusText}).`;
-      if(error.response.status === 409){
-        msg += ` Details: Bucket ${vaultKeys.value.storage.defaultPath} already exists or no permission to list.`;
+    else if((error instanceof AxiosError)){
+      var msg = error.message;
+      if(error.response?.statusText){
+        msg += ` (${error.response?.statusText}).`;
       }
-      else if(error.response.data.details !== undefined){
+      else{
+        msg += `.`;
+      }
+      if(error.response?.status === 409){
+        msg += ` Details: Bucket ${vaultKeys.value?.storage?.defaultPath} already exists or no permission to list.`;
+      }
+      else if(error.response?.data.details){
         msg += ` Details: ${error.response.data.details}.`;
       }
       onCreateError.value = new Error(msg);
