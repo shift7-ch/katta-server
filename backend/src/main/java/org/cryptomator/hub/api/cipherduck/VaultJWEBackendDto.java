@@ -2,8 +2,6 @@ package org.cryptomator.hub.api.cipherduck;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-// TODO https://github.com/shift7-ch/cipherduck-hub/issues/4 (R3) move to client altogether?
-
 /**
  * Part of vault JWE specifying the vault bookmark.
  * Allows to create a bookmark in the client referencing the vendor in the storage profiles.

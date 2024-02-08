@@ -23,17 +23,11 @@ CREATE TABLE "storage_profile"
 	-- (3) client profile
 	-- (3a) client profile attributes
     "protocol"           VARCHAR NOT NULL,
---    "oauthClientId"      VARCHAR,
---    "oauthTokenUrl"      VARCHAR,
---    "oauthAuthorizationUrl"
---                         VARCHAR,
+
     -- (3b) client profile custom properties
     "stsRoleArn"         VARCHAR,
     "stsRoleArn2"        VARCHAR,
     "stsDurationSeconds" INT4,
---    "oAuthTokenExchangeAudience"
---                         VARCHAR,
 
 	CONSTRAINT "STORAGE_PROFILE_PK" PRIMARY KEY ("id")
-	--  TODO https://github.com/shift7-ch/cipherduck-hub/issues/4 (R3) regions in region contraint?
 );
