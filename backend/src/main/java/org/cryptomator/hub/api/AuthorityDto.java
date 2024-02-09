@@ -4,7 +4,21 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.cryptomator.hub.entities.Authority;
 import org.cryptomator.hub.entities.Group;
 import org.cryptomator.hub.entities.User;
+import org.eclipse.microprofile.openapi.annotations.media.DiscriminatorMapping;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
+// / start cipherduck extension
+@Schema(
+		title = "Authority",
+		oneOf = { UserDto.class, GroupDto.class, MemberDto.class },
+		discriminatorMapping = {
+				@DiscriminatorMapping( value = "USER", schema = UserDto.class ),
+				@DiscriminatorMapping( value = "GROUP", schema = GroupDto.class ),
+				@DiscriminatorMapping( value = "MEMBER", schema = MemberDto.class )
+		},
+		discriminatorProperty = "type"
+)
+// \ end cipherduck extension
 abstract sealed class AuthorityDto permits UserDto, GroupDto, MemberDto {
 
 	public enum Type {
