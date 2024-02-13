@@ -434,8 +434,8 @@ class StorageService {
   }
 }
 class StorageProfileService {
-  public async get(): Promise<StorageProfileDto[]> {
-    return axiosAuth.get<StorageProfileDto[]>('/storageprofile/')
+  public async get(archived?: boolean): Promise<StorageProfileDto[]> {
+    return axiosAuth.get<StorageProfileDto[]>(`/storageprofile?archived=${archived}`)
     .then(response => response.data);
   }
 }
