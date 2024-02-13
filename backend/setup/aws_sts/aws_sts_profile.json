@@ -10,7 +10,7 @@
     "eu-west-2",
     "eu-west-3"
   ],
-  "protocol": "s3-hub-sts",
+  "protocol": "S3STS",
   "stsRoleArn": "arn:aws:iam::930717317329:role/cipherduck_chain_01",
   "stsRoleArn2": "arn:aws:iam::930717317329:role/cipherduck_chain_02"
 }

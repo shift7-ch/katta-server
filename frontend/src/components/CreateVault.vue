@@ -532,7 +532,7 @@ async function validateVaultDetails() {
                    secretAccessKey: vaultSecretKey.value
                }
             });
-            // TODO https://github.com/shift7-ch/cipherduck-hub/issues/17 actually, we should check write permissions! https://docs.aws.amazon.com/AmazonS3/latest/API/API_HeadObject.html seems not to support for this - it only checks s3:GetObjectPermission: To use HEAD, you must have the s3:GetObject permission.
+            // N.B. there seems to be no API to check write permissions without actually writing.
             const commandListObjects = new ListObjectsV2Command({
                Bucket: vaultBucketName.value,
                MaxKeys: 1,
@@ -803,7 +803,7 @@ function setRegionsOnSelectStorage(storage: StorageProfileDto){
     if (!selectedBackend.value) {
       throw new Error('Invalid state.');
     }
-    isPermanent.value = selectedBackend.value['protocol'] === 's3-hub';
+    isPermanent.value = selectedBackend.value['protocol'] === 'S3';
     console.log('   isPermanent: ' + isPermanent.value);
 }
 

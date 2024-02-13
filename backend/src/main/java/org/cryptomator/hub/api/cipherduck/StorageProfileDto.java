@@ -15,8 +15,8 @@ import java.util.UUID;
 		title = "StorageProfile",
 		oneOf = {StorageProfileS3Dto.class, StorageProfileS3STSDto.class},
 		discriminatorMapping = {
-				@DiscriminatorMapping(value = "s3-hub", schema = StorageProfileS3Dto.class),
-				@DiscriminatorMapping(value = "s3-hub-sts", schema = StorageProfileS3STSDto.class),
+				@DiscriminatorMapping(value = "S3", schema = StorageProfileS3Dto.class),
+				@DiscriminatorMapping(value = "S3STS", schema = StorageProfileS3STSDto.class),
 		},
 		discriminatorProperty = "protocol"
 )
@@ -25,8 +25,8 @@ import java.util.UUID;
 // - "defaultValue" needs to be repeated
 public abstract sealed class StorageProfileDto permits StorageProfileS3Dto {
 	public enum Protocol {
-		s3("s3-hub"),
-		s3sts("s3-hub-sts");
+		s3("S3"),
+		s3sts("S3STS");
 		private final String protocol;
 
 		private Protocol(final String protocol) {
@@ -56,7 +56,7 @@ public abstract sealed class StorageProfileDto permits StorageProfileS3Dto {
 	// (3a) STS and permanent client profile attributes
 	//----------------------------------------------------------------------
 	@JsonProperty(value = "protocol", required = true)
-	@Schema(description = "Storage protocol: s3-hub (permanent credentials) or s3-hub-sts (STS). Defaults to s3-hub-sts.")
+	@Schema(description = "Storage protocol: S3 (permanent credentials) or S3STS (STS).")
 	Protocol protocol;
 
 	@JsonProperty(value = "archived", required = true, defaultValue = "false")

@@ -10,7 +10,7 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "storage_profile_s3_sts")
-@DiscriminatorValue("s3-hub-sts")
+@DiscriminatorValue("S3STS")
 public class StorageProfileS3STS extends StorageProfileS3 { // TODO make sealed/final?
 
 	//======================================================================

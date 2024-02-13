@@ -8,6 +8,7 @@ import org.eclipse.microprofile.openapi.annotations.media.DiscriminatorMapping;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 // / start cipherduck extension
+// TODO review: backport @Schema upstream?
 @Schema(
 		title = "Authority",
 		oneOf = { UserDto.class, GroupDto.class, MemberDto.class },
