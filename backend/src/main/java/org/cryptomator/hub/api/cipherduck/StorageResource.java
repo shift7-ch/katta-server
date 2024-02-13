@@ -13,6 +13,7 @@ import jakarta.ws.rs.core.Response;
 import org.cryptomator.hub.SyncerConfig;
 import org.cryptomator.hub.entities.User;
 import org.cryptomator.hub.entities.Vault;
+import org.cryptomator.hub.entities.cipherduck.StorageProfile;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
@@ -49,26 +50,30 @@ public class StorageResource {
 	@Produces(MediaType.APPLICATION_JSON)
 	@Transactional
 	@Operation(summary = "creates bucket and policy", description = "creates an S3 bucket and uploads policy for it.")
-	@APIResponse(responseCode = "200", description = "uploaded storage configuration")
+	@APIResponse(responseCode = "200", description = "Bucket and Keycloak config created")
 	@APIResponse(responseCode = "400", description = "Could not create bucket")
 	@APIResponse(responseCode = "409", description = "Vault with this ID already exists")
-	public Response createBucket(@PathParam("vaultId") UUID vaultId, StorageDto storage) {
+	public Response createBucket(@PathParam("vaultId") UUID vaultId, final StorageDto storage) {
 		Optional<Vault> vault = Vault.<Vault>findByIdOptional(vaultId);
 		if (vault.isPresent()) {
 			throw new ClientErrorException(String.format("Vault with ID %s already exists", vaultId), Response.Status.CONFLICT);
 		}
 
-		final Map<UUID, StorageProfileDto> storageConfigs = StorageProfileDto.findAll().<StorageProfileDto>stream().collect(Collectors.toMap(StorageProfileDto::id, Function.identity()));
-		final StorageProfileDto storageProfile = storageConfigs.get(storage.storageConfigId());
+
+		final Map<UUID, StorageProfileDto> storageConfigs = StorageProfile.findAll().<StorageProfile>stream().map(StorageProfileDto::fromEntity).collect(Collectors.toMap(StorageProfileDto::id, Function.identity()));
+
+		final StorageProfileDto storageProfileDto = storageConfigs.get(storage.storageConfigId());
+
+		// TODO https://github.com/shift7-ch/cipherduck-hub/issues/6 raw cast, which HTTP status?
+		// TODO https://github.com/shift7-ch/cipherduck-hub/issues/6 check profile is not archived!
 
 		// N.B. if the bucket already exists, this will fail, so we do not prevent calling this method several times.
-		makeS3Bucket(storageProfile, storage);
+		makeS3Bucket((StorageProfileS3STSDto) storageProfileDto, storage);
 
 		final User currentUser = User.findById(jwt.getSubject());
 		keycloakGrantAccessToVault(syncerConfig, vaultId.toString(), currentUser.id, cipherduckConfig.keycloakClientIdCryptomatorVaults());
-		keycloakPrepareVault(syncerConfig, vaultId.toString(), storageProfile, jwt.getSubject(), cipherduckConfig.keycloakClientIdCryptomatorVaults());
+		keycloakPrepareVault(syncerConfig, vaultId.toString(), (StorageProfileS3STSDto) storageProfileDto, jwt.getSubject(), cipherduckConfig.keycloakClientIdCryptomatorVaults());
 
 		return Response.created(URI.create(".")).build();
 	}
-
 }

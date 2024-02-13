@@ -432,7 +432,8 @@ async function initialize() {
     state.value = State.EnterVaultDetails;
   }
   // / start cipherduck extension
-  backends.value = await backend.storageprofiles.get();
+  // get only non-archived storage profiles for new vaults
+  backends.value = await backend.storageprofiles.get(false);
   selectedBackend.value = backends.value[0];
   setRegionsOnSelectStorage(selectedBackend.value);
   selectedRegion.value = selectedBackend.value.region;
@@ -495,6 +496,8 @@ async function validateVaultDetails() {
         const endpoint = (selectedBackend.value.scheme && selectedBackend.value.hostname && selectedBackend.value.port) ? `${selectedBackend.value.scheme}://${selectedBackend.value.hostname}:${selectedBackend.value.port}` : undefined;
 
         try{
+            // TODO https://github.com/shift7-ch/cipherduck-hub/issues/6 test with AWS
+
             const client = new S3Client({
                region: "us-east-1", // must not be empty, despite documentation saying optional (SDK rejects before even sending out request) TODO review TODO https://github.com/shift7-ch/cipherduck-hub/issues/6 test with AWS
                endpoint: endpoint,
@@ -800,7 +803,7 @@ function setRegionsOnSelectStorage(storage: StorageProfileDto){
     if (!selectedBackend.value) {
       throw new Error('Invalid state.');
     }
-    isPermanent.value = !Boolean(selectedBackend.value['stsRoleArnHub'])
+    isPermanent.value = selectedBackend.value['protocol'] === 's3-hub';
     console.log('   isPermanent: ' + isPermanent.value);
 }
 

@@ -281,10 +281,10 @@ export ACCESS_TOKEN=`curl -v -X POST http://localhost:8180/realms/cryptomator/pr
      -d "grant_type=password" \
      -d "username=admin" \
      -d "password=admin" | jq ".access_token" | tr -d '"'`
-curl -X PUT $HUB_API_BASE/storageprofile/ -d @setup/minio_sts/minio_sts_profile.json -v  -H "Content-Type: application/json" -H "Authorization: Bearer $ACCESS_TOKEN"
-curl -X PUT $HUB_API_BASE/storageprofile/ -d @setup/minio_static/minio_static_profile.json -v  -H "Content-Type: application/json" -H "Authorization: Bearer $ACCESS_TOKEN"
-curl -X PUT $HUB_API_BASE/storageprofile/ -d @setup/aws_static/aws_static_profile.json -v  -H "Content-Type: application/json" -H "Authorization: Bearer $ACCESS_TOKEN"
-curl -X PUT $HUB_API_BASE/storageprofile/ -d @setup/aws_sts/aws_sts_profile.json -v  -H "Content-Type: application/json" -H "Authorization: Bearer $ACCESS_TOKEN"
+curl -X PUT $HUB_API_BASE/storageprofile/s3sts -d @setup/minio_sts/minio_sts_profile.json -v  -H "Content-Type: application/json" -H "Authorization: Bearer $ACCESS_TOKEN"
+curl -X PUT $HUB_API_BASE/storageprofile/s3 -d @setup/minio_static/minio_static_profile.json -v  -H "Content-Type: application/json" -H "Authorization: Bearer $ACCESS_TOKEN"
+curl -X PUT $HUB_API_BASE/storageprofile/s3sts -d @setup/aws_sts/aws_sts_profile.json -v  -H "Content-Type: application/json" -H "Authorization: Bearer $ACCESS_TOKEN"
+curl -X PUT $HUB_API_BASE/storageprofile/s3 -d @setup/aws_static/aws_static_profile.json -v  -H "Content-Type: application/json" -H "Authorization: Bearer $ACCESS_TOKEN"
 curl  $HUB_API_BASE/storageprofile/ -H "Authorization: Bearer $ACCESS_TOKEN"
 ```
 

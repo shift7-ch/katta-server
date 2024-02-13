@@ -13,7 +13,7 @@ import jakarta.ws.rs.ClientErrorException;
 import jakarta.ws.rs.core.Response;
 import org.apache.commons.io.IOUtils;
 import org.cryptomator.hub.api.cipherduck.StorageDto;
-import org.cryptomator.hub.api.cipherduck.StorageProfileDto;
+import org.cryptomator.hub.api.cipherduck.StorageProfileS3STSDto;
 import org.jboss.logging.Logger;
 
 import java.io.ByteArrayInputStream;
@@ -23,7 +23,7 @@ public class S3StorageHelper {
 	private static final Logger log = Logger.getLogger(S3StorageHelper.class);
 
 	public static void makeS3Bucket(
-			final StorageProfileDto storageConfig,
+			final StorageProfileS3STSDto storageConfig,
 			final StorageDto dto
 	) {
 

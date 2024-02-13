@@ -4,7 +4,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.ws.rs.core.Response;
 import org.cryptomator.hub.SyncerConfig;
 import org.cryptomator.hub.api.VaultResource;
-import org.cryptomator.hub.api.cipherduck.StorageProfileDto;
+import org.cryptomator.hub.api.cipherduck.StorageProfileS3STSDto;
 import org.cryptomator.hub.entities.Group;
 import org.cryptomator.hub.entities.Vault;
 import org.jboss.logging.Logger;
@@ -30,7 +30,7 @@ public class KeycloakCryptomatorVaultsHelper {
 
 	private static final Logger LOG = Logger.getLogger(KeycloakCryptomatorVaultsHelper.class);
 
-	public static void keycloakPrepareVault(final SyncerConfig syncerConfig, final String vaultId, final StorageProfileDto storageConfig, final String userOrGroupId, final String clientId) {
+	public static void keycloakPrepareVault(final SyncerConfig syncerConfig, final String vaultId, final StorageProfileS3STSDto storageConfig, final String userOrGroupId, final String clientId) {
 
 		// N.B. quarkus has no means to provide empty string as value, interpreted as no value, see https://github.com/quarkusio/quarkus/issues/2765
 		// TODO review better solution than using sentinel string "empty"?
@@ -44,8 +44,8 @@ public class KeycloakCryptomatorVaultsHelper {
 			// https://www.keycloak.org/docs-api/21.1.1/rest-api
 			final RealmResource realm = keycloak.realm(syncerConfig.getKeycloakRealm());
 
-			final boolean minio = storageConfig.stsRoleArn()!=null && storageConfig.stsRoleArn2() ==null;
-			final boolean aws = storageConfig.stsRoleArn() !=null && storageConfig.stsRoleArn2() != null;
+			final boolean minio = storageConfig.stsRoleArn() != null && storageConfig.stsRoleArn2() == null;
+			final boolean aws = storageConfig.stsRoleArn() != null && storageConfig.stsRoleArn2() != null;
 
 			ClientScopeResource clientScopeResource = realm.clientScopes().get(vaultId);
 
