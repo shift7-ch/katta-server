@@ -17,6 +17,8 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.cryptomator.hub.entities.cipherduck.StorageProfile;
+import org.cryptomator.hub.entities.cipherduck.StorageProfileS3;
+import org.cryptomator.hub.entities.cipherduck.StorageProfileS3STS;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.hibernate.exception.ConstraintViolationException;
@@ -38,9 +40,17 @@ public class StorageProfileResource {
 	@RolesAllowed("admin")
 	@Transactional
 	@Consumes(MediaType.APPLICATION_JSON)
+	@APIResponse(responseCode = "200", description = "uploaded storage configuration")
+	@APIResponse(responseCode = "400", description = "Constraint violation")
+	@APIResponse(responseCode = "403", description = "not an admin")
+	@APIResponse(responseCode = "409", description = "Storage profile with ID already exists")
 	public Response uploadStorageProfile(final StorageProfileS3Dto c) {
 		try {
-			c.toEntity().persistAndFlush();
+			final StorageProfileS3 entity = c.toEntity();
+			if(StorageProfile.findByIdOptional(entity.id).isPresent()){
+				throw new ClientErrorException(Response.Status.CONFLICT);
+			}
+			entity.persistAndFlush();
 			return Response.created(URI.create(".")).build();
 		} catch (ConstraintViolationException e) {
 			throw new ClientErrorException(Response.Status.CONFLICT, e);
@@ -52,14 +62,20 @@ public class StorageProfileResource {
 	@RolesAllowed("admin")
 	@Transactional
 	@Consumes(MediaType.APPLICATION_JSON)
+	@APIResponse(responseCode = "200", description = "uploaded storage configuration")
+	@APIResponse(responseCode = "400", description = "Constraint violation")
+	@APIResponse(responseCode = "403", description = "not an admin")
+	@APIResponse(responseCode = "409", description = "Storage profile with ID already exists")
 	public Response uploadStorageProfile(final StorageProfileS3STSDto c) {
 		try {
-			c.toEntity().persistAndFlush();
-			// TODO https://github.com/shift7-ch/cipherduck-hub/issues/6 log constraint violation message - might be nonnullable constraing
+			final StorageProfileS3STS entity = c.toEntity();
+			if(StorageProfile.findByIdOptional(entity.id).isPresent()){
+				throw new ClientErrorException(Response.Status.CONFLICT);
+			}
+			entity.persistAndFlush();
 			return Response.created(URI.create(".")).build();
 		} catch (ConstraintViolationException e) {
-			//
-			throw new ClientErrorException(Response.Status.CONFLICT, e);
+			return Response.status(Response.Status.BAD_REQUEST).entity(e).build();
 		}
 	}
 
@@ -70,6 +86,7 @@ public class StorageProfileResource {
 	@Transactional
 	@Operation(summary = "get configs for storage backends", description = "get list of configs for storage backends")
 	@APIResponse(responseCode = "200", description = "uploaded storage configuration")
+	@APIResponse(responseCode = "403", description = "not a user")
 	public List<StorageProfileDto> getStorageProfiles(@Nullable @QueryParam("archived") Boolean archived) {
 		return StorageProfile.findAll().<StorageProfile>stream().map(StorageProfileDto::fromEntity).filter(p -> (null == archived) || (archived.booleanValue() == p.archived)).collect(Collectors.toList());
 	}
@@ -81,6 +98,7 @@ public class StorageProfileResource {
 	@Transactional
 	@Operation(summary = "get configs for storage backends", description = "get list of configs for storage backends")
 	@APIResponse(responseCode = "200", description = "uploaded storage configuration")
+	@APIResponse(responseCode = "403", description = "not a user")
 	public List<StorageProfileS3Dto> getStorageProfilesS3() {
 		return StorageProfile.findAll().<StorageProfile>stream().map(StorageProfileDto::fromEntity).filter(StorageProfileS3Dto.class::isInstance).map(StorageProfileS3Dto.class::cast).collect(Collectors.toList());
 	}
@@ -92,7 +110,7 @@ public class StorageProfileResource {
 	@Transactional
 	@Operation(summary = "gets a storage profile")
 	@APIResponse(responseCode = "200")
-	@APIResponse(responseCode = "403", description = "not an admin")
+	@APIResponse(responseCode = "403", description = "not a user")
 	public StorageProfileDto get(@PathParam("profileId") UUID profileId) {
 		return StorageProfileDto.fromEntity(StorageProfile.<StorageProfile>findByIdOptional(profileId).orElseThrow(NotFoundException::new));
 	}
