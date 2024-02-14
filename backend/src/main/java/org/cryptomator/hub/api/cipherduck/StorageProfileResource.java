@@ -53,7 +53,7 @@ public class StorageProfileResource {
 			entity.persistAndFlush();
 			return Response.created(URI.create(".")).build();
 		} catch (ConstraintViolationException e) {
-			throw new ClientErrorException(Response.Status.CONFLICT, e);
+			return Response.status(Response.Status.BAD_REQUEST).entity(e).build();
 		}
 	}
 

@@ -496,9 +496,8 @@ async function validateVaultDetails() {
         const endpoint = (selectedBackend.value.scheme && selectedBackend.value.hostname && selectedBackend.value.port) ? `${selectedBackend.value.scheme}://${selectedBackend.value.hostname}:${selectedBackend.value.port}` : undefined;
 
         try{
-            // TODO https://github.com/shift7-ch/cipherduck-hub/issues/6 test with AWS
             const headBucketClient = new S3Client({
-               region: "us-east-1", // must not be empty, despite documentation saying optional (SDK rejects before even sending out request) TODO review TODO https://github.com/shift7-ch/cipherduck-hub/issues/6 test with AWS
+               region: "us-east-1", // must not be empty, despite documentation saying optional (SDK rejects before even sending out request) TODO review
                endpoint: endpoint,
                forcePathStyle: selectedBackend.value.withPathStyleAccessEnabled,
                credentials:{
@@ -579,6 +578,9 @@ async function validateVaultDetails() {
             }
             return;
         }
+    }
+    else{
+        // we assume CORS settings are set correctly by admins
     }
     // \ end cipherduck extension
   if (props.recover) {
