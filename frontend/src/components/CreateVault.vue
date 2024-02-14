@@ -349,7 +349,7 @@ import {
 import { ChevronUpDownIcon } from '@heroicons/vue/24/outline';
 import { ArrowTopRightOnSquareIcon } from '@heroicons/vue/24/solid';
 import { STSClient,AssumeRoleWithWebIdentityCommand } from "@aws-sdk/client-sts";
-import { S3Client, PutObjectCommand, ListObjectsV2Command, GetBucketLocationCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, ListObjectsV2Command, GetBucketLocationCommand, HeadBucketCommand } from "@aws-sdk/client-s3";
 import authPromise from '../common/auth';
 import {AxiosError} from 'axios';
 // \ end cipherduck extension
@@ -497,8 +497,7 @@ async function validateVaultDetails() {
 
         try{
             // TODO https://github.com/shift7-ch/cipherduck-hub/issues/6 test with AWS
-
-            const client = new S3Client({
+            const headBucketClient = new S3Client({
                region: "us-east-1", // must not be empty, despite documentation saying optional (SDK rejects before even sending out request) TODO review TODO https://github.com/shift7-ch/cipherduck-hub/issues/6 test with AWS
                endpoint: endpoint,
                forcePathStyle: selectedBackend.value.withPathStyleAccessEnabled,
@@ -507,22 +506,22 @@ async function validateVaultDetails() {
                    secretAccessKey: vaultSecretKey.value
                }
             });
+            const headBucketCommand = new HeadBucketCommand({
+                 Bucket: vaultBucketName.value
+            });
+            const headBucketResponse = await headBucketClient.send(headBucketCommand);
+            console.log(headBucketResponse);
+
             const command = new GetBucketLocationCommand({
                Bucket: vaultBucketName.value
              });
-            const response = await client.send(command);
+            const response = await headBucketClient.send(command);
             selectedRegion.value = response.LocationConstraint
             if(selectedRegion.value === undefined){ // MinIO returns undefined
                 selectedRegion.value = "us-east-1"; // must not be empty, despite documentation saying optional (SDK rejects before even sending out request)
             }
             console.log(`GetBucketLocation returned region ${selectedRegion.value}`);
-        } catch (error) {
-            console.log(error);
-            onCreateError.value = new Error(error);
-            return;
-        }
 
-        try{
             const client = new S3Client({
                region: selectedRegion.value,
                endpoint: endpoint,
@@ -546,10 +545,10 @@ async function validateVaultDetails() {
             }
         } catch (error) {
             console.log(error);
-            // TODO https://github.com/shift7-ch/cipherduck-hub/issues/6: is checking on "NetworkError" safe across different browsers? Use https://docs.aws.amazon.com/AmazonS3/latest/API/RESTOPTIONSobject.html instead?
-            if((error instanceof TypeError) && (error.message.indexOf("NetworkError") !== -1)){
+            // TODO review can we improve whether this is a CORS problem? FF message is "NetworkError when attempting to fetch resource", Safari "Load failed".
+            if(error instanceof TypeError){
                 // TODO https://github.com/shift7-ch/cipherduck-hub/issues/31 localization
-                onCreateError.value = new ErrorWithCodeHint(error.message + " Check your bucket CORS settings.", `
+                onCreateError.value = new ErrorWithCodeHint(error.message + ". Check your bucket CORS settings.", `
                 aws s3api put-bucket-cors --endpoint-url ${endpoint} --bucket ${vaultBucketName.value} --cors-configuration file://cors.json
 
                 cors.json:

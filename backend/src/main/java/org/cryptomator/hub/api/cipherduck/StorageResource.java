@@ -11,6 +11,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.cryptomator.hub.SyncerConfig;
+import org.cryptomator.hub.api.GoneException;
 import org.cryptomator.hub.entities.User;
 import org.cryptomator.hub.entities.Vault;
 import org.cryptomator.hub.entities.cipherduck.StorageProfile;
@@ -52,20 +53,25 @@ public class StorageResource {
 	@Operation(summary = "creates bucket and policy", description = "creates an S3 bucket and uploads policy for it.")
 	@APIResponse(responseCode = "200", description = "Bucket and Keycloak config created")
 	@APIResponse(responseCode = "400", description = "Could not create bucket")
-	@APIResponse(responseCode = "409", description = "Vault with this ID already exists")
+	@APIResponse(responseCode = "409", description = "Vault with this ID or bucket with this name already exists")
+	@APIResponse(responseCode = "410", description = "Storage profile is archived")
 	public Response createBucket(@PathParam("vaultId") UUID vaultId, final StorageDto storage) {
 		Optional<Vault> vault = Vault.<Vault>findByIdOptional(vaultId);
 		if (vault.isPresent()) {
 			throw new ClientErrorException(String.format("Vault with ID %s already exists", vaultId), Response.Status.CONFLICT);
 		}
 
-
 		final Map<UUID, StorageProfileDto> storageConfigs = StorageProfile.findAll().<StorageProfile>stream().map(StorageProfileDto::fromEntity).collect(Collectors.toMap(StorageProfileDto::id, Function.identity()));
-
+		if (!storageConfigs.containsKey(storage.storageConfigId())) {
+			return Response.status(Response.Status.BAD_REQUEST).entity(String.format("Storage profile %s not found on this server", storage.storageConfigId())).build();
+		}
 		final StorageProfileDto storageProfileDto = storageConfigs.get(storage.storageConfigId());
-
-		// TODO https://github.com/shift7-ch/cipherduck-hub/issues/6 raw cast, which HTTP status?
-		// TODO https://github.com/shift7-ch/cipherduck-hub/issues/6 check profile is not archived!
+		if (storageProfileDto.archived) {
+			throw new GoneException("Storage profile is archived.");
+		}
+		if (!(storageProfileDto instanceof StorageProfileS3STSDto)) {
+			return Response.status(Response.Status.BAD_REQUEST).entity(String.format("Storage profile must be StorageProfileS3STSDto. Found %s", storageProfileDto.getClass().getName())).build();
+		}
 
 		// N.B. if the bucket already exists, this will fail, so we do not prevent calling this method several times.
 		makeS3Bucket((StorageProfileS3STSDto) storageProfileDto, storage);
