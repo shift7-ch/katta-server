@@ -613,7 +613,6 @@ async function createVault() {
     const storage: VaultJWEBackendDto = {
         "provider": selectedBackend.value.id,
         "defaultPath": selectedBackend.value.bucketPrefix + vaultId,
-        "uuid": vaultId,
         "nickname": vaultName.value,
         "region": selectedRegion.value
     }

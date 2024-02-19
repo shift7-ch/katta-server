@@ -252,7 +252,6 @@ export type VaultJWEBackendDto = {
 
     defaultPath: string;
     nickname: string;
-    uuid: string;
 
     region: string;
 
