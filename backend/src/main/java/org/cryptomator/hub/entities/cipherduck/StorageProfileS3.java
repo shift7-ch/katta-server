@@ -29,4 +29,7 @@ public class StorageProfileS3 extends StorageProfile {// TODO make sealed?
 
 	@Column
 	public Boolean withPathStyleAccessEnabled = false;
+
+	@Column
+	public String storageClass = "STANDARD";
 }

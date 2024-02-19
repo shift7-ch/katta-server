@@ -1,9 +1,12 @@
 package org.cryptomator.hub.entities.cipherduck;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.Column;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
+import org.cryptomator.hub.api.cipherduck.StorageProfileS3STSDto;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 import java.util.List;
 import java.util.UUID;
@@ -37,6 +40,12 @@ public class StorageProfileS3STS extends StorageProfileS3 { // TODO make sealed/
 	@Column
 	public Boolean bucketVersioning = true;
 
+	@Column
+	public Boolean bucketAcceleration = true;
+
+	@Column
+	public String bucketEncryption;
+
 	//----------------------------------------------------------------------
 	// (3b) STS client profile custom properties
 	//----------------------------------------------------------------------
@@ -49,15 +58,4 @@ public class StorageProfileS3STS extends StorageProfileS3 { // TODO make sealed/
 	@Column
 	public Integer stsDurationSeconds = null;
 
-	public StorageProfileS3STS toEntity() {
-		final StorageProfileS3STS storageProfileS3 = new StorageProfileS3STS();
-		storageProfileS3.id = this.id;
-		storageProfileS3.name = this.name;
-		storageProfileS3.scheme = this.scheme;
-		storageProfileS3.hostname = this.hostname;
-		storageProfileS3.port = this.port;
-		storageProfileS3.withPathStyleAccessEnabled = this.withPathStyleAccessEnabled;
-		storageProfileS3.region = this.region;
-		return storageProfileS3;
-	}
 }

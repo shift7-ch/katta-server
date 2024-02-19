@@ -9,7 +9,6 @@ CREATE TABLE "storage_profile"
     "archived"           bool NOT NULL,
 
 	CONSTRAINT "STORAGE_PROFILE_PK" PRIMARY KEY ("id")
-	--CONSTRAINT "AUTHORITY_CHK_TYPE" CHECK ("type" = 'USER' OR "type" = 'GROUP')
 );
 
 CREATE TABLE "storage_profile_s3"
@@ -22,9 +21,12 @@ CREATE TABLE "storage_profile_s3"
     "port"              INT4,
     "withPathStyleAccessEnabled"
                         bool NOT NULL,
+    "storageClass" VARCHAR NOT NULL,
+
 
 	CONSTRAINT "STORAGE_PROFILE_S3_PK" PRIMARY KEY ("id"),
-	CONSTRAINT "STORAGE_PROFILE_S3_FK_STORAGE_PROFILE" FOREIGN KEY ("id") REFERENCES "storage_profile" ("id") ON DELETE CASCADE
+	CONSTRAINT "STORAGE_PROFILE_S3_FK_STORAGE_PROFILE" FOREIGN KEY ("id") REFERENCES "storage_profile" ("id") ON DELETE CASCADE,
+	CONSTRAINT "STORAGE_PROFILE_S3_CHK_STORAGE_CLASS" CHECK ("storageClass" = 'STANDARD' OR "storageClass" = 'INTELLIGENT_TIERING' OR "storageClass" = 'STANDARD_IA' OR "storageClass" = 'ONEZONE_IA' OR "storageClass" = 'GLACIER' OR "storageClass" = 'GLACIER_IR' OR "storageClass" = 'DEEP_ARCHIVE')
 );
 
 CREATE TABLE "storage_profile_s3_sts"
@@ -38,7 +40,10 @@ CREATE TABLE "storage_profile_s3_sts"
     "stsRoleArnClient"  VARCHAR NOT NULL,
     "stsRoleArnHub"     VARCHAR NOT NULL,
     "stsEndpoint"       VARCHAR,
-    "bucketVersioning" bool NOT NULL,
+    "bucketVersioning"  bool NOT NULL,
+    "bucketAcceleration"
+                        bool NOT NULL,
+    "bucketEncryption" VARCHAR NOT NULL,
 
     -- (3b) client profile custom properties
     "stsRoleArn"         VARCHAR NOT NULL,
@@ -46,5 +51,6 @@ CREATE TABLE "storage_profile_s3_sts"
     "stsDurationSeconds" INT4,
 
 	CONSTRAINT "STORAGE_PROFILE_S3_STS_PK" PRIMARY KEY ("id"),
-	CONSTRAINT "STORAGE_PROFILE_S3_STS_FK_STORAGE_PROFILE_S3" FOREIGN KEY ("id") REFERENCES "storage_profile_s3" ("id") ON DELETE CASCADE
+	CONSTRAINT "STORAGE_PROFILE_S3_STS_FK_STORAGE_PROFILE_S3" FOREIGN KEY ("id") REFERENCES "storage_profile_s3" ("id") ON DELETE CASCADE,
+	CONSTRAINT "STORAGE_PROFILE_S3_CHK_BUCKET_ENCRYPTION" CHECK ("bucketEncryption" = 'NONE' OR "bucketEncryption" = 'SSE_AES256' OR "bucketEncryption" = 'SSE_KMS_DEFAULT')
 );

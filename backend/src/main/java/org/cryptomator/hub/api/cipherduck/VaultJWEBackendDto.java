@@ -17,10 +17,9 @@ public record VaultJWEBackendDto(
 		String defaultPath,
 		@JsonProperty(value = "nickname", required = true)
 		String nickname,
-		@JsonProperty(value = "uuid", required = true)
-		String uuid, // vault UUID, will be used as bookmark UUID
 		@JsonProperty(value = "region", required = true)
 		String region,
+
 		@JsonProperty(value = "username")
 		// for non-STS
 		String username,

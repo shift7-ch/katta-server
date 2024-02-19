@@ -11,6 +11,10 @@ import java.util.UUID;
 
 public final class StorageProfileS3STSDto extends StorageProfileS3Dto {
 
+	public enum S3_SERVERSIDE_ENCRYPTION {
+		NONE, SSE_AES256, SSE_KMS_DEFAULT
+	}
+
 	//======================================================================
 	// (2) STS only: bucket creation
 	//======================================================================
@@ -38,9 +42,17 @@ public final class StorageProfileS3STSDto extends StorageProfileS3Dto {
 	@Schema(description = "STS endpoint to use for AssumeRoleWithWebIdentity and AssumeRole for getting a temporary access token passed to the backend. Defaults to AWS SDK default.", nullable = true)
 	String stsEndpoint;
 
-	@JsonProperty(value = "bucketVersioning", defaultValue = "true")
-	@Schema(description = "Enable bucket versioning upon bucket creation", defaultValue = "true")
+	@JsonProperty(value = "bucketVersioning", defaultValue = "true", required = true)
+	@Schema(description = "Enable bucket versioning upon bucket creation", defaultValue = "true", required = true)
 	Boolean bucketVersioning = true;
+
+	@JsonProperty(value = "bucketAcceleration", defaultValue = "true")
+	@Schema(description = "Enable bucket versioning upon bucket creation", defaultValue = "true", required = true)
+	Boolean bucketAcceleration = true;
+
+	@JsonProperty(value = "bucketEncryption", required = true)
+	@Schema(description = "Enable bucket versioning upon bucket creation", required = true)
+	S3_SERVERSIDE_ENCRYPTION bucketEncryption = S3_SERVERSIDE_ENCRYPTION.NONE;
 
 	//----------------------------------------------------------------------
 	// (3b) STS client profile custom properties
@@ -49,8 +61,8 @@ public final class StorageProfileS3STSDto extends StorageProfileS3Dto {
 	@Schema(description = "roleArn to for STS AssumeRoleWithWebIdentity (AWS and MinIO)", example = "arn:aws:iam::930717317329:role/cipherduck_chain_01")
 	String stsRoleArn;
 
-	@JsonProperty(value = "stsRoleArn2", required = false)
-	@Schema(description = "roleArn to assume for STS AssumeRole in role chaining (AWS only, not MinIO)", example = "arn:aws:iam::930717317329:role/cipherduck_chain_02")
+	@JsonProperty(value = "stsRoleArn2")
+	@Schema(description = "roleArn to assume for STS AssumeRole in role chaining (AWS only, not MinIO)", example = "arn:aws:iam::930717317329:role/cipherduck_chain_02", nullable = true)
 	String stsRoleArn2;
 
 
@@ -62,8 +74,8 @@ public final class StorageProfileS3STSDto extends StorageProfileS3Dto {
 		// jackson
 	}
 
-	public StorageProfileS3STSDto(final UUID id, final String name, final Protocol protocol, final boolean archived, final String scheme, final String hostname, final Integer port, final Boolean withPathStyleAccessEnabled, final String region, final List<String> regions, final String bucketPrefix, final String stsRoleArnClient, final String stsRoleArnHub, final String stsEndpoint, final Boolean bucketVersioning, final String stsRoleArn, final String stsRoleArn2, final Integer stsDurationSeconds) {
-		super(id, name, protocol, archived, scheme, hostname, port, withPathStyleAccessEnabled);
+	public StorageProfileS3STSDto(final UUID id, final String name, final Protocol protocol, final boolean archived, final String scheme, final String hostname, final Integer port, final boolean withPathStyleAccessEnabled, final S3_STORAGE_CLASSES storageClass, final String region, final List<String> regions, final String bucketPrefix, final String stsRoleArnClient, final String stsRoleArnHub, final String stsEndpoint, final boolean bucketVersioning, final boolean bucketAcceleration, final S3_SERVERSIDE_ENCRYPTION bucketEncryption, final String stsRoleArn, final String stsRoleArn2, final Integer stsDurationSeconds) {
+		super(id, name, protocol, archived, scheme, hostname, port, withPathStyleAccessEnabled, storageClass);
 		this.region = region;
 		this.regions = regions;
 		this.bucketPrefix = bucketPrefix;
@@ -71,6 +83,8 @@ public final class StorageProfileS3STSDto extends StorageProfileS3Dto {
 		this.stsRoleArnHub = stsRoleArnHub;
 		this.stsEndpoint = stsEndpoint;
 		this.bucketVersioning = bucketVersioning;
+		this.bucketAcceleration = bucketAcceleration;
+		this.bucketEncryption = bucketEncryption;
 		this.stsRoleArn = stsRoleArn;
 		this.stsRoleArn2 = stsRoleArn2;
 		this.stsDurationSeconds = stsDurationSeconds;
@@ -86,6 +100,7 @@ public final class StorageProfileS3STSDto extends StorageProfileS3Dto {
 				storageProfile.hostname,
 				storageProfile.port,
 				storageProfile.withPathStyleAccessEnabled,
+				S3_STORAGE_CLASSES.valueOf(storageProfile.storageClass),
 				storageProfile.region,
 				storageProfile.regions,
 				storageProfile.bucketPrefix,
@@ -93,6 +108,8 @@ public final class StorageProfileS3STSDto extends StorageProfileS3Dto {
 				storageProfile.stsRoleArnHub,
 				storageProfile.stsEndpoint,
 				storageProfile.bucketVersioning,
+				storageProfile.bucketAcceleration,
+				S3_SERVERSIDE_ENCRYPTION.valueOf(storageProfile.bucketEncryption),
 				storageProfile.stsRoleArn,
 				storageProfile.stsRoleArn2,
 				storageProfile.stsDurationSeconds
@@ -108,6 +125,7 @@ public final class StorageProfileS3STSDto extends StorageProfileS3Dto {
 		storageProfile.hostname = this.hostname;
 		storageProfile.port = this.port;
 		storageProfile.withPathStyleAccessEnabled = this.withPathStyleAccessEnabled;
+		storageProfile.storageClass = this.storageClass.toString();
 		storageProfile.region = this.region;
 		storageProfile.regions = this.regions;
 		storageProfile.bucketPrefix = this.bucketPrefix;
@@ -115,6 +133,8 @@ public final class StorageProfileS3STSDto extends StorageProfileS3Dto {
 		storageProfile.stsRoleArnHub = this.stsRoleArnHub;
 		storageProfile.stsEndpoint = this.stsEndpoint;
 		storageProfile.bucketVersioning = this.bucketVersioning;
+		storageProfile.bucketAcceleration = this.bucketAcceleration;
+		storageProfile.bucketEncryption = this.bucketEncryption.name();
 		storageProfile.stsRoleArn = this.stsRoleArn;
 		storageProfile.stsRoleArn2 = this.stsRoleArn2;
 		storageProfile.stsDurationSeconds = this.stsDurationSeconds;
@@ -147,6 +167,14 @@ public final class StorageProfileS3STSDto extends StorageProfileS3Dto {
 
 	public Boolean bucketVersioning() {
 		return bucketVersioning;
+	}
+
+	public Boolean bucketAcceleration() {
+		return bucketAcceleration;
+	}
+
+	public S3_SERVERSIDE_ENCRYPTION bucketEncryption() {
+		return bucketEncryption;
 	}
 
 	public String stsRoleArn() {
