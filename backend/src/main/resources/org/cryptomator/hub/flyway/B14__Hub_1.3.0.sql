@@ -73,6 +73,9 @@ CREATE TABLE "vault"
 	"masterkey"     VARCHAR(255), -- deprecated ("vault admin password")
 	"auth_pubkey"   VARCHAR,      -- deprecated ("vault admin password")
 	"auth_prvkey"   VARCHAR,      -- deprecated ("vault admin password")
+	-- / start cipherduck extension
+	"metadata"      VARCHAR NOT NULL UNIQUE, -- encrypted using vault masterkey (JWE ECDH-ES)
+	-- \ end cipherduck extension
 	CONSTRAINT "VAULT_PK" PRIMARY KEY ("id")
 );
 
