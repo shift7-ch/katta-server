@@ -21,7 +21,7 @@
         "s3:PutObject"
       ],
       "Resource": [
-        "arn:aws:s3:::cipherduck*/vault.cryptomator",
+        "arn:aws:s3:::cipherduck*/vault.uvf",
         "arn:aws:s3:::cipherduck*/*/"
       ]
     }

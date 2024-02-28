@@ -46,6 +46,9 @@ export type VaultDto = {
   salt?: string;
   authPublicKey?: string;
   authPrivateKey?: string;
+  // / start cipherduck extension
+  metadata: string;
+  // \ end cipherduck extension
 };
 
 export type DeviceDto = {
@@ -196,17 +199,6 @@ export type VersionDto = {
 }
 
 // / start cipherduck extension
-export type StorageDto = {
-    vaultId: string;
-    storageConfigId: string;
-    vaultConfigToken: string;
-    rootDirHash: string;
-    awsAccessKey: string;
-    awsSecretKey: string;
-    sessionToken: string;
-    region: string;
-}
-
 export type ConfigDto = {
     keycloakUrl: string;
     keycloakRealm: string;
@@ -217,6 +209,17 @@ export type ConfigDto = {
     serverTime: string;
     apiLevel: number;
     uuid: string;
+}
+
+export type CreateS3STSBucketDto = {
+    vaultId: string;
+    storageConfigId: string;
+    vaultUvf: string;
+    rootDirHash: string;
+    awsAccessKey: string;
+    awsSecretKey: string;
+    sessionToken: string;
+    region: string;
 }
 
 export type StorageProfileDto = {
@@ -242,21 +245,30 @@ export type StorageProfileDto = {
     oAuthTokenExchangeAudience: number;
 }
 
-export type AutomaticAccessGrant = {
+export type VaultMetadataJWEAutomaticAccessGrantDto = {
     enabled: boolean,
     maxWotDepth: number
 }
 
-export type VaultJWEBackendDto = {
+export type VaultMetadataJWEStorageDto = {
     provider: string;
-
     defaultPath: string;
     nickname: string;
-
     region: string;
 
     username?: string;
     password?: string;
+}
+
+export type VaultMetadataJWEDto = {
+    fileFormat: string;
+    nameFormat: string;
+    keys: Record<string,string>;
+    latestFileKey: string;
+    nameKey: string;
+    kdf: string;
+    storage: VaultMetadataJWEStorageDto;
+    automaticAccessGrant: VaultMetadataJWEAutomaticAccessGrantDto;
 }
 // \ end cipherduck extension
 
@@ -315,8 +327,16 @@ class VaultService {
       .catch(err => rethrowAndConvertIfExpected(err, 403));
   }
 
-  public async createOrUpdateVault(vaultId: string, name: string, archived: boolean, description?: string): Promise<VaultDto> {
-    const body: VaultDto = { id: vaultId, name: name, description: description, archived: archived, creationTime: new Date() };
+  public async createOrUpdateVault(vaultId: string, name: string, archived: boolean
+  // / start cipherduck extension
+  , metadata: string
+  // \ end cipherduck extension
+  , description?: string): Promise<VaultDto> {
+    const body: VaultDto = { id: vaultId, name: name, description: description, archived: archived, creationTime: new Date()
+    // / start cipherduck extension
+    , metadata: metadata
+    // \ end cipherduck extension
+    };
     return axiosAuth.put(`/vaults/${vaultId}`, body)
       .then(response => response.data)
       .catch((error) => rethrowAndConvertIfExpected(error, 402, 404));
@@ -428,7 +448,7 @@ class VersionService {
 
 // / start cipherduck extension
 class StorageService {
-  public async put(vaultId: string, dto: StorageDto): Promise<void> {
+  public async put(vaultId: string, dto: CreateS3STSBucketDto): Promise<void> {
     return axiosAuth.put(`/storage/${vaultId}/`, dto);
   }
 }

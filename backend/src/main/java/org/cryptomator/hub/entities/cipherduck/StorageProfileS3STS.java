@@ -1,15 +1,11 @@
 package org.cryptomator.hub.entities.cipherduck;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.Column;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
-import org.cryptomator.hub.api.cipherduck.StorageProfileS3STSDto;
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 import java.util.List;
-import java.util.UUID;
 
 @Entity
 @Table(name = "storage_profile_s3_sts")

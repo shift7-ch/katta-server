@@ -20,7 +20,7 @@
       ],
       "Resource": [
         "arn:aws:s3:::cipherduck*/*/",
-        "arn:aws:s3:::cipherduck*/vault.cryptomator"
+        "arn:aws:s3:::cipherduck*/vault.uvf"
       ]
     }
   ]
