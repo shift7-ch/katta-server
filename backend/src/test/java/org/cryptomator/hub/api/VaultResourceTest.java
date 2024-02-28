@@ -48,9 +48,8 @@ import static io.restassured.RestAssured.when;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
-import static org.hamcrest.Matchers.comparesEqualTo;
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.*;
 import static org.hamcrest.text.IsEqualIgnoringCase.equalToIgnoringCase;
 
 @QuarkusTest
@@ -83,9 +82,17 @@ public class VaultResourceTest {
 		private static final String VALID_AUTH_PUB = "base64";
 		private static final String VALID_AUTH_PRI = "base64";
 
+		// / start cipherduck extension
+		private static final String VALID_METADATA = "base64";
+		// \ end cipherduck extension
+
 		@Test
 		public void testValidDto() {
-			var dto = new VaultResource.VaultDto(VALID_ID, VALID_NAME, "foobarbaz", false, Instant.parse("2020-02-20T20:20:20Z"), VALID_MASTERKEY, 8, VALID_SALT, VALID_AUTH_PUB, VALID_AUTH_PRI);
+			var dto = new VaultResource.VaultDto(VALID_ID, VALID_NAME, "foobarbaz", false, Instant.parse("2020-02-20T20:20:20Z"), VALID_MASTERKEY, 8, VALID_SALT, VALID_AUTH_PUB
+					// / start cipherduck extension
+					, VALID_AUTH_PRI, VALID_METADATA
+					// \ end cipherduck extension
+			);
 			var violations = validator.validate(dto);
 			MatcherAssert.assertThat(violations, Matchers.empty());
 		}
@@ -193,7 +200,8 @@ public class VaultResourceTest {
 			}
 
 			@Test
-			@DisplayName("GET /vaults/7E57C0DE-0000-4000-8000-000100001111/keys/noSuchDevice returns 403") // legacy unlock must not encourage to register a legacy device by responding with 404 here
+			@DisplayName("GET /vaults/7E57C0DE-0000-4000-8000-000100001111/keys/noSuchDevice returns 403")
+			// legacy unlock must not encourage to register a legacy device by responding with 404 here
 			public void testUnlock3() {
 				when().get("/vaults/{vaultId}/keys/{deviceId}", "7E57C0DE-0000-4000-8000-000100001111", "noSuchDevice")
 						.then().statusCode(403);
@@ -247,7 +255,11 @@ public class VaultResourceTest {
 		@DisplayName("PUT /vaults/7E57C0DE-0000-4000-8000-000100003333 returns 201")
 		public void testCreateVault1() {
 			var uuid = UUID.fromString("7E57C0DE-0000-4000-8000-000100003333");
-			var vaultDto = new VaultResource.VaultDto(uuid, "My Vault", "Test vault 3", false, Instant.parse("2112-12-21T21:12:21Z"), "masterkey3", 42, "NaCl", "authPubKey3", "authPrvKey3");
+			var vaultDto = new VaultResource.VaultDto(uuid, "My Vault", "Test vault 3", false, Instant.parse("2112-12-21T21:12:21Z"), "masterkey3", 42, "NaCl", "authPubKey3", "authPrvKey3"
+					// / start cipherduck extension
+					, "metadata1"
+					// \ end cipherduck extension
+			);
 
 			given().contentType(ContentType.JSON).body(vaultDto)
 					.when().put("/vaults/{vaultId}", "7E57C0DE-0000-4000-8000-000100003333")
@@ -272,7 +284,11 @@ public class VaultResourceTest {
 		@DisplayName("PUT /vaults/7E57C0DE-0000-4000-8000-000100004444 returns 201 ignoring archived flag")
 		public void testCreateVault3() {
 			var uuid = UUID.fromString("7E57C0DE-0000-4000-8000-000100004444");
-			var vaultDto = new VaultResource.VaultDto(uuid, "My Vault", "Test vault 4", true, Instant.parse("2112-12-21T21:12:21Z"), "masterkey4", 42, "NaCl", "authPubKey4", "authPrvKey4");
+			var vaultDto = new VaultResource.VaultDto(uuid, "My Vault", "Test vault 4", true, Instant.parse("2112-12-21T21:12:21Z"), "masterkey4", 42, "NaCl", "authPubKey4", "authPrvKey4"
+					// / start cipherduck extension
+					, "metadata3"
+					// \ end cipherduck extension
+			);
 
 			given().contentType(ContentType.JSON).body(vaultDto)
 					.when().put("/vaults/{vaultId}", "7E57C0DE-0000-4000-8000-000100004444")
@@ -288,7 +304,11 @@ public class VaultResourceTest {
 		@DisplayName("PUT /vaults/7E57C0DE-0000-4000-8000-000100003333 returns 200, updating only name, description and archive flag")
 		public void testUpdateVault() {
 			var uuid = UUID.fromString("7E57C0DE-0000-4000-8000-000100003333");
-			var vaultDto = new VaultResource.VaultDto(uuid, "VaultUpdated", "Vault updated.", true, Instant.parse("2222-11-11T11:11:11Z"), "doNotUpdate", 27, "doNotUpdate", "doNotUpdate", "doNotUpdate");
+			var vaultDto = new VaultResource.VaultDto(uuid, "VaultUpdated", "Vault updated.", true, Instant.parse("2222-11-11T11:11:11Z"), "doNotUpdate", 27, "doNotUpdate", "doNotUpdate", "doNotUpdate"
+					// / start cipherduck extension
+					, "metadata4"
+					// \ end cipherduck extension
+			);
 			given().contentType(ContentType.JSON)
 					.body(vaultDto)
 					.when().put("/vaults/{vaultId}", "7E57C0DE-0000-4000-8000-000100003333")
@@ -750,7 +770,11 @@ public class VaultResourceTest {
 			assert EffectiveVaultAccess.countSeatOccupyingUsers() == 5;
 
 			var uuid = UUID.fromString("7E57C0DE-0000-4000-8000-0001FFFF3333");
-			var vaultDto = new VaultResource.VaultDto(uuid, "My Vault", "Test vault 4", false, Instant.parse("2112-12-21T21:12:21Z"), "masterkey3", 42, "NaCl", "authPubKey3", "authPrvKey3");
+			var vaultDto = new VaultResource.VaultDto(uuid, "My Vault", "Test vault 4", false, Instant.parse("2112-12-21T21:12:21Z"), "masterkey3", 42, "NaCl", "authPubKey3", "authPrvKey3"
+					// / start cipherduck extension
+					, "metadata5"
+					// \ end cipherduck extension
+			);
 			given().contentType(ContentType.JSON).body(vaultDto)
 					.when().put("/vaults/{vaultId}", "7E57C0DE-0000-4000-8000-0001FFFF3333")
 					.then().statusCode(402);
@@ -763,7 +787,11 @@ public class VaultResourceTest {
 			assert EffectiveVaultAccess.countSeatOccupyingUsers() == 5;
 
 			var uuid = UUID.fromString("7E57C0DE-0000-4000-8000-0001FFFF3333");
-			var vaultDto = new VaultResource.VaultDto(uuid, "My Vault", "Test vault 3", false, Instant.parse("2112-12-21T21:12:21Z"), "masterkey3", 42, "NaCl", "authPubKey3", "authPrvKey3");
+			var vaultDto = new VaultResource.VaultDto(uuid, "My Vault", "Test vault 3", false, Instant.parse("2112-12-21T21:12:21Z"), "masterkey3", 42, "NaCl", "authPubKey3", "authPrvKey3"
+					// / start cipherduck extension
+					, "metadata6"
+					// \ end cipherduck extension
+			);
 			given().contentType(ContentType.JSON).body(vaultDto)
 					.when().put("/vaults/{vaultId}", "7E57C0DE-0000-4000-8000-0001FFFF3333")
 					.then().statusCode(201)
@@ -780,7 +808,11 @@ public class VaultResourceTest {
 			assert EffectiveVaultAccess.countSeatOccupyingUsers() == 5;
 
 			var uuid = UUID.fromString("7E57C0DE-0000-4000-8000-0001FFFF3333");
-			var vaultDto = new VaultResource.VaultDto(uuid, "VaultUpdated", "Vault updated.", true, Instant.parse("2222-11-11T11:11:11Z"), "someVaule", -1, "doNotUpdate", "doNotUpdate", "doNotUpdate");
+			var vaultDto = new VaultResource.VaultDto(uuid, "VaultUpdated", "Vault updated.", true, Instant.parse("2222-11-11T11:11:11Z"), "someVaule", -1, "doNotUpdate", "doNotUpdate", "doNotUpdate"
+					// / start cipherduck extension
+					, "metadata7"
+					// \ end cipherduck extension
+			);
 			given().contentType(ContentType.JSON)
 					.body(vaultDto)
 					.when().put("/vaults/{vaultId}", "7E57C0DE-0000-4000-8000-0001FFFF3333")
@@ -871,6 +903,9 @@ public class VaultResourceTest {
 			v.name = "ownership-test-vault";
 			v.creationTime = Instant.now();
 			v.authenticationPublicKey = Base64.getEncoder().encodeToString(keyPair.getPublic().getEncoded());
+			// / start cipherduck extension
+			v.metadata = UUID.randomUUID().toString();
+			// \ end cipherduck extension
 			v.persist();
 		}
 

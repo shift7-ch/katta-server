@@ -93,7 +93,8 @@ async function downloadVault() {
 }
 
 async function generateVaultZip(): Promise<Blob> {
-  const config = await VaultConfig.create(props.vault.id, props.vaultKeys);
+  // TODO https://github.com/encryption-alliance/unified-vault-format/pull/19 upstream integration?
+   const config = await VaultConfig.create(props.vault.id, props.vaultKeys, "");
   return await config.exportTemplate();
 }
 </script>

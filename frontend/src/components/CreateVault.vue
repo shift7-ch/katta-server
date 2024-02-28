@@ -292,9 +292,11 @@ async function createVault() {
       throw new Error('Invalid state');
     }
     const vaultId = crypto.randomUUID();
-    vaultConfig.value = await VaultConfig.create(vaultId, vaultKeys.value);
+    // TODO https://github.com/encryption-alliance/unified-vault-format/pull/19 upstream integration
+    vaultConfig.value = await VaultConfig.create(vaultId, vaultKeys.value, "");
     const ownerJwe = await vaultKeys.value.encryptForUser(base64.parse(owner.publicKey));
-    await backend.vaults.createOrUpdateVault(vaultId, vaultName.value, false, vaultDescription.value);
+    // TODO https://github.com/encryption-alliance/unified-vault-format/pull/19 upstream integration
+    await backend.vaults.createOrUpdateVault(vaultId, vaultName.value, false, "", vaultDescription.value);
     await backend.vaults.grantAccess(vaultId, { userId: owner.id, token: ownerJwe });
     state.value = State.Finished;
   } catch (error) {

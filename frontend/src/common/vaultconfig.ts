@@ -4,14 +4,16 @@ import { VaultConfigHeaderHub, VaultConfigPayload, VaultKeys } from '../common/c
 
 export class VaultConfig {
   readonly vaultConfigToken: string;
-  private readonly rootDirHash: string;
+  readonly rootDirHash: string;
+  readonly vaultUvf: string;
 
-  private constructor(vaultConfigToken: string, rootDirHash: string) {
+  private constructor(vaultConfigToken: string, vaultUvf: string, rootDirHash: string) {
     this.vaultConfigToken = vaultConfigToken;
+    this.vaultUvf = vaultUvf;
     this.rootDirHash = rootDirHash;
   }
 
-  public static async create(vaultId: string, vaultKeys: VaultKeys): Promise<VaultConfig> {
+  public static async create(vaultId: string, vaultKeys: VaultKeys, vaultUvf: string): Promise<VaultConfig> {
     const cfg = config.get();
 
     const kid = `hub+${absBackendBaseURL}vaults/${vaultId}`;
@@ -35,7 +37,7 @@ export class VaultConfig {
 
     const vaultConfigToken = await vaultKeys.createVaultConfig(kid, hubConfig, jwtPayload);
     const rootDirHash = await vaultKeys.hashDirectoryId('');
-    return new VaultConfig(vaultConfigToken, rootDirHash);
+    return new VaultConfig(vaultConfigToken, vaultUvf, rootDirHash);
   }
 
   public async exportTemplate(): Promise<Blob> {
@@ -44,4 +46,11 @@ export class VaultConfig {
     zip.folder('d')?.folder(this.rootDirHash.substring(0, 2))?.folder(this.rootDirHash.substring(2));
     return zip.generateAsync({ type: 'blob' });
   }
+
+    public async exportMetadataTemplate(): Promise<Blob> {
+      const zip = new JSZip();
+      zip.file('vault.uvf', this.vaultUvf);
+      zip.folder('d')?.folder(this.rootDirHash.substring(0, 2))?.folder(this.rootDirHash.substring(2));
+      return zip.generateAsync({ type: 'blob' });
+    }
 }
