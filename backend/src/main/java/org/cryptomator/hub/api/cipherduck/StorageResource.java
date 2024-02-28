@@ -55,7 +55,7 @@ public class StorageResource {
 	@APIResponse(responseCode = "400", description = "Could not create bucket")
 	@APIResponse(responseCode = "409", description = "Vault with this ID or bucket with this name already exists")
 	@APIResponse(responseCode = "410", description = "Storage profile is archived")
-	public Response createBucket(@PathParam("vaultId") UUID vaultId, final StorageDto storage) {
+	public Response createBucket(@PathParam("vaultId") UUID vaultId, final CreateS3STSBucketDto storage) {
 		Optional<Vault> vault = Vault.<Vault>findByIdOptional(vaultId);
 		if (vault.isPresent()) {
 			throw new ClientErrorException(String.format("Vault with ID %s already exists", vaultId), Response.Status.CONFLICT);

@@ -27,7 +27,6 @@ import java.net.URI;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Path("/storageprofile")
 public class StorageProfileResource {
@@ -137,7 +136,7 @@ public class StorageProfileResource {
 	@Transactional
 	@Operation(summary = "get configs for storage backends", description = "get list of configs for storage backends")
 	@APIResponse(responseCode = "200", description = "uploaded storage configuration")
-	public VaultJWEPayloadDto getVaultJWEBackendDto(final StorageProfileDto.Protocol protocol) {
+	public VaultMasterkeyJWEDto getVaultJWEBackendDto(final StorageProfileDto.Protocol protocol) {
 		// N.B. temporary workaround to have VaultJWEBackendDto exposed in openapi.json for now....
 		return null;
 	}
