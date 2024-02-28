@@ -8,7 +8,7 @@ public record VaultJWEPayloadDto(
 		// masterkey
 		String key,
 
-		@JsonProperty(value = "backend", required = true)
+		@JsonProperty(value = "storage", required = true)
 		VaultJWEBackendDto backend,
 
 		@JsonProperty(value = "automaticAccessGrant", required = true)

@@ -81,7 +81,11 @@ async function archiveVault() {
   onArchiveVaultError.value = null;
   const v = props.vault;
   try {
-    const vaultDto = await backend.vaults.createOrUpdateVault(v.id, v.name, true, v.description);
+    const vaultDto = await backend.vaults.createOrUpdateVault(v.id, v.name, true
+    // / start cipherduck extension
+    , v.metadata
+    // \ end cipherduck extension
+    , v.description);
     emit('archived', vaultDto);
     open.value = false;
   } catch (error) {

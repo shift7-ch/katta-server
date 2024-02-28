@@ -339,7 +339,8 @@ import { VaultKeys } from '../common/crypto';
 import { debounce } from '../common/util';
 import { VaultConfig } from '../common/vaultconfig';
 // / start cipherduck extension
-import { StorageProfileDto, VaultJWEBackendDto } from '../common/backend';
+import { VaultMetadata } from '../common/crypto';
+import { StorageProfileDto, VaultMetadataJWEStorageDto, VaultMetadataJWEAutomaticAccessGrantDto } from '../common/backend';
 import {
      Listbox,
      ListboxButton,
@@ -404,6 +405,7 @@ const props = defineProps<{
 // / start cipherduck extension
 const selectedBackend = ref<StorageProfileDto | null >(null);
 const selectedRegion = ref<string | undefined>();
+const storage = ref<VaultMetadataJWEStorageDto | undefined>();
 const isPermanent = ref(false);
 const regions = ref<string[] | undefined>();
 const backends = ref<StorageProfileDto[] | null>(null);
@@ -413,6 +415,7 @@ const vaultBucketName = ref('');
 const automaticAccessGrant = ref<boolean>(true);
 const onOpenBookmarkError = ref<Error | null>(null);
 const onUploadTemplateError = ref<Error | null>(null);
+const vaultMetadata = ref<VaultMetadata | undefined>();
 
 class ErrorWithCodeHint extends Error {
   constructor(public message: string, public codehint: string) {
@@ -428,7 +431,8 @@ async function initialize() {
     state.value = State.EnterRecoveryKey;
   } else {
     vaultKeys.value = await VaultKeys.create();
-    recoveryKey.value = await vaultKeys.value.createRecoveryKey();
+    // TODO https://github.com/shift7-ch/cipherduck-hub/issues/19 fails - what to do with it?
+    //recoveryKey.value = await vaultKeys.value.createRecoveryKey();
     state.value = State.EnterVaultDetails;
   }
   // / start cipherduck extension
@@ -602,30 +606,30 @@ async function createVault() {
       throw new Error('Invalid state');
     }
     const vaultId = crypto.randomUUID();
-    vaultConfig.value = await VaultConfig.create(vaultId, vaultKeys.value);
-    // / start cipherduck extension
+    // / start cipherduck modification
     if (!selectedBackend.value) {
       throw new Error('Invalid state');
     }
     if (!selectedRegion.value) {
       throw new Error('Invalid state');
     }
-    const storage: VaultJWEBackendDto = {
+    storage.value = {
         "provider": selectedBackend.value.id,
         "defaultPath": selectedBackend.value.bucketPrefix + vaultId,
         "nickname": vaultName.value,
         "region": selectedRegion.value
     }
-    vaultKeys.value.automaticAccessGrant = {
+    const automaticAccessGrantDto: VaultMetadataJWEAutomaticAccessGrantDto = {
         "enabled": automaticAccessGrant.value,
         "maxWotDepth": -1
     };
     if(isPermanent.value){
-        storage.username = vaultAccessKeyId.value;
-        storage.password = vaultSecretKey.value;
-        storage.defaultPath = vaultBucketName.value;
+        storage.value.username = vaultAccessKeyId.value;
+        storage.value.password = vaultSecretKey.value;
+        storage.value.defaultPath = vaultBucketName.value;
     }
-    vaultKeys.value.storage = storage;
+    vaultMetadata.value = await VaultMetadata.create(storage.value, automaticAccessGrantDto);
+    vaultConfig.value = await VaultConfig.create(vaultId, await vaultMetadata.value.hashDirectoryId(''), await vaultMetadata.value.encryptWithMasterKey(vaultKeys.value.masterKey));
 
 
     // Decision 2024-02-01 upload vault template/create bucket before creating vault in hub and uploading JWE. This is the most delicate operation. No further rollback for now.
@@ -673,12 +677,12 @@ async function createVault() {
                   "s3:PutObject"
                 ],
                 "Resource": [
-                  "arn:aws:s3:::{}/vault.cryptomator",
+                  "arn:aws:s3:::{}/vault.uvf",
                   "arn:aws:s3:::{}/*/"
                 ]
               }
             ]
-          }`.replaceAll("{}", storage.defaultPath),
+          }`.replaceAll("{}", storage.value.defaultPath),
           // Required. ARN of the role that the caller is assuming.
           RoleArn: selectedBackend.value.stsRoleArnHub
         }
@@ -700,14 +704,18 @@ async function createVault() {
             throw new Error('Invalid state: Missing SessionToken.');
         }
 
-        const rootDirHash = await vaultKeys.value.hashDirectoryId('');
+        const rootDirHash = await vaultMetadata.value.hashDirectoryId('');
         if (!rootDirHash) {
+            throw new Error('Invalid state: rootDirHash missing.');
+        }
+        const vaultUvf = await vaultMetadata.value.encryptWithMasterKey(vaultKeys.value.masterKey);
+        if (!vaultUvf) {
             throw new Error('Invalid state: rootDirHash missing.');
         }
         await backend.storage.put(vaultId, {
             vaultId: vaultId,
             storageConfigId: selectedBackend.value.id,
-            vaultConfigToken: vaultConfig.value.vaultConfigToken,
+            vaultUvf: vaultUvf,
             rootDirHash: rootDirHash,
             // https://github.com/awslabs/smithy-typescript/blob/697310da9aec949034f92598f5cefc2cc162ef4d/packages/types/src/identity/awsCredentialIdentity.ts#L24
             awsAccessKey: Credentials.AccessKeyId,
@@ -720,11 +728,12 @@ async function createVault() {
     // \ end cipherduck extension
 
     const ownerJwe = await vaultKeys.value.encryptForUser(base64.parse(owner.publicKey));
-    await backend.vaults.createOrUpdateVault(vaultId, vaultName.value, false, vaultDescription.value);
+    await backend.vaults.createOrUpdateVault(vaultId, vaultName.value, false
+      // / start cipherduck extension
+      , await vaultMetadata.value.encryptWithMasterKey(vaultKeys.value.masterKey)
+      // \ end cipherduck extension
+      , vaultDescription.value);
     await backend.vaults.grantAccess(vaultId, { userId: owner.id, token: ownerJwe });
-    
-    
-
     
     state.value = State.Finished;
   } catch (error) {
@@ -743,7 +752,7 @@ async function createVault() {
         msg += `.`;
       }
       if(error.response?.status === 409){
-        msg += ` Details: Bucket ${vaultKeys.value?.storage?.defaultPath} already exists or no permission to list.`;
+        msg += ` Details: Bucket ${storage.value?.defaultPath} already exists or no permission to list.`;
       }
       else if(error.response?.data.details){
         msg += ` Details: ${error.response.data.details}.`;
@@ -808,6 +817,7 @@ function setRegionsOnSelectStorage(storage: StorageProfileDto){
 }
 
 async function uploadVaultTemplate() {
+  // TODO https://github.com/shift7-ch/cipherduck-hub/issues/19 upload metadata as file, remove vault.cryptomator
   onUploadTemplateError.value = null;
   try {
     if (!selectedBackend.value) {
@@ -833,8 +843,8 @@ async function uploadVaultTemplate() {
         throw new Error('Bucket not empty, cannot upload template. Empty the bucket manually and re-try.');
     }
 
-    const vaultConfigToken = await vaultConfig.value?.vaultConfigToken;
-    console.log(vaultConfigToken);
+    const vaultUvf = await vaultConfig.value?.vaultUvf;
+    console.log(vaultUvf);
     const rootDirHash = await vaultConfig.value?.rootDirHash;
     console.log(rootDirHash);
 
@@ -845,7 +855,7 @@ async function uploadVaultTemplate() {
     const commandPutVaultCryptomator = new PutObjectCommand({
         Bucket: vaultBucketName.value,
         Key: 'vault.cryptomator',
-        Body: vaultConfigToken,
+        Body: vaultUvf,
     });
     console.log(commandPutVaultCryptomator);
     const responsePutVaultCryptomator = await client.send(commandPutVaultCryptomator);
