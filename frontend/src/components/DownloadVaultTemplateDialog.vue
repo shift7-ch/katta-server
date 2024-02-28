@@ -93,7 +93,10 @@ async function downloadVault() {
 }
 
 async function generateVaultZip(): Promise<Blob> {
-  const config = await VaultConfig.create(props.vault.id, props.vaultKeys);
+  // / start cipherduck modification
+  // TODO https://github.com/shift7-ch/cipherduck-hub/issues/19 make linter happy - remove DownloadVaultTemplateDialog?
+  const config = await VaultConfig.create(props.vault.id, "", "");
+  // \ end cipherduck modification
   return await config.exportTemplate();
 }
 </script>

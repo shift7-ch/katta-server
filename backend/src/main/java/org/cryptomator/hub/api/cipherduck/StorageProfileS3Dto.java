@@ -35,7 +35,7 @@ public sealed class StorageProfileS3Dto extends StorageProfileDto permits Storag
 	@Schema(description = "Whether to use path style for S3 endpoint for template upload/bucket creation.", example = "false", defaultValue = "false")
 	Boolean withPathStyleAccessEnabled = false;
 
-	@JsonProperty(value = "storageClass")
+	@JsonProperty(value = "storageClass", defaultValue = "STANDARD")
 	@Schema(description = "Storage class for upload. Defaults to STANDARD", example = "STANDARD", required = true)
 	S3_STORAGE_CLASSES storageClass = S3_STORAGE_CLASSES.STANDARD;
 

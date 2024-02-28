@@ -4,13 +4,13 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.UUID;
 
-public record StorageDto(
+public record CreateS3STSBucketDto(
 		@JsonProperty("vaultId")
 		String vaultId,
 		@JsonProperty("storageConfigId")
 		UUID storageConfigId,
 		@JsonProperty("vaultUvf")
-		String vaultConfigToken,
+		String vaultUvf,
 		@JsonProperty("rootDirHash")
 		String rootDirHash,
 		@JsonProperty("awsAccessKey")
@@ -21,7 +21,6 @@ public record StorageDto(
 		String sessionToken,
 		@JsonProperty("region")
 		String region
-
 ) {
 
 }

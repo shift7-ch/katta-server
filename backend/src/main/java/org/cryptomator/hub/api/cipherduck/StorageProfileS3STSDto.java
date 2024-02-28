@@ -34,11 +34,11 @@ public final class StorageProfileS3STSDto extends StorageProfileS3Dto {
 	String stsRoleArnClient;
 
 	@JsonProperty(value = "stsRoleArnHub", required = true)
-	@Schema(description = "STS role for frontend to assume to create buckets (used with inline policy and passed to hub backend). Will be the same as stsRoleArnClient for AWS, different for MinIO.", example = "arn:aws:iam::<ACCOUNT ID>:role/cipherduck-createbucket")
+	@Schema(description = "STS role for frontend to assume to create buckets (used with inline policy and passed to hub storage). Will be the same as stsRoleArnClient for AWS, different for MinIO.", example = "arn:aws:iam::<ACCOUNT ID>:role/cipherduck-createbucket")
 	String stsRoleArnHub;
 
 	@JsonProperty("stsEndpoint")
-	@Schema(description = "STS endpoint to use for AssumeRoleWithWebIdentity and AssumeRole for getting a temporary access token passed to the backend. Defaults to AWS SDK default.", nullable = true)
+	@Schema(description = "STS endpoint to use for AssumeRoleWithWebIdentity and AssumeRole for getting a temporary access token passed to the storage. Defaults to AWS SDK default.", nullable = true)
 	String stsEndpoint;
 
 	@JsonProperty(value = "bucketVersioning", defaultValue = "true", required = true)

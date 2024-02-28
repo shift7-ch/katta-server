@@ -451,6 +451,10 @@ public class VaultResource {
 		vault.description = vaultDto.description;
 		vault.archived = existingVault.isEmpty() ? false : vaultDto.archived;
 
+		// / start cipherduck extension
+		vault.metadata = vaultDto.metadata;
+		// \ end cipherduck extension
+
 		vault.persistAndFlush(); // trigger PersistenceException before we continue with
 		if (existingVault.isEmpty()) {
 			var access = new VaultAccess();
@@ -535,10 +539,17 @@ public class VaultResource {
 						   @JsonProperty("masterkey") @OnlyBase64Chars String masterkey, @JsonProperty("iterations") Integer iterations,
 						   @JsonProperty("salt") @OnlyBase64Chars String salt,
 						   @JsonProperty("authPublicKey") @OnlyBase64Chars String authPublicKey, @JsonProperty("authPrivateKey") @OnlyBase64Chars String authPrivateKey
+						   // / start cipherduck extension
+							,@JsonProperty("metadata") @NotNull String metadata
+						   // \ end cipherduck extension
 	) {
 
 		public static VaultDto fromEntity(Vault entity) {
-			return new VaultDto(entity.id, entity.name, entity.description, entity.archived, entity.creationTime.truncatedTo(ChronoUnit.MILLIS), entity.masterkey, entity.iterations, entity.salt, entity.authenticationPublicKey, entity.authenticationPrivateKey);
+			return new VaultDto(entity.id, entity.name, entity.description, entity.archived, entity.creationTime.truncatedTo(ChronoUnit.MILLIS), entity.masterkey, entity.iterations, entity.salt, entity.authenticationPublicKey, entity.authenticationPrivateKey
+					// / start cipherduck extension
+					, entity.metadata
+					// \ end cipherduck extension
+					);
 		}
 
 	}
