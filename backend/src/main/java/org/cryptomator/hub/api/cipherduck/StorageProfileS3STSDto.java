@@ -1,11 +1,10 @@
 package org.cryptomator.hub.api.cipherduck;
 
-import com.amazonaws.regions.Regions;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.cryptomator.hub.entities.cipherduck.StorageProfileS3STS;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import software.amazon.awssdk.regions.Region;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -24,7 +23,7 @@ public final class StorageProfileS3STSDto extends StorageProfileS3Dto {
 
 	@JsonProperty(value = "regions", required = true)
 	@Schema(description = "List of selectable regions in the frontend/client to create bucket in. Defaults to full list from AWS SDK.")
-	List<String> regions = Arrays.stream(Regions.values()).map(r -> r.getName()).toList();
+	List<String> regions = Region.regions().stream().map(Region::id).toList();
 
 	@JsonProperty(value = "bucketPrefix", required = true)
 	@Schema(description = "Buckets are create with name <bucket prefix><vault UUID>.", example = "cipherduck")

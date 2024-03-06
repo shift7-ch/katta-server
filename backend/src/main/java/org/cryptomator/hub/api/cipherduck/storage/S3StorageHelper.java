@@ -1,34 +1,42 @@
 package org.cryptomator.hub.api.cipherduck.storage;
 
-import com.amazonaws.AmazonServiceException;
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicSessionCredentials;
-import com.amazonaws.client.builder.AwsClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.s3.model.AmazonS3Exception;
-import com.amazonaws.services.s3.model.BucketAccelerateConfiguration;
-import com.amazonaws.services.s3.model.BucketAccelerateStatus;
-import com.amazonaws.services.s3.model.BucketVersioningConfiguration;
-import com.amazonaws.services.s3.model.GetBucketEncryptionResult;
-import com.amazonaws.services.s3.model.ObjectMetadata;
-import com.amazonaws.services.s3.model.PutObjectRequest;
-import com.amazonaws.services.s3.model.SSEAlgorithm;
-import com.amazonaws.services.s3.model.ServerSideEncryptionByDefault;
-import com.amazonaws.services.s3.model.ServerSideEncryptionConfiguration;
-import com.amazonaws.services.s3.model.ServerSideEncryptionRule;
-import com.amazonaws.services.s3.model.SetBucketAccelerateConfigurationRequest;
-import com.amazonaws.services.s3.model.SetBucketEncryptionRequest;
-import com.amazonaws.services.s3.model.SetBucketVersioningConfigurationRequest;
+
 import jakarta.ws.rs.ClientErrorException;
 import jakarta.ws.rs.core.Response;
-import org.apache.commons.io.IOUtils;
-import org.cryptomator.hub.api.cipherduck.StorageDto;
+import org.cryptomator.hub.api.cipherduck.CreateS3STSBucketDto;
 import org.cryptomator.hub.api.cipherduck.StorageProfileS3STSDto;
 import org.jboss.logging.Logger;
+import software.amazon.awssdk.auth.credentials.AwsSessionCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.S3ClientBuilder;
+import software.amazon.awssdk.services.s3.S3Configuration;
+import software.amazon.awssdk.services.s3.model.AccelerateConfiguration;
+import software.amazon.awssdk.services.s3.model.BucketAccelerateStatus;
+import software.amazon.awssdk.services.s3.model.BucketVersioningStatus;
+import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
+import software.amazon.awssdk.services.s3.model.GetBucketAccelerateConfigurationRequest;
+import software.amazon.awssdk.services.s3.model.GetBucketAccelerateConfigurationResponse;
+import software.amazon.awssdk.services.s3.model.GetBucketEncryptionRequest;
+import software.amazon.awssdk.services.s3.model.GetBucketEncryptionResponse;
+import software.amazon.awssdk.services.s3.model.GetBucketVersioningRequest;
+import software.amazon.awssdk.services.s3.model.GetBucketVersioningResponse;
+import software.amazon.awssdk.services.s3.model.HeadBucketRequest;
+import software.amazon.awssdk.services.s3.model.NoSuchBucketException;
+import software.amazon.awssdk.services.s3.model.PutBucketAccelerateConfigurationRequest;
+import software.amazon.awssdk.services.s3.model.PutBucketEncryptionRequest;
+import software.amazon.awssdk.services.s3.model.PutBucketVersioningRequest;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.S3Exception;
+import software.amazon.awssdk.services.s3.model.ServerSideEncryption;
+import software.amazon.awssdk.services.s3.model.ServerSideEncryptionByDefault;
+import software.amazon.awssdk.services.s3.model.ServerSideEncryptionConfiguration;
+import software.amazon.awssdk.services.s3.model.ServerSideEncryptionRule;
+import software.amazon.awssdk.services.s3.model.VersioningConfiguration;
 
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
+import java.net.URI;
 import java.util.Collections;
 
 public class S3StorageHelper {
@@ -36,7 +44,7 @@ public class S3StorageHelper {
 
 	public static void makeS3Bucket(
 			final StorageProfileS3STSDto storageConfig,
-			final StorageDto dto
+			final CreateS3STSBucketDto dto
 	) {
 
 		if (log.isInfoEnabled()) {
@@ -46,50 +54,69 @@ public class S3StorageHelper {
 		final String bucketName = storageConfig.bucketPrefix() + dto.vaultId();
 		// https://github.com/awsdocs/aws-doc-sdk-examples/blob/main/java/example_code/s3/src/main/java/aws/example/s3/CreateBucket.java
 		final String region = dto.region();
-		AmazonS3ClientBuilder s3Builder = AmazonS3ClientBuilder
-				.standard()
-				.withCredentials(new AWSStaticCredentialsProvider(new BasicSessionCredentials(dto.awsAccessKey(), dto.awsSecretKey(), dto.sessionToken())));
+
+		S3ClientBuilder s3Builder = S3Client.builder()
+				.credentialsProvider(StaticCredentialsProvider.create(AwsSessionCredentials.create(dto.awsAccessKey(), dto.awsSecretKey(), dto.sessionToken())));
 		if (storageConfig.stsEndpoint() != null) {
 			s3Builder = s3Builder
-					.withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(storageConfig.stsEndpoint(), region))
-					.withPathStyleAccessEnabled(storageConfig.withPathStyleAccessEnabled() != null ? storageConfig.withPathStyleAccessEnabled() : false);
+					.endpointOverride(URI.create(storageConfig.stsEndpoint()))
+					.serviceConfiguration(S3Configuration.builder()
+							.pathStyleAccessEnabled(storageConfig.withPathStyleAccessEnabled() != null ? storageConfig.withPathStyleAccessEnabled() : false)
+							.build());
 		} else if (region != null) {
-			s3Builder = s3Builder.withRegion(region);
+			s3Builder = s3Builder.region(Region.of(region));
 		}
-		final AmazonS3 s3 = s3Builder
-				.build();
-
-		if (s3.doesBucketExistV2(bucketName)) {
+		final S3Client s3 = s3Builder.build();
+		boolean okToCreate = true;
+		try {
+			s3.headBucket(HeadBucketRequest.builder().bucket(bucketName).build());
+		} catch (final NoSuchBucketException e) {
+			okToCreate = true;
+		} catch (final S3Exception e) {
+			if (e.statusCode() == 403) {
+				// ignore
+				log.info("Ignoring 403 on bucket head", e);
+				okToCreate = true;
+			}
+		}
+		if (!okToCreate) {
 			throw new ClientErrorException(String.format("Bucket %s already exists or no permission to list.", bucketName), Response.Status.CONFLICT);
 		}
-		s3.createBucket(bucketName);
+
+		s3.createBucket(CreateBucketRequest.builder().bucket(bucketName).build());
 		if (log.isInfoEnabled()) {
 			log.info(String.format("Upload vault template to %s (%s, %s)", bucketName, dto, storageConfig));
 		}
-		s3.putObject(bucketName, "vault.cryptomator", IOUtils.toInputStream(dto.vaultConfigToken()), new ObjectMetadata());
+		s3.putObject(PutObjectRequest.builder()
+						.bucket(bucketName)
+						.key("vault.uvf")
+						.build(),
+				RequestBody.fromString(dto.vaultUvf()));
 
 		// See https://github.com/cryptomator/hub/blob/develop/frontend/src/common/vaultconfig.ts
-		//        zip.file('vault.cryptomator', this.vaultConfigToken);
+		//        zip.file('vault.uvf', this.vaultUvf);
 		//        zip.folder('d')?.folder(this.rootDirHash.substring(0, 2))?.folder(this.rootDirHash.substring(2));
 		// create meta-data for your folder and set content-length to 0
-		ObjectMetadata metadata = new ObjectMetadata();
-		metadata.setContentLength(0);
+		final PutObjectRequest request2 = PutObjectRequest.builder()
+				.bucket(bucketName)
+				.key(String.format("d/%s/%s/", dto.rootDirHash().substring(0, 2), dto.rootDirHash().substring(2)))
+				.contentLength(0L)
+				.build();
+		s3.putObject(request2, RequestBody.empty());
 
-		// create empty content
-		InputStream emptyContent = new ByteArrayInputStream(new byte[0]);
-		com.amazonaws.services.s3.model.PutObjectRequest request2 = new PutObjectRequest(bucketName, String.format("d/%s/%s/", dto.rootDirHash().substring(0, 2), dto.rootDirHash().substring(2)), emptyContent, metadata);
-		s3.putObject(request2);
-
-		// TODO review - should we allow for not setting (because of permissions)?
+		// TODO https://github.com/shift7-ch/cipherduck-hub/issues/44 CORS? should we allow for not setting (because of permissions)? E.g. MinIO which has now bucket acceleration
 		// enable versioning on the bucket.
 		{
 			if (log.isInfoEnabled()) {
 				log.info(String.format("Enable/disable bucket versioning on %s (%s, %s)", bucketName, dto, storageConfig));
 			}
-			s3.setBucketVersioningConfiguration(new SetBucketVersioningConfigurationRequest(bucketName, new BucketVersioningConfiguration().withStatus(storageConfig.bucketVersioning() ? BucketVersioningConfiguration.ENABLED : BucketVersioningConfiguration.OFF)));
-			final BucketVersioningConfiguration conf = s3.getBucketVersioningConfiguration(bucketName);
+			s3.putBucketVersioning(PutBucketVersioningRequest.builder()
+					.bucket(bucketName)
+					.versioningConfiguration(VersioningConfiguration.builder().status(storageConfig.bucketVersioning() ? BucketVersioningStatus.ENABLED : BucketVersioningStatus.SUSPENDED).build())
+					.build());
+			final GetBucketVersioningResponse conf = s3.getBucketVersioning(GetBucketVersioningRequest.builder().bucket(bucketName).build());
 			if (log.isInfoEnabled()) {
-				log.info(String.format("Enabled/disabled bucket versioning on %s (%s, %s) with status %s", bucketName, dto, storageConfig, conf.getStatus()));
+				log.info(String.format("Enabled/disabled bucket versioning on %s (%s, %s) with status %s", bucketName, dto, storageConfig, conf.statusAsString()));
 			}
 		}
 
@@ -99,21 +126,28 @@ public class S3StorageHelper {
 				log.info(String.format("Enable/disable bucket acceleration on %s (%s, %s)", bucketName, dto, storageConfig));
 			}
 			try {
-			s3.setBucketAccelerateConfiguration(new SetBucketAccelerateConfigurationRequest(bucketName, new BucketAccelerateConfiguration(storageConfig.bucketAcceleration() ? BucketAccelerateStatus.Enabled : BucketAccelerateStatus.Suspended)));
-			}
-			catch (AmazonS3Exception e){
-				if(!storageConfig.bucketAcceleration() && e.getMessage().contains("MalformedXML")){
+				s3.putBucketAccelerateConfiguration(PutBucketAccelerateConfigurationRequest.builder()
+						.bucket(bucketName)
+						.accelerateConfiguration(AccelerateConfiguration.builder()
+								.status(storageConfig.bucketAcceleration() ? BucketAccelerateStatus.ENABLED : BucketAccelerateStatus.SUSPENDED)
+								.build())
+						.build());
+			} catch (S3Exception e) {
+				if (!storageConfig.bucketAcceleration() && e.awsErrorDetails().errorCode().equals("MalformedXML")) {
 					// MinIO does not support bucket acceleration nor encryption -> TODO https://github.com/shift7-ch/cipherduck-hub/issues/44 should we make bucketAcceleration attribute in storage profile nullable instead?
 					// https://min.io/docs/minio/linux/administration/identity-access-management/policy-based-access-control.html
 					// https://github.com/minio/minio/blob/master/cmd/api-router.go
 					// https://github.com/minio/minio/issues/14586
 					log.warn(String.format("Ignoring failed SetBucketAccelerateConfiguration call - MinIO does not support it. Details: %s", e));
 				}
+				else {
+					throw e;
+				}
 			}
 
-			final BucketAccelerateConfiguration conf = s3.getBucketAccelerateConfiguration(bucketName);
+			final GetBucketAccelerateConfigurationResponse conf = s3.getBucketAccelerateConfiguration(GetBucketAccelerateConfigurationRequest.builder().bucket(bucketName).build());
 			if (log.isInfoEnabled()) {
-				log.info(String.format("Enabled/disabled bucket acceleration on %s (%s, %s) with status %s", bucketName, dto, storageConfig, conf.getStatus()));
+				log.info(String.format("Enabled/disabled bucket acceleration on %s (%s, %s) with status %s", bucketName, dto, storageConfig, conf.status()));
 			}
 		}
 
@@ -123,26 +157,35 @@ public class S3StorageHelper {
 				log.info(String.format("Enable/disable bucket encryption on %s (%s, %s)", bucketName, dto, storageConfig));
 			}
 			switch (storageConfig.bucketEncryption()) {
-				case NONE -> {}
-				case SSE_AES256 -> s3.setBucketEncryption(
-						new SetBucketEncryptionRequest()
-								.withBucketName(bucketName)
-								.withServerSideEncryptionConfiguration(new ServerSideEncryptionConfiguration()
-								.withRules(Collections.singleton(
-										new ServerSideEncryptionRule()
-												.withApplyServerSideEncryptionByDefault(new ServerSideEncryptionByDefault().withSSEAlgorithm(SSEAlgorithm.AES256))))
-						));
-				case SSE_KMS_DEFAULT -> s3.setBucketEncryption(
-						new SetBucketEncryptionRequest()
-								.withBucketName(bucketName)
-								.withServerSideEncryptionConfiguration(new ServerSideEncryptionConfiguration()
-										.withRules(Collections.singleton(
-												new ServerSideEncryptionRule()
-														.withApplyServerSideEncryptionByDefault(new ServerSideEncryptionByDefault().withSSEAlgorithm(SSEAlgorithm.KMS))))
-								));
+				case NONE -> {
+				}
+				case SSE_AES256 -> s3.putBucketEncryption(
+						PutBucketEncryptionRequest.builder()
+								.bucket(bucketName)
+								.serverSideEncryptionConfiguration(ServerSideEncryptionConfiguration.builder()
+										.rules(Collections.singleton(
+												ServerSideEncryptionRule.builder()
+														.applyServerSideEncryptionByDefault(ServerSideEncryptionByDefault.builder()
+																.sseAlgorithm(ServerSideEncryption.AES256).build())
+														.build()))
+
+										.build())
+								.build());
+				case SSE_KMS_DEFAULT -> s3.putBucketEncryption(
+						PutBucketEncryptionRequest.builder()
+								.bucket(bucketName)
+								.serverSideEncryptionConfiguration(ServerSideEncryptionConfiguration.builder()
+										.rules(Collections.singleton(
+												ServerSideEncryptionRule.builder()
+														.applyServerSideEncryptionByDefault(ServerSideEncryptionByDefault.builder()
+																.sseAlgorithm(ServerSideEncryption.AWS_KMS).build())
+														.build()))
+
+										.build())
+								.build());
 			}
 			switch (storageConfig.bucketEncryption()) {
-				case  NONE:
+				case NONE:
 					// MinIO does not support bucket acceleration nor encryption -> TODO https://github.com/shift7-ch/cipherduck-hub/issues/44 should we make bucketEncryption attribute in storage profile nullable instead?
 					// https://min.io/docs/minio/linux/administration/identity-access-management/policy-based-access-control.html
 					// https://github.com/minio/minio/blob/master/cmd/api-router.go
@@ -150,14 +193,13 @@ public class S3StorageHelper {
 					break;
 				case SSE_AES256:
 				case SSE_KMS_DEFAULT:
-					final GetBucketEncryptionResult conf = s3.getBucketEncryption(bucketName);
+					final GetBucketEncryptionResponse conf = s3.getBucketEncryption(GetBucketEncryptionRequest.builder().bucket(bucketName).build());
 					if (log.isInfoEnabled()) {
-						log.info(String.format("Enabled/disabled bucket encryption on %s (%s, %s) with configuration %s", bucketName, dto, storageConfig, conf.getServerSideEncryptionConfiguration()));
+						log.info(String.format("Enabled/disabled bucket encryption on %s (%s, %s) with configuration %s", bucketName, dto, storageConfig, conf.serverSideEncryptionConfiguration()));
 					}
 			}
 		}
 		// TODO https://github.com/shift7-ch/cipherduck-hub/issues/44 CORS?
 		//s3.setBucketCrossOriginConfiguration();
-
 	}
 }

@@ -8,10 +8,10 @@
         "s3:GetBucketPolicy",
         "s3:PutBucketVersioning",
         "s3:GetBucketVersioning",
-        "s3:GetBucketAccelerateConfiguration",
-        "s3:PutBucketAccelerateConfiguration",
-        "s3:GetBucketEncryption",
-        "s3:PutBucketEncryption"
+        "s3:GetAccelerateConfiguration",
+        "s3:PutAccelerateConfiguration",
+        "s3:GetEncryptionConfiguration",
+        "s3:PutEncryptionConfiguration"
       ],
       "Resource": "arn:aws:s3:::cipherduck*"
     },
