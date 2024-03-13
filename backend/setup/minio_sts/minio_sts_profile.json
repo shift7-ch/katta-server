@@ -17,7 +17,6 @@
   "stsRoleArnHub": "arn:minio:iam:::role/HGKdlY4eFFsXVvJmwlMYMhmbnDE",
   "stsRoleArnClient": "arn:minio:iam:::role/IqZpDC5ahW_DCAvZPZA4ACjEnDE",
   "stsEndpoint": "http://minio:9000",
-
   "protocol": "S3STS",
   "scheme": "http",
   "hostname": "minio",
