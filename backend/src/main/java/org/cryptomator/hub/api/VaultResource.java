@@ -317,7 +317,6 @@ public class VaultResource {
 	@RolesAllowed("user")
 	@VaultRole({VaultAccess.Role.MEMBER, VaultAccess.Role.OWNER}) // may throw 403
 	@Transactional
-	@Produces(MediaType.TEXT_PLAIN)
 	@Operation(summary = "get the user-specific vault key", description = "retrieves a jwe containing the vault key, encrypted for the current user")
 	@APIResponse(responseCode = "200")
 	@APIResponse(responseCode = "402", description = "license expired or number of effective vault users that have a token exceeds available license seats")
@@ -347,7 +346,7 @@ public class VaultResource {
 			AuditEventVaultKeyRetrieve.log(jwt.getSubject(), vaultId, AuditEventVaultKeyRetrieve.Result.SUCCESS);
 			var subscriptionStateHeaderName = "Hub-Subscription-State";
 			var subscriptionStateHeaderValue = license.isSet() ? "ACTIVE" : "INACTIVE"; // license expiration is not checked here, because it is checked in the ActiveLicense filter
-			return Response.ok(access.vaultKey).header(subscriptionStateHeaderName, subscriptionStateHeaderValue).build();
+			return Response.ok(access.vaultKey, MediaType.TEXT_PLAIN_TYPE).header(subscriptionStateHeaderName, subscriptionStateHeaderValue).build();
 		} else if (Vault.findById(vaultId) == null) {
 			throw new NotFoundException("No such vault.");
 		} else {
