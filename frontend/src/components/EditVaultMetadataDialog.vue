@@ -112,11 +112,7 @@ async function updateVaultMetadata() {
       throw new FormValidationFailedError();
     }
     const vault = props.vault;
-    const updatedVault = await backend.vaults.createOrUpdateVault(vault.id, vaultName.value, vault.archived
-    // / start cipherduck extension
-    , vault.metadata
-    // \ end cipherduck extension
-    , vaultDescription.value);
+    const updatedVault = await backend.vaults.createOrUpdateVault(vault.id, vaultName.value, vault.archived, vault.metadata, vaultDescription.value);
     emit('updated', updatedVault);
     open.value = false;
   } catch (error) {
