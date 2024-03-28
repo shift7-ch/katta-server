@@ -98,7 +98,7 @@ export class VaultKeys {
       rawKey = base64.parse(payload.key);
       rawUvfKey = base64.parse(payload.uvfKey);
       const masterKey = crypto.subtle.importKey('raw', rawKey, VaultKeys.MASTERKEY_KEY_DESIGNATION, true, ['sign']);
-      const uvfMasterKey = crypto.subtle.importKey('raw', rawUvfKey, VaultKeys.UVF_MASTERKEY_KEY_DESIGNATION, true, ['sign']);
+      const uvfMasterKey = crypto.subtle.importKey('raw', rawUvfKey, VaultKeys.UVF_MASTERKEY_KEY_DESIGNATION, true, ['wrapKey', 'unwrapKey']);
       return new VaultKeys(await masterKey, await uvfMasterKey);
     } finally {
       rawKey.fill(0x00);
