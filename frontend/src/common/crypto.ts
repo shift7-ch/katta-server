@@ -32,8 +32,13 @@ export interface VaultConfigHeaderHub {
   devicesResourceUrl: string
 }
 
-interface JWEPayload {
+interface UserKeysJWEPayload {
   key: string
+}
+
+interface VaultKeysWEPayload {
+  key: string
+  uvfKey: string
 }
 
 const GCM_NONCE_LEN = 12;
@@ -49,16 +54,19 @@ export class VaultKeys {
     length: 512
   };
 
-
+  // in uvf setting, the vault masterKey is used to encrypt the vault metadata JWE using A256KW
+  private static readonly UVF_MASTERKEY_KEY_DESIGNATION = { name: 'AES-KW', length: 256 };
 
   readonly masterKey: CryptoKey;
+  readonly uvfMasterKey: CryptoKey;
 
-  protected constructor(masterkey: CryptoKey) {
-    this.masterKey = masterkey;
+  protected constructor(masterKey: CryptoKey, uvfMasterKey: CryptoKey) {
+    this.masterKey = masterKey;
+    this.uvfMasterKey = uvfMasterKey;
   }
 
   /**
-   * Creates a new masterkey
+   * Creates a new masterkey (vault8 and uvf)
    * @returns A new masterkey
    */
   public static async create(): Promise<VaultKeys> {
@@ -67,23 +75,31 @@ export class VaultKeys {
       true,
       ['sign']
     );
-    return new VaultKeys(await key);
+    const uvfKey = crypto.subtle.generateKey(
+      VaultKeys.UVF_MASTERKEY_KEY_DESIGNATION,
+      true,
+      ['wrapKey', 'unwrapKey']
+    );
+    return new VaultKeys(await key, await uvfKey);
   }
 
 
   /**
-   * Decrypts the vault's masterkey using the user's private key
+   * Decrypts the vault's masterkey (vault8 and uvf) using the user's private key
    * @param jwe JWE containing the vault key
    * @param userPrivateKey The user's private key
    * @returns The masterkey
    */
   public static async decryptWithUserKey(jwe: string, userPrivateKey: CryptoKey): Promise<VaultKeys> {
     let rawKey = new Uint8Array();
+    let rawUvfKey = new Uint8Array();
     try {
-      const payload: JWEPayload = await JWEParser.parse(jwe).decryptEcdhEs(userPrivateKey);
+      const payload: VaultKeysWEPayload = await JWEParser.parse(jwe).decryptEcdhEs(userPrivateKey);
       rawKey = base64.parse(payload.key);
-      const masterkey = crypto.subtle.importKey('raw', rawKey, VaultKeys.MASTERKEY_KEY_DESIGNATION, true, ['sign']);
-      return new VaultKeys(await masterkey);
+      rawUvfKey = base64.parse(payload.uvfKey);
+      const masterKey = crypto.subtle.importKey('raw', rawKey, VaultKeys.MASTERKEY_KEY_DESIGNATION, true, ['sign']);
+      const uvfMasterKey = crypto.subtle.importKey('raw', rawUvfKey, VaultKeys.UVF_MASTERKEY_KEY_DESIGNATION, true, ['sign']);
+      return new VaultKeys(await masterKey, await uvfMasterKey);
     } finally {
       rawKey.fill(0x00);
     }
@@ -147,7 +163,8 @@ export class VaultKeys {
         true,
         ['verify']
       );
-      return [new VaultKeys(await masterkey), { privateKey: await privKey, publicKey: await pubKey }];
+      // TODO https://github.com/encryption-alliance/unified-vault-format/pull/19 upstream legacy integration for uvf?
+      return [new VaultKeys(await masterkey, await masterkey), { privateKey: await privKey, publicKey: await pubKey }];
     } catch (error) {
       throw new UnwrapKeyError(error);
     }
@@ -180,7 +197,8 @@ export class VaultKeys {
       true,
       ['sign']
     );
-    return new VaultKeys(await key);
+    // TODO https://github.com/encryption-alliance/unified-vault-format/pull/19 upstream legacy integration for uvf?
+    return new VaultKeys(await key, await key);
   }
 
   public async createVaultConfig(kid: string, hubConfig: VaultConfigHeaderHub, payload: VaultConfigPayload): Promise<string> {
@@ -221,16 +239,18 @@ export class VaultKeys {
   }
 
   /**
-   * Encrypts this masterkey using the given public key
+   * Encrypts this masterkey (vault8 and uvf) using the given public key
    * @param userPublicKey The recipient's public key (DER-encoded)
    * @returns a JWE containing this Masterkey
    */
   public async encryptForUser(userPublicKey: Uint8Array): Promise<string> {
     const publicKey = await crypto.subtle.importKey('spki', userPublicKey, UserKeys.KEY_DESIGNATION, false, []);
     const rawkey = new Uint8Array(await crypto.subtle.exportKey('raw', this.masterKey));
+    const rawUvfKey = new Uint8Array(await crypto.subtle.exportKey('raw', this.uvfMasterKey));
     try {
-      const payload: JWEPayload = {
-        key: base64.stringify(rawkey)
+      const payload: VaultKeysWEPayload = {
+        key: base64.stringify(rawkey),
+        uvfKey: base64.stringify(rawUvfKey)
       };
       return JWEBuilder.ecdhEs(publicKey).encrypt(payload);
     } finally {
@@ -288,7 +308,7 @@ export class UserKeys {
    * @throws {UnwrapKeyError} when attempting to decrypt the private key using an incorrect setupCode
    */
   public static async recover(encodedPublicKey: string, encryptedPrivateKey: string, setupCode: string): Promise<UserKeys> {
-    const jwe: JWEPayload = await JWEParser.parse(encryptedPrivateKey).decryptPbes2(setupCode);
+    const jwe: UserKeysJWEPayload = await JWEParser.parse(encryptedPrivateKey).decryptPbes2(setupCode);
     const decodedPublicKey = base64.parse(encodedPublicKey, { loose: true });
     const decodedPrivateKey = base64.parse(jwe.key, { loose: true });
     const privateKey = crypto.subtle.importKey('pkcs8', decodedPrivateKey, UserKeys.KEY_DESIGNATION, true, UserKeys.KEY_USAGES);
@@ -314,7 +334,7 @@ export class UserKeys {
   public async encryptedPrivateKey(setupCode: string): Promise<string> {
     const rawkey = new Uint8Array(await crypto.subtle.exportKey('pkcs8', this.keyPair.privateKey));
     try {
-      const payload: JWEPayload = {
+      const payload: UserKeysJWEPayload = {
         key: base64.stringify(rawkey)
       };
       return await JWEBuilder.pbes2(setupCode).encrypt(payload);
@@ -333,7 +353,7 @@ export class UserKeys {
     const publicKey = await UserKeys.publicKey(devicePublicKey);
     const rawkey = new Uint8Array(await crypto.subtle.exportKey('pkcs8', this.keyPair.privateKey));
     try {
-      const payload: JWEPayload = {
+      const payload: UserKeysJWEPayload = {
         key: base64.stringify(rawkey)
       };
       return JWEBuilder.ecdhEs(publicKey).encrypt(payload);
@@ -353,7 +373,7 @@ export class UserKeys {
     const publicKey = await UserKeys.publicKey(userPublicKey);
     let rawKey = new Uint8Array();
     try {
-      const payload: JWEPayload = await JWEParser.parse(jwe).decryptEcdhEs(browserPrivateKey);
+      const payload: UserKeysJWEPayload = await JWEParser.parse(jwe).decryptEcdhEs(browserPrivateKey);
       rawKey = base64.parse(payload.key);
       const privateKey = await crypto.subtle.importKey('pkcs8', rawKey, UserKeys.KEY_DESIGNATION, true, UserKeys.KEY_USAGES);
       return new UserKeys({ publicKey: publicKey, privateKey: privateKey });
@@ -368,221 +388,6 @@ export class UserKeys {
     } else {
       return await crypto.subtle.importKey('spki', publicKey, UserKeys.KEY_DESIGNATION, true, []);
     }
-  }
-}
-
-
-export class UvfVaultKeys {
-  // in uvf setting, the vault masterKey is used to encrypt the vault metadata JWE using A256KW
-  private static readonly MASTERKEY_KEY_DESIGNATION = { name: 'AES-KW', length: 256 };
-
-  readonly masterKey: CryptoKey;
-
-  protected constructor(masterkey: CryptoKey) {
-    this.masterKey = masterkey;
-  }
-
-  /**
-   * Creates a new masterkey
-   * @returns A new masterkey
-   */
-  public static async create(): Promise<UvfVaultKeys> {
-    const key = crypto.subtle.generateKey(
-      UvfVaultKeys.MASTERKEY_KEY_DESIGNATION,
-      true,
-      // TODO https://github.com/encryption-alliance/unified-vault-format/pull/19 is this correct?
-      ['wrapKey', 'unwrapKey']
-    );
-    return new UvfVaultKeys(await key);
-  }
-
-  /**
-   * Decrypts the vault's masterkey using the user's private key
-   * @param jwe JWE containing the vault key
-   * @param userPrivateKey The user's private key
-   * @returns The masterkey
-   */
-  public static async decryptWithUserKey(jwe: string, userPrivateKey: CryptoKey): Promise<UvfVaultKeys> {
-    let rawKey = new Uint8Array();
-    try {
-      const payload: JWEPayload = await JWEParser.parse(jwe).decryptEcdhEs(userPrivateKey);
-      rawKey = base64.parse(payload.key);
-      const masterkey = crypto.subtle.importKey('raw', rawKey, UvfVaultKeys.MASTERKEY_KEY_DESIGNATION, true,
-      // TODO https://github.com/encryption-alliance/unified-vault-format/pull/19 is this correct?
-      ['wrapKey', 'unwrapKey']
-      );
-
-      return new UvfVaultKeys(await masterkey);
-    } finally {
-      rawKey.fill(0x00);
-    }
-  }
-
-  /**
-   * Unwraps keys protected by the legacy "Vault Admin Password".
-   * @param vaultAdminPassword Vault Admin Password
-   * @param wrappedMasterkey The wrapped masterkey
-   * @param wrappedOwnerPrivateKey The wrapped owner private key
-   * @param ownerPublicKey The owner public key
-   * @param salt PBKDF2 Salt
-   * @param iterations PBKDF2 Iterations
-   * @returns The unwrapped key material.
-   * @throws WrongPasswordError, if the wrong password is used
-   * @deprecated Only used during "claim vault ownership" workflow for legacy vaults
-   */
-  public static async decryptWithAdminPassword(vaultAdminPassword: string, wrappedMasterkey: string, wrappedOwnerPrivateKey: string, ownerPublicKey: string, salt: string, iterations: number): Promise<[UvfVaultKeys, CryptoKeyPair]> {
-    // pbkdf2:
-    const encodedPw = new TextEncoder().encode(vaultAdminPassword);
-    const pwKey = crypto.subtle.importKey('raw', encodedPw, 'PBKDF2', false, ['deriveKey']);
-    const kek = crypto.subtle.deriveKey(
-      {
-        name: 'PBKDF2',
-        hash: 'SHA-256',
-        salt: base64.parse(salt, { loose: true }),
-        iterations: iterations
-      },
-      await pwKey,
-      { name: 'AES-GCM', length: 256 },
-      false,
-      ['unwrapKey']
-    );
-    // unwrapping
-    const decodedMasterKey = base64.parse(wrappedMasterkey, { loose: true });
-    const decodedPrivateKey = base64.parse(wrappedOwnerPrivateKey, { loose: true });
-    const decodedPublicKey = base64.parse(ownerPublicKey, { loose: true });
-    try {
-      const masterkey = crypto.subtle.unwrapKey(
-        'raw',
-        decodedMasterKey.slice(GCM_NONCE_LEN),
-        await kek,
-        { name: 'AES-GCM', iv: decodedMasterKey.slice(0, GCM_NONCE_LEN) },
-        UvfVaultKeys.MASTERKEY_KEY_DESIGNATION,
-        true,
-        ['sign']
-      );
-      const privKey = crypto.subtle.unwrapKey(
-        'pkcs8',
-        decodedPrivateKey.slice(GCM_NONCE_LEN),
-        await kek,
-        { name: 'AES-GCM', iv: decodedPrivateKey.slice(0, GCM_NONCE_LEN) },
-        { name: 'ECDSA', namedCurve: 'P-384' },
-        false,
-        ['sign']
-      );
-      const pubKey = crypto.subtle.importKey(
-        'spki',
-        decodedPublicKey,
-        { name: 'ECDSA', namedCurve: 'P-384' },
-        true,
-        ['verify']
-      );
-      return [new UvfVaultKeys(await masterkey), { privateKey: await privKey, publicKey: await pubKey }];
-    } catch (error) {
-      throw new UnwrapKeyError(error);
-    }
-  }
-
-  /**
-   * Restore the master key from a given recovery key, create a new admin signature key pair.
-   * @param recoveryKey The recovery key
-   * @returns The recovered master key
-   * @throws Error, if passing a malformed recovery key
-   */
-  public static async recover(recoveryKey: string): Promise<UvfVaultKeys> {
-    // decode and check recovery key:
-    const decoded = wordEncoder.decode(recoveryKey);
-    if (decoded.length !== 66) {
-      throw new Error('Invalid recovery key length.');
-    }
-    const decodedKey = decoded.subarray(0, 64);
-    const crc32 = CRC32.compute(decodedKey);
-    if (decoded[64] !== (crc32 & 0xFF)
-      || decoded[65] !== (crc32 >> 8 & 0xFF)) {
-      throw new Error('Invalid recovery key checksum.');
-    }
-
-    // construct new UvfVaultKeys from recovered key
-    const key = crypto.subtle.importKey(
-      'raw',
-      decodedKey,
-      UvfVaultKeys.MASTERKEY_KEY_DESIGNATION,
-      true,
-      ['sign']
-    );
-    return new UvfVaultKeys(await key);
-  }
-
-  public async createVaultConfig(kid: string, hubConfig: VaultConfigHeaderHub, payload: VaultConfigPayload): Promise<string> {
-    const header = JSON.stringify({
-      kid: kid,
-      typ: 'jwt',
-      alg: 'HS256',
-      hub: hubConfig
-    });
-    const payloadJson = JSON.stringify(payload);
-    const encoder = new TextEncoder();
-    const unsignedToken = base64url.stringify(encoder.encode(header), { pad: false }) + '.' + base64url.stringify(encoder.encode(payloadJson), { pad: false });
-    const encodedUnsignedToken = new TextEncoder().encode(unsignedToken);
-    const signature = await crypto.subtle.sign(
-      'HMAC',
-      this.masterKey,
-      encodedUnsignedToken
-    );
-    return unsignedToken + '.' + base64url.stringify(new Uint8Array(signature), { pad: false });
-  }
-
-  public async hashDirectoryId(cleartextDirectoryId: string): Promise<string> {
-    const dirHash = new TextEncoder().encode(cleartextDirectoryId);
-    const rawkey = new Uint8Array(await crypto.subtle.exportKey('raw', this.masterKey));
-    try {
-      // miscreant lib requires mac key first and then the enc key
-      const encKey = rawkey.subarray(0, rawkey.length / 2 | 0);
-      const macKey = rawkey.subarray(rawkey.length / 2 | 0);
-      const shiftedRawKey = new Uint8Array([...macKey, ...encKey]);
-      const key = await miscreant.SIV.importKey(shiftedRawKey, 'AES-SIV');
-      const ciphertext = await key.seal(dirHash, []);
-      // hash is only used as deterministic scheme for the root dir
-      const hash = await crypto.subtle.digest('SHA-1', ciphertext);
-      return base32.stringify(new Uint8Array(hash));
-    } finally {
-      rawkey.fill(0x00);
-    }
-  }
-
-  /**
-   * Encrypts this masterkey using the given public key
-   * @param userPublicKey The recipient's public key (DER-encoded)
-   * @returns a JWE containing this Masterkey
-   */
-  public async encryptForUser(userPublicKey: Uint8Array): Promise<string> {
-    const publicKey = await crypto.subtle.importKey('spki', userPublicKey, UserKeys.KEY_DESIGNATION, false, []);
-    const rawkey = new Uint8Array(await crypto.subtle.exportKey('raw', this.masterKey));
-    try {
-      const payload: JWEPayload = {
-        key: base64.stringify(rawkey)
-      };
-
-      return JWEBuilder.ecdhEs(publicKey).encrypt(payload);
-    } finally {
-      rawkey.fill(0x00);
-    }
-  }
-
-  /**
-   * Encode masterkey for offline backup purposes, allowing re-importing the key for recovery purposes
-   */
-  public async createRecoveryKey(): Promise<string> {
-    const rawkey = new Uint8Array(await crypto.subtle.exportKey('raw', this.masterKey));
-
-    // add 16 bit checksum:
-    const crc32 = CRC32.compute(rawkey);
-    const checksum = new Uint8Array(2);
-    checksum[0] = crc32 & 0xff;      // append the least significant byte of the crc
-    checksum[1] = crc32 >> 8 & 0xff; // followed by the second-least significant byte
-    const combined = new Uint8Array([...rawkey, ...checksum]);
-
-    // encode using human-readable words:
-    return wordEncoder.encodePadded(combined);
   }
 }
 

@@ -185,7 +185,7 @@ import { base64 } from 'rfc4648';
 import { onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import backend, { PaymentRequiredError } from '../common/backend';
-import { VaultKeys } from '../common/crypto';
+import { VaultKeys, VaultMetadata } from '../common/crypto';
 import { debounce } from '../common/util';
 import { VaultConfig } from '../common/vaultconfig';
 
@@ -292,11 +292,14 @@ async function createVault() {
       throw new Error('Invalid state');
     }
     const vaultId = crypto.randomUUID();
-    // TODO https://github.com/encryption-alliance/unified-vault-format/pull/19 upstream integration
-    vaultConfig.value = await VaultConfig.create(vaultId, vaultKeys.value, "");
+    const vaultMetadata: VaultMetadata = await VaultMetadata.create({
+       enabled: true,
+       maxWotDepth: -1
+    });
+    const vaultMetadataEncrypted = await vaultMetadata.encryptWithMasterKey(vaultKeys.value.uvfMasterKey);
+    vaultConfig.value = await VaultConfig.create(vaultId, vaultKeys.value, vaultMetadataEncrypted);
     const ownerJwe = await vaultKeys.value.encryptForUser(base64.parse(owner.publicKey));
-    // TODO https://github.com/encryption-alliance/unified-vault-format/pull/19 upstream integration
-    await backend.vaults.createOrUpdateVault(vaultId, vaultName.value, false, "", vaultDescription.value);
+    await backend.vaults.createOrUpdateVault(vaultId, vaultName.value, false, vaultMetadataEncrypted, vaultDescription.value);
     await backend.vaults.grantAccess(vaultId, { userId: owner.id, token: ownerJwe });
     state.value = State.Finished;
   } catch (error) {

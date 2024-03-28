@@ -42,15 +42,10 @@ export class VaultConfig {
 
   public async exportTemplate(): Promise<Blob> {
     const zip = new JSZip();
+    // TODO https://github.com/encryption-alliance/unified-vault-format/pull/19 what about vault.uvf? Not in template but only in vault dto?
     zip.file('vault.cryptomator', this.vaultConfigToken);
+    zip.file('vault.uvf', this.vaultUvf);
     zip.folder('d')?.folder(this.rootDirHash.substring(0, 2))?.folder(this.rootDirHash.substring(2));
     return zip.generateAsync({ type: 'blob' });
   }
-
-    public async exportMetadataTemplate(): Promise<Blob> {
-      const zip = new JSZip();
-      zip.file('vault.uvf', this.vaultUvf);
-      zip.folder('d')?.folder(this.rootDirHash.substring(0, 2))?.folder(this.rootDirHash.substring(2));
-      return zip.generateAsync({ type: 'blob' });
-    }
 }
