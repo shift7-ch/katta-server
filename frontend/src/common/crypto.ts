@@ -61,7 +61,7 @@ export class VaultKeys {
       VaultKeys.MASTERKEY_KEY_DESIGNATION,
       true,
       // TODO https://github.com/shift7-ch/cipherduck-hub/issues/19 is this correct?
-      ['sign', 'wrapKey', 'unwrapKey']
+      ['wrapKey', 'unwrapKey']
     );
     return new VaultKeys(await key);
   }
