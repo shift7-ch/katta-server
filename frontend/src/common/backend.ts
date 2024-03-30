@@ -222,6 +222,7 @@ export type ConfigDto = {
 export type StorageProfileDto = {
     id: string;
     name: string;
+    protocol: string;
     bucketPrefix: string;
     stsRoleArnClient: string;
     stsRoleArnHub: string;
@@ -232,7 +233,6 @@ export type StorageProfileDto = {
     scheme: string;
     hostname: string;
     port: number;
-    protocol: string;
     oauthClientId: string;
     oauthTokenUrl: string;
     oauthAuthorizationUrl: string;
@@ -240,6 +240,8 @@ export type StorageProfileDto = {
     stsRoleArn2: string;
     stsDurationSeconds: number;
     oAuthTokenExchangeAudience: number;
+    archived: boolean;
+    // TODO https://github.com/shift7-ch/cipherduck-hub/issues/44 add bucketVersioning/bucketAcceleration/bucketEncryption
 }
 
 export type AutomaticAccessGrant = {
@@ -434,9 +436,18 @@ class StorageService {
 }
 class StorageProfileService {
   public async get(archived?: boolean): Promise<StorageProfileDto[]> {
-    return axiosAuth.get<StorageProfileDto[]>(`/storageprofile?archived=${archived}`)
+    let query = '';
+    if(archived !== undefined){
+      query = `?archived=${archived}`;
+    }
+    return axiosAuth.get<StorageProfileDto[]>(`/storageprofile${query}`)
     .then(response => response.data);
   }
+
+  public async getSingle(storageprofileId: string): Promise<StorageProfileDto> {
+      return axiosAuth.get<StorageProfileDto>(`/storageprofile/${storageprofileId}`)
+      .then(response => response.data);
+    }
 }
 export const axiosUnAuth = AxiosStatic.create(axiosBaseCfg)
 class ConfigService {

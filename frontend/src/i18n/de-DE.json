@@ -255,5 +255,32 @@
   "CreateVaultS3.error.uploadTemplateFailed": "Hochladen Tresorvorlage nach S3-Bucket fehlgeschlagen.",
 
 
-  "vaultList.openInCipherduck": "In Cipherduck öffnen"
+  "vaultList.openInCipherduck": "In Cipherduck öffnen",
+
+  "nav.profile.storageprofiles": "Admin Tresor-Speicherbereiche",
+  "storageProfileList.title": "Tresor-Speicherbereiche",
+  "storageProfileList.search.placeholder": "Suche…",
+  "storageProfileList.empty.title": "Keine Tresor-Speicherbereiche",
+  "storageProfileList.empty.description": "Keine Tresor-Speicherbereiche",
+  "storageProfileList.filter.result.empty.title": "Keine Tresor-Speicherbereiche",
+  "storageProfileList.filter.result.empty.description": "Keinen Treffer mit diesem Suchbegriff oder Filter.",
+  "storageprofile.id": "id",
+  "storageprofile.name": "name",
+  "storageprofile.protocol": "protocol",
+  "storageprofile.bucketPrefix": "bucketPrefix",
+  "storageprofile.stsRoleArnClient": "stsRoleArnClient",
+  "storageprofile.stsRoleArnHub": "stsRoleArnHub",
+  "storageprofile.withPathStyleAccessEnabled": "withPathStyleAccessEnabled",
+  "storageprofile.region": "region",
+  "storageprofile.regions": "regions",
+  "storageprofile.scheme": "scheme",
+  "storageprofile.hostname": "hostname",
+  "storageprofile.port": "port",
+  "storageprofile.oauthClientId": "oauthClientId",
+  "storageprofile.oauthTokenUrl": "oauthTokenUrl",
+  "storageprofile.oauthAuthorizationUrl": "oauthAuthorizationUrl",
+  "storageprofile.stsRoleArn": "stsRoleArn",
+  "storageprofile.stsRoleArn2": "stsRoleArn2",
+  "storageprofile.stsDurationSeconds": "stsDurationSeconds",
+  "storageprofile.oAuthTokenExchangeAudience": "oAuthTokenExchangeAudience"
 }
