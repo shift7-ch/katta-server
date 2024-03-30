@@ -16,6 +16,7 @@
     <quarkus.jib.base-jvm-image>eclipse-temurin:17-jre</quarkus.jib.base-jvm-image> <!-- irrelevant for -Pnative -->
     <jwt.version>4.4.0</jwt.version>
     <surefire-plugin.version>3.1.2</surefire-plugin.version>
+    <quarkus.smallrye-openapi.store-schema-directory>../frontend/src/openapi</quarkus.smallrye-openapi.store-schema-directory>
   </properties>
 
   <dependencyManagement>

@@ -17,133 +17,56 @@
         <p class="ml-3 text-sm text-yellow-700">{{ t('vaultDetails.warning.archived') }}</p>
       </div>
     </div>
-    <!--
-
-    TODO https://github.com/shift7-ch/cipherduck-hub/issues/44
-     - get description and default vaules and possible values from /q/openapi/openapi.json
-     - add red start for mandatory etc.
-     - filter for archived
-     - fully dynamic: full list of attributes from openapi?
-    -->
-
-    <div>
-      <h3 class="font-medium text-gray-900">{{ t('storageprofile.id') }}</h3>
-      <div class="mt-2 flex items-center justify-between">
-        <p class="text-sm text-gray-500">{{ storageprofile.id }}</p>
+    <div v-if="storageprofile['protocol'] == 'S3STS'">
+      <div v-for="(item,key) in openapi.components.schemas.StorageProfileS3STSDto.properties">
+        <h3 class="font-medium text-gray-900"><span v-if="!item.nullable" style="color: red;">* </span>{{ key }}</h3>
+        <div class="mt-2 flex items-center justify-between">
+          <p class="text-sm text-gray-600">{{ storageprofile[key] }}</p>
+        </div>
+        <div class="mt-2 flex items-center justify-between">
+          <p class="text-sm text-gray-400">{{ item.description }}</p>
+        </div>
+        <div class="mt-2 flex items-center justify-between">
+          <p class="text-sm text-gray-400">type: {{ openapi.components.schemas.StorageProfileS3STSDto.properties[key].type }}</p>
+        </div>
+        <div v-if="openapi.components.schemas.StorageProfileS3STSDto.properties[key].allOf">
+          <div class="mt-2 flex items-center justify-between">
+            <p v-if="openapi.components.schemas[openapi.components.schemas.StorageProfileS3STSDto.properties[key].allOf[0].$ref.split('/').pop()].enum" class="text-sm text-gray-400">enum: {{ openapi.components.schemas[openapi.components.schemas.StorageProfileS3STSDto.properties[key].allOf[0].$ref.split('/').pop()].enum }}</p>
+          </div>
+          <div class="mt-2 flex items-center justify-between">
+            <p v-if="openapi.components.schemas[openapi.components.schemas.StorageProfileS3STSDto.properties[key].allOf[0].$ref.split('/').pop()].pattern" class="text-sm text-gray-400">pattern: {{ openapi.components.schemas[openapi.components.schemas.StorageProfileS3STSDto.properties[key].allOf[0].$ref.split('/').pop()].pattern }}</p>
+          </div>
+        </div>
+        <div class="mt-2 flex items-center justify-between" v-if="openapi.components.schemas.StorageProfileS3STSDto.properties[key].example">
+          <p class="text-sm text-gray-400">Example: {{ openapi.components.schemas.StorageProfileS3STSDto.properties[key].example }}</p>
+        </div>
+        <br/>
       </div>
     </div>
-    <div>
-      <h3 class="font-medium text-gray-900">{{ t('storageprofile.name') }}</h3>
-      <div class="mt-2 flex items-center justify-between">
-        <p class="text-sm text-gray-500">{{ storageprofile.name }}</p>
-      </div>
-    </div>
-    <div>
-      <h3 class="font-medium text-gray-900">{{ t('storageprofile.protocol') }}</h3>
-      <div class="mt-2 flex items-center justify-between">
-        <p class="text-sm text-gray-500">{{ storageprofile.protocol }}</p>
-      </div>
-    </div>
-    <div v-if="storageprofile.protocol == 'S3STS'">
-      <h3 class="font-medium text-gray-900">{{ t('storageprofile.bucketPrefix') }}</h3>
-      <div class="mt-2 flex items-center justify-between">
-        <p class="text-sm text-gray-500">{{ storageprofile.bucketPrefix }}</p>
-      </div>
-    </div>
-    <div v-if="storageprofile.protocol == 'S3STS'">
-      <h3 class="font-medium text-gray-900">{{ t('storageprofile.stsRoleArnClient') }}</h3>
-      <div class="mt-2 flex items-center justify-between">
-        <p class="text-sm text-gray-500">{{ storageprofile.stsRoleArnClient }}</p>
-      </div>
-    </div>
-    <div v-if="storageprofile.protocol == 'S3STS'">
-      <h3 class="font-medium text-gray-900">{{ t('storageprofile.stsRoleArnHub') }}</h3>
-      <div class="mt-2 flex items-center justify-between">
-        <p class="text-sm text-gray-500">{{ storageprofile.stsRoleArnHub }}</p>
-      </div>
-    </div>
-    <div v-if="storageprofile.protocol == 'S3STS'">
-      <h3 class="font-medium text-gray-900">{{ t('storageprofile.stsEndpoint') }}</h3>
-      <div class="mt-2 flex items-center justify-between">
-        <p class="text-sm text-gray-500">{{ storageprofile.stsEndpoint }}</p>
-      </div>
-    </div>
-    <div>
-      <h3 class="font-medium text-gray-900">{{ t('storageprofile.withPathStyleAccessEnabled') }}</h3>
-      <div class="mt-2 flex items-center justify-between">
-        <p class="text-sm text-gray-500">{{ storageprofile.withPathStyleAccessEnabled }}</p>
-      </div>
-    </div>
-    <div v-if="storageprofile.protocol == 'S3STS'">
-      <h3 class="font-medium text-gray-900">{{ t('storageprofile.region') }}</h3>
-      <div class="mt-2 flex items-center justify-between">
-        <p class="text-sm text-gray-500">{{ storageprofile.region }}</p>
-      </div>
-    </div>
-    <div v-if="storageprofile.protocol == 'S3STS'">
-      <h3 class="font-medium text-gray-900">{{ t('storageprofile.regions') }}</h3>
-      <div class="mt-2 flex items-center justify-between">
-        <p class="text-sm text-gray-500">{{ storageprofile.regions }}</p>
-      </div>
-    </div>
-    <div>
-      <h3 class="font-medium text-gray-900">{{ t('storageprofile.scheme') }}</h3>
-      <div class="mt-2 flex items-center justify-between">
-        <p class="text-sm text-gray-500">{{ storageprofile.scheme }}</p>
-      </div>
-    </div>
-    <div>
-      <h3 class="font-medium text-gray-900">{{ t('storageprofile.hostname') }}</h3>
-      <div class="mt-2 flex items-center justify-between">
-        <p class="text-sm text-gray-500">{{ storageprofile.hostname }}</p>
-      </div>
-    </div>
-    <div>
-      <h3 class="font-medium text-gray-900">{{ t('storageprofile.port') }}</h3>
-      <div class="mt-2 flex items-center justify-between">
-        <p class="text-sm text-gray-500">{{ storageprofile.port }}</p>
-      </div>
-    </div>
-    <div>
-      <h3 class="font-medium text-gray-900">{{ t('storageprofile.oauthClientId') }}</h3>
-      <div class="mt-2 flex items-center justify-between">
-        <p class="text-sm text-gray-500">{{ storageprofile.oauthClientId }}</p>
-      </div>
-    </div>
-    <div>
-      <h3 class="font-medium text-gray-900">{{ t('storageprofile.oauthTokenUrl') }}</h3>
-      <div class="mt-2 flex items-center justify-between">
-        <p class="text-sm text-gray-500">{{ storageprofile.oauthTokenUrl }}</p>
-      </div>
-    </div>
-    <div>
-      <h3 class="font-medium text-gray-900">{{ t('storageprofile.oauthAuthorizationUrl') }}</h3>
-      <div class="mt-2 flex items-center justify-between">
-        <p class="text-sm text-gray-500">{{ storageprofile.oauthAuthorizationUrl }}</p>
-      </div>
-    </div>
-    <div v-if="storageprofile.protocol == 'S3STS'">
-      <h3 class="font-medium text-gray-900">{{ t('storageprofile.stsRoleArn') }}</h3>
-      <div class="mt-2 flex items-center justify-between">
-        <p class="text-sm text-gray-500">{{ storageprofile.stsRoleArn }}</p>
-      </div>
-    </div>
-    <div v-if="storageprofile.protocol == 'S3STS'">
-      <h3 class="font-medium text-gray-900">{{ t('storageprofile.stsRoleArn2') }}</h3>
-      <div class="mt-2 flex items-center justify-between">
-        <p class="text-sm text-gray-500">{{ storageprofile.stsRoleArn2 }}</p>
-      </div>
-    </div>
-    <div v-if="storageprofile.protocol == 'S3STS'">
-      <h3 class="font-medium text-gray-900">{{ t('storageprofile.stsDurationSeconds') }}</h3>
-      <div class="mt-2 flex items-center justify-between">
-        <p class="text-sm text-gray-500">{{ storageprofile.stsDurationSeconds }}</p>
-      </div>
-    </div>
-    <div>
-      <h3 class="font-medium text-gray-900">{{ t('storageprofile.oAuthTokenExchangeAudience') }}</h3>
-      <div class="mt-2 flex items-center justify-between">
-        <p class="text-sm text-gray-500">{{ storageprofile.oAuthTokenExchangeAudience }}</p>
+    <div v-if="storageprofile['protocol'] == 'S3'">
+      <div v-for="(item,key) in openapi.components.schemas.StorageProfileS3Dto.properties">
+        <h3 class="font-medium text-gray-900"><span v-if="!item.nullable" style="color: red;">* </span>{{ key }}</h3>
+        <div class="mt-2 flex items-center justify-between">
+          <p class="text-sm text-gray-600">{{ storageprofile[key] }}</p>
+        </div>
+        <div class="mt-2 flex items-center justify-between">
+          <p class="text-sm text-gray-400">{{ item.description }}</p>
+        </div>
+        <div class="mt-2 flex items-center justify-between">
+          <p class="text-sm text-gray-400">type: {{ openapi.components.schemas.StorageProfileS3Dto.properties[key].type }}</p>
+        </div>
+        <div v-if="openapi.components.schemas.StorageProfileS3Dto.properties[key].allOf">
+          <div class="mt-2 flex items-center justify-between">
+            <p v-if="openapi.components.schemas[openapi.components.schemas.StorageProfileS3Dto.properties[key].allOf[0].$ref.split('/').pop()].enum" class="text-sm text-gray-400">enum: {{ openapi.components.schemas[openapi.components.schemas.StorageProfileS3Dto.properties[key].allOf[0].$ref.split('/').pop()].enum }}</p>
+          </div>
+          <div class="mt-2 flex items-center justify-between">
+            <p v-if="openapi.components.schemas[openapi.components.schemas.StorageProfileS3Dto.properties[key].allOf[0].$ref.split('/').pop()].pattern" class="text-sm text-gray-400">pattern: {{ openapi.components.schemas[openapi.components.schemas.StorageProfileS3Dto.properties[key].allOf[0].$ref.split('/').pop()].pattern }}</p>
+          </div>
+        </div>
+        <div class="mt-2 flex items-center justify-between" v-if="openapi.components.schemas.StorageProfileS3Dto.properties[key].example">
+          <p class="text-sm text-gray-400">example: {{ openapi.components.schemas.StorageProfileS3Dto.properties[key].example }}</p>
+        </div>
+        <br/>
       </div>
     </div>
   </div>
@@ -153,8 +76,9 @@
 import { ExclamationTriangleIcon } from '@heroicons/vue/20/solid';
 import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import backend, { StorageProfileDto, NotFoundError } from '../../common/backend';
+import backend, { NotFoundError, StorageProfileDto as StorageProfileDto2 } from '../../common/backend';
 import FetchError from '../FetchError.vue';
+import { openapi } from '../../openapi/index';
 
 
 const { t } = useI18n({ useScope: 'global' });
@@ -167,7 +91,7 @@ const props = defineProps<{
 const onFetchError = ref<Error | null>();
 const allowRetryFetch = computed(() => onFetchError.value != null && !(onFetchError.value instanceof NotFoundError));  //fetch requests either list something, or query from th storageprofile In the latter, a 404 indicates the vault does not exists anymore.
 
-const storageprofile = ref<StorageProfileDto>();
+const storageprofile = ref<StorageProfileDto2>();
 
 onMounted(fetchData);
 

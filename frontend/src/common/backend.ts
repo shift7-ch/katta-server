@@ -233,13 +233,9 @@ export type StorageProfileDto = {
     scheme: string;
     hostname: string;
     port: number;
-    oauthClientId: string;
-    oauthTokenUrl: string;
-    oauthAuthorizationUrl: string;
     stsRoleArn: string;
     stsRoleArn2: string;
     stsDurationSeconds: number;
-    oAuthTokenExchangeAudience: number;
     archived: boolean;
     // TODO https://github.com/shift7-ch/cipherduck-hub/issues/44 add bucketVersioning/bucketAcceleration/bucketEncryption
 }
