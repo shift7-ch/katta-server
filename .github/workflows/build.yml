@@ -36,6 +36,7 @@ jobs:
         working-directory: backend
         run: >
           mvn -B quarkus:build
+          cat ../frontend/src/openapi/openapi.json
       - name: Install npm dependencies
         working-directory: frontend
         run: npm install
