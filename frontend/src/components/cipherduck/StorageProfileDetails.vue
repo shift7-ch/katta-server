@@ -17,35 +17,9 @@
         <p class="ml-3 text-sm text-yellow-700">{{ t('vaultDetails.warning.archived') }}</p>
       </div>
     </div>
-    <div v-if="storageprofile['protocol'] == 'S3STS'">
-      <div v-for="(item,key) in openapi.components.schemas.StorageProfileS3STSDto.properties">
-        <h3 class="font-medium text-gray-900"><span v-if="!item.nullable" style="color: red;">* </span>{{ key }}</h3>
-        <div class="mt-2 flex items-center justify-between">
-          <p class="text-sm text-gray-600">{{ storageprofile[key] }}</p>
-        </div>
-        <div class="mt-2 flex items-center justify-between">
-          <p class="text-sm text-gray-400">{{ item.description }}</p>
-        </div>
-        <div class="mt-2 flex items-center justify-between">
-          <p class="text-sm text-gray-400">type: {{ openapi.components.schemas.StorageProfileS3STSDto.properties[key].type }}</p>
-        </div>
-        <div v-if="openapi.components.schemas.StorageProfileS3STSDto.properties[key].allOf">
-          <div class="mt-2 flex items-center justify-between">
-            <p v-if="openapi.components.schemas[openapi.components.schemas.StorageProfileS3STSDto.properties[key].allOf[0].$ref.split('/').pop()].enum" class="text-sm text-gray-400">enum: {{ openapi.components.schemas[openapi.components.schemas.StorageProfileS3STSDto.properties[key].allOf[0].$ref.split('/').pop()].enum }}</p>
-          </div>
-          <div class="mt-2 flex items-center justify-between">
-            <p v-if="openapi.components.schemas[openapi.components.schemas.StorageProfileS3STSDto.properties[key].allOf[0].$ref.split('/').pop()].pattern" class="text-sm text-gray-400">pattern: {{ openapi.components.schemas[openapi.components.schemas.StorageProfileS3STSDto.properties[key].allOf[0].$ref.split('/').pop()].pattern }}</p>
-          </div>
-        </div>
-        <div class="mt-2 flex items-center justify-between" v-if="openapi.components.schemas.StorageProfileS3STSDto.properties[key].example">
-          <p class="text-sm text-gray-400">Example: {{ openapi.components.schemas.StorageProfileS3STSDto.properties[key].example }}</p>
-        </div>
-        <br/>
-      </div>
-    </div>
     <div v-if="storageprofile['protocol'] == 'S3'">
       <div v-for="(item,key) in openapi.components.schemas.StorageProfileS3Dto.properties">
-        <h3 class="font-medium text-gray-900"><span v-if="!item.nullable" style="color: red;">* </span>{{ key }}</h3>
+        <h3 class="font-medium text-gray-900"><span v-if="!(item as OpenapiType).nullable" style="color: red;">* </span>{{ key }}</h3>
         <div class="mt-2 flex items-center justify-between">
           <p class="text-sm text-gray-600">{{ storageprofile[key] }}</p>
         </div>
@@ -55,16 +29,42 @@
         <div class="mt-2 flex items-center justify-between">
           <p class="text-sm text-gray-400">type: {{ openapi.components.schemas.StorageProfileS3Dto.properties[key].type }}</p>
         </div>
-        <div v-if="openapi.components.schemas.StorageProfileS3Dto.properties[key].allOf">
+        <div v-if="(openapi.components.schemas.StorageProfileS3Dto.properties[key] as OpenapiType)?.allOf">
           <div class="mt-2 flex items-center justify-between">
-            <p v-if="openapi.components.schemas[openapi.components.schemas.StorageProfileS3Dto.properties[key].allOf[0].$ref.split('/').pop()].enum" class="text-sm text-gray-400">enum: {{ openapi.components.schemas[openapi.components.schemas.StorageProfileS3Dto.properties[key].allOf[0].$ref.split('/').pop()].enum }}</p>
+            <p v-if="((openapi.components.schemas as OpenapiSchemas)?.[((openapi.components.schemas.StorageProfileS3Dto.properties[key] as OpenapiType)?.allOf?.[0].$ref.split('/').pop()) ?? ''] as OpenapiSchema)?.enum" class="text-sm text-gray-400">enum: {{ ((openapi.components.schemas as OpenapiSchemas)?.[((openapi.components.schemas.StorageProfileS3Dto.properties[key] as OpenapiType)?.allOf?.[0].$ref.split('/').pop()) ?? ''] as OpenapiSchema)?.enum }}</p>
           </div>
           <div class="mt-2 flex items-center justify-between">
-            <p v-if="openapi.components.schemas[openapi.components.schemas.StorageProfileS3Dto.properties[key].allOf[0].$ref.split('/').pop()].pattern" class="text-sm text-gray-400">pattern: {{ openapi.components.schemas[openapi.components.schemas.StorageProfileS3Dto.properties[key].allOf[0].$ref.split('/').pop()].pattern }}</p>
+            <p v-if="((openapi.components.schemas as OpenapiSchemas)?.[((openapi.components.schemas.StorageProfileS3Dto.properties[key] as OpenapiType)?.allOf?.[0].$ref.split('/').pop()) ?? ''] as OpenapiSchema)?.pattern" class="text-sm text-gray-400">pattern: {{ ((openapi.components.schemas as OpenapiSchemas)?.[((openapi.components.schemas.StorageProfileS3Dto.properties[key] as OpenapiType)?.allOf?.[0].$ref.split('/').pop()) ?? ''] as OpenapiSchema)?.pattern }}</p>
           </div>
         </div>
-        <div class="mt-2 flex items-center justify-between" v-if="openapi.components.schemas.StorageProfileS3Dto.properties[key].example">
-          <p class="text-sm text-gray-400">example: {{ openapi.components.schemas.StorageProfileS3Dto.properties[key].example }}</p>
+        <div class="mt-2 flex items-center justify-between">
+          <p class="text-sm text-gray-400" v-if="(openapi.components.schemas.StorageProfileS3STSDto.properties[key] as OpenapiType)?.example">example: {{ (openapi.components.schemas.StorageProfileS3STSDto.properties[key] as OpenapiType)?.example }}</p>
+        </div>
+        <br/>
+      </div>
+    </div>
+    <div v-if="storageprofile['protocol'] == 'S3STS'">
+      <div v-for="(item,key) in openapi.components.schemas.StorageProfileS3STSDto.properties">
+        <h3 class="font-medium text-gray-900"><span v-if="!(item as OpenapiType).nullable" style="color: red;">* </span>{{ key }}</h3>
+        <div class="mt-2 flex items-center justify-between">
+          <p class="text-sm text-gray-600">{{ storageprofile[key] }}</p>
+        </div>
+        <div class="mt-2 flex items-center justify-between">
+          <p class="text-sm text-gray-400">{{ item.description }}</p>
+        </div>
+        <div class="mt-2 flex items-center justify-between">
+          <p class="text-sm text-gray-400">type: {{ openapi.components.schemas.StorageProfileS3STSDto.properties[key].type }}</p>
+        </div>
+        <div v-if="(openapi.components.schemas.StorageProfileS3STSDto.properties[key] as OpenapiType)?.allOf">
+          <div class="mt-2 flex items-center justify-between">
+            <p v-if="((openapi.components.schemas as OpenapiSchemas)?.[((openapi.components.schemas.StorageProfileS3STSDto.properties[key] as OpenapiType)?.allOf?.[0].$ref.split('/').pop()) ?? ''] as OpenapiSchema)?.enum" class="text-sm text-gray-400">enum: {{ ((openapi.components.schemas as OpenapiSchemas)?.[((openapi.components.schemas.StorageProfileS3STSDto.properties[key] as OpenapiType)?.allOf?.[0].$ref.split('/').pop()) ?? ''] as OpenapiSchema)?.enum }}</p>
+          </div>
+          <div class="mt-2 flex items-center justify-between">
+            <p v-if="((openapi.components.schemas as OpenapiSchemas)?.[((openapi.components.schemas.StorageProfileS3STSDto.properties[key] as OpenapiType)?.allOf?.[0].$ref.split('/').pop()) ?? ''] as OpenapiSchema)?.pattern" class="text-sm text-gray-400">pattern: {{ ((openapi.components.schemas as OpenapiSchemas)?.[((openapi.components.schemas.StorageProfileS3STSDto.properties[key] as OpenapiType)?.allOf?.[0].$ref.split('/').pop()) ?? ''] as OpenapiSchema)?.pattern }}</p>
+          </div>
+        </div>
+        <div class="mt-2 flex items-center justify-between">
+          <p class="text-sm text-gray-400" v-if="(openapi.components.schemas.StorageProfileS3STSDto.properties[key] as OpenapiType)?.example">example: {{ (openapi.components.schemas.StorageProfileS3STSDto.properties[key] as OpenapiType)?.example }}</p>
         </div>
         <br/>
       </div>
@@ -78,7 +78,7 @@ import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import backend, { NotFoundError, StorageProfileDto as StorageProfileDto2 } from '../../common/backend';
 import FetchError from '../FetchError.vue';
-import { openapi } from '../../openapi/index';
+import { openapi, OpenapiType, OpenapiSchema, OpenapiSchemas } from '../../openapi/index';
 
 
 const { t } = useI18n({ useScope: 'global' });

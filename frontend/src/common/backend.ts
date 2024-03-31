@@ -227,9 +227,13 @@ export type StorageProfileDto = {
     stsRoleArnClient: string;
     stsRoleArnHub: string;
     stsEndpoint: string;
+    bucketVersioning: string;
+    bucketAcceleration: string;
+    bucketEncryption: string;
     region: string;
     regions: string[];
     withPathStyleAccessEnabled: boolean;
+    storageClass: string;
     scheme: string;
     hostname: string;
     port: number;
