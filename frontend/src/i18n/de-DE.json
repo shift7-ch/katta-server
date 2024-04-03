@@ -259,6 +259,8 @@
 
   "nav.profile.storageprofiles": "Admin Tresor-Speicherbereiche",
   "storageProfileList.title": "Tresor-Speicherbereiche",
+  "storageProfileList.setup.title": "Cipherduck hub setup",
+  "storageProfileList.setup.description": "Cipherduck hub setup admin documentation",
   "storageProfileList.search.placeholder": "Suche…",
   "storageProfileList.empty.title": "Keine Tresor-Speicherbereiche",
   "storageProfileList.empty.description": "Keine Tresor-Speicherbereiche",
