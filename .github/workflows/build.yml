@@ -35,7 +35,7 @@ jobs:
       - name: Generate openapi.json
         working-directory: backend
         run: >
-          mvn -B quarkus:build
+          mvn -B clean compile quarkus:build
       - name: Check openapi.json
         working-directory: backend
         run: >
