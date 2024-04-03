@@ -32,6 +32,12 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
+      # / cipherduck start addition
+      - uses: actions/setup-java@v2
+        with:
+          distribution: 'temurin'
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: 'maven'
       - name: Generate openapi.json
         working-directory: backend
         run: >
@@ -40,6 +46,7 @@ jobs:
         working-directory: backend
         run: >
           cat ../frontend/src/openapi/openapi.json
+      # \ cipherduck end addition
       - name: Install npm dependencies
         working-directory: frontend
         run: npm install
