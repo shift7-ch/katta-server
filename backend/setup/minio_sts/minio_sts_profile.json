@@ -22,5 +22,5 @@
   "hostname": "minio",
   "port": "9000",
   "stsRoleArn": "arn:minio:iam:::role/Hdms6XDZ6oOpuWYI3gu4gmgHN94",
-  "bucketAcceleration": false
+  "bucketAcceleration": null
 }

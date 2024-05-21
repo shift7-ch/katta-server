@@ -104,7 +104,7 @@ public class S3StorageHelper {
 				.build();
 		s3.putObject(request2, RequestBody.empty());
 
-		// TODO https://github.com/shift7-ch/cipherduck-hub/issues/44 CORS? should we allow for not setting (because of permissions)? E.g. MinIO which has now bucket acceleration
+		// TODO https://github.com/shift7-ch/cipherduck-hub/issues/44 CORS?
 		// enable versioning on the bucket.
 		{
 			if (log.isInfoEnabled()) {
@@ -120,31 +120,17 @@ public class S3StorageHelper {
 			}
 		}
 
-		// enable/disable bucket acceleration on the bucket
-		{
+		// enable/disable bucket acceleration on the bucket. Skip if not set (e.g. MinIO which has no bucket acceleration API)
+		if (storageConfig.bucketAcceleration() != null) {
 			if (log.isInfoEnabled()) {
 				log.info(String.format("Enable/disable bucket acceleration on %s (%s, %s)", bucketName, dto, storageConfig));
 			}
-			try {
-				s3.putBucketAccelerateConfiguration(PutBucketAccelerateConfigurationRequest.builder()
-						.bucket(bucketName)
-						.accelerateConfiguration(AccelerateConfiguration.builder()
-								.status(storageConfig.bucketAcceleration() ? BucketAccelerateStatus.ENABLED : BucketAccelerateStatus.SUSPENDED)
-								.build())
-						.build());
-			} catch (S3Exception e) {
-				if (!storageConfig.bucketAcceleration() && e.awsErrorDetails().errorCode().equals("MalformedXML")) {
-					// MinIO does not support bucket acceleration nor encryption -> TODO https://github.com/shift7-ch/cipherduck-hub/issues/44 should we make bucketAcceleration attribute in storage profile nullable instead?
-					// https://min.io/docs/minio/linux/administration/identity-access-management/policy-based-access-control.html
-					// https://github.com/minio/minio/blob/master/cmd/api-router.go
-					// https://github.com/minio/minio/issues/14586
-					log.warn(String.format("Ignoring failed SetBucketAccelerateConfiguration call - MinIO does not support it. Details: %s", e));
-				}
-				else {
-					throw e;
-				}
-			}
-
+			s3.putBucketAccelerateConfiguration(PutBucketAccelerateConfigurationRequest.builder()
+					.bucket(bucketName)
+					.accelerateConfiguration(AccelerateConfiguration.builder()
+							.status(storageConfig.bucketAcceleration() ? BucketAccelerateStatus.ENABLED : BucketAccelerateStatus.SUSPENDED)
+							.build())
+					.build());
 			final GetBucketAccelerateConfigurationResponse conf = s3.getBucketAccelerateConfiguration(GetBucketAccelerateConfigurationRequest.builder().bucket(bucketName).build());
 			if (log.isInfoEnabled()) {
 				log.info(String.format("Enabled/disabled bucket acceleration on %s (%s, %s) with status %s", bucketName, dto, storageConfig, conf.status()));

@@ -41,8 +41,7 @@ CREATE TABLE "storage_profile_s3_sts"
     "stsRoleArnHub"     VARCHAR NOT NULL,
     "stsEndpoint"       VARCHAR,
     "bucketVersioning"  bool NOT NULL,
-    "bucketAcceleration"
-                        bool NOT NULL,
+    "bucketAcceleration" bool,
     "bucketEncryption" VARCHAR NOT NULL,
 
     -- (3b) client profile custom properties

@@ -46,7 +46,7 @@ public final class StorageProfileS3STSDto extends StorageProfileS3Dto {
 	Boolean bucketVersioning = true;
 
 	@JsonProperty(value = "bucketAcceleration", defaultValue = "true")
-	@Schema(description = "Enable bucket versioning upon bucket creation", defaultValue = "true", required = true)
+	@Schema(description = "Enable bucket versioning upon bucket creation", defaultValue = "true")
 	Boolean bucketAcceleration = true;
 
 	@JsonProperty(value = "bucketEncryption", required = true)
@@ -73,7 +73,7 @@ public final class StorageProfileS3STSDto extends StorageProfileS3Dto {
 		// jackson
 	}
 
-	public StorageProfileS3STSDto(final UUID id, final String name, final Protocol protocol, final boolean archived, final String scheme, final String hostname, final Integer port, final boolean withPathStyleAccessEnabled, final S3_STORAGE_CLASSES storageClass, final String region, final List<String> regions, final String bucketPrefix, final String stsRoleArnClient, final String stsRoleArnHub, final String stsEndpoint, final boolean bucketVersioning, final boolean bucketAcceleration, final S3_SERVERSIDE_ENCRYPTION bucketEncryption, final String stsRoleArn, final String stsRoleArn2, final Integer stsDurationSeconds) {
+	public StorageProfileS3STSDto(final UUID id, final String name, final Protocol protocol, final boolean archived, final String scheme, final String hostname, final Integer port, final boolean withPathStyleAccessEnabled, final S3_STORAGE_CLASSES storageClass, final String region, final List<String> regions, final String bucketPrefix, final String stsRoleArnClient, final String stsRoleArnHub, final String stsEndpoint, final boolean bucketVersioning, final Boolean bucketAcceleration, final S3_SERVERSIDE_ENCRYPTION bucketEncryption, final String stsRoleArn, final String stsRoleArn2, final Integer stsDurationSeconds) {
 		super(id, name, protocol, archived, scheme, hostname, port, withPathStyleAccessEnabled, storageClass);
 		this.region = region;
 		this.regions = regions;
