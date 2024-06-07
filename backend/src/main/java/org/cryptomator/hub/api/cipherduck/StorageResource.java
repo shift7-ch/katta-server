@@ -12,6 +12,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.cryptomator.hub.SyncerConfig;
 import org.cryptomator.hub.api.GoneException;
+import org.cryptomator.hub.entities.Group;
 import org.cryptomator.hub.entities.User;
 import org.cryptomator.hub.entities.Vault;
 import org.cryptomator.hub.entities.cipherduck.StorageProfile;
@@ -44,6 +45,15 @@ public class StorageResource {
 	@Inject
 	JsonWebToken jwt;
 
+	@Inject
+	Vault.Repository vaultRepo;
+
+	@Inject
+	User.Repository userRepo;
+
+	@Inject
+	Group.Repository groupRepo;
+
 
 	@PUT
 	@Path("/{vaultId}")
@@ -56,7 +66,7 @@ public class StorageResource {
 	@APIResponse(responseCode = "409", description = "Vault with this ID or bucket with this name already exists")
 	@APIResponse(responseCode = "410", description = "Storage profile is archived")
 	public Response createBucket(@PathParam("vaultId") UUID vaultId, final CreateS3STSBucketDto storage) {
-		Optional<Vault> vault = Vault.<Vault>findByIdOptional(vaultId);
+		Optional<Vault> vault = vaultRepo.findByIdOptional(vaultId);
 		if (vault.isPresent()) {
 			throw new ClientErrorException(String.format("Vault with ID %s already exists", vaultId), Response.Status.CONFLICT);
 		}
@@ -76,8 +86,8 @@ public class StorageResource {
 		// N.B. if the bucket already exists, this will fail, so we do not prevent calling this method several times.
 		makeS3Bucket((StorageProfileS3STSDto) storageProfileDto, storage);
 
-		final User currentUser = User.findById(jwt.getSubject());
-		keycloakGrantAccessToVault(syncerConfig, vaultId.toString(), currentUser.id, cipherduckConfig.keycloakClientIdCryptomatorVaults());
+		final User currentUser = userRepo.findById(jwt.getSubject());
+		keycloakGrantAccessToVault(syncerConfig, vaultId.toString(), currentUser.getId(), cipherduckConfig.keycloakClientIdCryptomatorVaults(), groupRepo);
 		keycloakPrepareVault(syncerConfig, vaultId.toString(), (StorageProfileS3STSDto) storageProfileDto, jwt.getSubject(), cipherduckConfig.keycloakClientIdCryptomatorVaults());
 
 		return Response.created(URI.create(".")).build();
