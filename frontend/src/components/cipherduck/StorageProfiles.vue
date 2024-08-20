@@ -8,7 +8,6 @@
     </div>
   </div>
 
-  <LicenseAlert v-if="isAdmin" />
 
   <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
     {{ t('storageProfileList.title') }}
@@ -86,7 +85,6 @@ import backend, { StorageProfileDto } from '../../common/backend';
 import FetchError from '../FetchError.vue';
 import SlideOver from '../SlideOver.vue';
 import StorageProfileDetails from './StorageProfileDetails.vue';
-import LicenseAlert from '../LicenseAlert.vue';
 
 const { t } = useI18n({ useScope: 'global' });
 
