@@ -140,7 +140,7 @@ export class LicenseUserInfoDto {
 export type StorageDto = {
     vaultId: string;
     storageConfigId: string;
-    vaultConfigToken: string;
+    vaultUvf: string;
     rootDirHash: string;
     awsAccessKey: string;
     awsSecretKey: string;

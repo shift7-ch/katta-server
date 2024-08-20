@@ -414,7 +414,6 @@ import { DecodeUvfRecoveryKeyError, UniversalVaultFormat } from '../common/unive
 import userdata from '../common/userdata';
 import { debounce } from '../common/util';
 import { DecodeVf8RecoveryKeyError, VaultFormat8 } from '../common/vaultFormat8';
-import { VaultConfig } from '../common/vaultconfig';
 // / start cipherduck extension
 import { StorageProfileDto, VaultJWEBackendDto } from '../common/backend';
 import {
@@ -795,8 +794,6 @@ async function createVault() {
         break;
       }
     }
-    const vaultId = crypto.randomUUID();
-    vaultConfig.value = await VaultConfig.create(vaultId, vaultKeys.value);
     // / start cipherduck extension
     if (!selectedBackend.value) {
       throw new Error('Invalid state');
@@ -806,20 +803,23 @@ async function createVault() {
     }
     const storage: VaultJWEBackendDto = {
         "provider": selectedBackend.value.id,
-        "defaultPath": selectedBackend.value.bucketPrefix + vaultId,
-        "nickname": vaultName.value,
+        "defaultPath": selectedBackend.value.bucketPrefix + vault.value.id,
+        "nickname": vault.value.name,
         "region": selectedRegion.value
     }
-    vaultKeys.value.automaticAccessGrant = {
+    uvfVault.value.metadata.automaticAccessGrant.enabled = automaticAccessGrant.value;
+    // TODO
+    /*vaultKeys.value.automaticAccessGrant = {
         "enabled": automaticAccessGrant.value,
         "maxWotDepth": -1
-    };
+    };*/
+
     if(isPermanent.value){
         storage.username = vaultAccessKeyId.value;
         storage.password = vaultSecretKey.value;
         storage.defaultPath = vaultBucketName.value;
     }
-    vaultKeys.value.storage = storage;
+    uvfVault.value.metadata.storage = storage;
 
 
     // Decision 2024-02-01 upload vault template/create bucket before creating vault in hub and uploading JWE. This is the most delicate operation. No further rollback for now.
@@ -845,7 +845,7 @@ async function createVault() {
           // Required. The OAuth 2.0 access token or OpenID Connect ID token that is provided by the
           // identity provider.
           WebIdentityToken: token,
-          RoleSessionName: vaultId,
+          RoleSessionName: vault.value.id,
           // Valid Range: Minimum value of 900. Maximum value of 43200.
           DurationSeconds: 900,
           Policy: `{
@@ -867,7 +867,7 @@ async function createVault() {
                   "s3:PutObject"
                 ],
                 "Resource": [
-                  "arn:aws:s3:::{}/vault.cryptomator",
+                  "arn:aws:s3:::{}/vault.uvf",
                   "arn:aws:s3:::{}/*/"
                 ]
               }
@@ -894,14 +894,14 @@ async function createVault() {
             throw new Error('Invalid state: Missing SessionToken.');
         }
 
-        const rootDirHash = await vaultKeys.value.hashDirectoryId('');
+        const rootDirHash = await uvfVault.value.computeRootDirIdHash(await uvfVault.value.computeRootDirId());
         if (!rootDirHash) {
             throw new Error('Invalid state: rootDirHash missing.');
         }
-        await backend.storage.put(vaultId, {
-            vaultId: vaultId,
+        await backend.storage.put(vault.value.id, {
+            vaultId: vault.value.id,
             storageConfigId: selectedBackend.value.id,
-            vaultConfigToken: vaultConfig.value.vaultConfigToken,
+            vaultUvf: vault.value.uvfMetadataFile,
             rootDirHash: rootDirHash,
             // https://github.com/awslabs/smithy-typescript/blob/697310da9aec949034f92598f5cefc2cc162ef4d/packages/types/src/identity/awsCredentialIdentity.ts#L24
             awsAccessKey: Credentials.AccessKeyId,
@@ -1027,9 +1027,7 @@ async function uploadVaultTemplate() {
         throw new Error('Bucket not empty, cannot upload template. Empty the bucket manually and re-try.');
     }
 
-    const vaultConfigToken = await vaultConfig.value?.vaultConfigToken;
-    console.log(vaultConfigToken);
-    const rootDirHash = await vaultConfig.value?.rootDirHash;
+    const rootDirHash = await uvfVault.value.computeRootDirIdHash(await uvfVault.value.computeRootDirId());
     console.log(rootDirHash);
 
     if (!rootDirHash) {
@@ -1038,8 +1036,8 @@ async function uploadVaultTemplate() {
 
     const commandPutVaultCryptomator = new PutObjectCommand({
         Bucket: vaultBucketName.value,
-        Key: 'vault.cryptomator',
-        Body: vaultConfigToken,
+        Key: 'vault.uvf',
+        Body: vault.value.uvfMetadataFile
     });
     console.log(commandPutVaultCryptomator);
     const responsePutVaultCryptomator = await client.send(commandPutVaultCryptomator);
