@@ -136,8 +136,8 @@ public class StorageProfileResource {
 	@Transactional
 	@Operation(summary = "get configs for storage backends", description = "get list of configs for storage backends")
 	@APIResponse(responseCode = "200", description = "uploaded storage configuration")
-	public VaultMasterkeyJWEDto getVaultJWEBackendDto(final StorageProfileDto.Protocol protocol) {
-		// N.B. temporary workaround to have VaultJWEBackendDto exposed in openapi.json for now....
+	public VaultMasterkeyJWEDto getVaultMetadataJWEBackendDto(final StorageProfileDto.Protocol protocol) {
+		// N.B. temporary workaround to have VaultMetadataJWEBackendDto exposed in openapi.json for now....
 		return null;
 	}
 }

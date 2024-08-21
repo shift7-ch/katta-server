@@ -4,6 +4,9 @@ import { VaultDto } from './backend';
 import { AccessTokenPayload, AccessTokenProducing, JsonWebKeySet, OtherVaultMember, UserKeys, VaultTemplateProducing, getJwkThumbprintStr } from './crypto';
 import { JWE, JWEHeader, JsonJWE, Recipient } from './jwe';
 import { CRC32, wordEncoder } from './util';
+// / start cipherduck extension
+import { VaultMetadataJWEBackendDto } from './backend';
+// \ end cipherduck extension
 
 type MetadataPayload = {
   fileFormat: 'AES-256-GCM-32k';
@@ -14,6 +17,10 @@ type MetadataPayload = {
   kdf: 'HKDF-SHA512';
   kdfSalt: string;
   'org.cryptomator.automaticAccessGrant': VaultMetadataJWEAutomaticAccessGrantDto;
+  // / start cipherduck extension
+  // TODO finalize attribute name: 'io.katta.backend'?
+  backend: VaultMetadataJWEBackendDto;
+  // \ end cipherduck extension
 }
 
 type VaultMetadataJWEAutomaticAccessGrantDto = {
@@ -219,6 +226,9 @@ export class DecodeUvfRecoveryKeyError extends Error {
 export class VaultMetadata {
   private constructor(
     readonly automaticAccessGrant: VaultMetadataJWEAutomaticAccessGrantDto,
+    // / start cipherduck extension
+    readonly backend: VaultMetadataJWEBackendDto,
+    // \ end cipherduck extension
     readonly seeds: Map<number, Uint8Array>,
     readonly initialSeedId: number,
     readonly latestSeedId: number,
@@ -236,7 +246,11 @@ export class VaultMetadata {
    * @param automaticAccessGrant Configuration instructing the client how to automatically deal with permission requests
    * @returns new vault
    */
-  public static async create(automaticAccessGrant: VaultMetadataJWEAutomaticAccessGrantDto): Promise<VaultMetadata> {
+  public static async create(automaticAccessGrant: VaultMetadataJWEAutomaticAccessGrantDto
+    // / start cipherduck extension
+    , backend: VaultMetadataJWEBackendDto
+    // \ end cipherduck extension
+    ): Promise<VaultMetadata> {
     const initialSeedId = new Uint32Array(1);
     const initialSeedValue = new Uint8Array(32);
     const kdfSalt = new Uint8Array(32);
@@ -246,7 +260,11 @@ export class VaultMetadata {
     const initialSeedNo = initialSeedId[0];
     const seeds: Map<number, Uint8Array> = new Map<number, Uint8Array>();
     seeds.set(initialSeedNo, initialSeedValue);
-    return new VaultMetadata(automaticAccessGrant, seeds, initialSeedNo, initialSeedNo, kdfSalt);
+    return new VaultMetadata(automaticAccessGrant,
+      // / start cipherduck extension
+      backend,
+      // \ end cipherduck extension
+      seeds, initialSeedNo, initialSeedNo, kdfSalt);
   }
 
   public get initialSeed(): Uint8Array {
@@ -303,6 +321,9 @@ export class VaultMetadata {
     const kdfSalt = base64url.parse(payload['kdfSalt'], { loose: true });
     return new VaultMetadata(
       payload['org.cryptomator.automaticAccessGrant'],
+      // / start cipherduck extension
+      payload['backend'],
+      // \ start cipherduck extension
       seeds,
       initialSeedId,
       latestSeedId,
@@ -344,6 +365,9 @@ export class VaultMetadata {
       kdf: 'HKDF-SHA512',
       kdfSalt: base64url.stringify(this.kdfSalt, { pad: false }),
       'org.cryptomator.automaticAccessGrant': this.automaticAccessGrant
+      // / start cipherduck extension
+      ,backend: this.backend
+      // \ end cipherduck extension
     };
   }
 }
@@ -356,8 +380,16 @@ export class VaultMetadata {
 export class UniversalVaultFormat implements AccessTokenProducing, VaultTemplateProducing {
   private constructor(readonly metadata: VaultMetadata, readonly memberKey: MemberKey, readonly recoveryKey: RecoveryKey) { }
 
-  public static async create(automaticAccessGrant: VaultMetadataJWEAutomaticAccessGrantDto): Promise<UniversalVaultFormat> {
-    const metadata = await VaultMetadata.create(automaticAccessGrant);
+  public static async create(automaticAccessGrant: VaultMetadataJWEAutomaticAccessGrantDto
+    // / start cipherduck extension
+    , backend: VaultMetadataJWEBackendDto
+    // \ end cipherduck extension
+    ): Promise<UniversalVaultFormat> {
+    const metadata = await VaultMetadata.create(automaticAccessGrant
+      // / start cipherduck extension
+      ,backend
+      // \ end cipherduck extension
+      );
     const memberKey = await MemberKey.create();
     const recoveryKey = await RecoveryKey.create();
     return new UniversalVaultFormat(metadata, memberKey, recoveryKey);
