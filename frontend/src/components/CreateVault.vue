@@ -415,7 +415,7 @@ import userdata from '../common/userdata';
 import { debounce } from '../common/util';
 import { DecodeVf8RecoveryKeyError, VaultFormat8 } from '../common/vaultFormat8';
 // / start cipherduck extension
-import { StorageProfileDto, VaultJWEBackendDto } from '../common/backend';
+import { StorageProfileDto, VaultMetadataJWEBackendDto } from '../common/backend';
 import {
      Listbox,
      ListboxButton,
@@ -547,7 +547,7 @@ async function initialize() {
         recoveryKeyStr.value = await vaultFormat8.value.createRecoveryKey();
         break;
       case VaultType.UniversalVaultFormat:
-        uvfVault.value = await UniversalVaultFormat.create({ enabled: false, maxWotDepth: 0 });
+        uvfVault.value = await UniversalVaultFormat.create({ enabled: false, maxWotDepth: 0 }, { provider: '', defaultPath: '', nickname: '', region: ''});
         recoveryKeyStr.value = await uvfVault.value.recoveryKey.createRecoveryKey();
         break;
     }
@@ -795,32 +795,27 @@ async function createVault() {
       }
     }
     // / start cipherduck extension
+    if (!uvfVault.value) {
+      throw new Error('Invalid state');
+    }
     if (!selectedBackend.value) {
       throw new Error('Invalid state');
     }
     if (!selectedRegion.value) {
       throw new Error('Invalid state');
     }
-    const storage: VaultJWEBackendDto = {
-        "provider": selectedBackend.value.id,
-        "defaultPath": selectedBackend.value.bucketPrefix + vault.value.id,
-        "nickname": vault.value.name,
-        "region": selectedRegion.value
-    }
+
+    uvfVault.value.metadata.backend.provider = selectedBackend.value.id;
+    uvfVault.value.metadata.backend.defaultPath = selectedBackend.value.bucketPrefix + vault.value.id;
+    uvfVault.value.metadata.backend.nickname = vault.value.name;
+    uvfVault.value.metadata.backend.region = selectedRegion.value;
     uvfVault.value.metadata.automaticAccessGrant.enabled = automaticAccessGrant.value;
-    // TODO
-    /*vaultKeys.value.automaticAccessGrant = {
-        "enabled": automaticAccessGrant.value,
-        "maxWotDepth": -1
-    };*/
 
     if(isPermanent.value){
-        storage.username = vaultAccessKeyId.value;
-        storage.password = vaultSecretKey.value;
-        storage.defaultPath = vaultBucketName.value;
+        uvfVault.value.metadata.backend.username = vaultAccessKeyId.value;
+        uvfVault.value.metadata.backend.password = vaultSecretKey.value;
+        uvfVault.value.metadata.backend.defaultPath = vaultBucketName.value;
     }
-    uvfVault.value.metadata.storage = storage;
-
 
     // Decision 2024-02-01 upload vault template/create bucket before creating vault in hub and uploading JWE. This is the most delicate operation. No further rollback for now.
     if(isPermanent.value){
@@ -872,7 +867,7 @@ async function createVault() {
                 ]
               }
             ]
-          }`.replaceAll("{}", storage.defaultPath),
+          }`.replaceAll("{}", uvfVault.value.metadata.backend.defaultPath),
           // Required. ARN of the role that the caller is assuming.
           RoleArn: selectedBackend.value.stsRoleArnHub
         }
@@ -897,6 +892,9 @@ async function createVault() {
         const rootDirHash = await uvfVault.value.computeRootDirIdHash(await uvfVault.value.computeRootDirId());
         if (!rootDirHash) {
             throw new Error('Invalid state: rootDirHash missing.');
+        }
+        if (!vault.value?.uvfMetadataFile) {
+            throw new Error('Invalid state: uvfMetadataFile missing.');
         }
         await backend.storage.put(vault.value.id, {
             vaultId: vault.value.id,
@@ -931,7 +929,7 @@ async function createVault() {
         msg += `.`;
       }
       if(error.response?.status === 409){
-        msg += ` Details: Bucket ${vaultKeys.value?.storage?.defaultPath} already exists or no permission to list.`;
+        msg += ` Details: Bucket ${uvfVault.value?.metadata.backend.defaultPath} already exists or no permission to list.`;
       }
       else if(error.response?.data.details){
         msg += ` Details: ${error.response.data.details}.`;
@@ -1025,6 +1023,9 @@ async function uploadVaultTemplate() {
     console.log(responseListObjects);
     if(responseListObjects.KeyCount != 0){
         throw new Error('Bucket not empty, cannot upload template. Empty the bucket manually and re-try.');
+    }
+    if(!uvfVault.value){
+       throw new Error('Invalid state');
     }
 
     const rootDirHash = await uvfVault.value.computeRootDirIdHash(await uvfVault.value.computeRootDirId());

@@ -68,7 +68,7 @@ describe('UVF', () => {
   describe('VaultMetadata', () => {
 
     it('create()', async () => {
-      const orig = await VaultMetadata.create({ enabled: true, maxWotDepth: -1 });
+      const orig = await VaultMetadata.create({ enabled: true, maxWotDepth: -1 }, { provider: '', defaultPath: '', nickname: '', region: ''});
       expect(orig).to.be.not.null;
       expect(orig.seeds.get(orig.initialSeedId)).to.not.be.undefined
       expect(orig.seeds.get(orig.initialSeedId)!.length).to.eq(32)
@@ -81,7 +81,7 @@ describe('UVF', () => {
 
       beforeEach(async () => {
         // prepare some test metadata:
-        original = await VaultMetadata.create({ enabled: true, maxWotDepth: -1 });
+        original = await VaultMetadata.create({ enabled: true, maxWotDepth: -1 }, { provider: 'provider', defaultPath: 'defaultPath', nickname: 'nickname', region: 'region'});
       });
 
       it('decrypt(encrypt(orig)) == orig', async () => {
@@ -103,6 +103,7 @@ describe('UVF', () => {
         expect(decrypted.initialSeedId).to.eq(original.initialSeedId)
         expect(decrypted.latestSeedId).to.eq(original.latestSeedId)
         expect(decrypted.automaticAccessGrant).to.deep.eq(original.automaticAccessGrant);
+        expect(decrypted.backend).to.deep.eq(original.backend);
         expect(decrypted.payload().fileFormat).to.eq('AES-256-GCM-32k');
         expect(decrypted.payload().nameFormat).to.eq('AES-SIV-512-B64URL');
         expect(decrypted.payload().kdf).to.eq('HKDF-SHA512');
@@ -184,7 +185,7 @@ describe('UVF', () => {
   describe('UniversalVaultFormat', () => {
 
     it('create()', async () => {
-      const uvf = await UniversalVaultFormat.create({ enabled: true, maxWotDepth: -1 });
+      const uvf = await UniversalVaultFormat.create({ enabled: true, maxWotDepth: -1 }, { provider: '', defaultPath: '', nickname: '', region: ''});
       expect(uvf).to.be.not.null;
       expect(uvf.metadata).to.be.not.null;
       expect(uvf.memberKey).to.be.not.null;

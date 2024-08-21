@@ -185,12 +185,7 @@ export type StorageProfileDto = {
     // TODO https://github.com/shift7-ch/cipherduck-hub/issues/44 add bucketVersioning/bucketAcceleration/bucketEncryption
 }
 
-export type AutomaticAccessGrant = {
-    enabled: boolean,
-    maxWotDepth: number
-}
-
-export type VaultJWEBackendDto = {
+export type VaultMetadataJWEBackendDto = {
     provider: string;
 
     defaultPath: string;
@@ -478,8 +473,7 @@ const services = {
   billing: new BillingService(),
   version: new VersionService(),
   license: new LicenseService(),
-  settings: new SettingsService(),
-  license: new LicenseService()
+  settings: new SettingsService()
 
   // / start cipherduck extension
   ,storage: new StorageService()

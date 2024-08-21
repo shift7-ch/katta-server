@@ -8,7 +8,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * This Java record is unused in hub, only its ts counterpart in `storage.ts`.
  * It will used in Cipherduck client in the OpenAPI generator.
  */
-public record VaultJWEBackendDto(
+public record VaultMetadataJWEBackendDto(
 
 		@JsonProperty(value = "provider", required = true)
 		// references id in StorageProfileDto (aka. vendor in client profile)

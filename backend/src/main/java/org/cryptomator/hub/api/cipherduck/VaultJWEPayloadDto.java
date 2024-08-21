@@ -9,7 +9,7 @@ public record VaultJWEPayloadDto(
 		String key,
 
 		@JsonProperty(value = "storage", required = true)
-		VaultJWEBackendDto backend,
+		VaultMetadataJWEBackendDto backend,
 
 		@JsonProperty(value = "automaticAccessGrant", required = true)
 		AutomaticAccessGrant automaticAccessGrant
