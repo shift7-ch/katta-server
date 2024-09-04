@@ -46,7 +46,7 @@ public class StorageProfileResource {
 	public Response uploadStorageProfile(final StorageProfileS3Dto c) {
 		try {
 			final StorageProfileS3 entity = c.toEntity();
-			if(StorageProfile.findByIdOptional(entity.id).isPresent()){
+			if (StorageProfile.findByIdOptional(entity.id).isPresent()) {
 				throw new ClientErrorException(Response.Status.CONFLICT);
 			}
 			entity.persistAndFlush();
@@ -68,7 +68,7 @@ public class StorageProfileResource {
 	public Response uploadStorageProfile(final StorageProfileS3STSDto c) {
 		try {
 			final StorageProfileS3STS entity = c.toEntity();
-			if(StorageProfile.findByIdOptional(entity.id).isPresent()){
+			if (StorageProfile.findByIdOptional(entity.id).isPresent()) {
 				throw new ClientErrorException(Response.Status.CONFLICT);
 			}
 			entity.persistAndFlush();
@@ -128,16 +128,4 @@ public class StorageProfileResource {
 		return Response.status(Response.Status.NO_CONTENT).build();
 	}
 
-	// TODO https://github.com/shift7-ch/cipherduck-hub/issues/19 refactor into uvf vault metadata
-	@GET
-	@Path("/meta")
-	@RolesAllowed("admin")
-	@Produces(MediaType.APPLICATION_JSON)
-	@Transactional
-	@Operation(summary = "get configs for storage backends", description = "get list of configs for storage backends")
-	@APIResponse(responseCode = "200", description = "uploaded storage configuration")
-	public VaultMasterkeyJWEDto getVaultMetadataJWEBackendDto(final StorageProfileDto.Protocol protocol) {
-		// N.B. temporary workaround to have VaultMetadataJWEBackendDto exposed in openapi.json for now....
-		return null;
-	}
 }
