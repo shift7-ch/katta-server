@@ -45,9 +45,9 @@ public final class StorageProfileS3STSDto extends StorageProfileS3Dto {
 	@Schema(description = "Enable bucket versioning upon bucket creation", defaultValue = "true", required = true)
 	Boolean bucketVersioning = true;
 
-	@JsonProperty(value = "bucketAcceleration", defaultValue = "true")
-	@Schema(description = "Enable bucket versioning upon bucket creation", defaultValue = "true")
-	Boolean bucketAcceleration = true;
+	@JsonProperty(value = "bucketAcceleration")
+	@Schema(description = "Enable bucket versioning upon bucket creation (null for MinIO)", nullable = true)
+	Boolean bucketAcceleration = null;
 
 	@JsonProperty(value = "bucketEncryption", required = true)
 	@Schema(description = "Enable bucket versioning upon bucket creation", required = true)
