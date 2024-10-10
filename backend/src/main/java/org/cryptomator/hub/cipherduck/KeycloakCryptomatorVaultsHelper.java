@@ -18,7 +18,6 @@ import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,8 +29,8 @@ public class KeycloakCryptomatorVaultsHelper {
 
 	private static final Logger LOG = Logger.getLogger(KeycloakCryptomatorVaultsHelper.class);
 
-	public static void keycloakPrepareVault(final SyncerConfig syncerConfig, final String vaultId, final StorageProfileS3STSDto storageConfig, final String userOrGroupId, final String clientId) {
-
+	// TODO check scopes are at realm level - is this what we want?
+	public static void keycloakPrepareVault(final SyncerConfig syncerConfig, final String vaultId, final StorageProfileS3STSDto storageConfig, final String userOrGroupId) {
 		// N.B. quarkus has no means to provide empty string as value, interpreted as no value, see https://github.com/quarkusio/quarkus/issues/2765
 		// TODO review better solution than using sentinel string "empty"?
 		if ("empty".equals(syncerConfig.getKeycloakUrl())) {
@@ -39,60 +38,12 @@ public class KeycloakCryptomatorVaultsHelper {
 			return;
 		}
 
-		try (final Keycloak keycloak = Keycloak.getInstance(syncerConfig.getKeycloakUrl(), syncerConfig.getKeycloakRealm(), syncerConfig.getUsername(), syncerConfig.getPassword(), syncerConfig.getKeycloakClientId())) {
-
-			// https://www.keycloak.org/docs-api/21.1.1/rest-api
-			final RealmResource realm = keycloak.realm(syncerConfig.getKeycloakRealm());
-
+		final String keycloakRealm = syncerConfig.getKeycloakRealm();
+		try (final Keycloak keycloak = Keycloak.getInstance(syncerConfig.getKeycloakUrl(), keycloakRealm, syncerConfig.getUsername(), syncerConfig.getPassword())) {
 			final boolean minio = storageConfig.stsRoleArn() != null && storageConfig.stsRoleArn2() == null;
 			final boolean aws = storageConfig.stsRoleArn() != null && storageConfig.stsRoleArn2() != null;
 
-			ClientScopeResource clientScopeResource = realm.clientScopes().get(vaultId);
-
-			if (minio) {
-				ProtocolMapperRepresentation minioProtocolMapper = new ProtocolMapperRepresentation();
-				minioProtocolMapper.setName(String.format("Hard-coded mapper for vault %s (MinIO)", vaultId));
-				minioProtocolMapper.setProtocolMapper("oidc-hardcoded-claim-mapper");
-				minioProtocolMapper.setProtocol("openid-connect");
-
-				Map<String, String> minioConfig = new HashMap<>();
-				minioConfig.put("jsonType.label", "String");
-
-				minioConfig.put("userinfo.token.claim", "false");
-				minioConfig.put("id.token.claim", "false");
-				minioConfig.put("access.token.claim", "true");
-				minioConfig.put("access.tokenResponse.claim", "false");
-
-				// exhaustive list of jwt claims evaluated in MinIO: https://min.io/docs/minio/linux/administration/identity-access-management/policy-based-access-control.html#policy-variables
-				// let's use client_id, as aud etc. are already use by standard mappers
-				minioConfig.put("claim.name", "client_id");
-				minioConfig.put("claim.value", vaultId);
-
-				minioProtocolMapper.setConfig(minioConfig);
-
-				clientScopeResource.getProtocolMappers().createMapper(Arrays.asList(minioProtocolMapper));
-			}
-			if (aws) {
-				ProtocolMapperRepresentation awsProtocolMapper = new ProtocolMapperRepresentation();
-				awsProtocolMapper.setName(String.format("Hard-coded mapper for vault %s (AWS)", vaultId));
-				awsProtocolMapper.setProtocolMapper("oidc-hardcoded-claim-mapper");
-				awsProtocolMapper.setProtocol("openid-connect");
-
-				Map<String, String> awsConfig = new HashMap<>();
-				awsConfig.put("jsonType.label", "JSON");
-
-				awsConfig.put("userinfo.token.claim", "false");
-				awsConfig.put("id.token.claim", "false");
-				awsConfig.put("access.token.claim", "true");
-				awsConfig.put("access.tokenResponse.claim", "false");
-
-				awsConfig.put("claim.name", "https://aws\\.amazon\\.com/tags");
-				awsConfig.put("claim.value", String.format("{\"principal_tags\":{\"%s\":[\"\"]},\"transitive_tag_keys\":[\"%s\"]}", vaultId, vaultId));
-
-				awsProtocolMapper.setConfig(awsConfig);
-
-				clientScopeResource.getProtocolMappers().createMapper(Arrays.asList(awsProtocolMapper));
-			}
+			keycloakPrepareVault(vaultId, keycloak, keycloakRealm, minio, aws);
 		}
 	}
 
@@ -107,63 +58,11 @@ public class KeycloakCryptomatorVaultsHelper {
 		var group = groupRepo.findByIdOptional(userOrGroupId);
 		final boolean isGroup = group.isPresent();
 
-		try (final Keycloak keycloak = Keycloak.getInstance(syncerConfig.getKeycloakUrl(), syncerConfig.getKeycloakRealm(), syncerConfig.getUsername(), syncerConfig.getPassword(), syncerConfig.getKeycloakClientId())) {
-
-			// https://www.keycloak.org/docs-api/21.1.1/rest-api
-			final RealmResource realm = keycloak.realm(syncerConfig.getKeycloakRealm());
-
-			List<ClientRepresentation> byClientId = realm.clients().findByClientId(clientId);
-			if (byClientId.size() != 1) {
-				throw new RuntimeException(String.format("There are %s clients with clientId %s, expected to found exactly one.", byClientId.size(), clientId));
-			}
-			final ClientRepresentation cryptomatorVaultsClientRepresentation = byClientId.get(0);
-			ClientResource cryptomatorVaultsClientResource = realm.clients().get(cryptomatorVaultsClientRepresentation.getId());
-
-			// create client scope <vaultId> (if necessary)
-			if (realm.clientScopes().findAll().stream().map(clientScopeRepresentation -> clientScopeRepresentation.getId()).noneMatch(vaultId::equals)) {
-				ClientScopeRepresentation vaultClientScope = new ClientScopeRepresentation();
-				vaultClientScope.setId(vaultId);
-				vaultClientScope.setName(vaultId);
-				vaultClientScope.setDescription(String.format("Client scope for vault %s", vaultId));
-				vaultClientScope.setAttributes(new HashMap<>());
-				vaultClientScope.setProtocol("openid-connect");
-
-				Response response = realm.clientScopes().create(vaultClientScope);
-				if (response.getStatus() != 201) {
-					throw new RuntimeException(String.format("Failed to create client for vault %s. %s", vaultId, response.getStatusInfo().getReasonPhrase()));
-				}
-			}
-
-			// add client scope to "cryptomatorvaults" client
-			// -> requires role_manage-clients
-			cryptomatorVaultsClientResource.addOptionalClientScope(vaultId);
-
-
-			// create client role <vaultId> (if necessary)
-			// -> requires role_manage-clients
-			if (cryptomatorVaultsClientResource.roles().list().stream().map(role -> role.getName()).noneMatch(vaultId::equals)) {
-				RoleRepresentation vaultRole = new RoleRepresentation();
-				vaultRole.setName(vaultId);
-				vaultRole.setDescription(String.format("Role for vault %s", vaultId));
-				vaultRole.setClientRole(true);
-
-				cryptomatorVaultsClientResource.roles().create(vaultRole);
-			}
-
-			// scope the client scope to the client role for the vault
-			realm.clientScopes().get(vaultId).getScopeMappings().clientLevel(cryptomatorVaultsClientRepresentation.getId()).add(List.of(cryptomatorVaultsClientResource.roles().get(vaultId).toRepresentation()));
-
-
-			// add client role to user/group
-			// -> requires role_manage-users
-			if (!isGroup) {
-				realm.users().get(userOrGroupId).roles().clientLevel(cryptomatorVaultsClientRepresentation.getId()).add(List.of(cryptomatorVaultsClientResource.roles().get(vaultId).toRepresentation()));
-			} else {
-				realm.groups().group(userOrGroupId).roles().clientLevel(cryptomatorVaultsClientRepresentation.getId()).add(List.of(cryptomatorVaultsClientResource.roles().get(vaultId).toRepresentation()));
-			}
+		final String keycloakRealm = syncerConfig.getKeycloakRealm();
+		try (final Keycloak keycloak = Keycloak.getInstance(syncerConfig.getKeycloakUrl(), keycloakRealm, syncerConfig.getUsername(), syncerConfig.getPassword(), syncerConfig.getKeycloakClientId())) {
+			keycloakGrantAccessToVault(vaultId, userOrGroupId, clientId, keycloak, keycloakRealm, isGroup);
 		}
 	}
-
 
 	public static void keycloakRemoveAccessToVault(final SyncerConfig syncerConfig, final String vaultId, final String userOrGroupId, final String clientId, final Group.Repository groupRepo) {
 		// N.B. quarkus has no means to provide empty string as value, interpreted as no value, see https://github.com/quarkusio/quarkus/issues/2765
@@ -175,28 +74,9 @@ public class KeycloakCryptomatorVaultsHelper {
 
 		final boolean isGroup = groupRepo.findByIdOptional(userOrGroupId).isPresent();
 
-		try (final Keycloak keycloak = Keycloak.getInstance(syncerConfig.getKeycloakUrl(), syncerConfig.getKeycloakRealm(), syncerConfig.getUsername(), syncerConfig.getPassword(), syncerConfig.getKeycloakClientId())) {
-
-			// https://www.keycloak.org/docs-api/21.1.1/rest-api
-			final RealmResource realm = keycloak.realm(syncerConfig.getKeycloakRealm());
-
-			// add client scope to "cryptomatorvaults" client
-			// -> requires role_manage-clients
-			List<ClientRepresentation> byClientId = realm.clients().findByClientId(clientId);
-			if (byClientId.size() != 1) {
-				throw new RuntimeException(String.format("There are %s clients with clientId %s, expected to found exactly one.", byClientId.size(), clientId));
-			}
-			final ClientRepresentation cryptomatorVaultsClientRepresentation = byClientId.get(0);
-			ClientResource cryptomatorVaultsClientResource = realm.clients().get(cryptomatorVaultsClientRepresentation.getId());
-			cryptomatorVaultsClientResource.addOptionalClientScope(vaultId);
-
-			// remove client role from user/group
-			// -> requires role_manage-users
-			if (!isGroup) {
-				realm.users().get(userOrGroupId).roles().clientLevel(cryptomatorVaultsClientRepresentation.getId()).remove(List.of(cryptomatorVaultsClientResource.roles().get(vaultId).toRepresentation()));
-			} else {
-				realm.groups().group(userOrGroupId).roles().clientLevel(cryptomatorVaultsClientRepresentation.getId()).remove(List.of(cryptomatorVaultsClientResource.roles().get(vaultId).toRepresentation()));
-			}
+		final String keycloakRealm = syncerConfig.getKeycloakRealm();
+		try (final Keycloak keycloak = Keycloak.getInstance(syncerConfig.getKeycloakUrl(), keycloakRealm, syncerConfig.getUsername(), syncerConfig.getPassword(), syncerConfig.getKeycloakClientId())) {
+			keycloakRemoveAccessToVault(vaultId, userOrGroupId, clientId, keycloak, keycloakRealm, isGroup);
 		}
 	}
 
@@ -204,9 +84,8 @@ public class KeycloakCryptomatorVaultsHelper {
 	// Deleting the cryptomatorvaults client also deletes the client roles under the client, however, the client scopes are at the realm level and will not be removed by this procedure.
 	// Although safe, this can quickly become a mess in developing scenarios.
 	public static void keycloakCleanupDanglingCryptomatorVaultsRoles(final SyncerConfig syncerConfig, final String clientId, final Vault.Repository vaultRepo) {
-		Set<String> existingVaultIds = vaultRepo.findAll().<Vault>stream().map(VaultResource.VaultDto::fromEntity).map(vdto -> vdto.id().toString()).collect(Collectors.toSet());
+		Set<String> existingVaultIds = vaultRepo.findAll().stream().map(VaultResource.VaultDto::fromEntity).map(vdto -> vdto.id().toString()).collect(Collectors.toSet());
 		try (final Keycloak keycloak = Keycloak.getInstance(syncerConfig.getKeycloakUrl(), syncerConfig.getKeycloakRealm(), syncerConfig.getUsername(), syncerConfig.getPassword(), syncerConfig.getKeycloakClientId())) {
-
 			// https://www.keycloak.org/docs-api/21.1.1/rest-api
 			final RealmResource realm = keycloak.realm(syncerConfig.getKeycloakRealm());
 
@@ -214,10 +93,10 @@ public class KeycloakCryptomatorVaultsHelper {
 			if (byClientId.size() != 1) {
 				throw new RuntimeException(String.format("There are %s clients with clientId %s, expected to found exactly one.", byClientId.size(), clientId));
 			}
-			final ClientRepresentation cryptomatorVaultsClientRepresentation = byClientId.get(0);
+			final ClientRepresentation cryptomatorVaultsClientRepresentation = byClientId.getFirst();
 			ClientResource cryptomatorVaultsClientResource = realm.clients().get(cryptomatorVaultsClientRepresentation.getId());
 
-			for (RoleRepresentation roleRepresentation : cryptomatorVaultsClientResource.roles().list()) {
+			for (final RoleRepresentation roleRepresentation : cryptomatorVaultsClientResource.roles().list()) {
 				final String vaultId = roleRepresentation.getName();
 				if (!existingVaultIds.contains(vaultId)) {
 					cryptomatorVaultsClientResource.roles().deleteRole(vaultId);
@@ -230,6 +109,149 @@ public class KeycloakCryptomatorVaultsHelper {
 					}
 				}
 			}
+		}
+	}
+
+	protected static void keycloakPrepareVault(final String vaultId, final Keycloak keycloak, final String keycloakRealm, final boolean minio, final boolean aws) {
+		// https://www.keycloak.org/docs-api/21.1.1/rest-api
+		final RealmResource realm = keycloak.realm(keycloakRealm);
+
+		// create client scope <vaultId> (if necessary)
+		ensureClientScopeForVaultExists(vaultId, realm);
+
+		final ClientScopeResource clientScopeResource = realm.clientScopes().get(vaultId);
+		if (minio) {
+			final ProtocolMapperRepresentation minioProtocolMapper = minioProtocolMapper(vaultId);
+			clientScopeResource.getProtocolMappers().createMapper(List.of(minioProtocolMapper));
+		}
+		if (aws) {
+			final ProtocolMapperRepresentation awsProtocolMapper = awsProtocolMapper(vaultId);
+			clientScopeResource.getProtocolMappers().createMapper(List.of(awsProtocolMapper));
+		}
+	}
+
+	protected static ProtocolMapperRepresentation awsProtocolMapper(final String vaultId) {
+		final ProtocolMapperRepresentation awsProtocolMapper = new ProtocolMapperRepresentation();
+		awsProtocolMapper.setName(String.format("Hard-coded mapper for vault %s (AWS)", vaultId));
+		awsProtocolMapper.setProtocolMapper("oidc-hardcoded-claim-mapper");
+		awsProtocolMapper.setProtocol("openid-connect");
+
+		Map<String, String> awsConfig = new HashMap<>();
+		awsConfig.put("jsonType.label", "JSON");
+
+		awsConfig.put("userinfo.token.claim", "false");
+		awsConfig.put("id.token.claim", "false");
+		awsConfig.put("access.token.claim", "true");
+		awsConfig.put("access.tokenResponse.claim", "false");
+
+		awsConfig.put("claim.name", "https://aws\\.amazon\\.com/tags");
+		awsConfig.put("claim.value", String.format("{\"principal_tags\":{\"%s\":[\"\"]},\"transitive_tag_keys\":[\"%s\"]}", vaultId, vaultId));
+
+		awsProtocolMapper.setConfig(awsConfig);
+		return awsProtocolMapper;
+	}
+
+	protected static ProtocolMapperRepresentation minioProtocolMapper(String vaultId) {
+		final ProtocolMapperRepresentation minioProtocolMapper = new ProtocolMapperRepresentation();
+		minioProtocolMapper.setName(String.format("Hard-coded mapper for vault %s (MinIO)", vaultId));
+		minioProtocolMapper.setProtocolMapper("oidc-hardcoded-claim-mapper");
+		minioProtocolMapper.setProtocol("openid-connect");
+
+		Map<String, String> minioConfig = new HashMap<>();
+		minioConfig.put("jsonType.label", "String");
+
+		minioConfig.put("userinfo.token.claim", "false");
+		minioConfig.put("id.token.claim", "false");
+		minioConfig.put("access.token.claim", "true");
+		minioConfig.put("access.tokenResponse.claim", "false");
+
+		// exhaustive list of jwt claims evaluated in MinIO: https://min.io/docs/minio/linux/administration/identity-access-management/policy-based-access-control.html#policy-variables
+		// let's use client_id, as aud etc. are already use by standard mappers
+		minioConfig.put("claim.name", "client_id");
+		minioConfig.put("claim.value", vaultId);
+
+		minioProtocolMapper.setConfig(minioConfig);
+		return minioProtocolMapper;
+	}
+
+	protected static void keycloakGrantAccessToVault(final String vaultId, final String userOrGroupId, final String clientId, final Keycloak keycloak, final String keycloakRealm, final boolean isGroup) {
+		// https://www.keycloak.org/docs-api/21.1.1/rest-api
+		final RealmResource realm = keycloak.realm(keycloakRealm);
+
+		final List<ClientRepresentation> byClientId = realm.clients().findByClientId(clientId);
+		if (byClientId.size() != 1) {
+			throw new RuntimeException(String.format("There are %s clients with clientId %s, expected to found exactly one.", byClientId.size(), clientId));
+		}
+		final ClientRepresentation cryptomatorVaultsClientRepresentation = byClientId.getFirst();
+		final ClientResource cryptomatorVaultsClientResource = realm.clients().get(cryptomatorVaultsClientRepresentation.getId());
+
+		// create client scope <vaultId> (if necessary)
+		ensureClientScopeForVaultExists(vaultId, realm);
+
+		// add client scope to "cryptomatorvaults" client
+		// -> requires role_manage-clients
+		cryptomatorVaultsClientResource.addOptionalClientScope(vaultId);
+
+		// create client role <vaultId> (if necessary)
+		// -> requires role_manage-clients
+		if (cryptomatorVaultsClientResource.roles().list().stream().map(RoleRepresentation::getName).noneMatch(vaultId::equals)) {
+			RoleRepresentation vaultRole = new RoleRepresentation();
+			vaultRole.setName(vaultId);
+			vaultRole.setDescription(String.format("Role for vault %s", vaultId));
+			vaultRole.setClientRole(true);
+
+			cryptomatorVaultsClientResource.roles().create(vaultRole);
+		}
+
+		// scope the client scope to the client role for the vault
+		realm.clientScopes().get(vaultId).getScopeMappings().clientLevel(cryptomatorVaultsClientRepresentation.getId()).add(List.of(cryptomatorVaultsClientResource.roles().get(vaultId).toRepresentation()));
+
+		// add client role to user/group
+		// -> requires role_manage-users
+		if (!isGroup) {
+			realm.users().get(userOrGroupId).roles().clientLevel(cryptomatorVaultsClientRepresentation.getId()).add(List.of(cryptomatorVaultsClientResource.roles().get(vaultId).toRepresentation()));
+		} else {
+			realm.groups().group(userOrGroupId).roles().clientLevel(cryptomatorVaultsClientRepresentation.getId()).add(List.of(cryptomatorVaultsClientResource.roles().get(vaultId).toRepresentation()));
+		}
+	}
+
+	private static void ensureClientScopeForVaultExists(String vaultId, RealmResource realm) {
+		if (realm.clientScopes().findAll().stream().map(ClientScopeRepresentation::getId).noneMatch(vaultId::equals)) {
+			ClientScopeRepresentation vaultClientScope = new ClientScopeRepresentation();
+			vaultClientScope.setId(vaultId);
+			vaultClientScope.setName(vaultId);
+			vaultClientScope.setDescription(String.format("Client scope for vault %s", vaultId));
+			vaultClientScope.setAttributes(new HashMap<>());
+			vaultClientScope.setProtocol("openid-connect");
+
+			try (Response response = realm.clientScopes().create(vaultClientScope)) {
+				if (response.getStatus() != 201) {
+					throw new RuntimeException(String.format("Failed to create client for vault %s. %s", vaultId, response.getStatusInfo().getReasonPhrase()));
+				}
+			}
+		}
+	}
+
+	protected static void keycloakRemoveAccessToVault(final String vaultId, final String userOrGroupId, final String clientId, final Keycloak keycloak, final String keycloakRealm, boolean isGroup) {
+		// https://www.keycloak.org/docs-api/21.1.1/rest-api
+		final RealmResource realm = keycloak.realm(keycloakRealm);
+
+		// add client scope to "cryptomatorvaults" client
+		// -> requires role_manage-clients
+		final List<ClientRepresentation> byClientId = realm.clients().findByClientId(clientId);
+		if (byClientId.size() != 1) {
+			throw new RuntimeException(String.format("There are %s clients with clientId %s, expected to found exactly one.", byClientId.size(), clientId));
+		}
+		final ClientRepresentation cryptomatorVaultsClientRepresentation = byClientId.getFirst();
+		final ClientResource cryptomatorVaultsClientResource = realm.clients().get(cryptomatorVaultsClientRepresentation.getId());
+		cryptomatorVaultsClientResource.addOptionalClientScope(vaultId);
+
+		// remove client role from user/group
+		// -> requires role_manage-users
+		if (!isGroup) {
+			realm.users().get(userOrGroupId).roles().clientLevel(cryptomatorVaultsClientRepresentation.getId()).remove(List.of(cryptomatorVaultsClientResource.roles().get(vaultId).toRepresentation()));
+		} else {
+			realm.groups().group(userOrGroupId).roles().clientLevel(cryptomatorVaultsClientRepresentation.getId()).remove(List.of(cryptomatorVaultsClientResource.roles().get(vaultId).toRepresentation()));
 		}
 	}
 }
