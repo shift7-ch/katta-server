@@ -13,9 +13,9 @@ import org.keycloak.admin.client.resource.RealmResource;
 
 import java.util.UUID;
 
+import static org.cryptomator.hub.cipherduck.KeycloakCryptomatorVaultsHelper.keycloakGrantAccessToVault;
 import static org.cryptomator.hub.cipherduck.KeycloakCryptomatorVaultsHelper.keycloakPrepareVault;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 
 // Run as QuarkusTest as Keycloak admin client fails with no resteasy client on class path
 // Re-using Keycloak devservice fails as no way found to unset oidc quarkus.oidc.auth-server-url in test profile (as Keycloak mocked/disabled in other Quarkus tests)
@@ -49,5 +49,18 @@ class KeycloakCryptomatorVaultsHelperIT {
 
 	@Test
 	public void testKeycloakGrantAccessToVault() {
+		final Keycloak keycloak = Keycloak.getInstance(
+				container.getAuthServerUrl(),
+				"master",
+				"admin",
+				"admin",
+				"admin-cli");
+
+		final String vaultId = UUID.randomUUID().toString();
+		final String alice = keycloak.realm("cryptomator").users().searchByFirstName("alice", true).getFirst().getId();
+
+		assertNull(keycloak.realm("cryptomator").users().get(alice).roles().getAll().getClientMappings());
+		keycloakGrantAccessToVault(vaultId, alice, "cryptomatorvaults", keycloak, "cryptomator", false);
+		assertTrue(keycloak.realm("cryptomator").users().get(alice).roles().getAll().getClientMappings().get("cryptomatorvaults").getMappings().stream().anyMatch(r -> r.getName().equals(vaultId)));
 	}
 }
