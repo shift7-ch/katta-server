@@ -31,6 +31,17 @@ jobs:
       - name: Build Theme
         working-directory: keycloak/themes/cryptomator/common/resources
         run: npm run build
+      # / cipherduck start addition
+      - uses: actions/setup-java@v2
+        with:
+          distribution: 'temurin'
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: 'maven'
+      - name: Generate and test token exchange spi
+        working-directory: keycloak
+        run: >
+          mvn -B clean verify
+      # \ cipherduck end addition
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx
@@ -47,5 +58,7 @@ jobs:
           context: keycloak
           platforms: linux/amd64,linux/arm64/v8
           push: true
+          # / cipherduck start modification
           tags: |
-            ghcr.io/cryptomator/keycloak:${{ github.event.inputs.tag }}
+            ghcr.io/shift7/keycloak:${{ github.event.inputs.tag }}
+          # \ cipherduck end modification
