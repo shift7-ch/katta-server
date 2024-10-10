@@ -34,8 +34,6 @@ import static org.cryptomator.hub.cipherduck.KeycloakCryptomatorVaultsHelper.key
 
 @Path("/storage")
 public class StorageResource {
-	private static final Logger LOG = Logger.getLogger(StorageResource.class);
-
 	@Inject
 	SyncerConfig syncerConfig;
 
@@ -88,7 +86,7 @@ public class StorageResource {
 
 		final User currentUser = userRepo.findById(jwt.getSubject());
 		keycloakGrantAccessToVault(syncerConfig, vaultId.toString(), currentUser.getId(), cipherduckConfig.keycloakClientIdCryptomatorVaults(), groupRepo);
-		keycloakPrepareVault(syncerConfig, vaultId.toString(), (StorageProfileS3STSDto) storageProfileDto, jwt.getSubject(), cipherduckConfig.keycloakClientIdCryptomatorVaults());
+		keycloakPrepareVault(syncerConfig, vaultId.toString(), (StorageProfileS3STSDto) storageProfileDto, jwt.getSubject());
 
 		return Response.created(URI.create(".")).build();
 	}
