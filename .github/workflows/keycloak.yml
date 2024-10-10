@@ -61,5 +61,5 @@ jobs:
           push: true
           # / cipherduck start modification
           tags: |
-            ghcr.io/shift7/keycloak:${{ github.event.inputs.tag }}
+            ghcr.io/shift7-ch/keycloak:${{ github.event.inputs.tag }}
           # \ cipherduck end modification
