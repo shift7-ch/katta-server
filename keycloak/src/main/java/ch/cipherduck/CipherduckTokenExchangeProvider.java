@@ -35,8 +35,8 @@ public class CipherduckTokenExchangeProvider extends DefaultTokenExchangeProvide
 				formParams.containsKey(OAuth2Constants.AUDIENCE) &&
 				formParams.get(OAuth2Constants.AUDIENCE).size() == 1
 		) {
-			final String scope = formParams.get(OAuth2Constants.SCOPE).getFirst();
-			final String audience = formParams.get(OAuth2Constants.AUDIENCE).getFirst();
+			final String scope = formParams.getFirst(OAuth2Constants.SCOPE);
+			final String audience = formParams.getFirst(OAuth2Constants.AUDIENCE);
 			final ClientModel targetClient = realm.getClientByClientId(audience);
 			if (targetClient != null) {
 				return exchangeClientToOIDCClient(targetUser, targetUserSession, OAuth2Constants.ACCESS_TOKEN_TYPE, targetClient, audience, scope);
