@@ -29,55 +29,24 @@ public class KeycloakCryptomatorVaultsHelper {
 
 	private static final Logger LOG = Logger.getLogger(KeycloakCryptomatorVaultsHelper.class);
 
-	// TODO check scopes are at realm level - is this what we want?
-	public static void keycloakPrepareVault(final SyncerConfig syncerConfig, final String vaultId, final StorageProfileS3STSDto storageConfig, final String userOrGroupId) {
-		// N.B. quarkus has no means to provide empty string as value, interpreted as no value, see https://github.com/quarkusio/quarkus/issues/2765
-		// TODO review better solution than using sentinel string "empty"?
-		if ("empty".equals(syncerConfig.getKeycloakUrl())) {
-			LOG.error(String.format("Could not grant access to vault %s for user %s as keycloak URL is not defined.", vaultId, userOrGroupId));
-			return;
-		}
+	public static void keycloakPrepareVault(final Keycloak keycloak, final String keycloakRealm, final String vaultId, final StorageProfileS3STSDto storageConfig, final String userOrGroupId) {
+		final boolean minio = storageConfig.stsRoleArn() != null && storageConfig.stsRoleArn2() == null;
+		final boolean aws = storageConfig.stsRoleArn() != null && storageConfig.stsRoleArn2() != null;
 
-		final String keycloakRealm = syncerConfig.getKeycloakRealm();
-		try (final Keycloak keycloak = Keycloak.getInstance(syncerConfig.getKeycloakUrl(), keycloakRealm, syncerConfig.getUsername(), syncerConfig.getPassword())) {
-			final boolean minio = storageConfig.stsRoleArn() != null && storageConfig.stsRoleArn2() == null;
-			final boolean aws = storageConfig.stsRoleArn() != null && storageConfig.stsRoleArn2() != null;
-
-			keycloakPrepareVault(vaultId, keycloak, keycloakRealm, minio, aws);
-		}
+		keycloakPrepareVault(vaultId, keycloak, keycloakRealm, minio, aws);
 	}
 
-	public static void keycloakGrantAccessToVault(final SyncerConfig syncerConfig, final String vaultId, final String userOrGroupId, final String clientId, final Group.Repository groupRepo) {
-		// N.B. quarkus has no means to provide empty string as value, interpreted as no value, see https://github.com/quarkusio/quarkus/issues/2765
-		// TODO review better solution than using sentinel string "empty"?
-		if ("empty".equals(syncerConfig.getKeycloakUrl())) {
-			LOG.error(String.format("Could not grant access to vault %s for user %s as keycloak URL is not defined.", vaultId, userOrGroupId));
-			return;
-		}
-
+	public static void keycloakGrantAccessToVault(final Keycloak keycloak, final String keycloakRealm, final String vaultId, final String userOrGroupId, final String clientId, final Group.Repository groupRepo) {
 		var group = groupRepo.findByIdOptional(userOrGroupId);
 		final boolean isGroup = group.isPresent();
 
-		final String keycloakRealm = syncerConfig.getKeycloakRealm();
-		try (final Keycloak keycloak = Keycloak.getInstance(syncerConfig.getKeycloakUrl(), keycloakRealm, syncerConfig.getUsername(), syncerConfig.getPassword(), syncerConfig.getKeycloakClientId())) {
-			keycloakGrantAccessToVault(vaultId, userOrGroupId, clientId, keycloak, keycloakRealm, isGroup);
-		}
+		keycloakGrantAccessToVault(vaultId, userOrGroupId, clientId, keycloak, keycloakRealm, isGroup);
 	}
 
-	public static void keycloakRemoveAccessToVault(final SyncerConfig syncerConfig, final String vaultId, final String userOrGroupId, final String clientId, final Group.Repository groupRepo) {
-		// N.B. quarkus has no means to provide empty string as value, interpreted as no value, see https://github.com/quarkusio/quarkus/issues/2765
-		// TODO review better solution than using sentinel string "empty"?
-		if ("empty".equals(syncerConfig.getKeycloakUrl())) {
-			LOG.error(String.format("Could not grant access to vault %s for user %s as keycloak URL is not defined.", vaultId, userOrGroupId));
-			return;
-		}
-
+	public static void keycloakRemoveAccessToVault(final Keycloak keycloak, final String keycloakRealm, final String vaultId, final String userOrGroupId, final String clientId, final Group.Repository groupRepo) {
 		final boolean isGroup = groupRepo.findByIdOptional(userOrGroupId).isPresent();
 
-		final String keycloakRealm = syncerConfig.getKeycloakRealm();
-		try (final Keycloak keycloak = Keycloak.getInstance(syncerConfig.getKeycloakUrl(), keycloakRealm, syncerConfig.getUsername(), syncerConfig.getPassword(), syncerConfig.getKeycloakClientId())) {
-			keycloakRemoveAccessToVault(vaultId, userOrGroupId, clientId, keycloak, keycloakRealm, isGroup);
-		}
+		keycloakRemoveAccessToVault(vaultId, userOrGroupId, clientId, keycloak, keycloakRealm, isGroup);
 	}
 
 	// TODO review: this loop might not be safe enough to run in production - should we just disable this feature or remove from code entirely?

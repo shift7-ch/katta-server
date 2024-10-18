@@ -19,7 +19,6 @@ import org.cryptomator.hub.entities.cipherduck.StorageProfile;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
-import org.jboss.logging.Logger;
 
 import java.net.URI;
 import java.util.Map;
@@ -85,8 +84,8 @@ public class StorageResource {
 		makeS3Bucket((StorageProfileS3STSDto) storageProfileDto, storage);
 
 		final User currentUser = userRepo.findById(jwt.getSubject());
-		keycloakGrantAccessToVault(syncerConfig, vaultId.toString(), currentUser.getId(), cipherduckConfig.keycloakClientIdCryptomatorVaults(), groupRepo);
-		keycloakPrepareVault(syncerConfig, vaultId.toString(), (StorageProfileS3STSDto) storageProfileDto, jwt.getSubject());
+		keycloakGrantAccessToVault(syncerConfig.getKeycloak(), syncerConfig.getKeycloakRealm(), vaultId.toString(), currentUser.getId(), cipherduckConfig.keycloakClientIdCryptomatorVaults(), groupRepo);
+		keycloakPrepareVault(syncerConfig.getKeycloak(), syncerConfig.getKeycloakRealm(), vaultId.toString(), (StorageProfileS3STSDto) storageProfileDto, jwt.getSubject());
 
 		return Response.created(URI.create(".")).build();
 	}
