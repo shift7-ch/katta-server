@@ -186,7 +186,7 @@ public class VaultResource {
 				|| effectiveVaultAccessRepo.isUserOccupyingSeat(userId)) { // or user already sitting
 
 			// / start cipherduck extension
-			keycloakGrantAccessToVault(syncerConfig, vaultId.toString(), userId, cipherduckConfig.keycloakClientIdCryptomatorVaults(), groupRepo);
+			keycloakGrantAccessToVault(syncerConfig.getKeycloak(), syncerConfig.getKeycloakRealm(), vaultId.toString(), userId, cipherduckConfig.keycloakClientIdCryptomatorVaults(), groupRepo);
 			// \ end cipherduck extension
 
 			return addAuthority(vault, user, role);
@@ -219,7 +219,7 @@ public class VaultResource {
 		}
 
 		// / start cipherduck extension
-		keycloakGrantAccessToVault(syncerConfig, vaultId.toString(), groupId, cipherduckConfig.keycloakClientIdCryptomatorVaults(), groupRepo);
+		keycloakGrantAccessToVault(syncerConfig.getKeycloak(), syncerConfig.getKeycloakRealm(), vaultId.toString(), groupId, cipherduckConfig.keycloakClientIdCryptomatorVaults(), groupRepo);
 		// \ end cipherduck extension
 
 		return addAuthority(vault, group, role);
@@ -263,7 +263,8 @@ public class VaultResource {
 			// - Account reset: same situation as for addUser() and addGroup() before being granted access (masterkey): in the STS case, users can technically already gain access to the data at the storage level if they know/guess the STS endpoint etc, however they cannot decrypt yet.
 			// - Archiving: removeAuthority is not called in this case, so users still can renew access (get new temporary S3 credentials) at the storage level in the STS case.
 			//              However, they cannot get the masterkey any more (in all cases) nor the permanent storage credentials (in the non-STS case).
-			keycloakRemoveAccessToVault(syncerConfig, vaultId.toString(), authorityId, "cryptomatorvaults", groupRepo);
+			keycloakRemoveAccessToVault(syncerConfig.getKeycloak(), syncerConfig.getKeycloakRealm()
+					, vaultId.toString(), authorityId, "cryptomatorvaults", groupRepo);
 			// \ end cipherduck extension
 
 
