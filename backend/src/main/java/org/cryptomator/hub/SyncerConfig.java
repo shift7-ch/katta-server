@@ -44,7 +44,7 @@ public class SyncerConfig {
 
 	// / start cipherduck addition
 	public Keycloak getKeycloak() {
-		return Keycloak.getInstance(getKeycloakUrl(), getUsername(), getPassword(), getKeycloakClientId());
+		return Keycloak.getInstance(getKeycloakUrl(), getKeycloakRealm(), getUsername(), getPassword(), getKeycloakClientId());
 	}
 	// \ end cipherduck addition
 }
