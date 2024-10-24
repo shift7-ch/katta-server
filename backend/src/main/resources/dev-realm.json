@@ -495,7 +495,9 @@
       "authenticationFlowBindingOverrides": {},
       "fullScopeAllowed": true,
       "nodeReRegistrationTimeout": -1,
-      "defaultClientScopes": [],
+      "defaultClientScopes": [
+        "basic"
+      ],
       "optionalClientScopes": []
     },
     {
