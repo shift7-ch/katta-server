@@ -16,12 +16,12 @@ import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.testcontainers.containers.wait.strategy.Wait;
 
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import static ch.cipherduck.JWTDecoder.deocdeJWT;
 import static io.restassured.RestAssured.given;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -236,13 +236,6 @@ public class CipherduckTokenExchangeProviderIT {
 		}
 	}
 
-	private static JSONObject deocdeJWT(String token) throws JSONException {
-		String[] chunks = token.split("\\.");
-		Base64.Decoder decoder = Base64.getUrlDecoder();
-
-		String payload = new String(decoder.decode(chunks[1]));
-		return new JSONObject(payload);
-	}
 
 	// ============================================================
 	// methods below copied from KeycloakCryptomatorVaultsHelper
