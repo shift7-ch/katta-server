@@ -391,6 +391,7 @@
         }
       ],
       "defaultClientScopes": [
+        "basic",
         "web-origins",
         "phone",
         "profile",
@@ -451,6 +452,7 @@
         }
       ],
       "defaultClientScopes": [
+        "basic",
         "web-origins",
         "phone",
         "profile",
