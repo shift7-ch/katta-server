@@ -775,25 +775,6 @@ async function createVault() {
       throw new Error('User not set up');
     }
     const ownerGrant: AccessGrant = { userId: owner.id, token: '' };
-    switch (vaultType.value) {
-      case VaultType.VaultFormat8: {
-        if (!vaultFormat8.value) {
-          throw new Error('Invalid state');
-        }
-        ownerGrant.token = await vaultFormat8.value.encryptForUser(await userdata.ecdhPublicKey);
-        break;
-      }
-      case VaultType.UniversalVaultFormat: {
-        if (!uvfVault.value) {
-          throw new Error('Invalid state');
-        }
-        ownerGrant.token = await uvfVault.value.encryptForUser(await userdata.ecdhPublicKey, true);
-        const recoveryPublicKey = await uvfVault.value.recoveryKey.serializePublicKey();
-        vault.value.uvfMetadataFile = await uvfVault.value.createMetadataFile(absBackendBaseURL, vault.value);
-        vault.value.uvfKeySet = `{"keys": [${recoveryPublicKey}]}`;
-        break;
-      }
-    }
     // / start cipherduck extension
     if (!uvfVault.value) {
       throw new Error('Invalid state');
@@ -910,6 +891,25 @@ async function createVault() {
         });
     }
     // \ end cipherduck extension
+    switch (vaultType.value) {
+      case VaultType.VaultFormat8: {
+        if (!vaultFormat8.value) {
+          throw new Error('Invalid state');
+        }
+        ownerGrant.token = await vaultFormat8.value.encryptForUser(await userdata.ecdhPublicKey);
+        break;
+      }
+      case VaultType.UniversalVaultFormat: {
+        if (!uvfVault.value) {
+          throw new Error('Invalid state');
+        }
+        ownerGrant.token = await uvfVault.value.encryptForUser(await userdata.ecdhPublicKey, true);
+        const recoveryPublicKey = await uvfVault.value.recoveryKey.serializePublicKey();
+        vault.value.uvfMetadataFile = await uvfVault.value.createMetadataFile(absBackendBaseURL, vault.value);
+        vault.value.uvfKeySet = `{"keys": [${recoveryPublicKey}]}`;
+        break;
+      }
+    }
     await backend.vaults.createOrUpdateVault(vault.value);
     await backend.vaults.grantAccess(vault.value.id, ownerGrant);
     state.value = State.Finished;
