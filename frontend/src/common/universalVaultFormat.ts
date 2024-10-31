@@ -368,7 +368,7 @@ export class VaultMetadata {
       kdfSalt: base64url.stringify(this.kdfSalt, { pad: false }),
       'org.cryptomator.automaticAccessGrant': this.automaticAccessGrant
       // / start cipherduck extension
-      ,backend: this.backend
+      ,'io.katta.storage': this.backend
       // \ end cipherduck extension
     };
   }
