@@ -18,7 +18,6 @@ type MetadataPayload = {
   kdfSalt: string;
   'org.cryptomator.automaticAccessGrant': VaultMetadataJWEAutomaticAccessGrantDto;
   // / start cipherduck extension
-  // TODO finalize attribute name: 'io.katta.backend'?
   backend: VaultMetadataJWEBackendDto;
   // \ end cipherduck extension
 }
@@ -366,7 +365,7 @@ export class VaultMetadata {
       kdfSalt: base64url.stringify(this.kdfSalt, { pad: false }),
       'org.cryptomator.automaticAccessGrant': this.automaticAccessGrant
       // / start cipherduck extension
-      ,'io.katta.storage': this.backend
+      ,'cloud.katta.storage': this.backend
       // \ end cipherduck extension
     };
   }
