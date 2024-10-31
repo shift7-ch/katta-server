@@ -182,7 +182,6 @@ export type StorageProfileDto = {
     stsRoleArn2: string;
     stsDurationSeconds: number;
     archived: boolean;
-    // TODO https://github.com/shift7-ch/cipherduck-hub/issues/44 add bucketVersioning/bucketAcceleration/bucketEncryption
 }
 
 export type VaultMetadataJWEBackendDto = {
