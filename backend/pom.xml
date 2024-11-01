@@ -16,7 +16,7 @@
     <quarkus.smallrye-openapi.store-schema-directory>../frontend/src/openapi</quarkus.smallrye-openapi.store-schema-directory>
     <!-- \ end cipherduck modification -->
 
-    <quarkus.platform.version>3.8.2</quarkus.platform.version>
+    <quarkus.platform.version>3.8.6</quarkus.platform.version>
     <quarkus.jib.base-jvm-image>eclipse-temurin:21-jre</quarkus.jib.base-jvm-image> <!-- irrelevant for -Pnative -->
     <jwt.version>4.4.0</jwt.version>
     <compiler-plugin.version>3.13.0</compiler-plugin.version>
