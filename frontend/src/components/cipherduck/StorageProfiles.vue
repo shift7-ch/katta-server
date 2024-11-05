@@ -111,7 +111,7 @@ onMounted(fetchData);
 async function fetchData() {
   onFetchError.value = null;
   try {
-    isAdmin.value = (await auth).isAdmin();
+    isAdmin.value = (await auth).hasRole("admin");
     storageprofiles.value = (await backend.storageprofiles.get(undefined));
   } catch (error) {
     console.error('Retrieving storageprofile list failed.', error);
