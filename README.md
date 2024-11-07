@@ -26,6 +26,11 @@ During development, run Quarkus from the `backend` dir as explained in [its READ
 
 ## Custom Keycloak Image
 
-We add a custom token exchange SPI implementation and custom theme to the base keycloak image, as explained in [its README file](keycloak/README.md).
+We add a custom token exchange SPI implementation and custom theme to the base keycloak image, as explained
+in [its README file](keycloak/README.md).
+
+# Setup
+
+See [Katta Documentiona &rarr; Setup Katta Server](https://github.com/shift7-ch/katta-docs/blob/main/SETUP_KATTA_SERVER.md).
 
 
