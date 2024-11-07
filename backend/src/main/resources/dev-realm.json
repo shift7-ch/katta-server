@@ -471,7 +471,7 @@
       ]
     },
     {
-      "id": "367e3049-23ee-4714-a7ed-75e61d027d02",
+      "id": "cryptomatorvaults",
       "clientId": "cryptomatorvaults",
       "name": "Cryptomator Vaults (Token Exchange)",
       "surrogateAuthRequired": false,
@@ -510,11 +510,10 @@
         "policyEnforcementMode": "ENFORCING",
         "resources": [
           {
-            "name": "client.resource.367e3049-23ee-4714-a7ed-75e61d027d02",
+            "name": "client.resource.cryptomatorvaults",
             "type": "Client",
             "ownerManagedAccess": false,
             "attributes": {},
-            "_id": "67da8209-a6fb-438f-8ee7-f936b47aedf4",
             "uris": [],
             "scopes": [
               {
@@ -535,12 +534,12 @@
             }
           },
           {
-            "name": "token-exchange.permission.client.367e3049-23ee-4714-a7ed-75e61d027d02",
+            "name": "token-exchange.permission.client.cryptomatorvaults",
             "type": "scope",
             "logic": "POSITIVE",
             "decisionStrategy": "UNANIMOUS",
             "config": {
-              "resources": "[\"client.resource.367e3049-23ee-4714-a7ed-75e61d027d02\"]",
+              "resources": "[\"client.resource.cryptomatorvaults\"]",
               "scopes": "[\"token-exchange\"]",
               "applyPolicies": "[\"exchange\"]"
             }
