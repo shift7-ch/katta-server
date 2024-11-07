@@ -1,4 +1,4 @@
-package ch.cipherduck;
+package cloud.katta;
 
 import dasniko.testcontainers.keycloak.KeycloakContainer;
 import jakarta.ws.rs.core.Response;
@@ -21,12 +21,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import static ch.cipherduck.JWTDecoder.deocdeJWT;
+import static cloud.katta.JWTDecoder.deocdeJWT;
 import static io.restassured.RestAssured.given;
 import static org.junit.jupiter.api.Assertions.*;
 
 
-public class CipherduckTokenExchangeProviderIT {
+public class KattaTokenExchangeProviderIT {
 
 	/**
 	 * Document the new behaviour @see <a href="hhttps://github.com/keycloak/keycloak/issues/29614">Keycloak Issue 29614</a> which makes our spi necessary.

@@ -1,4 +1,4 @@
-package ch.cipherduck;
+package cloud.katta;
 
 import dasniko.testcontainers.keycloak.KeycloakContainer;
 import org.json.JSONArray;
@@ -13,11 +13,11 @@ import org.keycloak.representations.idm.UserRepresentation;
 import java.util.List;
 import java.util.Map;
 
-import static ch.cipherduck.JWTDecoder.deocdeJWT;
+import static cloud.katta.JWTDecoder.deocdeJWT;
 import static io.restassured.RestAssured.given;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class CipherduckDevRealmIT {
+public class KattaDevRealmIT {
 	/**
 	 * Ensure access token to have
 	 * - aud claim (required for STS)

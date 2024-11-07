@@ -1,13 +1,13 @@
-package ch.cipherduck;
+package cloud.katta;
 
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.DefaultTokenExchangeProviderFactory;
 import org.keycloak.protocol.oidc.TokenExchangeProvider;
 
-public class CipherduckTokenExchangeProviderFactory extends DefaultTokenExchangeProviderFactory {
+public class KattaTokenExchangeProviderFactory extends DefaultTokenExchangeProviderFactory {
     @Override
     public TokenExchangeProvider create(KeycloakSession session) {
-        return new CipherduckTokenExchangeProvider();
+        return new KattaTokenExchangeProvider();
     }
 
     @Override

@@ -1,4 +1,4 @@
-package ch.cipherduck;
+package cloud.katta;
 
 import org.json.JSONException;
 import org.json.JSONObject;

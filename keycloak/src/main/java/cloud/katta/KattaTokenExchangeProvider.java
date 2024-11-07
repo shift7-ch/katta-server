@@ -1,4 +1,4 @@
-package ch.cipherduck;
+package cloud.katta;
 
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
@@ -11,7 +11,7 @@ import org.keycloak.protocol.oidc.DefaultTokenExchangeProvider;
 import org.keycloak.protocol.oidc.TokenExchangeContext;
 import org.keycloak.representations.AccessToken;
 
-public class CipherduckTokenExchangeProvider extends DefaultTokenExchangeProvider {
+public class KattaTokenExchangeProvider extends DefaultTokenExchangeProvider {
 
 	private MultivaluedMap<String, String> formParams;
 
