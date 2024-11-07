@@ -12,7 +12,7 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <!-- / start cipherduck modification -->
     <quarkus.container-image.group>shift7-ch</quarkus.container-image.group>
-    <quarkus.container-image.name>cipherduck</quarkus.container-image.name>
+    <quarkus.container-image.name>katta-server</quarkus.container-image.name>
     <quarkus.smallrye-openapi.store-schema-directory>../frontend/src/openapi</quarkus.smallrye-openapi.store-schema-directory>
     <!-- \ end cipherduck modification -->
     <quarkus.platform.version>3.15.1</quarkus.platform.version>
