@@ -242,7 +242,7 @@ async function licenseUpdated(license: LicenseUserInfoDto) {
 import { showVaultIDs } from '../common/settings';
 async function openBookmark() {
   try {
-    window.location.href = `x-cipherduck-action:cipherduck?url=${encodeURIComponent(document.baseURI)}`;
+    window.location.href = `x-katta-action:katta?url=${encodeURIComponent(document.baseURI)}`;
   } catch (error) {
     console.error('Opening bookmark from browser failed.', error);
   }

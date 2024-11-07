@@ -418,7 +418,7 @@
       "enabled": true,
       "redirectUris": [
         "http://127.0.0.1/*",
-        "x-cipherduck-action:oauth"
+        "x-katta-action:oauth"
       ],
       "webOrigins": [
         "+"
