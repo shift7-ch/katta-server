@@ -1,0 +1,2875 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "hub-backend API",
+    "version": "1.4.0-SNAPSHOT"
+  },
+  "paths": {
+    "/api/auditlog": {
+      "get": {
+        "tags": [
+          "Audit Log Resource"
+        ],
+        "summary": "list all auditlog entries within a period",
+        "description": "list all auditlog entries from a period specified by a start and end date",
+        "parameters": [
+          {
+            "name": "startDate",
+            "in": "query",
+            "description": "the start date of the period as ISO 8601 datetime string, inclusive",
+            "schema": {
+              "$ref": "#/components/schemas/Instant"
+            }
+          },
+          {
+            "name": "endDate",
+            "in": "query",
+            "description": "the end date of the period as ISO 8601 datetime string, exclusive",
+            "schema": {
+              "$ref": "#/components/schemas/Instant"
+            }
+          },
+          {
+            "name": "paginationId",
+            "in": "query",
+            "description": "The smallest (asc ordering) or highest (desc ordering) audit entry id, not included in results. Used for pagination. ",
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "description": "The order of the queried table. Determines if most recent (desc) or oldest entries (asc) are considered first. Allowed Values are 'desc' (default) or 'asc'. Used for pagination.",
+            "schema": {
+              "default": "desc",
+              "type": "string"
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "description": "the maximum number of entries to return. Must be between 1 and 100.",
+            "schema": {
+              "format": "int32",
+              "default": 20,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Body contains list of events in the specified time interval",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AuditEventDto"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "startDate or endDate not specified, startDate > endDate, order specified and not in ['asc','desc'] or pageSize not in [1 .. 100]"
+          },
+          "402": {
+            "description": "Community license used or license expired"
+          },
+          "403": {
+            "description": "requesting user does not have admin role"
+          },
+          "401": {
+            "description": "Not Authorized"
+          }
+        },
+        "security": [
+          {
+            "SecurityScheme": [
+              "admin"
+            ]
+          }
+        ]
+      }
+    },
+    "/api/authorities": {
+      "get": {
+        "tags": [
+          "Authority Resource"
+        ],
+        "summary": "lists all authorities matching the given ids",
+        "description": "lists for each id in the list its corresponding authority. Ignores all id's where an authority cannot be found",
+        "parameters": [
+          {
+            "name": "ids",
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AuthorityDto"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not Allowed"
+          },
+          "401": {
+            "description": "Not Authorized"
+          }
+        },
+        "security": [
+          {
+            "SecurityScheme": [
+              "user"
+            ]
+          }
+        ]
+      }
+    },
+    "/api/authorities/search": {
+      "get": {
+        "tags": [
+          "Authority Resource"
+        ],
+        "summary": "search authority by name",
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "pattern": "\\S",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AuthorityDto"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not Allowed"
+          },
+          "401": {
+            "description": "Not Authorized"
+          }
+        },
+        "security": [
+          {
+            "SecurityScheme": [
+              "user"
+            ]
+          }
+        ]
+      }
+    },
+    "/api/billing": {
+      "get": {
+        "tags": [
+          "Billing Resource"
+        ],
+        "summary": "get the billing information",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BillingDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "only admins are allowed to get the billing information"
+          },
+          "401": {
+            "description": "Not Authorized"
+          }
+        },
+        "security": [
+          {
+            "SecurityScheme": [
+              "admin"
+            ]
+          }
+        ]
+      }
+    },
+    "/api/billing/token": {
+      "put": {
+        "tags": [
+          "Billing Resource"
+        ],
+        "summary": "set the token",
+        "requestBody": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "token set"
+          },
+          "400": {
+            "description": "token is invalid (e.g., expired or invalid signature)"
+          },
+          "403": {
+            "description": "only admins are allowed to set the token"
+          },
+          "401": {
+            "description": "Not Authorized"
+          }
+        },
+        "security": [
+          {
+            "SecurityScheme": [
+              "admin"
+            ]
+          }
+        ]
+      }
+    },
+    "/api/config": {
+      "get": {
+        "tags": [
+          "Config Resource"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfigDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/devices": {
+      "get": {
+        "tags": [
+          "Device Resource"
+        ],
+        "summary": "lists all devices matching the given ids",
+        "description": "lists for each id in the list its corresponding device. Ignores all id's where a device cannot be found",
+        "parameters": [
+          {
+            "name": "ids",
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DeviceDto"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not Allowed"
+          },
+          "401": {
+            "description": "Not Authorized"
+          }
+        },
+        "security": [
+          {
+            "SecurityScheme": [
+              "admin"
+            ]
+          }
+        ]
+      }
+    },
+    "/api/devices/{deviceId}": {
+      "get": {
+        "tags": [
+          "Device Resource"
+        ],
+        "summary": "get the device",
+        "description": "the device must be owned by the currently logged-in user",
+        "parameters": [
+          {
+            "name": "deviceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Device found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeviceDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Device not found or owned by a different user"
+          },
+          "403": {
+            "description": "Not Allowed"
+          },
+          "401": {
+            "description": "Not Authorized"
+          }
+        },
+        "security": [
+          {
+            "SecurityScheme": [
+              "user"
+            ]
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "Device Resource"
+        ],
+        "summary": "creates or updates a device",
+        "description": "the device will be owned by the currently logged-in user",
+        "parameters": [
+          {
+            "name": "deviceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeviceDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Device created or updated"
+          },
+          "409": {
+            "description": "Device with this key already exists"
+          },
+          "403": {
+            "description": "Not Allowed"
+          },
+          "401": {
+            "description": "Not Authorized"
+          }
+        },
+        "security": [
+          {
+            "SecurityScheme": [
+              "user"
+            ]
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Device Resource"
+        ],
+        "summary": "removes a device",
+        "description": "the device will be only be removed if the current user is the owner",
+        "parameters": [
+          {
+            "name": "deviceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "device removed"
+          },
+          "404": {
+            "description": "device not found with current user"
+          },
+          "403": {
+            "description": "Not Allowed"
+          },
+          "401": {
+            "description": "Not Authorized"
+          }
+        },
+        "security": [
+          {
+            "SecurityScheme": [
+              "user"
+            ]
+          }
+        ]
+      }
+    },
+    "/api/devices/{deviceId}/legacy-access-tokens": {
+      "get": {
+        "tags": [
+          "Device Resource"
+        ],
+        "summary": "list legacy access tokens",
+        "description": "get all legacy access tokens for this device ({vault1: token1, vault1: token2, ...}). The device must be owned by the currently logged-in user",
+        "parameters": [
+          {
+            "name": "deviceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not Allowed"
+          },
+          "401": {
+            "description": "Not Authorized"
+          }
+        },
+        "deprecated": true,
+        "security": [
+          {
+            "SecurityScheme": [
+              "user"
+            ]
+          }
+        ]
+      }
+    },
+    "/api/groups": {
+      "get": {
+        "tags": [
+          "Groups Resource"
+        ],
+        "summary": "list all groups",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GroupDto"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not Allowed"
+          },
+          "401": {
+            "description": "Not Authorized"
+          }
+        },
+        "security": [
+          {
+            "SecurityScheme": [
+              "user"
+            ]
+          }
+        ]
+      }
+    },
+    "/api/groups/{groupId}/effective-members": {
+      "get": {
+        "tags": [
+          "Groups Resource"
+        ],
+        "summary": "list all effective group members",
+        "parameters": [
+          {
+            "name": "groupId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UserDto"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not Allowed"
+          },
+          "401": {
+            "description": "Not Authorized"
+          }
+        },
+        "security": [
+          {
+            "SecurityScheme": [
+              "user"
+            ]
+          }
+        ]
+      }
+    },
+    "/api/license/user-info": {
+      "get": {
+        "tags": [
+          "License Resource"
+        ],
+        "summary": "Get license information for regular users",
+        "description": "Information includes the licensed seats, the already used seats and if defined, the license expiration date.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LicenseUserInfoDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not Allowed"
+          },
+          "401": {
+            "description": "Not Authorized"
+          }
+        },
+        "security": [
+          {
+            "SecurityScheme": [
+              "user"
+            ]
+          }
+        ]
+      }
+    },
+    "/api/settings": {
+      "get": {
+        "tags": [
+          "Settings Resource"
+        ],
+        "summary": "get the billing information",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettingsDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not Allowed"
+          },
+          "401": {
+            "description": "Not Authorized"
+          }
+        },
+        "security": [
+          {
+            "SecurityScheme": [
+              "user"
+            ]
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "Settings Resource"
+        ],
+        "summary": "update settings",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SettingsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "token set"
+          },
+          "400": {
+            "description": "invalid settings"
+          },
+          "403": {
+            "description": "only admins are allowed to update settings"
+          },
+          "401": {
+            "description": "Not Authorized"
+          }
+        },
+        "security": [
+          {
+            "SecurityScheme": [
+              "admin"
+            ]
+          }
+        ]
+      }
+    },
+    "/api/storage/{vaultId}": {
+      "put": {
+        "tags": [
+          "Storage Resource"
+        ],
+        "summary": "creates bucket and policy",
+        "description": "creates an S3 bucket and uploads policy for it.",
+        "parameters": [
+          {
+            "name": "vaultId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/UUID"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateS3STSBucketDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Bucket and Keycloak config created"
+          },
+          "400": {
+            "description": "Could not create bucket"
+          },
+          "409": {
+            "description": "Vault with this ID or bucket with this name already exists"
+          },
+          "410": {
+            "description": "Storage profile is archived"
+          },
+          "403": {
+            "description": "Not Allowed"
+          },
+          "401": {
+            "description": "Not Authorized"
+          }
+        },
+        "security": [
+          {
+            "SecurityScheme": [
+              "user"
+            ]
+          }
+        ]
+      }
+    },
+    "/api/storageprofile": {
+      "get": {
+        "tags": [
+          "Storage Profile Resource"
+        ],
+        "summary": "get configs for storage backends",
+        "description": "get list of configs for storage backends",
+        "parameters": [
+          {
+            "name": "archived",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "uploaded storage configuration",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/StorageProfileDto"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "not a user"
+          },
+          "401": {
+            "description": "Not Authorized"
+          }
+        },
+        "security": [
+          {
+            "SecurityScheme": [
+              "user"
+            ]
+          }
+        ]
+      }
+    },
+    "/api/storageprofile/s3": {
+      "get": {
+        "tags": [
+          "Storage Profile Resource"
+        ],
+        "summary": "get configs for storage backends",
+        "description": "get list of configs for storage backends",
+        "responses": {
+          "200": {
+            "description": "uploaded storage configuration",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/StorageProfileS3Dto"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "not a user"
+          },
+          "401": {
+            "description": "Not Authorized"
+          }
+        },
+        "security": [
+          {
+            "SecurityScheme": [
+              "user"
+            ]
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "Storage Profile Resource"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StorageProfileS3Dto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "uploaded storage configuration"
+          },
+          "400": {
+            "description": "Constraint violation"
+          },
+          "403": {
+            "description": "not an admin"
+          },
+          "409": {
+            "description": "Storage profile with ID already exists"
+          },
+          "401": {
+            "description": "Not Authorized"
+          }
+        },
+        "security": [
+          {
+            "SecurityScheme": [
+              "admin"
+            ]
+          }
+        ]
+      }
+    },
+    "/api/storageprofile/s3sts": {
+      "put": {
+        "tags": [
+          "Storage Profile Resource"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StorageProfileS3STSDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "uploaded storage configuration"
+          },
+          "400": {
+            "description": "Constraint violation"
+          },
+          "403": {
+            "description": "not an admin"
+          },
+          "409": {
+            "description": "Storage profile with ID already exists"
+          },
+          "401": {
+            "description": "Not Authorized"
+          }
+        },
+        "security": [
+          {
+            "SecurityScheme": [
+              "admin"
+            ]
+          }
+        ]
+      }
+    },
+    "/api/storageprofile/{profileId}": {
+      "get": {
+        "tags": [
+          "Storage Profile Resource"
+        ],
+        "summary": "gets a storage profile",
+        "parameters": [
+          {
+            "name": "profileId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/UUID"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StorageProfileDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "not a user"
+          },
+          "401": {
+            "description": "Not Authorized"
+          }
+        },
+        "security": [
+          {
+            "SecurityScheme": [
+              "user"
+            ]
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "Storage Profile Resource"
+        ],
+        "summary": "archive a storage profile",
+        "parameters": [
+          {
+            "name": "profileId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/UUID"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "archived": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "storage profile archived"
+          },
+          "403": {
+            "description": "not an admin"
+          },
+          "401": {
+            "description": "Not Authorized"
+          }
+        },
+        "security": [
+          {
+            "SecurityScheme": [
+              "admin"
+            ]
+          }
+        ]
+      }
+    },
+    "/api/users": {
+      "get": {
+        "tags": [
+          "Users Resource"
+        ],
+        "summary": "list all users",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UserDto"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not Allowed"
+          },
+          "401": {
+            "description": "Not Authorized"
+          }
+        },
+        "security": [
+          {
+            "SecurityScheme": [
+              "user"
+            ]
+          }
+        ]
+      }
+    },
+    "/api/users/me": {
+      "get": {
+        "tags": [
+          "Users Resource"
+        ],
+        "summary": "get the logged-in user",
+        "parameters": [
+          {
+            "name": "withDevices",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "returns the current user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "no user matching the subject of the JWT passed as Bearer Token"
+          },
+          "403": {
+            "description": "Not Allowed"
+          },
+          "401": {
+            "description": "Not Authorized"
+          }
+        },
+        "security": [
+          {
+            "SecurityScheme": [
+              "user"
+            ]
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "Users Resource"
+        ],
+        "summary": "update the logged-in user",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "user created or updated"
+          },
+          "403": {
+            "description": "Not Allowed"
+          },
+          "401": {
+            "description": "Not Authorized"
+          }
+        },
+        "security": [
+          {
+            "SecurityScheme": [
+              "user"
+            ]
+          }
+        ]
+      }
+    },
+    "/api/users/me/access-tokens": {
+      "post": {
+        "tags": [
+          "Users Resource"
+        ],
+        "summary": "adds/updates user-specific vault keys",
+        "description": "Stores one or more vaultid-vaultkey-tuples for the currently logged-in user, as defined in the request body ({vault1: token1, vault2: token2, ...}).",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "all keys stored"
+          },
+          "403": {
+            "description": "Not Allowed"
+          },
+          "401": {
+            "description": "Not Authorized"
+          }
+        },
+        "security": [
+          {
+            "SecurityScheme": [
+              "user"
+            ]
+          }
+        ]
+      }
+    },
+    "/api/users/me/reset": {
+      "post": {
+        "tags": [
+          "Users Resource"
+        ],
+        "summary": "resets the user account",
+        "responses": {
+          "204": {
+            "description": "deleted keys, devices and access permissions"
+          },
+          "403": {
+            "description": "Not Allowed"
+          },
+          "401": {
+            "description": "Not Authorized"
+          }
+        },
+        "security": [
+          {
+            "SecurityScheme": [
+              "user"
+            ]
+          }
+        ]
+      }
+    },
+    "/api/users/trusted": {
+      "get": {
+        "tags": [
+          "Users Resource"
+        ],
+        "summary": "get trusted users",
+        "description": "returns a list of users trusted by the currently logged-in user",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TrustedUserDto"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not Allowed"
+          },
+          "401": {
+            "description": "Not Authorized"
+          }
+        },
+        "security": [
+          {
+            "SecurityScheme": [
+              "user"
+            ]
+          }
+        ]
+      }
+    },
+    "/api/users/trusted/{userId}": {
+      "get": {
+        "tags": [
+          "Users Resource"
+        ],
+        "summary": "get trust detail for given user",
+        "description": "returns the shortest found signature chain for the given user",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrustedUserDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "if no sufficiently short trust chain between the invoking user and the user with the given id has been found"
+          },
+          "403": {
+            "description": "Not Allowed"
+          },
+          "401": {
+            "description": "Not Authorized"
+          }
+        },
+        "security": [
+          {
+            "SecurityScheme": [
+              "user"
+            ]
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "Users Resource"
+        ],
+        "summary": "adds/updates trust",
+        "description": "Stores a signature for the given user.",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "signature stored"
+          },
+          "403": {
+            "description": "Not Allowed"
+          },
+          "401": {
+            "description": "Not Authorized"
+          }
+        },
+        "security": [
+          {
+            "SecurityScheme": [
+              "user"
+            ]
+          }
+        ]
+      }
+    },
+    "/api/vaults/accessible": {
+      "get": {
+        "tags": [
+          "Vault Resource"
+        ],
+        "summary": "list all accessible vaults",
+        "description": "list all vaults that have been shared with the currently logged in user or a group in wich this user is",
+        "parameters": [
+          {
+            "name": "role",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/Role"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/VaultDto"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not Allowed"
+          },
+          "401": {
+            "description": "Not Authorized"
+          }
+        },
+        "security": [
+          {
+            "SecurityScheme": [
+              "user"
+            ]
+          }
+        ]
+      }
+    },
+    "/api/vaults/all": {
+      "get": {
+        "tags": [
+          "Vault Resource"
+        ],
+        "summary": "list all vaults",
+        "description": "list all vaults in the system",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/VaultDto"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not Allowed"
+          },
+          "401": {
+            "description": "Not Authorized"
+          }
+        },
+        "security": [
+          {
+            "SecurityScheme": [
+              "admin"
+            ]
+          }
+        ]
+      }
+    },
+    "/api/vaults/some": {
+      "get": {
+        "tags": [
+          "Vault Resource"
+        ],
+        "summary": "list all vaults corresponding to the given ids",
+        "description": "list for each id in the list its corresponding vault. Ignores all id's where a vault does not exist, ",
+        "parameters": [
+          {
+            "name": "ids",
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "format": "uuid",
+                "pattern": "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}",
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/VaultDto"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not Allowed"
+          },
+          "401": {
+            "description": "Not Authorized"
+          }
+        },
+        "security": [
+          {
+            "SecurityScheme": [
+              "admin"
+            ]
+          }
+        ]
+      }
+    },
+    "/api/vaults/{vaultId}": {
+      "get": {
+        "tags": [
+          "Vault Resource"
+        ],
+        "summary": "gets a vault",
+        "parameters": [
+          {
+            "name": "vaultId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/UUID"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VaultDto"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "requesting user is neither a vault member nor has the admin role"
+          },
+          "401": {
+            "description": "Not Authorized"
+          }
+        },
+        "security": [
+          {
+            "SecurityScheme": [
+              "user"
+            ]
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "Vault Resource"
+        ],
+        "summary": "creates or updates a vault",
+        "description": "Creates or updates a vault with the given vault id. The creationTime in the vaultDto is always ignored. On creation, the current server time is used and the archived field is ignored. On update, only the name, description, and archived fields are considered.",
+        "parameters": [
+          {
+            "name": "vaultId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/UUID"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VaultDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "existing vault updated"
+          },
+          "201": {
+            "description": "new vault created"
+          },
+          "402": {
+            "description": "number of licensed seats is exceeded"
+          },
+          "403": {
+            "description": "Not Allowed"
+          },
+          "401": {
+            "description": "Not Authorized"
+          }
+        },
+        "security": [
+          {
+            "SecurityScheme": [
+              "user"
+            ]
+          }
+        ]
+      }
+    },
+    "/api/vaults/{vaultId}/access-token": {
+      "get": {
+        "tags": [
+          "Vault Resource"
+        ],
+        "summary": "get the user-specific vault key",
+        "description": "retrieves a jwe containing the vault key, encrypted for the current user",
+        "parameters": [
+          {
+            "name": "vaultId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/UUID"
+            }
+          },
+          {
+            "name": "evenIfArchived",
+            "in": "query",
+            "schema": {
+              "default": false,
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "license expired or number of effective vault users that have a token exceeds available license seats"
+          },
+          "403": {
+            "description": "not a vault member"
+          },
+          "404": {
+            "description": "unknown vault"
+          },
+          "410": {
+            "description": "Vault is archived. Only returned if evenIfArchived query param is false or not set, otherwise the archived flag is ignored"
+          },
+          "449": {
+            "description": "User account not yet initialized. Retry after setting up user"
+          },
+          "401": {
+            "description": "Not Authorized"
+          }
+        },
+        "security": [
+          {
+            "SecurityScheme": [
+              "user"
+            ]
+          }
+        ]
+      }
+    },
+    "/api/vaults/{vaultId}/access-tokens": {
+      "post": {
+        "tags": [
+          "Vault Resource"
+        ],
+        "summary": "adds user-specific vault keys",
+        "description": "Stores one or more user-vaultkey-tuples, as defined in the request body ({user1: token1, user2: token2, ...}).",
+        "parameters": [
+          {
+            "name": "vaultId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/UUID"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "all keys stored"
+          },
+          "402": {
+            "description": "number of users granted access exceeds available license seats"
+          },
+          "403": {
+            "description": "not a vault owner"
+          },
+          "404": {
+            "description": "at least one user has not been found"
+          },
+          "401": {
+            "description": "Not Authorized"
+          }
+        },
+        "security": [
+          {
+            "SecurityScheme": [
+              "user"
+            ]
+          }
+        ]
+      }
+    },
+    "/api/vaults/{vaultId}/authority/{authorityId}": {
+      "delete": {
+        "tags": [
+          "Vault Resource"
+        ],
+        "summary": "remove a user or group from this vault",
+        "description": "revokes the given authority's access rights from this vault. If the given authority is no member, the request is a no-op.",
+        "parameters": [
+          {
+            "name": "authorityId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "vaultId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/UUID"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "authority removed"
+          },
+          "403": {
+            "description": "not a vault owner"
+          },
+          "401": {
+            "description": "Not Authorized"
+          }
+        },
+        "security": [
+          {
+            "SecurityScheme": [
+              "user"
+            ]
+          }
+        ]
+      }
+    },
+    "/api/vaults/{vaultId}/claim-ownership": {
+      "post": {
+        "tags": [
+          "Vault Resource"
+        ],
+        "summary": "claims ownership of a vault",
+        "description": "Assigns the OWNER role to the currently logged in user, who proofs this claim by sending a JWT signed with a private key held by users knowing the Vault Admin Password",
+        "parameters": [
+          {
+            "name": "vaultId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/UUID"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "proof": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "ownership claimed successfully"
+          },
+          "400": {
+            "description": "incorrect proof"
+          },
+          "404": {
+            "description": "no such vault"
+          },
+          "409": {
+            "description": "owned by another user"
+          },
+          "403": {
+            "description": "Not Allowed"
+          },
+          "401": {
+            "description": "Not Authorized"
+          }
+        },
+        "security": [
+          {
+            "SecurityScheme": [
+              "user"
+            ]
+          }
+        ]
+      }
+    },
+    "/api/vaults/{vaultId}/groups/{groupId}": {
+      "put": {
+        "tags": [
+          "Vault Resource"
+        ],
+        "summary": "adds a group to this vault or updates its role",
+        "parameters": [
+          {
+            "name": "groupId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "vaultId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/UUID"
+            }
+          },
+          {
+            "name": "role",
+            "in": "query",
+            "description": "the role to grant to this group (defaults to MEMBER)",
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/Role"
+                },
+                {
+                  "default": "MEMBER"
+                }
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "group's role updated"
+          },
+          "201": {
+            "description": "group added"
+          },
+          "402": {
+            "description": "license is expired or licensed seats would be exceeded after the operation"
+          },
+          "403": {
+            "description": "not a vault owner"
+          },
+          "404": {
+            "description": "group not found"
+          },
+          "401": {
+            "description": "Not Authorized"
+          }
+        },
+        "security": [
+          {
+            "SecurityScheme": [
+              "user"
+            ]
+          }
+        ]
+      }
+    },
+    "/api/vaults/{vaultId}/keys/{deviceId}": {
+      "get": {
+        "tags": [
+          "Vault Resource"
+        ],
+        "summary": "get the device-specific masterkey of a non-archived vault",
+        "parameters": [
+          {
+            "name": "deviceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "vaultId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/UUID"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "402": {
+            "description": "number of effective vault users exceeds available license seats"
+          },
+          "403": {
+            "description": "not authorized to access this vault"
+          },
+          "410": {
+            "description": "Vault is archived"
+          },
+          "401": {
+            "description": "Not Authorized"
+          }
+        },
+        "deprecated": true,
+        "security": [
+          {
+            "SecurityScheme": [
+              "user"
+            ]
+          }
+        ]
+      }
+    },
+    "/api/vaults/{vaultId}/members": {
+      "get": {
+        "tags": [
+          "Vault Resource"
+        ],
+        "summary": "list vault members",
+        "description": "list all users or groups that this vault has been shared with directly (not inherited via group membership)",
+        "parameters": [
+          {
+            "name": "vaultId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/UUID"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MemberDto"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "not a vault owner"
+          },
+          "401": {
+            "description": "Not Authorized"
+          }
+        },
+        "security": [
+          {
+            "SecurityScheme": [
+              "user"
+            ]
+          }
+        ]
+      }
+    },
+    "/api/vaults/{vaultId}/users-requiring-access-grant": {
+      "get": {
+        "tags": [
+          "Vault Resource"
+        ],
+        "summary": "list members requiring access tokens",
+        "description": "lists all members, that have permissions but lack an access token",
+        "parameters": [
+          {
+            "name": "vaultId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/UUID"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MemberDto"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "not a vault owner"
+          },
+          "401": {
+            "description": "Not Authorized"
+          }
+        },
+        "security": [
+          {
+            "SecurityScheme": [
+              "user"
+            ]
+          }
+        ]
+      }
+    },
+    "/api/vaults/{vaultId}/users/{userId}": {
+      "put": {
+        "tags": [
+          "Vault Resource"
+        ],
+        "summary": "adds a user to this vault or updates her role",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "vaultId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/UUID"
+            }
+          },
+          {
+            "name": "role",
+            "in": "query",
+            "description": "the role to grant to this user (defaults to MEMBER)",
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/Role"
+                },
+                {
+                  "default": "MEMBER"
+                }
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "user's role updated"
+          },
+          "201": {
+            "description": "user added"
+          },
+          "402": {
+            "description": "license is expired or licensed seats would be exceeded after the operation"
+          },
+          "403": {
+            "description": "not a vault owner"
+          },
+          "404": {
+            "description": "user not found"
+          },
+          "401": {
+            "description": "Not Authorized"
+          }
+        },
+        "security": [
+          {
+            "SecurityScheme": [
+              "user"
+            ]
+          }
+        ]
+      }
+    },
+    "/api/vaults/{vaultId}/uvf/jwks.json": {
+      "get": {
+        "tags": [
+          "Vault Resource"
+        ],
+        "summary": "get public vault keys",
+        "description": "retrieves a JWK Set containing public keys related to this vault",
+        "parameters": [
+          {
+            "name": "vaultId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/UUID"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "unknown vault"
+          },
+          "403": {
+            "description": "Not Allowed"
+          },
+          "401": {
+            "description": "Not Authorized"
+          }
+        },
+        "security": [
+          {
+            "SecurityScheme": [
+              "user"
+            ]
+          }
+        ]
+      }
+    },
+    "/api/vaults/{vaultId}/uvf/vault.uvf": {
+      "get": {
+        "tags": [
+          "Vault Resource"
+        ],
+        "summary": "get the vault.uvf file",
+        "parameters": [
+          {
+            "name": "vaultId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/UUID"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "unknown vault"
+          },
+          "403": {
+            "description": "Not Allowed"
+          },
+          "401": {
+            "description": "Not Authorized"
+          }
+        },
+        "security": [
+          {
+            "SecurityScheme": [
+              "user"
+            ]
+          }
+        ]
+      }
+    },
+    "/api/version": {
+      "get": {
+        "tags": [
+          "Version Resource"
+        ],
+        "summary": "get version of hub and keycloak",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VersionDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AuditEventDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "timestamp": {
+            "$ref": "#/components/schemas/Instant"
+          }
+        }
+      },
+      "AuthorityDto": {
+        "title": "Authority",
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "type": {
+            "$ref": "#/components/schemas/Type"
+          },
+          "name": {
+            "type": "string"
+          },
+          "pictureUrl": {
+            "type": "string"
+          }
+        },
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/UserDto"
+          },
+          {
+            "$ref": "#/components/schemas/GroupDto"
+          },
+          {
+            "$ref": "#/components/schemas/MemberDto"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "type",
+          "mapping": {
+            "USER": "#/components/schemas/UserDto",
+            "GROUP": "#/components/schemas/GroupDto",
+            "MEMBER": "#/components/schemas/MemberDto"
+          }
+        }
+      },
+      "BillingDto": {
+        "type": "object",
+        "properties": {
+          "hubId": {
+            "type": "string"
+          },
+          "hasLicense": {
+            "type": "boolean"
+          },
+          "email": {
+            "type": "string"
+          },
+          "licensedSeats": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "usedSeats": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "issuedAt": {
+            "$ref": "#/components/schemas/Instant"
+          },
+          "expiresAt": {
+            "$ref": "#/components/schemas/Instant"
+          },
+          "managedInstance": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ConfigDto": {
+        "type": "object",
+        "properties": {
+          "keycloakUrl": {
+            "type": "string"
+          },
+          "keycloakRealm": {
+            "type": "string"
+          },
+          "keycloakClientIdHub": {
+            "type": "string"
+          },
+          "keycloakClientIdCryptomator": {
+            "type": "string"
+          },
+          "keycloakAuthEndpoint": {
+            "type": "string"
+          },
+          "keycloakTokenEndpoint": {
+            "type": "string"
+          },
+          "serverTime": {
+            "$ref": "#/components/schemas/Instant"
+          },
+          "apiLevel": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "keycloakClientIdCryptomatorVaults": {
+            "type": "string"
+          },
+          "uuid": {
+            "type": "string"
+          }
+        }
+      },
+      "CreateS3STSBucketDto": {
+        "type": "object",
+        "properties": {
+          "vaultId": {
+            "type": "string"
+          },
+          "storageConfigId": {
+            "$ref": "#/components/schemas/UUID"
+          },
+          "vaultUvf": {
+            "type": "string"
+          },
+          "rootDirHash": {
+            "type": "string"
+          },
+          "awsAccessKey": {
+            "type": "string"
+          },
+          "awsSecretKey": {
+            "type": "string"
+          },
+          "sessionToken": {
+            "type": "string"
+          },
+          "region": {
+            "type": "string"
+          }
+        }
+      },
+      "DeviceDto": {
+        "required": [
+          "name",
+          "publicKey",
+          "userPrivateKey"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "pattern": "\\S",
+            "type": "string"
+          },
+          "type": {
+            "$ref": "#/components/schemas/Type1"
+          },
+          "publicKey": {
+            "type": "string"
+          },
+          "userPrivateKey": {
+            "type": "string"
+          },
+          "owner": {
+            "type": "string"
+          },
+          "creationTime": {
+            "$ref": "#/components/schemas/Instant"
+          }
+        }
+      },
+      "GroupDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "type": {
+            "$ref": "#/components/schemas/Type"
+          },
+          "name": {
+            "type": "string"
+          },
+          "pictureUrl": {
+            "type": "string"
+          }
+        }
+      },
+      "Instant": {
+        "format": "date-time",
+        "type": "string",
+        "example": "2022-03-10T16:15:50Z"
+      },
+      "LicenseUserInfoDto": {
+        "type": "object",
+        "properties": {
+          "licensedSeats": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "usedSeats": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "expiresAt": {
+            "$ref": "#/components/schemas/Instant"
+          }
+        }
+      },
+      "MemberDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "type": {
+            "$ref": "#/components/schemas/Type"
+          },
+          "name": {
+            "type": "string"
+          },
+          "pictureUrl": {
+            "type": "string"
+          },
+          "ecdhPublicKey": {
+            "type": "string"
+          },
+          "ecdsaPublicKey": {
+            "type": "string"
+          },
+          "role": {
+            "$ref": "#/components/schemas/Role"
+          }
+        }
+      },
+      "Protocol": {
+        "enum": [
+          "S3",
+          "S3STS"
+        ],
+        "type": "string"
+      },
+      "Role": {
+        "enum": [
+          "MEMBER",
+          "OWNER"
+        ],
+        "type": "string"
+      },
+      "S3_SERVERSIDE_ENCRYPTION": {
+        "enum": [
+          "NONE",
+          "SSE_AES256",
+          "SSE_KMS_DEFAULT"
+        ],
+        "type": "string"
+      },
+      "S3_STORAGE_CLASSES": {
+        "enum": [
+          "STANDARD",
+          "INTELLIGENT_TIERING",
+          "STANDARD_IA",
+          "ONEZONE_IA",
+          "REDUCED_REDUNDANCY",
+          "GLACIER",
+          "GLACIER_IR",
+          "DEEP_ARCHIVE"
+        ],
+        "type": "string"
+      },
+      "SettingsDto": {
+        "type": "object",
+        "properties": {
+          "hubId": {
+            "type": "string"
+          },
+          "wotMaxDepth": {
+            "format": "int32",
+            "maximum": 9,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "wotIdVerifyLen": {
+            "format": "int32",
+            "minimum": 0,
+            "type": "integer"
+          }
+        }
+      },
+      "StorageProfileDto": {
+        "title": "StorageProfile",
+        "required": [
+          "id",
+          "name",
+          "protocol",
+          "archived"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "description": "Technical identifier for a storage profile. Must be unique UUID. Clients will use this as vendor in profile and provider in vault bookmark",
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UUID"
+              }
+            ]
+          },
+          "name": {
+            "description": "Displayed when choosing type of a new vault in dropdown.",
+            "type": "string"
+          },
+          "protocol": {
+            "description": "Storage protocol: S3 (permanent credentials) or S3STS (STS).",
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Protocol"
+              }
+            ]
+          },
+          "archived": {
+            "description": "For archived storage profiles, no vaults can be created any more.",
+            "type": "boolean"
+          }
+        },
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/StorageProfileS3Dto"
+          },
+          {
+            "$ref": "#/components/schemas/StorageProfileS3STSDto"
+          }
+        ],
+        "discriminator": {
+          "propertyName": "protocol",
+          "mapping": {
+            "S3": "#/components/schemas/StorageProfileS3Dto",
+            "S3STS": "#/components/schemas/StorageProfileS3STSDto"
+          }
+        }
+      },
+      "StorageProfileS3Dto": {
+        "required": [
+          "id",
+          "name",
+          "protocol",
+          "archived",
+          "storageClass"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "description": "Technical identifier for a storage profile. Must be unique UUID. Clients will use this as vendor in profile and provider in vault bookmark",
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UUID"
+              }
+            ]
+          },
+          "name": {
+            "description": "Displayed when choosing type of a new vault in dropdown.",
+            "type": "string"
+          },
+          "protocol": {
+            "description": "Storage protocol: S3 (permanent credentials) or S3STS (STS).",
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Protocol"
+              }
+            ]
+          },
+          "archived": {
+            "description": "For archived storage profiles, no vaults can be created any more.",
+            "type": "boolean"
+          },
+          "scheme": {
+            "description": "Scheme of S3 endpoint for template upload/bucket creation. Defaults to default for protocol, i.e. https in most cases.",
+            "type": "string",
+            "example": "https",
+            "nullable": true
+          },
+          "hostname": {
+            "description": "Hostname S3 endpoint for template upload/bucket creation. Defaults to AWS SDK default.",
+            "type": "string",
+            "example": "s3-us-gov-west-1.amazonaws.com",
+            "nullable": true
+          },
+          "port": {
+            "format": "int32",
+            "description": "Port S3 endpoint for template upload/bucket creation. Defaults to default port for scheme.",
+            "type": "integer",
+            "example": 443,
+            "nullable": true
+          },
+          "withPathStyleAccessEnabled": {
+            "description": "Whether to use path style for S3 endpoint for template upload/bucket creation.",
+            "default": false,
+            "type": "boolean",
+            "example": false
+          },
+          "storageClass": {
+            "description": "Storage class for upload. Defaults to STANDARD",
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/S3_STORAGE_CLASSES"
+              }
+            ],
+            "example": "STANDARD"
+          }
+        }
+      },
+      "StorageProfileS3STSDto": {
+        "required": [
+          "id",
+          "name",
+          "protocol",
+          "archived",
+          "storageClass",
+          "region",
+          "regions",
+          "bucketPrefix",
+          "stsRoleArnClient",
+          "stsRoleArnHub",
+          "bucketVersioning",
+          "bucketEncryption",
+          "stsRoleArn"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "description": "Technical identifier for a storage profile. Must be unique UUID. Clients will use this as vendor in profile and provider in vault bookmark",
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UUID"
+              }
+            ]
+          },
+          "name": {
+            "description": "Displayed when choosing type of a new vault in dropdown.",
+            "type": "string"
+          },
+          "protocol": {
+            "description": "Storage protocol: S3 (permanent credentials) or S3STS (STS).",
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Protocol"
+              }
+            ]
+          },
+          "archived": {
+            "description": "For archived storage profiles, no vaults can be created any more.",
+            "type": "boolean"
+          },
+          "scheme": {
+            "description": "Scheme of S3 endpoint for template upload/bucket creation. Defaults to default for protocol, i.e. https in most cases.",
+            "type": "string",
+            "example": "https",
+            "nullable": true
+          },
+          "hostname": {
+            "description": "Hostname S3 endpoint for template upload/bucket creation. Defaults to AWS SDK default.",
+            "type": "string",
+            "example": "s3-us-gov-west-1.amazonaws.com",
+            "nullable": true
+          },
+          "port": {
+            "format": "int32",
+            "description": "Port S3 endpoint for template upload/bucket creation. Defaults to default port for scheme.",
+            "type": "integer",
+            "example": 443,
+            "nullable": true
+          },
+          "withPathStyleAccessEnabled": {
+            "description": "Whether to use path style for S3 endpoint for template upload/bucket creation.",
+            "default": false,
+            "type": "boolean",
+            "example": false
+          },
+          "storageClass": {
+            "description": "Storage class for upload. Defaults to STANDARD",
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/S3_STORAGE_CLASSES"
+              }
+            ],
+            "example": "STANDARD"
+          },
+          "region": {
+            "description": "Default region selected in the frontend/client to create bucket in.",
+            "default": "us-east-1",
+            "type": "string",
+            "example": "443"
+          },
+          "regions": {
+            "description": "List of selectable regions in the frontend/client to create bucket in. Defaults to full list from AWS SDK.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "bucketPrefix": {
+            "description": "Buckets are create with name <bucket prefix><vault UUID>.",
+            "type": "string",
+            "example": "cipherduck"
+          },
+          "stsRoleArnClient": {
+            "description": "STS role for clients to assume to create buckets. Will be the same as stsRoleArnHub for AWS, different for MinIO.",
+            "type": "string",
+            "example": "arn:aws:iam::<ACCOUNT ID>:role/cipherduck-createbucket"
+          },
+          "stsRoleArnHub": {
+            "description": "STS role for frontend to assume to create buckets (used with inline policy and passed to hub storage). Will be the same as stsRoleArnClient for AWS, different for MinIO.",
+            "type": "string",
+            "example": "arn:aws:iam::<ACCOUNT ID>:role/cipherduck-createbucket"
+          },
+          "stsEndpoint": {
+            "description": "STS endpoint to use for AssumeRoleWithWebIdentity and AssumeRole for getting a temporary access token passed to the storage. Defaults to AWS SDK default.",
+            "type": "string",
+            "nullable": true
+          },
+          "bucketVersioning": {
+            "description": "Enable bucket versioning upon bucket creation",
+            "default": true,
+            "type": "boolean"
+          },
+          "bucketAcceleration": {
+            "description": "Enable bucket versioning upon bucket creation (null for MinIO)",
+            "type": "boolean",
+            "nullable": true
+          },
+          "bucketEncryption": {
+            "description": "Enable bucket versioning upon bucket creation",
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/S3_SERVERSIDE_ENCRYPTION"
+              }
+            ]
+          },
+          "stsRoleArn": {
+            "description": "roleArn to for STS AssumeRoleWithWebIdentity (AWS and MinIO)",
+            "type": "string",
+            "example": "arn:aws:iam::930717317329:role/cipherduck_chain_01"
+          },
+          "stsRoleArn2": {
+            "description": "roleArn to assume for STS AssumeRole in role chaining (AWS only, not MinIO)",
+            "type": "string",
+            "example": "arn:aws:iam::930717317329:role/cipherduck_chain_02",
+            "nullable": true
+          },
+          "stsDurationSeconds": {
+            "format": "int32",
+            "description": "Token lifetime for STS tokens assumed. Defaults to AWS/MinIO defaults",
+            "type": "integer",
+            "nullable": true
+          }
+        }
+      },
+      "TrustedUserDto": {
+        "type": "object",
+        "properties": {
+          "trustedUserId": {
+            "type": "string"
+          },
+          "signatureChain": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "Type": {
+        "enum": [
+          "USER",
+          "GROUP"
+        ],
+        "type": "string"
+      },
+      "Type1": {
+        "enum": [
+          "BROWSER",
+          "DESKTOP",
+          "MOBILE"
+        ],
+        "type": "string"
+      },
+      "UUID": {
+        "format": "uuid",
+        "pattern": "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}",
+        "type": "string"
+      },
+      "UserDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "type": {
+            "$ref": "#/components/schemas/Type"
+          },
+          "name": {
+            "type": "string"
+          },
+          "pictureUrl": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "devices": {
+            "uniqueItems": true,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DeviceDto"
+            }
+          },
+          "ecdhPublicKey": {
+            "type": "string"
+          },
+          "ecdsaPublicKey": {
+            "type": "string"
+          },
+          "privateKey": {
+            "type": "string"
+          },
+          "setupCode": {
+            "type": "string"
+          },
+          "publicKey": {
+            "type": "string",
+            "deprecated": true
+          }
+        }
+      },
+      "VaultDto": {
+        "required": [
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/UUID"
+          },
+          "name": {
+            "pattern": "\\S",
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "archived": {
+            "type": "boolean"
+          },
+          "creationTime": {
+            "$ref": "#/components/schemas/Instant"
+          },
+          "uvfMetadataFile": {
+            "type": "string"
+          },
+          "uvfKeySet": {
+            "type": "string"
+          },
+          "masterkey": {
+            "type": "string"
+          },
+          "iterations": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "salt": {
+            "type": "string"
+          },
+          "authPublicKey": {
+            "type": "string"
+          },
+          "authPrivateKey": {
+            "type": "string"
+          }
+        }
+      },
+      "VersionDto": {
+        "type": "object",
+        "properties": {
+          "hubVersion": {
+            "type": "string"
+          },
+          "keycloakVersion": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "SecurityScheme": {
+        "type": "openIdConnect",
+        "description": "Authentication",
+        "openIdConnectUrl": "http://localhost:8180/realms/cryptomator/.well-known/openid-configuration"
+      }
+    }
+  }
+}
