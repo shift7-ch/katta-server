@@ -1,0 +1,26 @@
+{
+  "id": "732D43FA-3716-46C4-B931-66EA5405EF1C",
+  "name": "MinIO S3 STS",
+  "bucketPrefix": "cipherduck",
+  "region": "eu-central-1",
+  "regions": [
+    "eu-west-1",
+    "eu-west-2",
+    "eu-west-3",
+    "eu-north-1",
+    "eu-south-1",
+    "eu-south-2",
+    "eu-central-1",
+    "eu-central-2"
+  ],
+  "withPathStyleAccessEnabled": "true",
+  "stsRoleArnHub": "arn:minio:iam:::role/HGKdlY4eFFsXVvJmwlMYMhmbnDE",
+  "stsRoleArnClient": "arn:minio:iam:::role/IqZpDC5ahW_DCAvZPZA4ACjEnDE",
+  "stsEndpoint": "http://minio:9000",
+  "protocol": "S3STS",
+  "scheme": "http",
+  "hostname": "minio",
+  "port": "9000",
+  "stsRoleArn": "arn:minio:iam:::role/Hdms6XDZ6oOpuWYI3gu4gmgHN94",
+  "bucketAcceleration": null
+}

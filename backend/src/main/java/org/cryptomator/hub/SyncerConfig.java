@@ -2,6 +2,7 @@ package org.cryptomator.hub;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.keycloak.admin.client.Keycloak;
 
 @ApplicationScoped
 public class SyncerConfig {
@@ -41,4 +42,9 @@ public class SyncerConfig {
 		return keycloakRealm;
 	}
 
+	// / start cipherduck addition
+	public Keycloak getKeycloak() {
+		return Keycloak.getInstance(getKeycloakUrl(), getKeycloakRealm(), getUsername(), getPassword(), getKeycloakClientId());
+	}
+	// \ end cipherduck addition
 }

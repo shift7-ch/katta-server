@@ -10,8 +10,11 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.jdk.version>21</project.jdk.version>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <quarkus.container-image.group>cryptomator</quarkus.container-image.group>
-    <quarkus.container-image.name>hub</quarkus.container-image.name>
+    <!-- / start cipherduck modification -->
+    <quarkus.container-image.group>shift7-ch</quarkus.container-image.group>
+    <quarkus.container-image.name>katta-server</quarkus.container-image.name>
+    <quarkus.smallrye-openapi.store-schema-directory>../frontend/src/openapi</quarkus.smallrye-openapi.store-schema-directory>
+    <!-- \ end cipherduck modification -->
     <quarkus.platform.version>3.15.1</quarkus.platform.version>
     <quarkus.jib.base-jvm-image>eclipse-temurin:21-jre</quarkus.jib.base-jvm-image> <!-- irrelevant for -Pnative -->
     <jwt.version>4.4.0</jwt.version>
@@ -31,6 +34,23 @@
         <type>pom</type>
         <scope>import</scope>
       </dependency>
+      <!-- / start cipherduck extension -->
+      <!-- https://docs.quarkiverse.io/quarkus-amazon-services/dev/amazon-s3.html#_prerequisites -->
+      <dependency>
+        <groupId>io.quarkus.platform</groupId>
+        <artifactId>quarkus-bom</artifactId>
+        <version>${quarkus.platform.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>io.quarkus.platform</groupId>
+        <artifactId>quarkus-amazon-services-bom</artifactId>
+        <version>${quarkus.platform.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <!-- \ end cipherduck extension -->
     </dependencies>
   </dependencyManagement>
 
@@ -129,6 +149,31 @@
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-undertow</artifactId>
     </dependency>
+
+    <!-- / start cipherduck extension -->
+    <dependency>
+      <groupId>io.quarkiverse.amazonservices</groupId>
+      <artifactId>quarkus-amazon-s3</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.quarkiverse.amazonservices</groupId>
+      <artifactId>quarkus-amazon-iam</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>url-connection-client</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>aws-crt-client</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.github.dasniko</groupId>
+      <artifactId>testcontainers-keycloak</artifactId>
+      <version>3.5.1</version>
+      <scope>test</scope>
+    </dependency>
+    <!-- \ end cipherduck extension -->
   </dependencies>
 
   <build>

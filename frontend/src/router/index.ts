@@ -27,6 +27,9 @@ function checkRole(role: string): NavigationGuardWithThis<undefined> {
     }
   };
 }
+// / start cipherduck extension
+import StorageProfiles from '../components/cipherduck/StorageProfiles.vue';
+// \ end cipherduck extension
 
 const routes: RouteRecordRaw[] = [
   {
@@ -101,6 +104,12 @@ const routes: RouteRecordRaw[] = [
             path: 'auditlog',
             component: AuditLog,
           },
+          // / start cipherduck extension
+          {
+            path: 'storageprofiles',
+            component: StorageProfiles,
+          },
+          // \ end cipherduck extension
         ]
       },
     ]
