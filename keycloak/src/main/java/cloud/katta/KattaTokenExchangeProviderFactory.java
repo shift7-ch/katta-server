@@ -12,7 +12,7 @@ public class KattaTokenExchangeProviderFactory extends DefaultTokenExchangeProvi
 
     @Override
     public String getId() {
-        return "cipherduck-oauth2-token-exchange";
+        return "katta-oauth2-token-exchange";
     }
 
     @Override
