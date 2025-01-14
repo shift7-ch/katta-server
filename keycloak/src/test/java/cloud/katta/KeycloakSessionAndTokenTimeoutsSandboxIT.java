@@ -24,8 +24,8 @@ public class KeycloakSessionAndTokenTimeoutsSandboxIT {
 
 	/**
 	 * Document <a href="https://www.keycloak.org/docs/latest/server_admin/#_timeouts">Keycloak session and token timeouts</a>.
-	 *
-	 * <a href="https://medium.com/@elamarane90/keycloak-session-configuration-best-practices-and-principles-cdff9348f936">Two fundamental principleseffective session management in Keycloak</a>:
+	 * <p>
+	 * <a href="https://medium.com/@elamarane90/keycloak-session-configuration-best-practices-and-principles-cdff9348f936">Two fundamental principles for effective session management in Keycloak</a>:
 	 * <ul>
 	 * 	<li>Access tokens must not outlast their corresponding refresh tokens, ensuring controlled access within the refresh token’s lifespan.</li>
 	 *  <li>Refresh tokens must align with the duration of the Keycloak session, maintaining session integrity and security.<li>
@@ -84,7 +84,6 @@ public class KeycloakSessionAndTokenTimeoutsSandboxIT {
 					.then()
 					.statusCode(200).extract();
 
-
 			final JSONObject accessToken = deocdeJWT(tokenResponse.path("access_token"));
 			final String refreshToken = tokenResponse.path("refresh_token");
 			final LocalDateTime expiry = LocalDateTime.ofEpochSecond(accessToken.getInt("exp"), 0, OffsetDateTime.now().getOffset());
@@ -95,7 +94,7 @@ public class KeycloakSessionAndTokenTimeoutsSandboxIT {
 			assert delta < ssoSessionMaxLifespan;
 
 			// do a refresh within session lifetime
-			final ExtractableResponse<io.restassured.response.Response> refreshTokenResponse = given()
+			given()
 					.header("Content-Type", "application/x-www-form-urlencoded")
 					.formParam("client_id", "cryptomator")
 					.formParam("grant_type", "refresh_token")
@@ -105,9 +104,9 @@ public class KeycloakSessionAndTokenTimeoutsSandboxIT {
 					.then()
 					.statusCode(200).extract();
 
-			Thread.sleep(ssoSessionMaxLifespan * 1000);
+			Thread.sleep(ssoSessionMaxLifespan * 1000L);
 
-			// after session expiry, refresh should not be possible any more
+			// after session expiry, refresh should not be possible anymore
 			given()
 					.header("Content-Type", "application/x-www-form-urlencoded")
 					.formParam("client_id", "cryptomator")
