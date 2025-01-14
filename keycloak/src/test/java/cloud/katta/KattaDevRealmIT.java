@@ -1,7 +1,6 @@
 package cloud.katta;
 
 import dasniko.testcontainers.keycloak.KeycloakContainer;
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.jupiter.api.Test;
@@ -81,8 +80,9 @@ public class KattaDevRealmIT {
 				final JSONObject jwt = deocdeJWT(accessToken);
 
 				assertEquals("cryptomator", jwt.getString("aud"));
+				assertFalse(jwt.has("resource_access"));
 				assertEquals(aliceId, jwt.getString("sub"));
-				assertTrue(((JSONArray) ((JSONObject) jwt.get("realm_access")).get("roles")).toList().contains("user"));
+				assertTrue(jwt.getJSONObject("realm_access").getJSONArray("roles").toList().contains("user"));
 				assertThrows(JSONException.class, () -> jwt.get("resource_access"));
 
 				// strangely, the "basic" scope is not added to the "scope" claim...
@@ -106,13 +106,18 @@ public class KattaDevRealmIT {
 							.extract().path("access_token");
 			final JSONObject jwt = deocdeJWT(accessToken);
 
-			// roles scope adds additional value "account" to "aud" claim
-			assertTrue(((JSONArray) jwt.get("aud")).toList().contains("cryptomator"));
-			assertEquals(aliceId, jwt.getString("sub"));
-			assertTrue(((JSONArray) ((JSONObject) jwt.get("realm_access")).get("roles")).toList().contains("user"));
-			assertNotNull(jwt.get("resource_access"));
-			assertTrue(((JSONArray) ((JSONObject) ((JSONObject) jwt.get("resource_access")).get("cryptomatorvaults")).get("roles")).toList().contains("blup"));
+			// "roles" scope adds client scopes to "resource_access.<clientId>.roles"
+			assertTrue(jwt.getJSONObject("resource_access").getJSONObject("cryptomatorvaults").getJSONArray("roles").toList().contains("blup"));
+			// "roles" scope adds additional value "account" to "aud" claim
+			assertTrue(jwt.getJSONArray("aud").toList().contains("cryptomator"));
+			assertTrue(jwt.getJSONArray("aud").toList().contains("account"));
+			assertTrue(jwt.getJSONArray("aud").toList().contains("cryptomatorvaults"));
+			assertEquals(3, jwt.getJSONArray("aud").length());
 
+			assertEquals(aliceId, jwt.getString("sub"));
+			assertTrue(jwt.getJSONObject("realm_access").getJSONArray("roles").toList().contains("user"));
+			assertNotNull(jwt.get("resource_access"));
+			assertTrue(jwt.getJSONObject("resource_access").getJSONObject("cryptomatorvaults").getJSONArray("roles").toList().contains("blup"));
 
 			assertTrue(jwt.getString("scope").contains("phone"));
 			assertTrue(jwt.getString("scope").contains("email"));
