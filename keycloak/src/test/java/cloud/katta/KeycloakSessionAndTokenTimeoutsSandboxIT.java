@@ -73,6 +73,7 @@ public class KeycloakSessionAndTokenTimeoutsSandboxIT {
 			realmRepresentation.setSsoSessionMaxLifespan(ssoSessionMaxLifespan); // seconds, see https://www.keycloak.org/docs-api/latest/javadocs/org/keycloak/models/RealmModel.html
 			realm.update(realmRepresentation);
 
+			// get access token and verify its expiry is smaller than ssoSessionMaxLifespan
 			final ExtractableResponse<io.restassured.response.Response> tokenResponse = given()
 					.header("Content-Type", "application/x-www-form-urlencoded")
 					.formParam("client_id", "cryptomator")
@@ -104,6 +105,7 @@ public class KeycloakSessionAndTokenTimeoutsSandboxIT {
 					.then()
 					.statusCode(200).extract();
 
+			// let session expire
 			Thread.sleep(ssoSessionMaxLifespan * 1000L);
 
 			// after session expiry, refresh should not be possible anymore
