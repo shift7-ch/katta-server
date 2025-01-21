@@ -27,8 +27,8 @@ public class KeycloakSessionAndTokenTimeoutsSandboxIT {
 	 * <p>
 	 * <a href="https://medium.com/@elamarane90/keycloak-session-configuration-best-practices-and-principles-cdff9348f936">Two fundamental principles for effective session management in Keycloak</a>:
 	 * <ul>
-	 * 	<li>Access tokens must not outlast their corresponding refresh tokens, ensuring controlled access within the refresh token’s lifespan.</li>
-	 *  <li>Refresh tokens must align with the duration of the Keycloak session, maintaining session integrity and security.<li>
+	 *	<li>Access tokens must not outlast their corresponding refresh tokens, ensuring controlled access within the refresh token’s lifespan.</li>
+	 * 	<li>Refresh tokens must align with the duration of the Keycloak session, maintaining session integrity and security.<li>
 	 * </ul>
 	 *
 	 * @see <a href="https://stackoverflow.com/questions/52040265/how-to-specify-refresh-tokens-lifespan-in-keycloak/54679852#54679852">How to specify refresh tokens lifespan in Keycloak</a>
