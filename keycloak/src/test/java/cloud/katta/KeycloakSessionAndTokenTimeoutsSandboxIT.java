@@ -27,7 +27,7 @@ public class KeycloakSessionAndTokenTimeoutsSandboxIT {
 	 * <p>
 	 * <a href="https://medium.com/@elamarane90/keycloak-session-configuration-best-practices-and-principles-cdff9348f936">Two fundamental principles for effective session management in Keycloak</a>:
 	 * <ul>
-	 *	<li>Access tokens must not outlast their corresponding refresh tokens, ensuring controlled access within the refresh token’s lifespan.</li>
+	 * 	<li>Access tokens must not outlast their corresponding refresh tokens, ensuring controlled access within the refresh token’s lifespan.</li>
 	 * 	<li>Refresh tokens must align with the duration of the Keycloak session, maintaining session integrity and security.<li>
 	 * </ul>
 	 *
