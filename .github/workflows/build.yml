@@ -3,7 +3,7 @@ name: CI Build
 on:
   push:
   pull_request_target:
-    types: [labeled]
+    types: [ labeled ]
   workflow_dispatch:
     inputs:
       tag:
@@ -55,48 +55,48 @@ jobs:
       - name: Deploy frontend
         working-directory: frontend
         run: npm run dist
-# / cipherduck start commented out
-#      - name: SonarCloud Scan Frontend
-#        uses: SonarSource/sonarcloud-github-action@master
-#        with:
-#          projectBaseDir: frontend
-#          args: >
-#            -Dsonar.organization=cryptomator
-#            -Dsonar.projectKey=cryptomator_hub_frontend
-#            -Dsonar.typescript.tsconfigPath=tsconfig.json
-#            -Dsonar.sources=src/
-#            -Dsonar.tests=test/
-#            -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
-#        env:
-#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
-#          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-# \ cipherduck end commented out
+      # / cipherduck start commented out
+      #      - name: SonarCloud Scan Frontend
+      #        uses: SonarSource/sonarcloud-github-action@master
+      #        with:
+      #          projectBaseDir: frontend
+      #          args: >
+      #            -Dsonar.organization=cryptomator
+      #            -Dsonar.projectKey=cryptomator_hub_frontend
+      #            -Dsonar.typescript.tsconfigPath=tsconfig.json
+      #            -Dsonar.sources=src/
+      #            -Dsonar.tests=test/
+      #            -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
+      #        env:
+      #          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
+      #          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      # \ cipherduck end commented out
       - uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: ${{ env.JAVA_VERSION }}
           cache: 'maven'
-# / cipherduck start commented out
-#      - name: Cache SonarCloud packages
-#        uses: actions/cache@v4
-#        with:
-#          path: ~/.sonar/cache
-#          key: ${{ runner.os }}-sonar
-#          restore-keys: ${{ runner.os }}-sonar
-# \ cipherduck end commented out
+      # / cipherduck start commented out
+      #      - name: Cache SonarCloud packages
+      #        uses: actions/cache@v4
+      #        with:
+      #          path: ~/.sonar/cache
+      #          key: ${{ runner.os }}-sonar
+      #          restore-keys: ${{ runner.os }}-sonar
+      # \ cipherduck end commented out
       - name: Build and test backend
         working-directory: backend
         run: >
           mvn -B clean verify
-# / cipherduck start commented out
-#          org.sonarsource.scanner.maven:sonar-maven-plugin:sonar
-#          -Dsonar.projectKey=cryptomator_hub_backend
-#          -Dsonar.organization=cryptomator
-#          -Dsonar.host.url=https://sonarcloud.io
-#        env:
-#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-# \ cipherduck end commented out
+      # / cipherduck start commented out
+      #          org.sonarsource.scanner.maven:sonar-maven-plugin:sonar
+      #          -Dsonar.projectKey=cryptomator_hub_backend
+      #          -Dsonar.organization=cryptomator
+      #          -Dsonar.host.url=https://sonarcloud.io
+      #        env:
+      #          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      # \ cipherduck end commented out
       - id: get_tag
         # / cipherduck start commented out
         # if: inputs.tag != '' || github.ref_type == 'tag' || contains(github.event.head_commit.message, '[build image]')
@@ -131,3 +131,13 @@ jobs:
           QUARKUS_CONTAINER_IMAGE_REGISTRY: ghcr.io
           QUARKUS_CONTAINER_IMAGE_USERNAME: ${{ github.actor }}
           QUARKUS_CONTAINER_IMAGE_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push native container image
+        env:
+          QUARKUS_CONTAINER_IMAGE_TAG: ${{ steps.get_tag.outputs.tag }}-amd64
+          QUARKUS_CONTAINER_IMAGE_BUILD: true
+          QUARKUS_CONTAINER_IMAGE_PUSH: true
+          QUARKUS_CONTAINER_IMAGE_REGISTRY: ghcr.io
+          QUARKUS_CONTAINER_IMAGE_USERNAME: ${{ github.actor }}
+          QUARKUS_CONTAINER_IMAGE_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+        working-directory: backend
+        run: mvn -B clean package -Pnative -DskipTests -Dquarkus.native.container-build=true
