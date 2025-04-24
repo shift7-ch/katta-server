@@ -18,7 +18,7 @@ COPY --from=ubi-micro-build /mnt/rootfs /
 COPY /themes/cryptomator /opt/keycloak/themes/cryptomator
 
 # / cipherduck start addition
-COPY /target/cipherduck-token-exchange-service-provider.jar /opt/keycloak/providers/
+COPY /target/katta-token-exchange-service-provider.jar /opt/keycloak/providers/
 RUN /opt/keycloak/bin/kc.sh build
 # \ cipherduck end addition
 
