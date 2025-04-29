@@ -13,7 +13,9 @@
         "s3:GetEncryptionConfiguration",
         "s3:PutEncryptionConfiguration"
       ],
-      "Resource": "arn:aws:s3:::cipherduck*"
+      "Resource": [
+        "arn:aws:s3:::cipherduck*"
+      ]
     },
     {
       "Effect": "Allow",
