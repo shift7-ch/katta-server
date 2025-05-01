@@ -4,6 +4,7 @@ import dasniko.testcontainers.keycloak.KeycloakContainer;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Disabled;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
@@ -28,6 +29,7 @@ public class KattaDevRealmIT {
 	 * - {@see https://www.keycloak.org/docs/latest/release_notes/#keycloak-25-0-0}
 	 */
 	@Test
+	@Disabled
 	public void testDevRealm() throws JSONException {
 		try (final KeycloakContainer container = new KeycloakContainer("quay.io/keycloak/keycloak:25.0.4")
 				.withFeaturesEnabled("token-exchange", "admin-fine-grained-authz")

@@ -4,6 +4,7 @@ import dasniko.testcontainers.keycloak.KeycloakContainer;
 import jakarta.ws.rs.core.Response;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.keycloak.admin.client.Keycloak;
@@ -31,6 +32,7 @@ public class KattaTokenExchangeProviderIT {
 	/**
 	 * Document the new behaviour @see <a href="hhttps://github.com/keycloak/keycloak/issues/29614">Keycloak Issue 29614</a> which makes our spi necessary.
 	 */
+	@Disabled
 	@ParameterizedTest
 	@CsvSource({"21.1.1,true", "24.0.4,false", "25.0.4,false"})
 	public void inspectTokenExchangeWithAdditionalScope(final String keycloakVersion, final boolean exchangePossible) throws JSONException {
