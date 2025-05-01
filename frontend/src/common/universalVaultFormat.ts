@@ -10,7 +10,7 @@ import { VaultMetadataJWEBackendDto } from './backend';
 
 type MetadataPayload = {
   fileFormat: 'AES-256-GCM-32k';
-  nameFormat: 'AES-SIV-512-B64URL'; // TODO verify after merging https://github.com/encryption-alliance/unified-vault-format/pull/24
+  nameFormat: 'AES-SIV-512-B64URL';
   seeds: Record<string, string>;
   initialSeed: string;
   latestSeed: string;
@@ -57,11 +57,11 @@ export class MemberKey {
 
   /**
    * Creates a new vault member key
-   * @param encodedKey base64-encoded raw 256 bit key (as retrieved from {@link AccessTokenPayload#foo})
+   * @param encodedKey base64-encoded raw 256 bit key (as retrieved from {@link AccessTokenPayload#key})
    * @returns new key
    */
   public static async load(encodedKey: string): Promise<MemberKey> {
-    let rawKey = new Uint8Array();
+    let rawKey: Uint8Array = new Uint8Array();
     try {
       rawKey = base64.parse(encodedKey);
       const memberKey = await crypto.subtle.importKey('raw', rawKey, MemberKey.KEY_DESIGNATION, true, MemberKey.KEY_USAGE);
@@ -394,6 +394,12 @@ export class UniversalVaultFormat implements AccessTokenProducing, VaultTemplate
     return new UniversalVaultFormat(metadata, memberKey, recoveryKey);
   }
 
+  public static async forTesting(metadata: VaultMetadata) {
+    const memberKey = await MemberKey.create();
+    const recoveryKey = await RecoveryKey.create();
+    return new UniversalVaultFormat(metadata, memberKey, recoveryKey);
+  }
+
   /**
    * Decrypts a UVF vault.
    * @param vault The vault to decrypt
@@ -420,7 +426,7 @@ export class UniversalVaultFormat implements AccessTokenProducing, VaultTemplate
   }
 
   /**
-   * Recovery the `vault.uvf` file using the recovery key. After recovery, all access tokens need to be re-issued.
+   * Recover the `vault.uvf` file using the recovery key. After recovery, all access tokens need to be re-issued.
    * @param uvfMetadataFile contents of the `vault.uvf` file
    * @param recoveryKey the vault's recovery key encoded into human-readable words
    * @returns The recovered vault
@@ -464,7 +470,7 @@ export class UniversalVaultFormat implements AccessTokenProducing, VaultTemplate
   public async computeRootDirIdHash(rootDirId: Uint8Array): Promise<string> {
     const textencoder = new TextEncoder();
     const initialSeed = await crypto.subtle.importKey('raw', this.metadata.initialSeed, { name: 'HKDF' }, false, ['deriveKey']);
-    const hmacKey = await crypto.subtle.deriveKey({ name: 'HKDF', hash: 'SHA-512', salt: this.metadata.kdfSalt, info: textencoder.encode('hmac') }, initialSeed, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+    const hmacKey = await crypto.subtle.deriveKey({ name: 'HKDF', hash: 'SHA-512', salt: this.metadata.kdfSalt, info: textencoder.encode('hmac') }, initialSeed, { name: 'HMAC', hash: 'SHA-256', length: 256 }, false, ['sign']);
     const rootDirHash = await crypto.subtle.sign('HMAC', hmacKey, rootDirId);
     return base32.stringify(new Uint8Array(rootDirHash).slice(0, 20));
   }

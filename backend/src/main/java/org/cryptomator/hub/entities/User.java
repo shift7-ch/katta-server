@@ -40,6 +40,9 @@ public class User extends Authority {
 	@Column(name = "email")
 	private String email;
 
+	@Column(name = "language")
+	private String language;
+
 	@Column(name = "ecdh_publickey")
 	private String ecdhPublicKey;
 
@@ -66,6 +69,14 @@ public class User extends Authority {
 
 	public void setEmail(String email) {
 		this.email = email;
+	}
+
+	public String getLanguage() {
+		return language;
+	}
+
+	public void setLanguage(String language) {
+		this.language = language;
 	}
 
 	public String getEcdhPublicKey() {
@@ -116,11 +127,26 @@ public class User extends Authority {
 		this.devices = devices;
 	}
 
+	/**
+	 * @deprecated to be removed in <a href="https://github.com/cryptomator/hub/issues/333">#333</a>
+	 */
+	@Deprecated(since = "1.3.0", forRemoval = true)
+	public Set<LegacyDevice> getLegacyDevices() {
+		return legacyDevices;
+	}
+
 	@OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
 	public Set<AccessToken> accessTokens = new HashSet<>();
 
 	@OneToMany(mappedBy = "owner", orphanRemoval = true, fetch = FetchType.LAZY)
 	public Set<Device> devices = new HashSet<>();
+
+	/**
+	 * @deprecated to be removed in <a href="https://github.com/cryptomator/hub/issues/333">#333</a>
+	 */
+	@Deprecated(since = "1.3.0", forRemoval = true)
+	@OneToMany(mappedBy = "owner", orphanRemoval = true, fetch = FetchType.LAZY)
+	public Set<LegacyDevice> legacyDevices = new HashSet<>();
 
 	@Override
 	public boolean equals(Object o) {

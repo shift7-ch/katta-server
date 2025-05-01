@@ -5,7 +5,11 @@ import { JWE, Recipient } from './jwe';
 
 class UserData {
   #me?: Promise<UserDto>;
+  #meWithLastAccess?: Promise<UserDto>;
   #browserKeys?: Promise<BrowserKeys | undefined>;
+
+  /** @deprecated since version 1.3.0, to be removed in https://github.com/cryptomator/hub/issues/333 */
+  #meWithLegacyDevicesAndLastAccess?: Promise<UserDto>;
 
   /**
    * Gets the user DTO representing the currently logged in user.
@@ -15,6 +19,22 @@ class UserData {
       this.#me = backend.users.me(true);
     }
     return this.#me;
+  }
+
+  public get meWithLastAccess(): Promise<UserDto> {
+    if (!this.#meWithLastAccess) {
+      this.#meWithLastAccess = backend.users.me(true, true);
+      this.#me = this.#meWithLastAccess;
+    }
+    return this.#meWithLastAccess;
+  }
+
+  /** @deprecated since version 1.3.0, to be removed in https://github.com/cryptomator/hub/issues/333 */
+  public get meWithLegacyDevicesAndLastAccess(): Promise<UserDto> {
+    if (!this.#meWithLegacyDevicesAndLastAccess) {
+      this.#meWithLegacyDevicesAndLastAccess = backend.users.meWithLegacyDevicesAndAccess();
+    }
+    return this.#meWithLegacyDevicesAndLastAccess;
   }
 
   /**
@@ -74,6 +94,21 @@ class UserData {
   }
 
   /**
+   * Invalidates the cached user data with devices and last access and reloads it in the backend.
+   */
+  public async reloadAccess() {
+    this.#meWithLastAccess = backend.users.me(true, true);
+  }
+
+  /**
+   * Invalidates the cached user data with legacy devices and last access and reloads it in the backend.
+   * @deprecated since version 1.3.0, to be removed in https://github.com/cryptomator/hub/issues/333
+   */
+  public async reloadLegacyAccess() {
+    this.#meWithLegacyDevicesAndLastAccess = backend.users.meWithLegacyDevicesAndAccess();
+  }
+
+  /**
    * Creates a new browser key pair for the user.
    * This does not change the device DTO stored in the backend.
    * @returns A new browser key pair for the user.
@@ -93,10 +128,10 @@ class UserData {
    */
   public async decryptUserKeysWithSetupCode(setupCode: string): Promise<UserKeys> {
     const me = await this.me;
-    if (!me.privateKey) {
+    if (!me.privateKeys) {
       throw new Error('User not initialized.');
     }
-    const userKeys = await UserKeys.recover(me.privateKey, setupCode, await this.ecdhPublicKey, await this.ecdsaPublicKey);
+    const userKeys = await UserKeys.recover(me.privateKeys, setupCode, await this.ecdhPublicKey, await this.ecdsaPublicKey);
     await this.addEcdsaKeyIfMissing(userKeys);
     return userKeys;
   }
@@ -138,7 +173,7 @@ class UserData {
     if (me.setupCode && !me.ecdsaPublicKey) {
       const setupCode = await this.decryptSetupCode(userKeys);
       me.ecdsaPublicKey = await userKeys.encodedEcdsaPublicKey();
-      me.privateKey = await userKeys.encryptWithSetupCode(setupCode);
+      me.privateKeys = await userKeys.encryptWithSetupCode(setupCode);
       for (const device of me.devices) {
         device.userPrivateKey = await userKeys.encryptForDevice(base64.parse(device.publicKey));
       }

@@ -3,12 +3,7 @@ name: CI Build
 on:
   push:
   pull_request_target:
-    types: [ labeled ]
-  workflow_dispatch:
-    inputs:
-      tag:
-        description: 'Image Tag'
-        required: false
+    types: [labeled]
 
 env:
   NODE_VERSION: 20
@@ -20,7 +15,7 @@ defaults:
 
 jobs:
   test:
-    name: Build and Test
+    name: Run Tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -31,24 +26,9 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
-      # / cipherduck start addition
-      - uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: ${{ env.JAVA_VERSION }}
-          cache: 'maven'
-      - name: Generate openapi.json
-        working-directory: backend
-        run: >
-          mvn -B clean compile quarkus:build
-      - name: Check openapi.json
-        working-directory: backend
-        run: >
-          cat ../frontend/src/openapi/openapi.json
-      # \ cipherduck end addition
-      - name: Install npm dependencies
+      - name: NPM install
         working-directory: frontend
-        run: npm install
+        run: npm ci --ignore-scripts
       - name: Build and test frontend
         working-directory: frontend
         run: npm test
@@ -57,7 +37,7 @@ jobs:
         run: npm run dist
       # / cipherduck start commented out
       #      - name: SonarCloud Scan Frontend
-      #        uses: SonarSource/sonarcloud-github-action@master
+      #        uses: SonarSource/sonarqube-scan-action@v4
       #        with:
       #          projectBaseDir: frontend
       #          args: >
@@ -70,7 +50,7 @@ jobs:
       #        env:
       #          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
       #          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      # \ cipherduck end commented out
+      # \ cipherduck start commented out
       - uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
@@ -83,61 +63,130 @@ jobs:
       #          path: ~/.sonar/cache
       #          key: ${{ runner.os }}-sonar
       #          restore-keys: ${{ runner.os }}-sonar
-      # \ cipherduck end commented out
+      # \ cipherduck start commented out
       - name: Build and test backend
         working-directory: backend
         run: >
-          mvn -B clean verify
-      # / cipherduck start commented out
-      #          org.sonarsource.scanner.maven:sonar-maven-plugin:sonar
-      #          -Dsonar.projectKey=cryptomator_hub_backend
-      #          -Dsonar.organization=cryptomator
-      #          -Dsonar.host.url=https://sonarcloud.io
-      #        env:
-      #          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      # \ cipherduck end commented out
-      - id: get_tag
-        # / cipherduck start commented out
-        # if: inputs.tag != '' || github.ref_type == 'tag' || contains(github.event.head_commit.message, '[build image]')
-        # \ cipherduck end commented out
-        run: |
-          if [[ ! -z "${{ inputs.tag }}" ]]; then
-            TAG="${{ inputs.tag }}"
-          elif [[ ${{ github.ref_type }} == 'tag' || ${{ github.ref_name }} == 'develop' ]]; then
-            TAG="${{ github.ref_name }}"
-          else
-            # / cipherduck start modification
-            #TAG="commit-${{ github.sha }}"
-            # use latest by default as our container registry has limited capacity
-            TAG="latest"
-            # \ cipherduck end modification
-          fi
-          echo tag=${TAG} >> "$GITHUB_OUTPUT"
+          ./mvnw -B clean verify
+          # / cipherduck start commented out
+          #          org.sonarsource.scanner.maven:sonar-maven-plugin:sonar
+          #          -Dsonar.projectKey=cryptomator_hub_backend
+          #          -Dsonar.organization=cryptomator
+          #          -Dsonar.host.url=https://sonarcloud.io
+          # \ cipherduck start commented out
+          --no-transfer-progress
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  build-native-image:
+    name: Build and Push ${{ matrix.arch }} Image
+    needs: test
+    if: startsWith(github.ref, 'refs/tags/') || contains(github.event.head_commit.message, '[build image]')
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux/amd64
+            arch: amd64
+          - os: ubuntu-24.04-arm
+            platform: linux/arm64
+            arch: arm64
+    runs-on: ${{ matrix.os }}
+    outputs:
+      digest_amd64: ${{ steps.digest.outputs.digest_amd64 }}
+      digest_arm64: ${{ steps.digest.outputs.digest_arm64 }}
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+      - name: NPM install
+        working-directory: frontend
+        run: npm ci --ignore-scripts
+      - name: Deploy frontend
+        working-directory: frontend
+        run: npm run dist
       - name: Ensure to use tagged version
-        if: startsWith(github.ref, 'refs/tags/')
-        run: mvn versions:set --file ./backend/pom.xml -DnewVersion=${GITHUB_REF##*/}
-      - name: Build and push container image
-        # / cipherduck start commented out
-        #if: github.event.inputs.tag != '' || startsWith(github.ref, 'refs/tags/') || contains(github.event.head_commit.message, '[build image]')
-        # \ cipherduck end commented out
         working-directory: backend
-        run: mvn -B clean package -DskipTests
+        run: ./mvnw versions:set --file pom.xml -DnewVersion=${GITHUB_REF##*/}
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/shift7-ch/katta-server
+          tags: |
+            type=sha,prefix=,format=short
+          flavor: |
+            suffix=-${{ matrix.arch }}
+          labels: |
+            org.opencontainers.image.title=Cryptomator Hub
+            org.opencontainers.image.vendor=Skymatic GmbH
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and Push Container Image
+        id: push
+        uses: docker/build-push-action@v6
+        with:
+          context: backend
+          file: backend/src/main/docker/Dockerfile.native
+          platforms: ${{ matrix.platform }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          push: true
+      - name: Export Digest
+        id: digest
+        run: |
+          echo "digest_${{ matrix.arch }}=${{ steps.push.outputs.digest }}" >> "$GITHUB_OUTPUT"
+
+  multi-arch-image:
+    name: Build and Push Multi-Arch Image
+    needs: build-native-image
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+      attestations: write
+      packages: write
+    steps:
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Determine short Commit SHA
+        id: sha
+        run: echo "short_sha=${LONG_SHA:0:7}" >> "$GITHUB_OUTPUT"
         env:
-          QUARKUS_JIB_PLATFORMS: linux/amd64,linux/arm64/v8
-          QUARKUS_CONTAINER_IMAGE_TAG: ${{ steps.get_tag.outputs.tag }}
-          QUARKUS_CONTAINER_IMAGE_BUILD: true
-          QUARKUS_CONTAINER_IMAGE_PUSH: true
-          QUARKUS_CONTAINER_IMAGE_REGISTRY: ghcr.io
-          QUARKUS_CONTAINER_IMAGE_USERNAME: ${{ github.actor }}
-          QUARKUS_CONTAINER_IMAGE_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
-      - name: Build and push native container image
-        env:
-          QUARKUS_CONTAINER_IMAGE_TAG: ${{ steps.get_tag.outputs.tag }}-amd64
-          QUARKUS_CONTAINER_IMAGE_BUILD: true
-          QUARKUS_CONTAINER_IMAGE_PUSH: true
-          QUARKUS_CONTAINER_IMAGE_REGISTRY: ghcr.io
-          QUARKUS_CONTAINER_IMAGE_USERNAME: ${{ github.actor }}
-          QUARKUS_CONTAINER_IMAGE_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
-        working-directory: backend
-        run: mvn -B clean package -Pnative -DskipTests -Dquarkus.native.container-build=true
+          LONG_SHA: ${{ github.sha }}
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Create Multi-Arch Manifest for ghcr.io/shift7-ch/katta-server:${{ steps.sha.outputs.short_sha }}
+        run: >
+          docker buildx imagetools create --tag ghcr.io/shift7-ch/katta-server:${{ steps.sha.outputs.short_sha }}
+          ghcr.io/shift7-ch/katta-server@${{ needs.build-native-image.outputs.digest_amd64 }}
+          ghcr.io/shift7-ch/katta-server@${{ needs.build-native-image.outputs.digest_arm64 }}
+      - name: Retrieve Multi-Arch Digest
+        id: inspect
+        run: |
+          DIGEST=$(docker buildx imagetools inspect ghcr.io/shift7-ch/katta-server:${{ steps.sha.outputs.short_sha }} --format "{{json .Manifest}}" | jq -r .digest)
+          echo "digest_multiarch=${DIGEST}" >> "$GITHUB_OUTPUT"
+      - name: Generate artifact attestation
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-name: ghcr.io/shift7-ch/katta-server
+          subject-digest: ${{ steps.inspect.outputs.digest_multiarch }}
+          push-to-registry: true

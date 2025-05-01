@@ -57,6 +57,9 @@ export type DeviceDto = {
   publicKey: string;
   userPrivateKey: string;
   creationTime: Date;
+  lastIpAddress?: string;
+  lastAccessTime?: Date;
+  legacyDevice?: boolean;
 };
 
 export type VaultRole = 'MEMBER' | 'OWNER';
@@ -72,11 +75,12 @@ export type UserDto = {
   name: string;
   pictureUrl?: string;
   email: string;
+  language?: string;
   devices: DeviceDto[];
   accessibleVaults: VaultDto[];
   ecdhPublicKey?: string;
   ecdsaPublicKey?: string;
-  privateKey?: string;
+  privateKeys?: string;
   setupCode?: string;
 }
 
@@ -85,6 +89,7 @@ export type GroupDto = {
   id: string;
   name: string;
   pictureUrl?: string;
+  memberSize?: number;
 }
 
 export type AuthorityDto = UserDto | GroupDto;
@@ -264,8 +269,12 @@ class VaultService {
       .catch((error) => rethrowAndConvertIfExpected(error, 400, 404, 409));
   }
 
-  public async accessToken(vaultId: string, evenIfArchived = false): Promise<string> {
-    return axiosAuth.get(`/vaults/${vaultId}/access-token?evenIfArchived=${evenIfArchived}`, { headers: { 'Content-Type': 'text/plain' } })
+  public async accessToken(vaultId: string, deviceId?: string, evenIfArchived = false): Promise<string> {
+    const headers: Record<string, string> = { 'Content-Type': 'text/plain' };
+    if (deviceId) {
+      headers['Hub-Device-ID'] = deviceId;
+    }
+    return axiosAuth.get(`/vaults/${vaultId}/access-token?evenIfArchived=${evenIfArchived}`, { headers })
       .then(response => response.data)
       .catch((error) => rethrowAndConvertIfExpected(error, 402, 403));
   }
@@ -291,8 +300,20 @@ class DeviceService {
     return axiosAuth.get<DeviceDto[]>(`/devices?${query}`).then(response => response.data);
   }
 
+  /** @deprecated since version 1.3.0, to be removed in https://github.com/cryptomator/hub/issues/333 */
+  public async listSomeLegacyDevices(deviceIds: string[]): Promise<DeviceDto[]> {
+    const query = `ids=${deviceIds.join('&ids=')}`;
+    return axiosAuth.get<DeviceDto[]>(`/devices/legacy-devices?${query}`).then(response => response.data);
+  }
+
   public async removeDevice(deviceId: string): Promise<AxiosResponse<unknown>> {
     return axiosAuth.delete(`/devices/${deviceId}`)
+      .catch((error) => rethrowAndConvertIfExpected(error, 404));
+  }
+
+  /** @deprecated since version 1.3.0, to be removed in https://github.com/cryptomator/hub/issues/333 */
+  public async removeLegacyDevice(deviceId: string): Promise<AxiosResponse<unknown>> {
+    return axiosAuth.delete(`/devices/${deviceId}/legacy-device`)
       .catch((error) => rethrowAndConvertIfExpected(error, 404));
   }
 
@@ -306,8 +327,13 @@ class UserService {
     return axiosAuth.put('/users/me', dto);
   }
 
-  public async me(withDevices: boolean = false): Promise<UserDto> {
-    return axiosAuth.get<UserDto>(`/users/me?withDevices=${withDevices}`).then(response => AuthorityService.fillInMissingPicture(response.data));
+  public async me(withDevices: boolean = false, withLastAccess: boolean = false): Promise<UserDto> {
+    return axiosAuth.get<UserDto>(`/users/me?withDevices=${withDevices}&withLastAccess=${withLastAccess}`).then(response => AuthorityService.fillInMissingPicture(response.data));
+  }
+
+  /** @deprecated since version 1.3.0, to be removed in https://github.com/cryptomator/hub/issues/333 */
+  public async meWithLegacyDevicesAndAccess(): Promise<UserDto> {
+    return axiosAuth.get<UserDto>('/users/me-with-legacy-devices-and-access').then(response => AuthorityService.fillInMissingPicture(response.data));
   }
 
   public async resetMe(): Promise<void> {
@@ -338,8 +364,8 @@ class TrustService {
 }
 
 class AuthorityService {
-  public async search(query: string): Promise<AuthorityDto[]> {
-    return axiosAuth.get<AuthorityDto[]>(`/authorities/search?query=${query}`).then(response => response.data.map(AuthorityService.fillInMissingPicture));
+  public async search(query: string, withMemberSize: boolean = false): Promise<AuthorityDto[]> {
+    return axiosAuth.get<AuthorityDto[]>(`/authorities/search?query=${query}&withMemberSize=${withMemberSize}`).then(response => response.data.map(AuthorityService.fillInMissingPicture));
   }
 
   public async listSome(authorityIds: string[]): Promise<AuthorityDto[]> {
@@ -428,6 +454,10 @@ class VersionService {
 class SettingsService {
   public async get(): Promise<SettingsDto> {
     return axiosAuth.get<SettingsDto>('/settings').then(response => response.data);
+  }
+
+  public async put(settings: SettingsDto): Promise<void> {
+    return axiosAuth.put('/settings', settings);
   }
 }
 

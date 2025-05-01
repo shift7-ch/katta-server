@@ -8,7 +8,7 @@ on:
         required: true
 
 env:
-  NODE_VERSION: 16
+  NODE_VERSION: 20
   JAVA_VERSION: 21
 
 defaults:
@@ -19,6 +19,11 @@ jobs:
   build-image:
     name: Build Custom Keycloak Image
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+      attestations: write
+      packages: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -54,12 +59,19 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Build and Push Container Image
+        id: push
         uses: docker/build-push-action@v6
         with:
           context: keycloak
-          platforms: linux/amd64,linux/arm64/v8
+          platforms: linux/amd64,linux/arm64
           push: true
           # / cipherduck start modification
           tags: |
             ghcr.io/shift7-ch/keycloak:${{ github.event.inputs.tag }}
           # \ cipherduck end modification
+      - name: Generate artifact attestation
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-name: ghcr.io/cryptomator/keycloak
+          subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true

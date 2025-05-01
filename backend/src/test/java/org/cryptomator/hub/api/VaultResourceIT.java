@@ -20,6 +20,7 @@ import org.flywaydb.core.Flyway;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -52,8 +53,9 @@ import static io.restassured.RestAssured.when;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.Matchers.comparesEqualTo;
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.text.IsEqualIgnoringCase.equalToIgnoringCase;
 
 @QuarkusTest
@@ -158,6 +160,23 @@ public class VaultResourceIT {
 		}
 
 		@Test
+		@DisplayName("GET /vaults/7E57C0DE-0000-4000-8000-000100001111/access-token with remote IP and device ID stores it in audit log")
+		public void testUnlock4() throws SQLException {
+			given().header("HUB-DEVICE-ID", "123456789123456789")
+					.header("X-Forwarded-For", "1.2.3.4")
+					.when().get("/vaults/{vaultId}/access-token", "7E57C0DE-0000-4000-8000-000100001111")
+					.then().statusCode(200)
+					.body(is("jwe.jwe.jwe.vault1.user1"));
+
+			try (var c = dataSource.getConnection(); var s = c.createStatement()) {
+				var rs = s.executeQuery("""
+						SELECT * FROM "audit_event_vault_key_retrieve" WHERE "device_id" = '123456789123456789' AND "ip_address" = '1.2.3.4';
+						""");
+				Assertions.assertTrue(rs.next());
+			}
+		}
+
+		@Test
 		@DisplayName("GET /vaults/7E57C0DE-0000-4000-8000-00010000AAAA/access-token returns 410 for archived vaults")
 		public void testUnlockArchived1() {
 			when().get("/vaults/{vaultId}/access-token", "7E57C0DE-0000-4000-8000-00010000AAAA")
@@ -173,7 +192,7 @@ public class VaultResourceIT {
 
 		@Test
 		@DisplayName("GET /vaults/7E57C0DE-0000-4000-8000-00010000AAAA/access-token returns 200 for archived vaults with evenIfArchived set to true")
-		public void testUnlockArchived3() {
+		public void testUnlockArchived3() throws SQLException {
 			when().get("/vaults/{vaultId}/access-token?evenIfArchived=true", "7E57C0DE-0000-4000-8000-00010000AAAA")
 					.then().statusCode(200);
 		}
@@ -203,8 +222,7 @@ public class VaultResourceIT {
 			}
 
 			@Test
-			@DisplayName("GET /vaults/7E57C0DE-0000-4000-8000-000100001111/keys/noSuchDevice returns 403")
-			// legacy unlock must not encourage to register a legacy device by responding with 404 here
+			@DisplayName("GET /vaults/7E57C0DE-0000-4000-8000-000100001111/keys/noSuchDevice returns 403") // legacy unlock must not encourage to register a legacy device by responding with 404 here
 			public void testUnlock3() {
 				when().get("/vaults/{vaultId}/keys/{deviceId}", "7E57C0DE-0000-4000-8000-000100001111", "noSuchDevice")
 						.then().statusCode(403);
@@ -248,7 +266,7 @@ public class VaultResourceIT {
 		@DisplayName("PUT /vaults/7E57C0DE-0000-4000-8000-000100003333 returns 403 for missing role")
 		public void testCreateVaultWithMissingRole() {
 			var uuid = UUID.fromString("7E57C0DE-0000-4000-8000-000100003333");
-			var vaultDto = new VaultResource.VaultDto(uuid, "My Vault", "Test vault 3", false, Instant.parse("2112-12-21T21:12:21Z"), "metadata3", "recovery3", "masterkey3", 42, "NaCl", "authPubKey3", "authPrvKey3");
+			var vaultDto = new VaultResource.VaultDto(uuid, "My Vault", "Test vault 3", false, Instant.parse("2112-12-21T21:12:21Z"), "uvfMetadata3", "uvfKeySet3", "masterkey3", 42, "NaCl", "authPubKey3", "authPrvKey3");
 
 			given().contentType(ContentType.JSON).body(vaultDto)
 					.when().put("/vaults/{vaultId}", "7E57C0DE-0000-4000-8000-000100003333")
@@ -271,7 +289,7 @@ public class VaultResourceIT {
 		@DisplayName("PUT /vaults/7E57C0DE-0000-4000-8000-000100003333 returns 201")
 		public void testCreateVault1() {
 			var uuid = UUID.fromString("7E57C0DE-0000-4000-8000-000100003333");
-			var vaultDto = new VaultResource.VaultDto(uuid, "My Vault", "Test vault 3", false, Instant.parse("2112-12-21T21:12:21Z"), "metadata3", "recovery3", "masterkey3", 42, "NaCl", "authPubKey3", "authPrvKey3");
+			var vaultDto = new VaultResource.VaultDto(uuid, "My Vault", "Test vault 3", false, Instant.parse("2112-12-21T21:12:21Z"), "uvfMetadata3", "uvfKeySet3", "masterkey3", 42, "NaCl", "authPubKey3", "authPrvKey3");
 
 			given().contentType(ContentType.JSON).body(vaultDto)
 					.when().put("/vaults/{vaultId}", "7E57C0DE-0000-4000-8000-000100003333")
@@ -296,7 +314,7 @@ public class VaultResourceIT {
 		@DisplayName("PUT /vaults/7E57C0DE-0000-4000-8000-000100004444 returns 201 ignoring archived flag")
 		public void testCreateVault3() {
 			var uuid = UUID.fromString("7E57C0DE-0000-4000-8000-000100004444");
-			var vaultDto = new VaultResource.VaultDto(uuid, "My Vault", "Test vault 4", true, Instant.parse("2112-12-21T21:12:21Z"), "metadata4", "recovery4", "masterkey4", 42, "NaCl", "authPubKey4", "authPrvKey4");
+			var vaultDto = new VaultResource.VaultDto(uuid, "My Vault", "Test vault 4", true, Instant.parse("2112-12-21T21:12:21Z"), "uvfMetadata4", "uvfKeySet4","masterkey4", 42, "NaCl", "authPubKey4", "authPrvKey4");
 
 			given().contentType(ContentType.JSON).body(vaultDto)
 					.when().put("/vaults/{vaultId}", "7E57C0DE-0000-4000-8000-000100004444")
@@ -681,11 +699,11 @@ public class VaultResourceIT {
 							('user94', 'USER', 'user name 94'),
 							('user95_A', 'USER', 'user name Archived'),
 							('group91', 'GROUP', 'group name 91');
-						
+							
 						INSERT INTO "group_details" ("id")
 						VALUES
 							('group91');
-						
+							
 						INSERT INTO "user_details" ("id")
 						VALUES
 							('user91'),
@@ -789,7 +807,7 @@ public class VaultResourceIT {
 			Assumptions.assumeTrue(effectiveVaultAccessRepo.countSeatOccupyingUsers() > 5);
 
 			var uuid = UUID.fromString("7E57C0DE-0000-4000-8000-0001FFFF3333");
-			var vaultDto = new VaultResource.VaultDto(uuid, "My Vault", "Test vault 4", false, Instant.parse("2112-12-21T21:12:21Z"), "metadata4", "recovery4", "masterkey4", 42, "NaCl", "authPubKey4", "authPrvKey4");
+			var vaultDto = new VaultResource.VaultDto(uuid, "My Vault", "Test vault 4", false, Instant.parse("2112-12-21T21:12:21Z"), "uvfMetadata3", "uvfKeySet3", "masterkey3", 42, "NaCl", "authPubKey3", "authPrvKey3");
 			given().contentType(ContentType.JSON).body(vaultDto)
 					.when().put("/vaults/{vaultId}", "7E57C0DE-0000-4000-8000-0001FFFF3333")
 					.then().statusCode(402);
@@ -872,7 +890,6 @@ public class VaultResourceIT {
 						v.setName("ownership-test-vault");
 						v.setCreationTime(Instant.now());
 						v.setAuthenticationPublicKey(Base64.getEncoder().encodeToString(keyPair.getPublic().getEncoded()));
-						v.setUvfMetadataFile("metadata");
 						vaultRepo.persist(v);
 						return 0;
 					});
