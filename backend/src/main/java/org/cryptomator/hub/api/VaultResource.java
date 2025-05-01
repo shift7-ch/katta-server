@@ -34,8 +34,8 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import org.cryptomator.hub.SyncerConfig;
 import org.cryptomator.hub.api.cipherduck.CipherduckConfig;
+import org.cryptomator.hub.cipherduck.KeycloakCryptomatorVaultsHelper;
 import org.cryptomator.hub.entities.AccessToken;
 import org.cryptomator.hub.entities.Authority;
 import org.cryptomator.hub.entities.EffectiveVaultAccess;
@@ -70,8 +70,6 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Stream;
 
-import static org.cryptomator.hub.cipherduck.KeycloakCryptomatorVaultsHelper.keycloakGrantAccessToVault;
-import static org.cryptomator.hub.cipherduck.KeycloakCryptomatorVaultsHelper.keycloakRemoveAccessToVault;
 
 
 @Path("/vaults")
@@ -114,6 +112,9 @@ public class VaultResource {
 	// / start cipherduck extension
 	@Inject
 	CipherduckConfig cipherduckConfig;
+
+	@Inject
+	KeycloakCryptomatorVaultsHelper keycloakCryptomatorVaultsHelper;
 	// \ end cipherduck extension
 
 	@GET
@@ -193,7 +194,7 @@ public class VaultResource {
 				|| effectiveVaultAccessRepo.isUserOccupyingSeat(userId)) { // or user already sitting
 
 			// / start cipherduck extension
-			keycloakGrantAccessToVault(syncerConfig.getKeycloak(), syncerConfig.getKeycloakRealm(), vaultId.toString(), userId, cipherduckConfig.keycloakClientIdCryptomatorVaults(), groupRepo);
+			keycloakCryptomatorVaultsHelper.keycloakGrantAccessToVault(vaultId.toString(), userId, cipherduckConfig.keycloakClientIdCryptomatorVaults(), groupRepo);
 			// \ end cipherduck extension
 
 			return addAuthority(vault, user, role);
@@ -226,7 +227,7 @@ public class VaultResource {
 		}
 
 		// / start cipherduck extension
-		keycloakGrantAccessToVault(syncerConfig.getKeycloak(), syncerConfig.getKeycloakRealm(), vaultId.toString(), groupId, cipherduckConfig.keycloakClientIdCryptomatorVaults(), groupRepo);
+		keycloakCryptomatorVaultsHelper.		keycloakGrantAccessToVault(vaultId.toString(), groupId, cipherduckConfig.keycloakClientIdCryptomatorVaults(), groupRepo);
 		// \ end cipherduck extension
 
 		return addAuthority(vault, group, role);
@@ -270,8 +271,7 @@ public class VaultResource {
 			// - Account reset: same situation as for addUser() and addGroup() before being granted access (masterkey): in the STS case, users can technically already gain access to the data at the storage level if they know/guess the STS endpoint etc, however they cannot decrypt yet.
 			// - Archiving: removeAuthority is not called in this case, so users still can renew access (get new temporary S3 credentials) at the storage level in the STS case.
 			//              However, they cannot get the masterkey any more (in all cases) nor the permanent storage credentials (in the non-STS case).
-			keycloakRemoveAccessToVault(syncerConfig.getKeycloak(), syncerConfig.getKeycloakRealm()
-					, vaultId.toString(), authorityId, "cryptomatorvaults", groupRepo);
+			keycloakCryptomatorVaultsHelper.keycloakRemoveAccessToVault( vaultId.toString(), authorityId, "cryptomatorvaults", groupRepo);
 			// \ end cipherduck extension
 
 

@@ -1,12 +1,13 @@
 package org.cryptomator.hub.cipherduck;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import jakarta.ws.rs.core.Response;
-import org.cryptomator.hub.SyncerConfig;
 import org.cryptomator.hub.api.VaultResource;
 import org.cryptomator.hub.api.cipherduck.StorageProfileS3STSDto;
 import org.cryptomator.hub.entities.Group;
 import org.cryptomator.hub.entities.Vault;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.ClientWebApplicationException;
 import org.keycloak.admin.client.Keycloak;
@@ -29,21 +30,27 @@ public class KeycloakCryptomatorVaultsHelper {
 
 	private static final Logger LOG = Logger.getLogger(KeycloakCryptomatorVaultsHelper.class);
 
-	public static void keycloakPrepareVault(final Keycloak keycloak, final String keycloakRealm, final String vaultId, final StorageProfileS3STSDto storageConfig, final String userOrGroupId) {
+	@Inject
+	Keycloak keycloak;
+
+	@ConfigProperty(name = "hub.keycloak.realm")
+	String keycloakRealm;
+
+	public void keycloakPrepareVault(final String vaultId, final StorageProfileS3STSDto storageConfig, final String userOrGroupId) {
 		final boolean minio = storageConfig.stsRoleArn() != null && storageConfig.stsRoleArn2() == null;
 		final boolean aws = storageConfig.stsRoleArn() != null && storageConfig.stsRoleArn2() != null;
 
 		keycloakPrepareVault(vaultId, keycloak, keycloakRealm, minio, aws);
 	}
 
-	public static void keycloakGrantAccessToVault(final Keycloak keycloak, final String keycloakRealm, final String vaultId, final String userOrGroupId, final String clientId, final Group.Repository groupRepo) {
+	public void keycloakGrantAccessToVault(final String vaultId, final String userOrGroupId, final String clientId, final Group.Repository groupRepo) {
 		var group = groupRepo.findByIdOptional(userOrGroupId);
 		final boolean isGroup = group.isPresent();
 
 		keycloakGrantAccessToVault(vaultId, userOrGroupId, clientId, keycloak, keycloakRealm, isGroup);
 	}
 
-	public static void keycloakRemoveAccessToVault(final Keycloak keycloak, final String keycloakRealm, final String vaultId, final String userOrGroupId, final String clientId, final Group.Repository groupRepo) {
+	public void keycloakRemoveAccessToVault(final String vaultId, final String userOrGroupId, final String clientId, final Group.Repository groupRepo) {
 		final boolean isGroup = groupRepo.findByIdOptional(userOrGroupId).isPresent();
 
 		keycloakRemoveAccessToVault(vaultId, userOrGroupId, clientId, keycloak, keycloakRealm, isGroup);
@@ -52,29 +59,27 @@ public class KeycloakCryptomatorVaultsHelper {
 	// TODO review: this loop might not be safe enough to run in production - should we just disable this feature or remove from code entirely?
 	// Deleting the cryptomatorvaults client also deletes the client roles under the client, however, the client scopes are at the realm level and will not be removed by this procedure.
 	// Although safe, this can quickly become a mess in developing scenarios.
-	public static void keycloakCleanupDanglingCryptomatorVaultsRoles(final SyncerConfig syncerConfig, final String clientId, final Vault.Repository vaultRepo) {
+	public void keycloakCleanupDanglingCryptomatorVaultsRoles(final String clientId, final Vault.Repository vaultRepo) {
 		Set<String> existingVaultIds = vaultRepo.findAll().stream().map(VaultResource.VaultDto::fromEntity).map(vdto -> vdto.id().toString()).collect(Collectors.toSet());
-		try (final Keycloak keycloak = Keycloak.getInstance(syncerConfig.getKeycloakUrl(), syncerConfig.getKeycloakRealm(), syncerConfig.getUsername(), syncerConfig.getPassword(), syncerConfig.getKeycloakClientId())) {
-			// https://www.keycloak.org/docs-api/21.1.1/rest-api
-			final RealmResource realm = keycloak.realm(syncerConfig.getKeycloakRealm());
+		// https://www.keycloak.org/docs-api/21.1.1/rest-api
+		final RealmResource realm = keycloak.realm(keycloakRealm);
 
-			List<ClientRepresentation> byClientId = realm.clients().findByClientId(clientId);
-			if (byClientId.size() != 1) {
-				throw new RuntimeException(String.format("There are %s clients with clientId %s, expected to found exactly one.", byClientId.size(), clientId));
-			}
-			final ClientRepresentation cryptomatorVaultsClientRepresentation = byClientId.getFirst();
-			ClientResource cryptomatorVaultsClientResource = realm.clients().get(cryptomatorVaultsClientRepresentation.getId());
+		List<ClientRepresentation> byClientId = realm.clients().findByClientId(clientId);
+		if (byClientId.size() != 1) {
+			throw new RuntimeException(String.format("There are %s clients with clientId %s, expected to found exactly one.", byClientId.size(), clientId));
+		}
+		final ClientRepresentation cryptomatorVaultsClientRepresentation = byClientId.getFirst();
+		ClientResource cryptomatorVaultsClientResource = realm.clients().get(cryptomatorVaultsClientRepresentation.getId());
 
-			for (final RoleRepresentation roleRepresentation : cryptomatorVaultsClientResource.roles().list()) {
-				final String vaultId = roleRepresentation.getName();
-				if (!existingVaultIds.contains(vaultId)) {
-					cryptomatorVaultsClientResource.roles().deleteRole(vaultId);
-					try {
-						realm.clientScopes().get(vaultId).remove();
-					} catch (ClientWebApplicationException e) {
-						if (LOG.isInfoEnabled()) {
-							LOG.info(String.format("Could not delete client scope %s", vaultId), e);
-						}
+		for (final RoleRepresentation roleRepresentation : cryptomatorVaultsClientResource.roles().list()) {
+			final String vaultId = roleRepresentation.getName();
+			if (!existingVaultIds.contains(vaultId)) {
+				cryptomatorVaultsClientResource.roles().deleteRole(vaultId);
+				try {
+					realm.clientScopes().get(vaultId).remove();
+				} catch (ClientWebApplicationException e) {
+					if (LOG.isInfoEnabled()) {
+						LOG.info(String.format("Could not delete client scope %s", vaultId), e);
 					}
 				}
 			}

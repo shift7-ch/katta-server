@@ -10,8 +10,8 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import org.cryptomator.hub.SyncerConfig;
 import org.cryptomator.hub.api.GoneException;
+import org.cryptomator.hub.cipherduck.KeycloakCryptomatorVaultsHelper;
 import org.cryptomator.hub.entities.Group;
 import org.cryptomator.hub.entities.User;
 import org.cryptomator.hub.entities.Vault;
@@ -28,16 +28,15 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.cryptomator.hub.api.cipherduck.storage.S3StorageHelper.makeS3Bucket;
-import static org.cryptomator.hub.cipherduck.KeycloakCryptomatorVaultsHelper.keycloakGrantAccessToVault;
-import static org.cryptomator.hub.cipherduck.KeycloakCryptomatorVaultsHelper.keycloakPrepareVault;
 
 @Path("/storage")
 public class StorageResource {
-	@Inject
-	SyncerConfig syncerConfig;
 
 	@Inject
 	CipherduckConfig cipherduckConfig;
+
+	@Inject
+	KeycloakCryptomatorVaultsHelper keycloakCryptomatorVaultsHelper;
 
 	@Inject
 	JsonWebToken jwt;
@@ -84,8 +83,8 @@ public class StorageResource {
 		makeS3Bucket((StorageProfileS3STSDto) storageProfileDto, storage);
 
 		final User currentUser = userRepo.findById(jwt.getSubject());
-		keycloakGrantAccessToVault(syncerConfig.getKeycloak(), syncerConfig.getKeycloakRealm(), vaultId.toString(), currentUser.getId(), cipherduckConfig.keycloakClientIdCryptomatorVaults(), groupRepo);
-		keycloakPrepareVault(syncerConfig.getKeycloak(), syncerConfig.getKeycloakRealm(), vaultId.toString(), (StorageProfileS3STSDto) storageProfileDto, jwt.getSubject());
+		keycloakCryptomatorVaultsHelper.keycloakGrantAccessToVault( vaultId.toString(), currentUser.getId(), cipherduckConfig.keycloakClientIdCryptomatorVaults(), groupRepo);
+		keycloakCryptomatorVaultsHelper.keycloakPrepareVault(vaultId.toString(), (StorageProfileS3STSDto) storageProfileDto, jwt.getSubject());
 
 		return Response.created(URI.create(".")).build();
 	}
