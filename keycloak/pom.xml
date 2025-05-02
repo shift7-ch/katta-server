@@ -44,7 +44,7 @@
                                 <resource>
                                     <directory>../backend/src/main/resources/</directory>
                                     <includes>
-                                        <include>dev-realm.json</include>
+                                        <include>dev.json</include>
                                     </includes>
                                 </resource>
                             </resources>

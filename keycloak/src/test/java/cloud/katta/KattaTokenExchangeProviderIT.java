@@ -32,9 +32,14 @@ public class KattaTokenExchangeProviderIT {
 	/**
 	 * Document the new behaviour @see <a href="hhttps://github.com/keycloak/keycloak/issues/29614">Keycloak Issue 29614</a> which makes our spi necessary.
 	 */
-	@Disabled
 	@ParameterizedTest
-	@CsvSource({"21.1.1,true", "24.0.4,false", "25.0.4,false"})
+	@CsvSource({
+
+//			"21.1.1,true", // does not work any more with current realm file - token exchange provider to be removed with Keycloak 26.2. (https://github.com/shift7-ch/katta-server/issues/66)
+			"24.0.4,false",
+			"25.0.4,false",
+			"26.1.5,false"
+	})
 	public void inspectTokenExchangeWithAdditionalScope(final String keycloakVersion, final boolean exchangePossible) throws JSONException {
 		try (final KeycloakContainer container = new KeycloakContainer(String.format("quay.io/keycloak/keycloak:%s", keycloakVersion))
 				.withFeaturesEnabled("token-exchange", "admin-fine-grained-authz")
@@ -43,7 +48,7 @@ public class KattaTokenExchangeProviderIT {
 				//              .withCustomCommand("--log-level=DEBUG")
 				// see https://github.com/dasniko/testcontainers-keycloak/blob/main/README.md
 				//     https://github.com/dasniko/keycloak-extensions-demo/blob/1523b9c153f4325373c8d6787bfeb6c95d3dfed8/docker-compose.yml#L25
-				.withRealmImportFile("/dev-realm.json")
+				.withRealmImportFile("/dev.json")
 				// Keycloak < 25 seems to expose /health/started on default port, and not on management port as expected in testcontainers-keycloak:
 				//   https://github.com/dasniko/testcontainers-keycloak/blame/d910aa6d6919c0e0f9cd50f97c9bf878eb24f753/src/main/java/dasniko/testcontainers/keycloak/ExtendableKeycloakContainer.java#L203
 				.waitingFor(Wait.forLogMessage(".*Listening.*", 1))
@@ -114,7 +119,7 @@ public class KattaTokenExchangeProviderIT {
 				// comment in for local debugging:
 				//				.withDebugFixedPort(5005, false)
 				//				.withCustomCommand("--log-level=DEBUG")
-				.withRealmImportFile("/dev-realm.json")
+				.withRealmImportFile("/dev.json")
 				// N.B. remove once we're Keycloak >= 26, see https://github.com/dasniko/testcontainers-keycloak/issues/152
 				.withEnv("KEYCLOAK_ADMIN", "admin")
 				.withEnv("KEYCLOAK_ADMIN_PASSWORD", "admin")
