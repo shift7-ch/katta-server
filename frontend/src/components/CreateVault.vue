@@ -465,13 +465,12 @@ class FormValidationFailedError extends Error {
   }
 }
 
-// / start cipherduck extension
-// class EmptyVaultTemplateError extends Error {
-//   constructor() {
-//     super('Vault template is empty.');
-//   }
-// }
-// \ end cipherduck extension
+class EmptyVaultTemplateError extends Error {
+  constructor() {
+    super('Vault template is empty.');
+  }
+}
+
 
 class NoFileError extends Error {
   constructor() {
@@ -497,11 +496,6 @@ const form = ref<HTMLFormElement>();
 const fileUpload = ref<HTMLInputElement>();
 
 const onCreateError = ref<Error | null>(null);
-// / start cipherduck extension
-/*
-const onDownloadTemplateError = ref<Error | null>(null);
-*/
-// \ end cipherduck extension
 const onRecoverError = ref<Error | null>(null);
 const onUploadError = ref<Error | null>(null);
 
@@ -541,6 +535,7 @@ const vaultBucketName = ref('');
 const automaticAccessGrant = ref<boolean>(true);
 const onOpenBookmarkError = ref<Error | null>(null);
 const onUploadTemplateError = ref<Error | null>(null);
+const onDownloadTemplateError = ref<Error | null>(null);
 
 class ErrorWithCodeHint extends Error {
   constructor(public message: string, public codehint: string) {
@@ -970,8 +965,6 @@ async function copyRecoveryKey() {
   debouncedCopyFinish();
 }
 
-// / start cipherduck modification
-/*
 async function downloadVaultTemplate() {
   if (!vaultFormat8.value && !uvfVault.value) {
     throw new Error('Invalid state');
@@ -985,11 +978,11 @@ async function downloadVaultTemplate() {
     } else {
       throw new EmptyVaultTemplateError();
     }
-    isPermanent.value = selectedBackend.value['protocol'] === 'S3';
-    console.log('   isPermanent: ' + isPermanent.value);
+  } catch (error) {
+    console.error('Exporting vault template failed.', error);
+    onDownloadTemplateError.value = error instanceof Error ? error : new Error('Unknown reason');
+  }
 }
-*/
-// \ end cipherduck modification
 
 // / start cipherduck extension
 async function openBookmark() {
