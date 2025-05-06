@@ -14,7 +14,7 @@
         <compiler-plugin.version>3.13.0</compiler-plugin.version>
         <failsafe-plugin.version>3.2.5</failsafe-plugin.version>
 
-        <keycloak.version>25.0.5</keycloak.version>
+        <keycloak.version>26.1.5</keycloak.version>
         <junit-jupiter.version>5.8.2</junit-jupiter.version>
     </properties>
 

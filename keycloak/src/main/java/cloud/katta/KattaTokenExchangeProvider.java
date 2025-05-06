@@ -39,7 +39,7 @@ public class KattaTokenExchangeProvider extends DefaultTokenExchangeProvider {
 			final String audience = formParams.getFirst(OAuth2Constants.AUDIENCE);
 			final ClientModel targetClient = realm.getClientByClientId(audience);
 			if (targetClient != null) {
-				return exchangeClientToOIDCClient(targetUser, targetUserSession, OAuth2Constants.ACCESS_TOKEN_TYPE, targetClient, audience, scope);
+				return exchangeClientToOIDCClient(targetUser, targetUserSession, OAuth2Constants.ACCESS_TOKEN_TYPE, targetClient, scope);
 			}
 		}
 		return super.exchangeClientToClient(targetUser, targetUserSession, token, disallowOnHolderOfTokenMismatch);
