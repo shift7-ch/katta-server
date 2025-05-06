@@ -114,7 +114,7 @@ public class KattaTokenExchangeProviderIT {
 	@ParameterizedTest
 	@CsvSource({"true,true,true,true", "true,false,true,true", "false,true,true,true"})
 	public void testCipherduckTokenExchange(final boolean spiEnabled, final boolean shared, final boolean minio, final boolean aws) throws JSONException {
-		try (final KeycloakContainer container = new KeycloakContainer("quay.io/keycloak/keycloak:25.0.4")
+		try (final KeycloakContainer container = new KeycloakContainer("quay.io/keycloak/keycloak:26.1.5")
 				.withFeaturesEnabled("token-exchange", "admin-fine-grained-authz")
 				// comment in for local debugging:
 				//				.withDebugFixedPort(5005, false)

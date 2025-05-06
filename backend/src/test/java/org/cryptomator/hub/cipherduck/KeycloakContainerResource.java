@@ -12,12 +12,12 @@ public class KeycloakContainerResource implements QuarkusTestResourceLifecycleMa
 
 	@Override
 	public Map<String, String> start() {
-		container = new KeycloakContainer("quay.io/keycloak/keycloak:25.0.4")
+		container = new KeycloakContainer("quay.io/keycloak/keycloak:26.1.5")
 				.withFeaturesEnabled("token-exchange", "admin-fine-grained-authz")
 				// comment in for local debugging:
 				//				.withDebugFixedPort(5005, false)
 				//				.withCustomCommand("--log-level=DEBUG")
-				.withRealmImportFile("/dev-realm.json")
+				.withRealmImportFile("/dev.json")
 				// N.B. remove once we're Keycloak >= 26, see https://github.com/dasniko/testcontainers-keycloak/issues/152
 				.withEnv("KEYCLOAK_ADMIN", "admin")
 				.withEnv("KEYCLOAK_ADMIN_PASSWORD", "admin");
