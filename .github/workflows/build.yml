@@ -118,6 +118,22 @@ jobs:
       contents: read
       packages: write
     steps:
+      # / cipherduck addition
+      - id: get_tag
+        run: |
+          if [[ ! -z "${{ inputs.tag }}" ]]; then
+            TAG="${{ inputs.tag }}"
+          elif [[ ${{ github.ref_type }} == 'tag' || ${{ github.ref_name }} == 'develop' ]]; then
+            TAG="${{ github.ref_name }}"
+          else
+            # / cipherduck start modification
+            #TAG="commit-${{ github.sha }}"
+            # use latest by default as our container registry has limited capacity
+            TAG="latest"
+            # \ cipherduck end modification
+          fi
+          echo tag=${TAG} >> "$GITHUB_OUTPUT"
+      # \ cipherduck addition
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
@@ -132,7 +148,10 @@ jobs:
         run: npm run dist
       - name: Ensure to use tagged version
         working-directory: backend
-        run: ./mvnw versions:set --file pom.xml -DnewVersion=${GITHUB_REF##*/}
+        # / cipherduck modification
+        #run: ./mvnw versions:set --file pom.xml -DnewVersion=${GITHUB_REF##*/}
+        run: ./mvnw versions:set --file pom.xml -DnewVersion=${{ steps.get_tag.outputs.tag }}
+        # \ cipherduck modification
       - name: Docker metadata
         id: meta
         uses: docker/metadata-action@v5
@@ -160,7 +179,10 @@ jobs:
           context: backend
           file: backend/src/main/docker/Dockerfile.native
           platforms: ${{ matrix.platform }}
-          tags: ${{ steps.meta.outputs.tags }}
+          # / cipherduck modification
+          #tags: ${{ steps.meta.outputs.tags }}
+          tags: ghcr.io/shift7-ch/katta-server:${{ steps.get_tag.outputs.tag }}
+          # \ cipherduck modification
           labels: ${{ steps.meta.outputs.labels }}
           push: true
       - name: Export Digest
