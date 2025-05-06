@@ -40,20 +40,20 @@ public class KeycloakCryptomatorVaultsHelper {
 		final boolean minio = storageConfig.stsRoleArn() != null && storageConfig.stsRoleArn2() == null;
 		final boolean aws = storageConfig.stsRoleArn() != null && storageConfig.stsRoleArn2() != null;
 
-		keycloakPrepareVault(vaultId, keycloak, keycloakRealm, minio, aws);
+		keycloakPrepareVault(vaultId, getKeycloak(), keycloakRealm, minio, aws);
 	}
 
 	public void keycloakGrantAccessToVault(final String vaultId, final String userOrGroupId, final String clientId, final Group.Repository groupRepo) {
 		var group = groupRepo.findByIdOptional(userOrGroupId);
 		final boolean isGroup = group.isPresent();
 
-		keycloakGrantAccessToVault(vaultId, userOrGroupId, clientId, keycloak, keycloakRealm, isGroup);
+		keycloakGrantAccessToVault(vaultId, userOrGroupId, clientId, getKeycloak(), keycloakRealm, isGroup);
 	}
 
 	public void keycloakRemoveAccessToVault(final String vaultId, final String userOrGroupId, final String clientId, final Group.Repository groupRepo) {
 		final boolean isGroup = groupRepo.findByIdOptional(userOrGroupId).isPresent();
 
-		keycloakRemoveAccessToVault(vaultId, userOrGroupId, clientId, keycloak, keycloakRealm, isGroup);
+		keycloakRemoveAccessToVault(vaultId, userOrGroupId, clientId, getKeycloak(), keycloakRealm, isGroup);
 	}
 
 	// TODO review: this loop might not be safe enough to run in production - should we just disable this feature or remove from code entirely?
@@ -62,7 +62,7 @@ public class KeycloakCryptomatorVaultsHelper {
 	public void keycloakCleanupDanglingCryptomatorVaultsRoles(final String clientId, final Vault.Repository vaultRepo) {
 		Set<String> existingVaultIds = vaultRepo.findAll().stream().map(VaultResource.VaultDto::fromEntity).map(vdto -> vdto.id().toString()).collect(Collectors.toSet());
 		// https://www.keycloak.org/docs-api/21.1.1/rest-api
-		final RealmResource realm = keycloak.realm(keycloakRealm);
+		final RealmResource realm = getKeycloak().realm(keycloakRealm);
 
 		List<ClientRepresentation> byClientId = realm.clients().findByClientId(clientId);
 		if (byClientId.size() != 1) {
@@ -227,5 +227,9 @@ public class KeycloakCryptomatorVaultsHelper {
 		} else {
 			realm.groups().group(userOrGroupId).roles().clientLevel(cryptomatorVaultsClientRepresentation.getId()).remove(List.of(cryptomatorVaultsClientResource.roles().get(vaultId).toRepresentation()));
 		}
+	}
+
+	protected Keycloak getKeycloak() {
+		return keycloak;
 	}
 }
