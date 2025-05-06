@@ -17,10 +17,6 @@
     <surefire-plugin.version>3.5.2</surefire-plugin.version>
     <failsafe-plugin.version>3.5.2</failsafe-plugin.version>
     <junit-tree-reporter.version>1.4.0</junit-tree-reporter.version>
-
-    <!-- / start cipherduck modification -->
-    <quarkus.smallrye-openapi.store-schema-directory>../frontend/src/openapi</quarkus.smallrye-openapi.store-schema-directory>
-    <!-- \ end cipherduck modification -->
   </properties>
 
   <dependencyManagement>
@@ -319,5 +315,13 @@
         <quarkus.package.jar.type>uber-jar</quarkus.package.jar.type>
       </properties>
     </profile>
+    <!-- / start cipherduck modification -->
+    <profile>
+      <id>generate-openapi-json</id>
+      <properties>
+          <quarkus.smallrye-openapi.store-schema-directory>../frontend/src/openapi</quarkus.smallrye-openapi.store-schema-directory>
+      </properties>
+    </profile>
+    <!-- \ end cipherduck modification -->
   </profiles>
 </project>
