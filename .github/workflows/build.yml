@@ -98,13 +98,13 @@ jobs:
         run: |
           if [[ ! -z "${{ inputs.tag }}" ]]; then
             TAG="${{ inputs.tag }}"
-          elif [[ ${{ github.ref_type }} == 'tag' || ${{ github.ref_name }} == 'develop' ]]; then
+          elif [[ ${{ github.ref_type }} == 'tag' ]]; then
             TAG="${{ github.ref_name }}"
           else
             # / cipherduck start modification
             #TAG="commit-${{ github.sha }}"
             # use latest by default as our container registry has limited capacity
-            TAG="latest"
+            TAG=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
             # \ cipherduck end modification
           fi
           echo tag=${TAG} >> "$GITHUB_OUTPUT"
@@ -150,13 +150,13 @@ jobs:
         run: |
           if [[ ! -z "${{ inputs.tag }}" ]]; then
             TAG="${{ inputs.tag }}"
-          elif [[ ${{ github.ref_type }} == 'tag' || ${{ github.ref_name }} == 'develop' ]]; then
+          elif [[ ${{ github.ref_type }} == 'tag' ]]; then
             TAG="${{ github.ref_name }}"
           else
             # / cipherduck start modification
             #TAG="commit-${{ github.sha }}"
             # use latest by default as our container registry has limited capacity
-            TAG="latest"
+            TAG=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
             # \ cipherduck end modification
           fi
           echo tag=${TAG} >> "$GITHUB_OUTPUT"
