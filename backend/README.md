@@ -48,12 +48,12 @@ Make sure a container engine is running (required to register the built image lo
 Then run this command to build the image:
 
 ```shell script
-docker build -f src/main/docker/Dockerfile.jvm -t ghcr.io/cryptomator/hub .
+docker build -f src/main/docker/Dockerfile.jvm -t ghcr.io/shift7-ch/katta-server .
 ```
 
 ### Building native images
 
 3x smaller but takes longer to build. Docker VM requires sufficient memory during the build:
 ```shell script
-docker build -f src/main/docker/Dockerfile.native -t ghcr.io/cryptomator/hub .
+docker build -f src/main/docker/Dockerfile.native -t ghcr.io/shift7-ch/katta-server .
 ```
