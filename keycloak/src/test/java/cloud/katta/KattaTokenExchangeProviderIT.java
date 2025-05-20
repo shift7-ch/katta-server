@@ -4,7 +4,6 @@ import dasniko.testcontainers.keycloak.KeycloakContainer;
 import jakarta.ws.rs.core.Response;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.keycloak.admin.client.Keycloak;
@@ -54,7 +53,7 @@ public class KattaTokenExchangeProviderIT {
 				.waitingFor(Wait.forLogMessage(".*Listening.*", 1))
 				// N.B. remove once we're Keycloak >= 26, see https://github.com/dasniko/testcontainers-keycloak/issues/152
 				.withEnv("KEYCLOAK_ADMIN", "admin")
-				.withEnv("KEYCLOAK_ADMIN_PASSWORD", "admin")
+				.withEnv("KEYCLOAK_ADMIN_PASSWORD", "admin");
 		) {
 			container.start();
 			System.out.println(container.getAuthServerUrl());

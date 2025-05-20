@@ -268,7 +268,7 @@ jobs:
 
 # / katta start addition
   keycloak-integrationtests:
-    name: katta Keycloak integration tests
+    name: Run katta Keycloak Integration Tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

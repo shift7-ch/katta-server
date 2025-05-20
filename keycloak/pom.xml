@@ -44,10 +44,30 @@
                                 <resource>
                                     <directory>../backend/src/main/resources/</directory>
                                     <includes>
-                                        <include>dev.json</include>
+                                        <include>dev-realm.json</include>
                                     </includes>
                                 </resource>
                             </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>rename-resources</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <!-- undo to dev.json because of https://github.com/keycloak/keycloak/issues/37569 for Keycloak 26.1.5, remove when fixed -->
+                                <move file="${project.build.directory}/classes/dev-realm.json"
+                                      tofile="${project.build.directory}/classes/dev.json"/>
+                            </target>
                         </configuration>
                     </execution>
                 </executions>
@@ -143,7 +163,7 @@
         <dependency>
             <groupId>com.github.dasniko</groupId>
             <artifactId>testcontainers-keycloak</artifactId>
-            <version>3.5.1</version>
+            <version>3.7.0</version>
             <scope>test</scope>
         </dependency>
         <dependency>
