@@ -274,6 +274,26 @@
           </execution>
         </executions>
       </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>rename-resources</id>
+            <phase>pre-integration-test</phase>
+            <goals>
+              <goal>run</goal>
+            </goals>
+            <configuration>
+              <target>
+                <!-- undo to dev.json because of https://github.com/keycloak/keycloak/issues/37569 for Keycloak 26.1.5, remove when fixed -->
+                <move file="${project.build.directory}/classes/dev-realm.json"
+                      tofile="${project.build.directory}/classes/dev.json"/>
+              </target>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
   </build>
 
