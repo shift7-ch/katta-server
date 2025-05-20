@@ -31,7 +31,7 @@ public class KattaDevRealmIT {
 	@Test
 	@Disabled
 	public void testDevRealm() throws JSONException {
-		try (final KeycloakContainer container = new KeycloakContainer("quay.io/keycloak/keycloak:26.1.5")
+		try (final KeycloakContainer container = new KeycloakContainer("quay.io/keycloak/keycloak:26.2.2")
 				.withFeaturesEnabled("token-exchange", "admin-fine-grained-authz")
 				// comment in for local debugging:
 				//				.withDebugFixedPort(5005, false)

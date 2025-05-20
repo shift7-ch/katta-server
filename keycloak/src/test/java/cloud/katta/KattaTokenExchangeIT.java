@@ -1,10 +1,14 @@
 package cloud.katta;
 
+import com.github.dzieciou.testing.curl.CurlRestAssuredConfigFactory;
+import com.github.dzieciou.testing.curl.Options;
 import dasniko.testcontainers.keycloak.KeycloakContainer;
+import io.restassured.config.RestAssuredConfig;
 import jakarta.ws.rs.core.Response;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.keycloak.admin.client.Keycloak;
@@ -27,22 +31,26 @@ import static io.restassured.RestAssured.given;
 import static org.junit.jupiter.api.Assertions.*;
 
 
-public class KattaTokenExchangeProviderIT {
+public class KattaTokenExchangeIT {
+	private static final Logger log = LogManager.getLogger(KattaTokenExchangeIT.class.getName());
 
 	/**
-	 * Document the new behaviour @see <a href="hhttps://github.com/keycloak/keycloak/issues/29614">Keycloak Issue 29614</a> which makes our spi necessary.
+	 * Document token-exchange-standard:v2 behaviour according to <a href="https://www.keycloak.org/securing-apps/token-exchange#_standard-token-exchange-enable">How to enable token exchange</a>:
+	 * - downscoping audiences: the access token passed to token-exchange must come with target client id included in aud claim (i.e. cryptomatorvaults in our case)
+	 * - upscoping scopes: only the requrested scopes (plus the default scopes) must be in the exchanged token
+	 *
+	 * <blockquote cite="https://www.keycloak.org/securing-apps/token-exchange#_standard-token-exchange-enable">
+	 * The audience parameter can be used to filter the audiences that are coming from the used client scopes.
+	 * However, this parameter will not add more audiences. When the audience parameter is omitted, no filtering occurs.
+	 * As a result, the audience parameter is effectively used for "downscoping" the token to make sure that it contains only the requested audiences.
+	 * However, the scope parameter is used to add optional client scopes and hence it can be used for "upscoping" and adding more scopes.
+	 * </blockquote>
 	 */
 	@ParameterizedTest
-	@CsvSource({
-
-//			"21.1.1,true", // does not work any more with current realm file - token exchange provider to be removed with Keycloak 26.2. (https://github.com/shift7-ch/katta-server/issues/66)
-			"24.0.4,false",
-			"25.0.4,false",
-			"26.1.5,false"
-	})
-	public void inspectTokenExchangeWithAdditionalScope(final String keycloakVersion, final boolean exchangePossible) throws JSONException {
+	@CsvSource({"26.2.2,true"})
+	public void inspectTokenExchangeWithAdditionalScope(final String keycloakVersion) throws JSONException {
+		final RestAssuredConfig config = CurlRestAssuredConfigFactory.createConfig(Options.builder().build());
 		try (final KeycloakContainer container = new KeycloakContainer(String.format("quay.io/keycloak/keycloak:%s", keycloakVersion))
-				.withFeaturesEnabled("token-exchange", "admin-fine-grained-authz")
 				// comment in for local debugging:
 				//              .withDebugFixedPort(5005, false)
 				//              .withCustomCommand("--log-level=DEBUG")
@@ -71,9 +79,10 @@ public class KattaTokenExchangeProviderIT {
 			cryptomatorClient.setDirectAccessGrantsEnabled(true);
 			keycloak.realm("cryptomator").clients().get(cryptomatorClient.getId()).update(cryptomatorClient);
 
-			final String accessToken =
-					given()
+			final String accessTokenClient1 =
+					given().config(config)
 							.header("Content-Type", "application/x-www-form-urlencoded")
+							// https://datatracker.ietf.org/doc/html/rfc6749 OAuth 2.0 authorization, see https://datatracker.ietf.org/doc/html/rfc8693#name-request
 							.formParam("client_id", "cryptomator")
 							.formParam("grant_type", "password")
 							.formParam("username", "alice")
@@ -81,30 +90,65 @@ public class KattaTokenExchangeProviderIT {
 							.when()
 							.post(container.getAuthServerUrl() + "/realms/cryptomator/protocol/openid-connect/token")
 							.then()
+							.log().everything()
 							.statusCode(200)
 							.extract().path("access_token");
-			final String scopes = deocdeJWT(accessToken).getString("scope");
+			final JSONObject jwtClient1 = deocdeJWT(accessTokenClient1);
+			final String auds = jwtClient1.getString("aud");
+			final String scopes = jwtClient1.getString("scope");
+			// default client scopes
 			assertTrue(scopes.contains("profile"));
 			assertTrue(scopes.contains("email"));
 			assertTrue(scopes.contains("phone"));
 			// openid is non-default scope -> not returned if not requested
 			assertFalse(scopes.contains("openid"));
-			final String exchangedAccessToken = given()
-					.formParam("client_id", "cryptomator")
-					.formParam("audience", "cryptomatorvaults")
-					.formParam("grant_type", "urn:ietf:params:oauth:grant-type:token-exchange")
-					.formParam("subject_token", accessToken)
-					// we request openid scope
-					.formParam("scope", "openid")
-					.when()
-					.post(container.getAuthServerUrl() + "/realms/cryptomator/protocol/openid-connect/token")
-					.then()
-					.statusCode(200)
-					.extract().path("access_token");
-			// if exchange possible with additional scope, the non-default scope openid will be contained in the list of scopes
-			assertEquals(exchangePossible ? "openid" : "", deocdeJWT(exchangedAccessToken).get("scope"));
-			final JSONObject jwt = deocdeJWT(exchangedAccessToken);
-			assertEquals("cryptomatorvaults", jwt.getString("aud"));
+			assertFalse(scopes.contains("address"));
+			// mapped in by protocol mapper
+			assertTrue(auds.contains("cryptomatorvaults"));
+			assertEquals("cryptomator", jwtClient1.getString("azp"));
+
+			// accessToken from cryptomator client containing cryptomatorvaults in aud claim allows to exchange token with additional scope TODO add test without protocol mapper to show this
+			{
+				final String exchangedAccessTokenClient = given()
+						// https://datatracker.ietf.org/doc/html/rfc6749 OAuth 2.0 authorization, see https://datatracker.ietf.org/doc/html/rfc8693#name-request
+						.formParam("client_id", "cryptomatorvaults") // accessToken containing cryptomatorvaults in aud claim allows this
+						.formParam("client_secret", "")
+						// https://datatracker.ietf.org/doc/html/rfc8693#name-request / https://www.keycloak.org/securing-apps/token-exchange#_standard-token-exchange-request token-exchange
+						.formParam("grant_type", "urn:ietf:params:oauth:grant-type:token-exchange")
+						.formParam("subject_token_type", "urn:ietf:params:oauth:token-type:access_token")
+						.formParam("subject_token", accessTokenClient1)
+						// we now request address scope of cryptomator!
+						.formParam("scope", "address")
+						.when()
+						.post(container.getAuthServerUrl() + "/realms/cryptomator/protocol/openid-connect/token")
+						.then()
+						.log().everything()
+						.statusCode(200)
+						.extract().path("access_token");
+				final JSONObject jwtClient2 = deocdeJWT(exchangedAccessTokenClient);
+				assertFalse(jwtClient2.has("aud"));
+				assertEquals("cryptomatorvaults", jwtClient2.getString("azp"));
+				//exchange with additional scope, the non-default scope address will be contained in the list of scopes; there are no other default scopes
+				assertEquals("address", jwtClient2.getString("scope"));
+			}
+
+			// exchange on cryptomator with audience=cryptomatorvaults returns azp cryptomator!
+			{
+				given()
+						// https://datatracker.ietf.org/doc/html/rfc6749 OAuth 2.0 authorization, see https://datatracker.ietf.org/doc/html/rfc8693#name-request
+						.formParam("client_id", "cryptomator") // accessToken containing cryptomatorvaults in aud claim allows this
+						.formParam("client_secret", "")
+						// https://datatracker.ietf.org/doc/html/rfc8693#name-request / https://www.keycloak.org/securing-apps/token-exchange#_standard-token-exchange-request token-exchange
+						.formParam("grant_type", "urn:ietf:params:oauth:grant-type:token-exchange")
+						.formParam("subject_token_type", "urn:ietf:params:oauth:token-type:access_token")
+						.formParam("subject_token", accessTokenClient1)
+						.formParam("audience", "cryptomatorvaults")
+						.when()
+						.post(container.getAuthServerUrl() + "/realms/cryptomator/protocol/openid-connect/token")
+						.then()
+						.log().everything()
+						.statusCode(400);
+			}
 		}
 	}
 
@@ -112,10 +156,9 @@ public class KattaTokenExchangeProviderIT {
 	 * Test our token exchange service provider and default behaviour
 	 */
 	@ParameterizedTest
-	@CsvSource({"true,true,true,true", "true,false,true,true", "false,true,true,true"})
-	public void testCipherduckTokenExchange(final boolean spiEnabled, final boolean shared, final boolean minio, final boolean aws) throws JSONException {
-		try (final KeycloakContainer container = new KeycloakContainer("quay.io/keycloak/keycloak:26.1.5")
-				.withFeaturesEnabled("token-exchange", "admin-fine-grained-authz")
+	@CsvSource({"true,true,true", "false,true,true", "true,true,true"})
+	public void testKattaTokenExchange(final boolean shared, final boolean minio, final boolean aws) throws JSONException {
+		try (final KeycloakContainer container = new KeycloakContainer("quay.io/keycloak/keycloak:26.2.2")
 				// comment in for local debugging:
 				//				.withDebugFixedPort(5005, false)
 				//				.withCustomCommand("--log-level=DEBUG")
@@ -124,9 +167,6 @@ public class KattaTokenExchangeProviderIT {
 				.withEnv("KEYCLOAK_ADMIN", "admin")
 				.withEnv("KEYCLOAK_ADMIN_PASSWORD", "admin")
 		) {
-			if (spiEnabled) {
-				container.withDefaultProviderClasses();
-			}
 			container.start();
 			System.out.println(container.getAuthServerUrl());
 
@@ -159,78 +199,63 @@ public class KattaTokenExchangeProviderIT {
 							.when()
 							.post(container.getAuthServerUrl() + "/realms/cryptomator/protocol/openid-connect/token")
 							.then()
+							.log().everything()
 							.statusCode(200)
 							.extract().path("access_token");
-
-			// test cipherduck behaviour
+			// test katta behaviour
 			{
 				final String exchangedAccessToken = given()
-						.formParam("client_id", "cryptomator")
-						.formParam("audience", "cryptomatorvaults")
+						.formParam("client_id", "cryptomatorvaults")
+						.formParam("client_secret", "")
 						.formParam("grant_type", "urn:ietf:params:oauth:grant-type:token-exchange")
+						.formParam("subject_token_type", "urn:ietf:params:oauth:token-type:access_token")
 						.formParam("subject_token", accessToken)
 						.formParam("scope", vaultId)
 						.when()
 						.post(container.getAuthServerUrl() + "/realms/cryptomator/protocol/openid-connect/token")
 						.then()
+						.log().everything()
 						.statusCode(200)
 						.extract().path("access_token");
-				final JSONObject jwt = deocdeJWT(exchangedAccessToken);
-				assertEquals("cryptomatorvaults", jwt.getString("aud"));
-				final String scopes = jwt.getString("scope");
-				assertEquals(spiEnabled && shared, scopes.contains(vaultId));
-				assertEquals(spiEnabled && shared && aws, jwt.has("https://aws.amazon.com/tags"));
-				assertEquals(spiEnabled && shared && minio, jwt.has("client_id"));
+				final JSONObject jwtExchanged = deocdeJWT(exchangedAccessToken);
+				assertEquals("cryptomatorvaults", jwtExchanged.getString("azp"));
+				assertFalse(jwtExchanged.has("aud"));
+				final String scopes = jwtExchanged.getString("scope");
+				assertEquals(shared, scopes.contains(vaultId));
+				assertEquals(shared && aws, jwtExchanged.has("https://aws.amazon.com/tags"));
+				assertEquals(shared && minio, jwtExchanged.has("client_id"));
 			}
 
 			// test for fallback to default behaviour if no scope provided
 			{
 				final String exchangedAccessToken = given()
-						.formParam("client_id", "cryptomator")
-						.formParam("audience", "cryptomatorvaults")
+						.formParam("client_id", "cryptomatorvaults")
+						.formParam("client_secret", "")
 						.formParam("grant_type", "urn:ietf:params:oauth:grant-type:token-exchange")
+						.formParam("subject_token_type", "urn:ietf:params:oauth:token-type:access_token")
 						.formParam("subject_token", accessToken)
 						// no scope
 						.when()
 						.post(container.getAuthServerUrl() + "/realms/cryptomator/protocol/openid-connect/token")
 						.then()
+						.log().everything()
 						.statusCode(200)
 						.extract().path("access_token");
 				final JSONObject jwt = deocdeJWT(exchangedAccessToken);
-				assertEquals("cryptomatorvaults", jwt.getString("aud"));
-				final String scopes = jwt.getString("scope");
-				assertFalse(scopes.contains(vaultId));
-				assertFalse(jwt.has("https://aws.amazon.com/tags"));
-				assertFalse(jwt.has("client_id"));
-			}
-			// test for fallback to default behaviour if no audience and no scope
-			{
-				final String exchangedAccessToken =
-						given()
-								.formParam("client_id", "cryptomator")
-								// no audience
-								.formParam("grant_type", "urn:ietf:params:oauth:grant-type:token-exchange")
-								.formParam("subject_token", accessToken)
-								// no scope
-								.when()
-								.post(container.getAuthServerUrl() + "/realms/cryptomator/protocol/openid-connect/token")
-								.then()
-								.statusCode(200)
-								.extract().path("access_token");
-				final JSONObject jwt = deocdeJWT(exchangedAccessToken);
-				assertEquals("cryptomator", jwt.getString("aud"));
+				assertFalse(jwt.has("aud"));
 				final String scopes = jwt.getString("scope");
 				assertFalse(scopes.contains(vaultId));
 				assertFalse(jwt.has("https://aws.amazon.com/tags"));
 				assertFalse(jwt.has("client_id"));
 			}
 
-			// test for fallback to default behaviour if duplicate scope param
+			// test for stats 400 if duplicate scope param
 			{
 				given()
 						.formParam("client_id", "cryptomator")
 						.formParam("audience", "cryptomatorvaults")
 						.formParam("grant_type", "urn:ietf:params:oauth:grant-type:token-exchange")
+						.formParam("subject_token_type", "urn:ietf:params:oauth:token-type:access_token")
 						.formParam("subject_token", accessToken)
 						.formParam("scope", vaultId)
 						// duplicate scope
@@ -238,6 +263,7 @@ public class KattaTokenExchangeProviderIT {
 						.when()
 						.post(container.getAuthServerUrl() + "/realms/cryptomator/protocol/openid-connect/token")
 						.then()
+						.log().everything()
 						.statusCode(400);
 			}
 		}

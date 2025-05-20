@@ -12,7 +12,7 @@ public class KeycloakContainerResource implements QuarkusTestResourceLifecycleMa
 
 	@Override
 	public Map<String, String> start() {
-		container = new KeycloakContainer("quay.io/keycloak/keycloak:26.1.5")
+		container = new KeycloakContainer("quay.io/keycloak/keycloak:26.2.2")
 				.withFeaturesEnabled("token-exchange", "admin-fine-grained-authz")
 				// comment in for local debugging:
 				//				.withDebugFixedPort(5005, false)
