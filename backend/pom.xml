@@ -286,7 +286,7 @@
             </goals>
             <configuration>
               <target>
-                <!-- undo to dev.json because of https://github.com/keycloak/keycloak/issues/37569 for Keycloak 26.1.5, remove when fixed -->
+                <!-- rename to dev.json because of https://github.com/keycloak/keycloak/issues/37569 -->
                 <move file="${project.build.directory}/classes/dev-realm.json"
                       tofile="${project.build.directory}/classes/dev.json"/>
               </target>
