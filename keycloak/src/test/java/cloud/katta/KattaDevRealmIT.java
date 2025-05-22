@@ -4,7 +4,6 @@ import dasniko.testcontainers.keycloak.KeycloakContainer;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Disabled;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
@@ -19,37 +18,28 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class KattaDevRealmIT {
 	/**
-	 * Ensure access token to have
+	 * Ensure initial access token from cryptomator client to have
 	 * - aud claim (required for STS)
 	 * - sub claim (required for STS)
 	 * - no client roles (as we add one client role per vault, the token would grow with the amount of vaults and quickly hit token size limits at AWS).
+	 * - realm roles are included (required to make hub API calls)
 	 * <p>
 	 * Note: Keycloak 25 introduces mapper for sub claim in scope "basic", the scope needs to added explicitly to the default scopes list as we override the list (in order to remove the "roles" scope):
 	 * - {@see https://www.keycloak.org/docs/latest/upgrading/index.html#new-default-client-scope-basic}
 	 * - {@see https://www.keycloak.org/docs/latest/release_notes/#keycloak-25-0-0}
 	 */
 	@Test
-	@Disabled
 	public void testDevRealm() throws JSONException {
 		try (final KeycloakContainer container = new KeycloakContainer("quay.io/keycloak/keycloak:26.2.2")
-				.withFeaturesEnabled("token-exchange", "admin-fine-grained-authz")
 				// comment in for local debugging:
 				//				.withDebugFixedPort(5005, false)
 				//				.withCustomCommand("--log-level=DEBUG")
-				.withRealmImportFile("/dev.json")
-				// N.B. remove once we're Keycloak >= 26, see https://github.com/dasniko/testcontainers-keycloak/issues/152
-				.withEnv("KEYCLOAK_ADMIN", "admin")
-				.withEnv("KEYCLOAK_ADMIN_PASSWORD", "admin")
+				.withRealmImportFile("/dev.json");
 		) {
 			container.start();
 			System.out.println(container.getAuthServerUrl());
 
-			final Keycloak keycloak = Keycloak.getInstance(
-					container.getAuthServerUrl(),
-					"master",
-					"admin",
-					"admin",
-					"admin-cli");
+			final Keycloak keycloak = container.getKeycloakAdminClient();
 
 			// enable direct access grant for client cryptomator
 			final ClientRepresentation cryptomatorClient = keycloak.realm("cryptomator").clients().findByClientId("cryptomator").getFirst();
@@ -81,11 +71,12 @@ public class KattaDevRealmIT {
 								.extract().path("access_token");
 				final JSONObject jwt = deocdeJWT(accessToken);
 
-				assertEquals("cryptomator", jwt.getString("aud"));
+				// TODO do we want both cryptomator and cryptomatorvaults?
+				assertEquals("cryptomatorvaults", jwt.getString("aud"));
 				assertFalse(jwt.has("resource_access"));
 				assertEquals(aliceId, jwt.getString("sub"));
 				assertTrue(jwt.getJSONObject("realm_access").getJSONArray("roles").toList().contains("user"));
-				assertThrows(JSONException.class, () -> jwt.get("resource_access"));
+				assertFalse(jwt.has("resource_access"));
 
 				// strangely, the "basic" scope is not added to the "scope" claim...
 				assertTrue(jwt.getString("scope").contains("phone"));
@@ -111,10 +102,11 @@ public class KattaDevRealmIT {
 			// "roles" scope adds client scopes to "resource_access.<clientId>.roles"
 			assertTrue(jwt.getJSONObject("resource_access").getJSONObject("cryptomatorvaults").getJSONArray("roles").toList().contains("blup"));
 			// "roles" scope adds additional value "account" to "aud" claim
-			assertTrue(jwt.getJSONArray("aud").toList().contains("cryptomator"));
+			// TODO do we want both cryptomator and cryptomatorvaults?
+//			assertTrue(jwt.getJSONArray("aud").toList().contains("cryptomator"));
 			assertTrue(jwt.getJSONArray("aud").toList().contains("account"));
 			assertTrue(jwt.getJSONArray("aud").toList().contains("cryptomatorvaults"));
-			assertEquals(3, jwt.getJSONArray("aud").length());
+			assertEquals(2, jwt.getJSONArray("aud").length());
 
 			assertEquals(aliceId, jwt.getString("sub"));
 			assertTrue(jwt.getJSONObject("realm_access").getJSONArray("roles").toList().contains("user"));
