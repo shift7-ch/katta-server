@@ -2,8 +2,6 @@ package cloud.katta;
 
 import dasniko.testcontainers.keycloak.KeycloakContainer;
 import jakarta.ws.rs.core.Response;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -28,7 +26,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 
 public class KattaTokenExchangeIT {
-	private static final Logger log = LogManager.getLogger(KattaTokenExchangeIT.class.getName());
 
 	/**
 	 * Document token-exchange-standard:v2 behaviour according to <a href="https://www.keycloak.org/securing-apps/token-exchange#_standard-token-exchange-enable">How to enable token exchange</a>:
@@ -49,8 +46,6 @@ public class KattaTokenExchangeIT {
 				// comment in for local debugging:
 				//              .withDebugFixedPort(5005, false)
 				//              .withCustomCommand("--log-level=DEBUG")
-				// see https://github.com/dasniko/testcontainers-keycloak/blob/main/README.md
-				//     https://github.com/dasniko/keycloak-extensions-demo/blob/1523b9c153f4325373c8d6787bfeb6c95d3dfed8/docker-compose.yml#L25
 				.withRealmImportFile("/dev.json")
 		) {
 			container.start();
