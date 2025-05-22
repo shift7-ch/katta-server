@@ -117,8 +117,8 @@ public class KattaTokenExchangeIT {
 	 * Test our token exchange service provider and default behaviour
 	 */
 	@ParameterizedTest
-	@CsvSource({"true,true,true", "false,true,true", "true,true,true"})
-	public void testKattaTokenExchange(final boolean shared, final boolean minio, final boolean aws) throws JSONException {
+	@CsvSource({"true,true,true", "false,true,true", "true,false,true", "true,true,false"})
+	public void testKattaTokenExchange(final boolean sharedWithAlice, final boolean addMinioMapper, final boolean addAwsMapper) throws JSONException {
 		try (final KeycloakContainer container = new KeycloakContainer("quay.io/keycloak/keycloak:26.2.2")
 				// comment in for local debugging:
 				//				.withDebugFixedPort(5005, false)
@@ -138,8 +138,8 @@ public class KattaTokenExchangeIT {
 
 			final String alice = keycloak.realm("cryptomator").users().searchByFirstName("alice", true).getFirst().getId();
 			keycloakGrantAccessToVault(vaultId, alice, "cryptomatorvaults", keycloak, "cryptomator", false);
-			keycloakPrepareVault(vaultId, keycloak, "cryptomator", minio, aws);
-			if (!shared) {
+			keycloakPrepareVault(vaultId, keycloak, "cryptomator", addMinioMapper, addAwsMapper);
+			if (!sharedWithAlice) {
 				keycloakRemoveAccessToVault(vaultId, alice, "cryptomatorvaults", keycloak, "cryptomator", false);
 			}
 			final String accessToken =
@@ -174,9 +174,20 @@ public class KattaTokenExchangeIT {
 				assertEquals("cryptomatorvaults", jwtExchanged.getString("azp"));
 				assertFalse(jwtExchanged.has("aud"));
 				final String scopes = jwtExchanged.getString("scope");
-				assertEquals(shared, scopes.contains(vaultId));
-				assertEquals(shared && aws, jwtExchanged.has("https://aws.amazon.com/tags"));
-				assertEquals(shared && minio, jwtExchanged.has("client_id"));
+				assertEquals(sharedWithAlice, scopes.contains(vaultId));
+				assertEquals(sharedWithAlice && addAwsMapper, jwtExchanged.has("https://aws.amazon.com/tags"));
+				if (sharedWithAlice && addAwsMapper) {
+					// {"sub":"91e714c5-9293-4be2-baff-8d789bd9cc12","azp":"cryptomatorvaults","scope":"b2a8dbc4-eaa0-4887-ad55-9bfb4641801a","https://aws.amazon.com/tags":{"transitive_tag_keys":["b2a8dbc4-eaa0-4887-ad55-9bfb4641801a"],"principal_tags":{"b2a8dbc4-eaa0-4887-ad55-9bfb4641801a":[""]}},"iss":"http://localhost:64618/realms/cryptomator","typ":"Bearer","exp":1747919626,"iat":1747919326,"jti":"ntrtte:b73fc934-4e0f-4f74-993f-8baf605940f4","client_id":"b2a8dbc4-eaa0-4887-ad55-9bfb4641801a","sid":"e7409b3f-a13a-441a-b0ce-aa66c39b1ebc"}
+					assertEquals(1, jwtExchanged.getJSONObject("https://aws.amazon.com/tags").getJSONArray("transitive_tag_keys").length());
+					assertEquals(vaultId, jwtExchanged.getJSONObject("https://aws.amazon.com/tags").getJSONArray("transitive_tag_keys").getString(0));
+					assertEquals(1, jwtExchanged.getJSONObject("https://aws.amazon.com/tags").getJSONObject("principal_tags").length());
+					assertEquals(1, jwtExchanged.getJSONObject("https://aws.amazon.com/tags").getJSONObject("principal_tags").getJSONArray(vaultId).length());
+					assertEquals("", jwtExchanged.getJSONObject("https://aws.amazon.com/tags").getJSONObject("principal_tags").getJSONArray(vaultId).getString(0));
+				}
+				assertEquals(sharedWithAlice && addMinioMapper, jwtExchanged.has("client_id"));
+				if (sharedWithAlice && addMinioMapper) {
+					assertEquals(vaultId, jwtExchanged.getString("client_id"));
+				}
 			}
 
 			// test for fallback to default behaviour if no scope provided
