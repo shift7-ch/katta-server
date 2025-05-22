@@ -26,8 +26,8 @@ During development, run Quarkus from the `backend` dir as explained in [its READ
 
 ## Custom Keycloak Image
 
-We add a custom token exchange SPI implementation and custom theme to the base keycloak image, as explained
-in [its README file](keycloak/README.md).
+We add custom theme to the base keycloak image, as explained
+in [its README file](keycloak/README.md). We use [token-exchange-standard:v2](https://www.keycloak.org/securing-apps/token-exchange) as per [RFC 8693](https://www.rfc-editor.org/rfc/rfc8693.html).
 
 # Setup
 
