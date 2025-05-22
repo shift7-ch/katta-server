@@ -267,7 +267,6 @@
       "frontchannelLogout": false,
       "protocol": "openid-connect",
       "attributes": {
-        "standard.token.exchange.enabled": true,
         "pkce.code.challenge.method": "S256"
       },
       "protocolMappers": [
