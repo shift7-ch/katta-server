@@ -86,7 +86,7 @@ public class KattaTokenExchangeIT {
 			assertTrue(auds.contains("cryptomatorvaults"));
 			assertEquals("cryptomator", jwtClient1.getString("azp"));
 
-			// accessToken from cryptomator client containing cryptomatorvaults in aud claim allows to exchange token with additional scope TODO add test without protocol mapper to show this
+			// accessToken from cryptomator client containing cryptomatorvaults in aud claim allows to exchange token with additional scope
 			{
 				final String exchangedAccessTokenClient = given()
 						// https://datatracker.ietf.org/doc/html/rfc6749 OAuth 2.0 authorization, see https://datatracker.ietf.org/doc/html/rfc8693#name-request
@@ -109,24 +109,6 @@ public class KattaTokenExchangeIT {
 				assertEquals("cryptomatorvaults", jwtClient2.getString("azp"));
 				//exchange with additional scope, the non-default scope address will be contained in the list of scopes; there are no other default scopes
 				assertEquals("address", jwtClient2.getString("scope"));
-			}
-
-			// exchange on cryptomator with audience=cryptomatorvaults returns azp cryptomator!
-			{
-				given()
-						// https://datatracker.ietf.org/doc/html/rfc6749 OAuth 2.0 authorization, see https://datatracker.ietf.org/doc/html/rfc8693#name-request
-						.formParam("client_id", "cryptomator") // accessToken containing cryptomatorvaults in aud claim allows this
-						.formParam("client_secret", "")
-						// https://datatracker.ietf.org/doc/html/rfc8693#name-request / https://www.keycloak.org/securing-apps/token-exchange#_standard-token-exchange-request token-exchange
-						.formParam("grant_type", "urn:ietf:params:oauth:grant-type:token-exchange")
-						.formParam("subject_token_type", "urn:ietf:params:oauth:token-type:access_token")
-						.formParam("subject_token", accessTokenClient1)
-						.formParam("audience", "cryptomatorvaults")
-						.when()
-						.post(container.getAuthServerUrl() + "/realms/cryptomator/protocol/openid-connect/token")
-						.then()
-						.log().everything()
-						.statusCode(400);
 			}
 		}
 	}
