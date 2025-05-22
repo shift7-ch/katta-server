@@ -16,11 +16,7 @@ public class KeycloakContainerResource implements QuarkusTestResourceLifecycleMa
 				// comment in for local debugging:
 				//				.withDebugFixedPort(5005, false)
 				//				.withCustomCommand("--log-level=DEBUG")
-				.withRealmImportFile("/dev.json")
-				// N.B. remove once we're Keycloak >= 26, see https://github.com/dasniko/testcontainers-keycloak/issues/152
-				.withEnv("KEYCLOAK_ADMIN", "admin")
-				.withEnv("KEYCLOAK_ADMIN_PASSWORD", "admin");
-
+				.withRealmImportFile("/dev.json");
 		container.start();
 		return Map.of();
 	}

@@ -56,19 +56,12 @@ public class KattaTokenExchangeIT {
 				// Keycloak < 25 seems to expose /health/started on default port, and not on management port as expected in testcontainers-keycloak:
 				//   https://github.com/dasniko/testcontainers-keycloak/blame/d910aa6d6919c0e0f9cd50f97c9bf878eb24f753/src/main/java/dasniko/testcontainers/keycloak/ExtendableKeycloakContainer.java#L203
 				.waitingFor(Wait.forLogMessage(".*Listening.*", 1))
-				// N.B. remove once we're Keycloak >= 26, see https://github.com/dasniko/testcontainers-keycloak/issues/152
-				.withEnv("KEYCLOAK_ADMIN", "admin")
-				.withEnv("KEYCLOAK_ADMIN_PASSWORD", "admin");
+			 // N.B. remove once we're Keycloak >= 26, see https://github.com/dasniko/testcontainers-keycloak/issues/152
 		) {
 			container.start();
 			System.out.println(container.getAuthServerUrl());
 
-			final Keycloak keycloak = Keycloak.getInstance(
-					container.getAuthServerUrl(),
-					"master",
-					"admin",
-					"admin",
-					"admin-cli");
+			final Keycloak keycloak = container.getKeycloakAdminClient();
 
 			// enable direct access grant for client cryptomator
 			final ClientRepresentation cryptomatorClient = keycloak.realm("cryptomator").clients().findByClientId("cryptomator").getFirst();
@@ -158,20 +151,12 @@ public class KattaTokenExchangeIT {
 				// comment in for local debugging:
 				//				.withDebugFixedPort(5005, false)
 				//				.withCustomCommand("--log-level=DEBUG")
-				.withRealmImportFile("/dev.json")
-				// N.B. remove once we're Keycloak >= 26, see https://github.com/dasniko/testcontainers-keycloak/issues/152
-				.withEnv("KEYCLOAK_ADMIN", "admin")
-				.withEnv("KEYCLOAK_ADMIN_PASSWORD", "admin")
+				.withRealmImportFile("/dev.json");
 		) {
 			container.start();
 			System.out.println(container.getAuthServerUrl());
 
-			final Keycloak keycloak = Keycloak.getInstance(
-					container.getAuthServerUrl(),
-					"master",
-					"admin",
-					"admin",
-					"admin-cli");
+			final Keycloak keycloak = container.getKeycloakAdminClient();
 			final String vaultId = UUID.randomUUID().toString();
 
 			// enable direct access grant for client cryptomator

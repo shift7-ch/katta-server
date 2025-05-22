@@ -28,12 +28,7 @@ class KeycloakCryptomatorVaultsHelperIT {
 	@ParameterizedTest
 	@CsvSource({"true,true,2", "true,false,1", "false,true,1", "false,false,0"})
 	public void testKeycloakPrepareVault(final boolean minio, final boolean aws, final int expected) {
-		final Keycloak keycloak = Keycloak.getInstance(
-				container.getAuthServerUrl(),
-				"master",
-				"admin",
-				"admin",
-				"admin-cli");
+		final Keycloak keycloak = container.getKeycloakAdminClient();
 
 		final String vaultId = UUID.randomUUID().toString();
 
@@ -49,12 +44,7 @@ class KeycloakCryptomatorVaultsHelperIT {
 
 	@Test
 	public void testKeycloakGrantAccessToVault() {
-		final Keycloak keycloak = Keycloak.getInstance(
-				container.getAuthServerUrl(),
-				"master",
-				"admin",
-				"admin",
-				"admin-cli");
+		final Keycloak keycloak = container.getKeycloakAdminClient();
 
 		final String vaultId = UUID.randomUUID().toString();
 		final String alice = keycloak.realm("cryptomator").users().searchByFirstName("alice", true).getFirst().getId();
