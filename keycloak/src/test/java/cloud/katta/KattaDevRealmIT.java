@@ -8,7 +8,9 @@ import org.keycloak.admin.client.Keycloak;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.testcontainers.shaded.com.trilead.ssh2.crypto.Base64;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 
@@ -87,6 +89,48 @@ public class KattaDevRealmIT {
 			alice.setClientRoles(Map.of("cryptomatorvaults", List.of("blup")));
 			keycloak.realm("cryptomator").users().get(alice.getId()).roles().clientLevel(cryptomatorvaultsClient.getId()).add(List.of(keycloak.realm("cryptomator").clients().get(cryptomatorvaultsClient.getId()).roles().get("blup").toRepresentation()));
 
+			{
+				// serviceAccountsEnabled=true for cryptomatorhub-cli allows to fetch tokens with client_secret only:
+				given()
+						.header("Content-Type", "application/x-www-form-urlencoded")
+						.header("Authorization", "Basic: "+ new String(Base64.encode("cryptomatorhub-cli:top-secret".getBytes(StandardCharsets.UTF_8))))
+						.formParam("client_id", "cryptomatorhub-cli")
+						.formParam("grant_type", "client_credentials")
+						.when()
+						.post(container.getAuthServerUrl() + "/realms/cryptomator/protocol/openid-connect/token")
+						.then()
+						.statusCode(200);
+
+				// serviceAccountsEnabled=true allows to fetch tokens with client_secret only:
+				cryptomatorvaultsClient.setServiceAccountsEnabled(true);
+				keycloak.realm("cryptomator").clients().get(cryptomatorvaultsClient.getId()).update(cryptomatorvaultsClient);
+
+				given()
+						.header("Content-Type", "application/x-www-form-urlencoded")
+						.header("Authorization", "Basic: "+ new String(Base64.encode("cryptomatorvaults:".getBytes(StandardCharsets.UTF_8))))
+						.formParam("client_id", "cryptomatorvaults")
+						.formParam("grant_type", "client_credentials")
+						.when()
+						.post(container.getAuthServerUrl() + "/realms/cryptomator/protocol/openid-connect/token")
+						.then()
+						.statusCode(200);
+
+
+				// serviceAccountsEnabled=false disallows to fetch tokens with client_secret only:
+				cryptomatorvaultsClient.setServiceAccountsEnabled(false);
+				keycloak.realm("cryptomator").clients().get(cryptomatorvaultsClient.getId()).update(cryptomatorvaultsClient);
+
+				given()
+						.header("Content-Type", "application/x-www-form-urlencoded")
+						.header("Authorization", "Basic: "+ new String(Base64.encode("cryptomatorvaults:".getBytes(StandardCharsets.UTF_8))))
+						.formParam("client_id", "cryptomatorvaults")
+						.formParam("grant_type", "client_credentials")
+						.when()
+						.post(container.getAuthServerUrl() + "/realms/cryptomator/protocol/openid-connect/token")
+						.then()
+						.statusCode(401);
+			}
+
 			final String aliceId = alice.getId();
 			{
 				final String accessTokenWithoutRoles =
@@ -94,6 +138,8 @@ public class KattaDevRealmIT {
 								.header("Content-Type", "application/x-www-form-urlencoded")
 								.formParam("client_id", "cryptomator")
 								.formParam("grant_type", "password")
+//								.auth().form("alice", "asd")
+//								.auth().basic("alice","asd")
 								.formParam("username", "alice")
 								.formParam("password", "asd")
 								.when()
