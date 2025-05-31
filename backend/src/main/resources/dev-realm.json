@@ -276,7 +276,7 @@
           "protocolMapper": "oidc-audience-mapper",
           "consentRequired": false,
           "config": {
-            "included.client.audience": "cryptomatorvaults",
+            "included.client.audience": "cryptomator",
             "id.token.claim": "false",
             "access.token.claim": "true",
             "userinfo.token.claim": "false",
@@ -284,12 +284,12 @@
           }
         },
         {
-          "name": "aud2",
+          "name": "aud-cryptomatorvaults",
           "protocol": "openid-connect",
           "protocolMapper": "oidc-audience-mapper",
           "consentRequired": false,
           "config": {
-            "included.client.audience": "cryptomator",
+            "included.client.audience": "cryptomatorvaults",
             "id.token.claim": "false",
             "access.token.claim": "true",
             "userinfo.token.claim": "false",
