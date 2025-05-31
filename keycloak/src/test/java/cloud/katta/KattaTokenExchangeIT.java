@@ -30,7 +30,7 @@ public class KattaTokenExchangeIT {
 	/**
 	 * Document token-exchange-standard:v2 behaviour according to <a href="https://www.keycloak.org/securing-apps/token-exchange#_standard-token-exchange-enable">How to enable token exchange</a>:
 	 * - downscoping audiences: the access token passed to token-exchange must come with target client id included in aud claim (i.e. cryptomatorvaults in our case)
-	 * - upscoping scopes: only the requrested scopes (plus the default scopes) must be in the exchanged token
+	 * - upscoping scopes: only the requested scopes (plus the default scopes) must be in the exchanged token
 	 *
 	 * <blockquote cite="https://www.keycloak.org/securing-apps/token-exchange#_standard-token-exchange-enable">
 	 * The audience parameter can be used to filter the audiences that are coming from the used client scopes.
@@ -73,7 +73,7 @@ public class KattaTokenExchangeIT {
 							.statusCode(200)
 							.extract().path("access_token");
 			final JSONObject jwtClient1 = deocdeJWT(accessTokenClient1);
-			final String auds = jwtClient1.getString("aud");
+			List<Object> auds = jwtClient1.getJSONArray("aud").toList();
 			final String scopes = jwtClient1.getString("scope");
 			// default client scopes
 			assertTrue(scopes.contains("profile"));
@@ -82,7 +82,9 @@ public class KattaTokenExchangeIT {
 			// openid is non-default scope -> not returned if not requested
 			assertFalse(scopes.contains("openid"));
 			assertFalse(scopes.contains("address"));
+			// (P2) audiences
 			// mapped in by protocol mapper
+			assertTrue(auds.contains("cryptomator"));
 			assertTrue(auds.contains("cryptomatorvaults"));
 			assertEquals("cryptomator", jwtClient1.getString("azp"));
 
@@ -105,8 +107,11 @@ public class KattaTokenExchangeIT {
 						.statusCode(200)
 						.extract().path("access_token");
 				final JSONObject jwtClient2 = deocdeJWT(exchangedAccessTokenClient);
-				assertFalse(jwtClient2.has("aud"));
+
+				// (P4) audience and azp
+				assertEquals("cryptomatorvaults", jwtClient2.getString("aud"));
 				assertEquals("cryptomatorvaults", jwtClient2.getString("azp"));
+
 				//exchange with additional scope, the non-default scope address will be contained in the list of scopes; there are no other default scopes
 				assertEquals("address", jwtClient2.getString("scope"));
 			}
@@ -171,8 +176,12 @@ public class KattaTokenExchangeIT {
 						.statusCode(200)
 						.extract().path("access_token");
 				final JSONObject jwtExchanged = deocdeJWT(exchangedAccessToken);
+
+				// (P4) audience and azp
 				assertEquals("cryptomatorvaults", jwtExchanged.getString("azp"));
-				assertFalse(jwtExchanged.has("aud"));
+				assertEquals("cryptomatorvaults", jwtExchanged.getString("aud"));
+
+				// (P5) scopes and claims
 				final String scopes = jwtExchanged.getString("scope");
 				assertEquals(sharedWithAlice, scopes.contains(vaultId));
 				assertEquals(sharedWithAlice && addAwsMapper, jwtExchanged.has("https://aws.amazon.com/tags"));
@@ -206,7 +215,9 @@ public class KattaTokenExchangeIT {
 						.statusCode(200)
 						.extract().path("access_token");
 				final JSONObject jwt = deocdeJWT(exchangedAccessToken);
-				assertFalse(jwt.has("aud"));
+				// (P4) audience and azp
+				assertEquals("cryptomatorvaults", jwt.getString("aud"));
+				assertEquals("cryptomatorvaults", jwt.getString("azp"));
 				final String scopes = jwt.getString("scope");
 				assertFalse(scopes.contains(vaultId));
 				assertFalse(jwt.has("https://aws.amazon.com/tags"));
