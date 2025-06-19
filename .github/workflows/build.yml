@@ -102,13 +102,13 @@ jobs:
             TAG="${{ inputs.tag }}"
           elif [[ ${{ github.ref_type }} == 'tag' ]]; then
             TAG="${{ github.ref_name }}"
-          else
-            # / cipherduck start modification
-            #TAG="commit-${{ github.sha }}"
-            # use latest by default as our container registry has limited capacity
+          # / cipherduck start modification
+          elif [[ ${{ github.ref_name  }} == ${{ github.event.repository.default_branch }} ]]; then
             TAG=$(./mvnw help:evaluate -Dexpression=project.version -q -DforceStdout)
-            # \ cipherduck end modification
+          else
+            TAG="commit-${{ github.sha }}"
           fi
+          # \ cipherduck end modification
           echo tag=${TAG}
           echo tag=${TAG} >> "$GITHUB_OUTPUT"
       - name: Build and push container image (ci)
@@ -163,13 +163,13 @@ jobs:
             TAG="${{ inputs.tag }}"
           elif [[ ${{ github.ref_type }} == 'tag' ]]; then
             TAG="${{ github.ref_name }}"
-          else
-            # / cipherduck start modification
-            #TAG="commit-${{ github.sha }}"
-            # use latest by default as our container registry has limited capacity
+          # / cipherduck start modification
+          elif [[ ${{ github.ref_name  }} == ${{ github.event.repository.default_branch }} ]]; then
             TAG=$(./mvnw help:evaluate -Dexpression=project.version -q -DforceStdout)
-            # \ cipherduck end modification
+          else
+            TAG="commit-${{ github.sha }}"
           fi
+          # \ cipherduck end modification
           echo tag=${TAG}
           echo tag=${TAG} >> "$GITHUB_OUTPUT"
         # \ cipherduck addition
