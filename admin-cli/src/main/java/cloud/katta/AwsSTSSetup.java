@@ -37,10 +37,10 @@ import java.util.concurrent.Callable;
 		mixinStandardHelpOptions = true)
 public class AwsSTSSetup implements Callable<Void> {
 
-	@CommandLine.Option(names = {"--realmUrl"}, description = "Keycloak realm URL with scheme.", required = true)
+	@CommandLine.Option(names = {"--realmUrl"}, description = "Keycloak realm URL with scheme. Example: \"https://testing.katta.cloud/kc/realms/tamarind\"", required = true)
 	String realmUrl;
 
-	@CommandLine.Option(names = {"--profileName"}, description = "AWS profile to load AWS credentials from.", required = true)
+	@CommandLine.Option(names = {"--profileName"}, description = "AWS profile to load AWS credentials from. See ~/.aws/credentials.", required = true)
 	String profileName;
 
 	@CommandLine.Option(names = {"--bucketPrefix"}, description = "Bucket Prefix for STS vaults.", required = false, defaultValue = "katta")
@@ -51,6 +51,9 @@ public class AwsSTSSetup implements Callable<Void> {
 
 	@Override
 	public Void call() throws Exception {
+		// remove trailing slash
+		realmUrl = realmUrl.replaceAll("/$", "");
+
 		final String arnPostfix = realmUrl.replace("https://", "");
 		final String arnPostfixSanitized = arnPostfix.replace("/", "-");
 
@@ -114,6 +117,7 @@ public class AwsSTSSetup implements Callable<Void> {
 			awsSTSChain01RoleNamePermissionPolicyTemplate.getJSONArray("Statement").getJSONObject(0).put("Resource", arnPrefix + ":role/" + awsSTSChain02RoleName);
 			uploadAssumeRolePolicyAndPermissionPolicy(iam, awsSTSChain01RoleName, awsSTSChain01RoleNameTrustPolicyTemplate, awsSTSChain01RoleNamePermissionPolicyTemplate, maxSessionDuration);
 
+			Thread.sleep(10000);
 			//		sleep 10;
 			//
 			//		aws iam create-role --role-name cipherduck_chain_02 --assume-role-policy-document file://src/main/resources/cipherduck/setup/aws_stscipherduck_chain_02_trustpolicy.json
