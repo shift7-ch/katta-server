@@ -4,7 +4,7 @@ import picocli.CommandLine;
 
 @CommandLine.Command(name = "katta-admin-cli",
 		mixinStandardHelpOptions = true,
-		subcommands = {AwsSTSSetup.class, CommandLine.HelpCommand.class, StorageProfileSetup.class})
+		subcommands = {AwsSTSSetup.class, CommandLine.HelpCommand.class, StorageProfileAWSSTSSetup.class, StorageProfileAWSStaticSetup.class})
 public class KattaSetupCli {
 
 	public static void main(String... args) {

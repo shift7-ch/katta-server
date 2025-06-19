@@ -10,10 +10,10 @@ import java.util.concurrent.Callable;
 
 import static io.restassured.RestAssured.given;
 
-@CommandLine.Command(name = "storageProfile",
-		description = "Upload storage profile.",
+@CommandLine.Command(name = "storageProfileAWSSTS",
+		description = "Upload storage profile for AWS STS.",
 		mixinStandardHelpOptions = true)
-public class StorageProfileSetup implements Callable<Void> {
+public class StorageProfileAWSSTSSetup implements Callable<Void> {
 
 //	@CommandLine.Option(names = {"--tokenUrl"}, description = "Keycloak realm URL with scheme. Example: \"https://testing.katta.cloud/kc/realms/tamarind/protocol/openid-connect/token\"", required = true)
 //	String tokenUrl;
@@ -32,7 +32,7 @@ public class StorageProfileSetup implements Callable<Void> {
 
 	@Override
 	public Void call() throws Exception {
-		final String uuid = UUID.randomUUID().toString();
+
 
 // TODO extract
 //		final String accessToken = given()
@@ -46,6 +46,9 @@ public class StorageProfileSetup implements Callable<Void> {
 //				.then()
 //				.statusCode(200)
 //				.extract().path("access_token");
+
+
+		final String uuid = UUID.randomUUID().toString();
 
 		final JSONObject awsSTSTemplate = new JSONObject(IOUtils.toString(KattaSetupCli.class.getResourceAsStream("/setup/aws_sts/aws_sts_profile.json"), Charset.defaultCharset()));
 		System.out.println(awsSTSTemplate);
@@ -62,7 +65,6 @@ public class StorageProfileSetup implements Callable<Void> {
 		awsSTSTemplate.put("bucketPrefix", bucketPrefix);
 
 		System.out.println(awsSTSTemplate);
-
 		final String response = given().header("Content-Type", "application/json")
 				.header("Authorization", String.format("Bearer %s", accessToken))
 				.when()
@@ -70,12 +72,9 @@ public class StorageProfileSetup implements Callable<Void> {
 				.put(String.format("%s/api/storageprofile/s3sts", hubUrl))
 				.then()
 				.statusCode(201).extract().body().toString();
-
 		System.out.println(response);
 
-
 		// TODO other profiles
-		//curl -v --fail -X PUT http://localhost:${HUB_PORT}/api/storageprofile/s3sts -d @setup/aws_sts/aws_sts_profile.json -H "Content-Type: application/json" -H "Authorization: Bearer $$ACCESS_TOKEN"
 		//curl -v --fail -X PUT http://localhost:${HUB_PORT}/api/storageprofile/s3 -d @setup/aws_static/aws_static_profile.json -H "Content-Type: application/json" -H "Authorization: Bearer $$ACCESS_TOKEN"
 		//curl -v --fail http://localhost:${HUB_PORT}/api/storageprofile/ -H "Authorization: Bearer $$ACCESS_TOKEN"
 
