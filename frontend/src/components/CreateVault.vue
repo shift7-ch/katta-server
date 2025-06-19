@@ -797,6 +797,30 @@ async function createVault() {
         if (!uvfVault.value) {
           throw new Error('Invalid state');
         }
+        // / start cipherduck extension
+        if (!uvfVault.value) {
+          throw new Error('Invalid state');
+        }
+        if (!selectedBackend.value) {
+          throw new Error('Invalid state');
+        }
+        if (!selectedRegion.value) {
+          throw new Error('Invalid state');
+        }
+
+        uvfVault.value.metadata.backend.provider = selectedBackend.value.id;
+        uvfVault.value.metadata.backend.defaultPath = selectedBackend.value.bucketPrefix + vault.value.id;
+        uvfVault.value.metadata.backend.nickname = vault.value.name;
+        uvfVault.value.metadata.backend.region = selectedRegion.value;
+        uvfVault.value.metadata.automaticAccessGrant.enabled = automaticAccessGrant.value;
+
+        if(isPermanent.value){
+            uvfVault.value.metadata.backend.username = vaultAccessKeyId.value;
+            uvfVault.value.metadata.backend.password = vaultSecretKey.value;
+            uvfVault.value.metadata.backend.defaultPath = vaultBucketName.value;
+        }
+        // \ end cipherduck extension
+
         ownerGrant.token = await uvfVault.value.encryptForUser(await userdata.ecdhPublicKey, true);
         const recoveryPublicKey = await uvfVault.value.recoveryKey.serializePublicKey();
         vault.value.uvfMetadataFile = await uvfVault.value.createMetadataFile(absBackendBaseURL, vault.value);
@@ -814,19 +838,6 @@ async function createVault() {
     if (!selectedRegion.value) {
       throw new Error('Invalid state');
     }
-
-    uvfVault.value.metadata.backend.provider = selectedBackend.value.id;
-    uvfVault.value.metadata.backend.defaultPath = selectedBackend.value.bucketPrefix + vault.value.id;
-    uvfVault.value.metadata.backend.nickname = vault.value.name;
-    uvfVault.value.metadata.backend.region = selectedRegion.value;
-    uvfVault.value.metadata.automaticAccessGrant.enabled = automaticAccessGrant.value;
-
-    if(isPermanent.value){
-        uvfVault.value.metadata.backend.username = vaultAccessKeyId.value;
-        uvfVault.value.metadata.backend.password = vaultSecretKey.value;
-        uvfVault.value.metadata.backend.defaultPath = vaultBucketName.value;
-    }
-
     // Decision 2024-02-01 upload vault template/create bucket before creating vault in hub and uploading JWE. This is the most delicate operation. No further rollback for now.
     if(isPermanent.value){
        await uploadVaultTemplate();
