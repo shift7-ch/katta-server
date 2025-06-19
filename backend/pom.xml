@@ -120,6 +120,24 @@
       <scope>test</scope>
     </dependency>
     <dependency>
+      <groupId>io.github.coffeelibs</groupId>
+      <artifactId>tiny-oauth2-client</artifactId>
+      <version>0.8.1</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.htmlunit</groupId>
+      <artifactId>htmlunit</artifactId>
+      <version>4.2.0</version>
+      <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>org.eclipse.jetty</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
       <groupId>io.rest-assured</groupId>
       <artifactId>rest-assured</artifactId>
       <scope>test</scope>
@@ -271,26 +289,6 @@
               <goal>integration-test</goal>
               <goal>verify</goal>
             </goals>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-antrun-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>rename-resources</id>
-            <phase>pre-integration-test</phase>
-            <goals>
-              <goal>run</goal>
-            </goals>
-            <configuration>
-              <target>
-                <!-- rename to dev.json because of https://github.com/keycloak/keycloak/issues/37569 -->
-                <move file="${project.build.directory}/classes/dev-realm.json"
-                      tofile="${project.build.directory}/classes/dev.json"/>
-              </target>
-            </configuration>
           </execution>
         </executions>
       </plugin>

@@ -284,16 +284,16 @@
           }
         },
         {
-          "name": "aud-cryptomatorvaults",
+          "name": "aud-cryptomatorhub-system",
           "protocol": "openid-connect",
           "protocolMapper": "oidc-audience-mapper",
           "consentRequired": false,
           "config": {
-            "included.client.audience": "cryptomatorvaults",
+            "included.client.audience": "cryptomatorhub-system",
             "id.token.claim": "false",
+            "lightweight.claim": "false",
             "access.token.claim": "true",
-            "userinfo.token.claim": "false",
-            "multivalued": "true"
+            "introspection.token.claim": "true"
           }
         },
         {
@@ -326,53 +326,11 @@
     },
     {
       "clientId": "cryptomatorvaults",
-      "serviceAccountsEnabled": false,
-      "publicClient": false,
-      "name": "Cryptomator App",
-      "enabled": true,
-      "clientAuthenticatorType": "client-secret",
-      "secret": "",
-      "redirectUris": [
-        "http://127.0.0.1/*"
-      ],
-      "webOrigins": [
-        "+"
-      ],
-      "bearerOnly": false,
-      "frontchannelLogout": false,
+      "name": "Cryptomator S3 Access",
       "standardFlowEnabled": false,
-      "implicitFlowEnabled": false,
-      "directAccessGrantsEnabled": false,
-      "protocol": "openid-connect",
-      "attributes": {
-        "realm_client": "false",
-        "standard.token.exchange.enabled": "true",
-        "post.logout.redirect.uris": "+",
-        "pkce.code.challenge.method": "S256",
-        "oauth2.device.authorization.grant.enabled": false,
-        "oidc.ciba.grant.enabled": false,
-        "login_theme": "",
-        "display.on.consent.screen": "false",
-        "consent.screen.text": "",
-        "backchannel.logout.url": "",
-        "backchannel.logout.session.required": "true",
-        "backchannel.logout.revoke.offline.tokens": "false"
-      },
-      "protocolMappers": [
-        {
-          "name": "aud",
-          "protocol": "openid-connect",
-          "protocolMapper": "oidc-audience-mapper",
-          "consentRequired": false,
-          "config": {
-            "included.client.audience": "cryptomatorvaults",
-            "id.token.claim": "false",
-            "access.token.claim": "true",
-            "userinfo.token.claim": "false",
-            "multivalued": "true"
-          }
-        }
-      ],
+      "serviceAccountsEnabled": false,
+      "publicClient": true,
+      "enabled": true,
       "defaultClientScopes": [
         "basic"
       ],
@@ -388,7 +346,25 @@
       "standardFlowEnabled": false,
       "serviceAccountsEnabled": true,
       "publicClient": false,
-      "enabled": true
+      "enabled": true,
+      "attributes": {
+        "standard.token.exchange.enabled": "true"
+      },
+      "protocolMappers": [
+        {
+          "name": "aud-cryptomatorvaults",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "cryptomatorvaults",
+            "id.token.claim": "false",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "false",
+            "multivalued": "true"
+          }
+        }
+      ]
     },
     {
       "clientId": "cryptomatorhub-cli",

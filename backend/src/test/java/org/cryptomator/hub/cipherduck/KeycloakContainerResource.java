@@ -1,10 +1,8 @@
 package org.cryptomator.hub.cipherduck;
 
 import dasniko.testcontainers.keycloak.KeycloakContainer;
-import io.quarkus.runtime.configuration.ConfigUtils;
 import io.quarkus.test.common.QuarkusTestResourceLifecycleManager;
 
-import java.util.List;
 import java.util.Map;
 
 public class KeycloakContainerResource implements QuarkusTestResourceLifecycleManager {
@@ -16,7 +14,7 @@ public class KeycloakContainerResource implements QuarkusTestResourceLifecycleMa
 				// comment in for local debugging:
 				//				.withDebugFixedPort(5005, false)
 				//				.withCustomCommand("--log-level=DEBUG")
-				.withRealmImportFile("/dev.json");
+				.withRealmImportFile("/cryptomator-realm.json");
 		container.start();
 		return Map.of();
 	}
