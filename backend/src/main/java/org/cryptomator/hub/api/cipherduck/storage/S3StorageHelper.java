@@ -6,6 +6,7 @@ import jakarta.ws.rs.core.Response;
 import org.cryptomator.hub.api.cipherduck.CreateS3STSBucketDto;
 import org.cryptomator.hub.api.cipherduck.StorageProfileS3STSDto;
 import org.jboss.logging.Logger;
+import org.jose4j.base64url.Base64Url;
 import software.amazon.awssdk.auth.credentials.AwsSessionCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -37,6 +38,7 @@ import software.amazon.awssdk.services.s3.model.ServerSideEncryptionRule;
 import software.amazon.awssdk.services.s3.model.VersioningConfiguration;
 
 import java.net.URI;
+import java.util.Base64;
 import java.util.Collections;
 
 public class S3StorageHelper {
@@ -99,10 +101,9 @@ public class S3StorageHelper {
 			// create meta-data for your folder and set content-length to 0
 			final PutObjectRequest request2 = PutObjectRequest.builder()
 					.bucket(bucketName)
-					.key(String.format("d/%s/%s/", dto.rootDirHash().substring(0, 2), dto.rootDirHash().substring(2)))
-					.contentLength(0L)
+					.key(String.format("d/%s/%s/dir.uvf", dto.rootDirHash().substring(0, 2), dto.rootDirHash().substring(2)))
 					.build();
-			s3.putObject(request2, RequestBody.empty());
+			s3.putObject(request2, RequestBody.fromBytes(Base64.getUrlDecoder().decode(dto.dirUvf())));
 
 			// enable versioning on the bucket.
 			{
