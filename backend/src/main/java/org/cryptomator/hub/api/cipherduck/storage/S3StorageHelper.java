@@ -102,11 +102,19 @@ public class S3StorageHelper {
 			//        zip.file('vault.uvf', this.vaultUvf);
 			//        zip.folder('d')?.folder(this.rootDirHash.substring(0, 2))?.folder(this.rootDirHash.substring(2));
 			// create meta-data for your folder and set content-length to 0
-			final PutObjectRequest request2 = PutObjectRequest.builder()
+			final PutObjectRequest placeholderPutRequest = PutObjectRequest.builder()
+					.bucket(bucketName)
+					.key(String.format("d/%s/%s/", dto.rootDirHash().substring(0, 2), dto.rootDirHash().substring(2)))
+					.contentLength(0L)
+					.build();
+			s3.putObject(placeholderPutRequest, RequestBody.empty());
+
+			final PutObjectRequest dirUvfPutRequest = PutObjectRequest.builder()
 					.bucket(bucketName)
 					.key(String.format("d/%s/%s/dir.uvf", dto.rootDirHash().substring(0, 2), dto.rootDirHash().substring(2)))
 					.build();
-			s3.putObject(request2, RequestBody.fromBytes(Base64.getUrlDecoder().decode(dto.dirUvf())));
+			s3.putObject(dirUvfPutRequest, RequestBody.fromBytes(Base64.getUrlDecoder().decode(dto.dirUvf())));
+
 
 			// enable versioning on the bucket.
 			{
