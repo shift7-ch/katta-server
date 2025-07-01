@@ -442,6 +442,7 @@ import { STSClient,AssumeRoleWithWebIdentityCommand } from "@aws-sdk/client-sts"
 import { S3Client, PutObjectCommand, ListObjectsV2Command, GetBucketLocationCommand, HeadBucketCommand } from "@aws-sdk/client-s3";
 import authPromise from '../common/auth';
 import {AxiosError} from 'axios';
+import { base64url } from 'rfc4648';
 // \ end cipherduck extension
 
 enum State {
@@ -910,17 +911,20 @@ async function createVault() {
             throw new Error('Invalid state: Missing SessionToken.');
         }
 
-        const rootDirHash = await uvfVault.value.computeRootDirIdHash(await uvfVault.value.computeRootDirId());
+        const rootDirId = await uvfVault.value.computeRootDirId();
+        const rootDirHash = await uvfVault.value.computeRootDirIdHash(rootDirId);
         if (!rootDirHash) {
             throw new Error('Invalid state: rootDirHash missing.');
         }
         if (!vault.value?.uvfMetadataFile) {
             throw new Error('Invalid state: uvfMetadataFile missing.');
         }
+        const dirFile = await uvfVault.value.encryptFile(rootDirId, uvfVault.value.metadata.initialSeedId);
         await backend.storage.put(vault.value.id, {
             vaultId: vault.value.id,
             storageConfigId: selectedBackend.value.id,
             vaultUvf: vault.value.uvfMetadataFile,
+            dirUvf: base64url.stringify(dirFile, { pad: false }),
             rootDirHash: rootDirHash,
             // https://github.com/awslabs/smithy-typescript/blob/697310da9aec949034f92598f5cefc2cc162ef4d/packages/types/src/identity/awsCredentialIdentity.ts#L24
             awsAccessKey: Credentials.AccessKeyId,

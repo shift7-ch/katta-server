@@ -146,6 +146,7 @@ export type StorageDto = {
     vaultId: string;
     storageConfigId: string;
     vaultUvf: string;
+    dirUvf: string;
     rootDirHash: string;
     awsAccessKey: string;
     awsSecretKey: string;
