@@ -1,6 +1,7 @@
 package cloud.katta;
 
 import dasniko.testcontainers.keycloak.KeycloakContainer;
+import io.restassured.response.ValidatableResponse;
 import jakarta.ws.rs.core.Response;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -443,6 +444,99 @@ public class KattaTokenExchangeIT {
 		}
 	}
 
+	/**
+	 * The following test shows that Keycloak does not down-scope upon token refresh,
+	 * i.e. it seems to ignore the optional scope param defined in Sec. 6 of <a ahref="https://www.rfc-editor.org/rfc/rfc6749#page-47">RFC 6749: The OAuth 2.0 Authorization Framework</a>
+	 * Furthermore, it shows that up-scoping fails.
+	 */
+	@Test
+	public void testNoDownScopingTokenRefresh() throws JSONException {
+		try (final KeycloakContainer container = new KeycloakContainer("quay.io/keycloak/keycloak:26.2.2")
+				// comment in for local debugging:
+				//				.withDebugFixedPort(5005, false)
+				//				.withCustomCommand("--log-level=DEBUG")
+				.withRealmImportFile("/dev.json");
+		) {
+			container.start();
+			System.out.println(container.getAuthServerUrl());
+
+			final Keycloak keycloak = container.getKeycloakAdminClient();
+			final String vaultId = UUID.randomUUID().toString();
+
+			// enable direct access grant for client cryptomator
+			final ClientRepresentation cryptomatorClient = keycloak.realm("cryptomator").clients().findByClientId("cryptomator").getFirst();
+			cryptomatorClient.setDirectAccessGrantsEnabled(true);
+			keycloak.realm("cryptomator").clients().get(cryptomatorClient.getId()).update(cryptomatorClient);
+
+
+			final ValidatableResponse passwordGrant = given()
+					.header("Content-Type", "application/x-www-form-urlencoded")
+					.formParam("client_id", "cryptomator")
+					.formParam("grant_type", "password")
+					.formParam("username", "alice")
+					.formParam("password", "asd")
+					.when()
+					.post(container.getAuthServerUrl() + "/realms/cryptomator/protocol/openid-connect/token")
+					.then()
+					.log().everything()
+					.statusCode(200);
+			final String accessToken = passwordGrant.extract().path("access_token");
+			final String refreshToken = passwordGrant.extract().path("refresh_token");
+			final JSONObject jwt = deocdeJWT(accessToken);
+			assertTrue(jwt.getString("scope").contains("phone"));
+			assertTrue(jwt.getString("scope").contains("email"));
+			assertTrue(jwt.getString("scope").contains("profile"));
+			assertEquals(jwt.getString("scope").split(" ").length, 3);
+			final JSONObject jwtRefresh = deocdeJWT(refreshToken);
+			assertTrue(jwtRefresh.getString("scope").contains("phone"));
+			assertTrue(jwtRefresh.getString("scope").contains("email"));
+			assertTrue(jwtRefresh.getString("scope").contains("profile"));
+			assertTrue(jwtRefresh.getString("scope").contains("basic"));
+			assertTrue(jwtRefresh.getString("scope").contains("web-origins"));
+			assertEquals(jwtRefresh.getString("scope").split(" ").length, 5);
+
+			ValidatableResponse refreshTokenGrant = given()
+					.header("Content-Type", "application/x-www-form-urlencoded")
+					.formParam("client_id", "cryptomator")
+					.formParam("grant_type", "refresh_token")
+					.formParam("refresh_token", refreshToken)
+					.formParam("scope", "phone")
+					.when()
+					.post(container.getAuthServerUrl() + "/realms/cryptomator/protocol/openid-connect/token")
+					.then()
+					.log().everything()
+					.statusCode(200);
+			final String refreshedAccessToken =
+					refreshTokenGrant
+							.extract().path("access_token");
+
+			final JSONObject jwtRefreshed = deocdeJWT(refreshedAccessToken);
+			assertTrue(jwtRefreshed.getString("scope").contains("phone"));
+			assertTrue(jwtRefreshed.getString("scope").contains("email"));
+			assertTrue(jwtRefreshed.getString("scope").contains("profile"));
+			assertEquals(jwtRefreshed.getString("scope").split(" ").length, 3);
+			final JSONObject jwtRefreshedRefresh = deocdeJWT(refreshToken);
+			assertTrue(jwtRefreshedRefresh.getString("scope").contains("phone"));
+			assertTrue(jwtRefreshedRefresh.getString("scope").contains("email"));
+			assertTrue(jwtRefreshedRefresh.getString("scope").contains("profile"));
+			assertTrue(jwtRefreshedRefresh.getString("scope").contains("basic"));
+			assertTrue(jwtRefreshedRefresh.getString("scope").contains("web-origins"));
+			assertEquals(jwtRefreshedRefresh.getString("scope").split(" ").length, 5);
+
+			// up-scoping is not possible
+			given()
+					.header("Content-Type", "application/x-www-form-urlencoded")
+					.formParam("client_id", "cryptomator")
+					.formParam("grant_type", "refresh_token")
+					.formParam("refresh_token", refreshToken)
+					.formParam("scope", "snoopy")
+					.when()
+					.post(container.getAuthServerUrl() + "/realms/cryptomator/protocol/openid-connect/token")
+					.then()
+					.log().everything()
+					.statusCode(400);
+		}
+	}
 
 	// ============================================================
 	// methods below copied from KeycloakCryptomatorVaultsHelper
