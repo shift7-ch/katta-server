@@ -6,7 +6,6 @@ import jakarta.ws.rs.core.Response;
 import org.cryptomator.hub.api.cipherduck.CreateS3STSBucketDto;
 import org.cryptomator.hub.api.cipherduck.StorageProfileS3STSDto;
 import org.jboss.logging.Logger;
-import org.jose4j.base64url.Base64Url;
 import software.amazon.awssdk.auth.credentials.AwsSessionCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -17,6 +16,7 @@ import software.amazon.awssdk.services.s3.S3Configuration;
 import software.amazon.awssdk.services.s3.model.AccelerateConfiguration;
 import software.amazon.awssdk.services.s3.model.BucketAccelerateStatus;
 import software.amazon.awssdk.services.s3.model.BucketVersioningStatus;
+import software.amazon.awssdk.services.s3.model.CreateBucketConfiguration;
 import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
 import software.amazon.awssdk.services.s3.model.GetBucketAccelerateConfigurationRequest;
 import software.amazon.awssdk.services.s3.model.GetBucketAccelerateConfigurationResponse;
@@ -85,7 +85,10 @@ public class S3StorageHelper {
 				throw new ClientErrorException(String.format("Bucket %s already exists or no permission to list.", bucketName), Response.Status.CONFLICT);
 			}
 
-			s3.createBucket(CreateBucketRequest.builder().bucket(bucketName).build());
+			s3.createBucket(CreateBucketRequest.builder()
+					.bucket(bucketName)
+					.createBucketConfiguration(CreateBucketConfiguration.builder().locationConstraint(region).build())
+					.build());
 			if (log.isInfoEnabled()) {
 				log.info(String.format("Upload vault template to %s (%s, %s)", bucketName, dto, storageConfig));
 			}
