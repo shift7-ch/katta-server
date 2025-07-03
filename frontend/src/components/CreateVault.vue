@@ -884,7 +884,7 @@ async function createVault() {
                   "s3:PutObject"
                 ],
                 "Resource": [
-                  "arn:aws:s3:::{}/vault.uvf",
+                  "arn:aws:s3:::{}/*.uvf",
                   "arn:aws:s3:::{}/*/"
                 ]
               }
