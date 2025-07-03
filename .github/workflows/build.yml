@@ -265,3 +265,21 @@ jobs:
           subject-name: ghcr.io/shift7-ch/katta-server
           subject-digest: ${{ steps.inspect.outputs.digest_multiarch }}
           push-to-registry: true
+
+# / katta start addition
+  keycloak-integrationtests:
+    name: Run katta Keycloak Integration Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: 'maven'
+      - name: Run Keycloak integration tests
+        working-directory: keycloak
+        run: >
+          mvn -B clean verify
+# \ katta end addition
