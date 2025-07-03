@@ -11,6 +11,8 @@ public record CreateS3STSBucketDto(
 		UUID storageConfigId,
 		@JsonProperty("vaultUvf")
 		String vaultUvf,
+		@JsonProperty("dirUvf")
+		String dirUvf,
 		@JsonProperty("rootDirHash")
 		String rootDirHash,
 		@JsonProperty("awsAccessKey")
