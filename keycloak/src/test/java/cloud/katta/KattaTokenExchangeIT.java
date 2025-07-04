@@ -90,7 +90,7 @@ public class KattaTokenExchangeIT {
 				// comment in for local debugging:
 				//				.withDebugFixedPort(5005, false)
 				//				.withCustomCommand("--log-level=DEBUG")
-				.withRealmImportFile("/dev.json");
+				.withRealmImportFile("/cryptomator-realm.json");
 		) {
 			container.start();
 			System.out.println(container.getAuthServerUrl());
@@ -241,7 +241,7 @@ public class KattaTokenExchangeIT {
 				// comment in for local debugging:
 				//              .withDebugFixedPort(5005, false)
 				//              .withCustomCommand("--log-level=DEBUG")
-				.withRealmImportFile("/dev.json")
+				.withRealmImportFile("/cryptomator-realm.json")
 		) {
 			container.start();
 			System.out.println(container.getAuthServerUrl());
@@ -323,7 +323,7 @@ public class KattaTokenExchangeIT {
 				// comment in for local debugging:
 				//				.withDebugFixedPort(5005, false)
 				//				.withCustomCommand("--log-level=DEBUG")
-				.withRealmImportFile("/dev.json");
+				.withRealmImportFile("/cryptomator-realm.json");
 		) {
 			container.start();
 			System.out.println(container.getAuthServerUrl());
