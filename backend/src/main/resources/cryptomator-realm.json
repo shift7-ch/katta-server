@@ -333,6 +333,21 @@
       "enabled": true,
       "clientAuthenticatorType": "client-secret",
       "secret": "top-secret",
+      "protocolMappers": [
+        {
+          "name": "aud",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "cryptomatorvaults",
+            "id.token.claim": "false",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "false",
+            "multivalued": "true"
+          }
+        }
+      ],
       "defaultClientScopes": [
         "basic"
       ],

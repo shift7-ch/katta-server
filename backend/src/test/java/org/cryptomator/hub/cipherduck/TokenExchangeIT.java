@@ -59,6 +59,8 @@ public class TokenExchangeIT {
 		Assertions.assertEquals(200, tokenExchangeResponse.statusCode());
 		var exchangedAccessToken = new ObjectMapper().reader().readTree(tokenExchangeResponse.body().asString()).get("access_token").asText();
 		var jwt = JWT.decode(exchangedAccessToken);
+		Assertions.assertEquals(1, jwt.getAudience().size());
+		Assertions.assertEquals("cryptomatorvaults", jwt.getAudience().getFirst());
 		Assertions.assertEquals("cryptomatorvaults", jwt.getClaim("azp").asString());
 		MatcherAssert.assertThat(jwt.getClaim("scope").asString(), Matchers.containsStringIgnoringCase("address"));
 	}
