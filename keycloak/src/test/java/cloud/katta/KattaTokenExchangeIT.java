@@ -129,7 +129,7 @@ public class KattaTokenExchangeIT {
 
 				given()
 						.header("Content-Type", "application/x-www-form-urlencoded")
-						.header("Authorization", "Basic: " + new String(Base64.encode("cryptomatorvaults:".getBytes(StandardCharsets.UTF_8))))
+						.header("Authorization", "Basic: " + new String(Base64.encode("cryptomatorvaults:top-secret".getBytes(StandardCharsets.UTF_8))))
 						.formParam("client_id", "cryptomatorvaults")
 						.formParam("grant_type", "client_credentials")
 						.when()
@@ -144,7 +144,7 @@ public class KattaTokenExchangeIT {
 
 				given()
 						.header("Content-Type", "application/x-www-form-urlencoded")
-						.header("Authorization", "Basic: " + new String(Base64.encode("cryptomatorvaults:".getBytes(StandardCharsets.UTF_8))))
+						.header("Authorization", "Basic: " + new String(Base64.encode("cryptomatorvaults:top-secret".getBytes(StandardCharsets.UTF_8))))
 						.formParam("client_id", "cryptomatorvaults")
 						.formParam("grant_type", "client_credentials")
 						.when()
