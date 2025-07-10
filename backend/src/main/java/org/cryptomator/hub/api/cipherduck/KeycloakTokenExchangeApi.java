@@ -11,7 +11,7 @@ import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 
 @RegisterRestClient(configKey = "keycloak") // quarkus.rest-client.keycloak.url
-@ClientBasicAuth(username = "${hub.keycloak.system-client-id}", password = "${hub.keycloak.system-client-secret}")
+@ClientBasicAuth(username = "${hub.keycloak.oidc.cryptomator-vaults-client-id}", password = "${hub.keycloak.oidc.cryptomator-vaults-client-secret}")
 public interface KeycloakTokenExchangeApi {
 
 	@POST
@@ -22,6 +22,5 @@ public interface KeycloakTokenExchangeApi {
 					  @FormParam("subject_token") String subjectToken,
 					  @FormParam("subject_token_type") String subjectTokenType,
 					  @FormParam("requested_token_type") String requestedTokenType,
-					  @FormParam("scope") String scope,
-					  @FormParam("audience") String audience);
+					  @FormParam("scope") String scope);
 }

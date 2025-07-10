@@ -106,7 +106,6 @@ public class StorageResource {
 				jwt.getRawToken(),
 				"urn:ietf:params:oauth:token-type:access_token",
 				"urn:ietf:params:oauth:token-type:access_token",
-				"email", // TODO: parametrize scope?
-				"cryptomatorvaults"); // TODO: parametrize audience?
+				"address"); // TODO: parametrize scope?
 	}
 }
