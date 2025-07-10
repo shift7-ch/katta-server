@@ -9,6 +9,7 @@ import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.cryptomator.hub.api.GoneException;
@@ -101,11 +102,11 @@ public class StorageResource {
 	@Transactional
 	@Operation(summary = "token exchange", description = "retrieves a downscoped access token for S3.")
 	@APIResponse(responseCode = "200", description = "success")
-	public Response exchangeS3Token() {
+	public Response exchangeS3Token(@QueryParam("vault") String vault) {
 		return tokenExchangeApi.exchange("urn:ietf:params:oauth:grant-type:token-exchange",
 				jwt.getRawToken(),
 				"urn:ietf:params:oauth:token-type:access_token",
 				"urn:ietf:params:oauth:token-type:access_token",
-				"address"); // TODO: parametrize scope?
+				vault);
 	}
 }

@@ -54,6 +54,7 @@ public class TokenExchangeIT {
 		// 2. Call the token exchange endpoint
 		var tokenExchangeResponse = RestAssured.given()
 				.auth().oauth2(initialAccessToken)
+				.queryParam("vault", "address") // "address" is one of cryptomatorvaults' optional client scope. In production there will be scopes for each vault
 				.post("/storage/s3-token");
 		Assertions.assertEquals(200, tokenExchangeResponse.statusCode());
 		var exchangedAccessToken = new ObjectMapper().reader().readTree(tokenExchangeResponse.body().asString()).get("access_token").asText();
