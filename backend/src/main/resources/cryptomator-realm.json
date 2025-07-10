@@ -284,16 +284,16 @@
           }
         },
         {
-          "name": "aud-cryptomatorhub-system",
+          "name": "aud-cryptomatorvaults",
           "protocol": "openid-connect",
           "protocolMapper": "oidc-audience-mapper",
           "consentRequired": false,
           "config": {
-            "included.client.audience": "cryptomatorhub-system",
+            "included.client.audience": "cryptomatorvaults",
             "id.token.claim": "false",
-            "lightweight.claim": "false",
             "access.token.claim": "true",
-            "introspection.token.claim": "true"
+            "userinfo.token.claim": "false",
+            "multivalued": "true"
           }
         },
         {
@@ -329,14 +329,19 @@
       "name": "Cryptomator S3 Access",
       "standardFlowEnabled": false,
       "serviceAccountsEnabled": false,
-      "publicClient": true,
+      "publicClient": false,
       "enabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "top-secret",
       "defaultClientScopes": [
         "basic"
       ],
       "optionalClientScopes": [
         "address"
-      ]
+      ],
+      "attributes": {
+        "standard.token.exchange.enabled": "true"
+      }
     },
     {
       "clientId": "cryptomatorhub-system",
@@ -346,25 +351,7 @@
       "standardFlowEnabled": false,
       "serviceAccountsEnabled": true,
       "publicClient": false,
-      "enabled": true,
-      "attributes": {
-        "standard.token.exchange.enabled": "true"
-      },
-      "protocolMappers": [
-        {
-          "name": "aud-cryptomatorvaults",
-          "protocol": "openid-connect",
-          "protocolMapper": "oidc-audience-mapper",
-          "consentRequired": false,
-          "config": {
-            "included.client.audience": "cryptomatorvaults",
-            "id.token.claim": "false",
-            "access.token.claim": "true",
-            "userinfo.token.claim": "false",
-            "multivalued": "true"
-          }
-        }
-      ]
+      "enabled": true
     },
     {
       "clientId": "cryptomatorhub-cli",
