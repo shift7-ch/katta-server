@@ -91,7 +91,7 @@ public class KattaTokenExchangeIT {
 				// comment in for local debugging:
 				//				.withDebugFixedPort(5005, false)
 				//				.withCustomCommand("--log-level=DEBUG")
-				.withRealmImportFile("/dev.json");
+				.withRealmImportFile("/cryptomator-realm.json");
 		) {
 			container.start();
 			System.out.println(container.getAuthServerUrl());
@@ -130,7 +130,7 @@ public class KattaTokenExchangeIT {
 
 				given()
 						.header("Content-Type", "application/x-www-form-urlencoded")
-						.header("Authorization", "Basic: " + new String(Base64.encode("cryptomatorvaults:".getBytes(StandardCharsets.UTF_8))))
+						.header("Authorization", "Basic: " + new String(Base64.encode("cryptomatorvaults:top-secret".getBytes(StandardCharsets.UTF_8))))
 						.formParam("client_id", "cryptomatorvaults")
 						.formParam("grant_type", "client_credentials")
 						.when()
@@ -145,7 +145,7 @@ public class KattaTokenExchangeIT {
 
 				given()
 						.header("Content-Type", "application/x-www-form-urlencoded")
-						.header("Authorization", "Basic: " + new String(Base64.encode("cryptomatorvaults:".getBytes(StandardCharsets.UTF_8))))
+						.header("Authorization", "Basic: " + new String(Base64.encode("cryptomatorvaults:top-secret".getBytes(StandardCharsets.UTF_8))))
 						.formParam("client_id", "cryptomatorvaults")
 						.formParam("grant_type", "client_credentials")
 						.when()
@@ -242,7 +242,7 @@ public class KattaTokenExchangeIT {
 				// comment in for local debugging:
 				//              .withDebugFixedPort(5005, false)
 				//              .withCustomCommand("--log-level=DEBUG")
-				.withRealmImportFile("/dev.json")
+				.withRealmImportFile("/cryptomator-realm.json")
 		) {
 			container.start();
 			System.out.println(container.getAuthServerUrl());
@@ -289,7 +289,7 @@ public class KattaTokenExchangeIT {
 				final String exchangedAccessTokenClient = given()
 						// https://datatracker.ietf.org/doc/html/rfc6749 OAuth 2.0 authorization, see https://datatracker.ietf.org/doc/html/rfc8693#name-request
 						.formParam("client_id", "cryptomatorvaults") // accessToken containing cryptomatorvaults in aud claim allows this
-						.formParam("client_secret", "")
+						.formParam("client_secret", "top-secret")
 						// https://datatracker.ietf.org/doc/html/rfc8693#name-request / https://www.keycloak.org/securing-apps/token-exchange#_standard-token-exchange-request token-exchange
 						.formParam("grant_type", "urn:ietf:params:oauth:grant-type:token-exchange")
 						.formParam("subject_token_type", "urn:ietf:params:oauth:token-type:access_token")
@@ -324,7 +324,7 @@ public class KattaTokenExchangeIT {
 				// comment in for local debugging:
 				//				.withDebugFixedPort(5005, false)
 				//				.withCustomCommand("--log-level=DEBUG")
-				.withRealmImportFile("/dev.json");
+				.withRealmImportFile("/cryptomator-realm.json");
 		) {
 			container.start();
 			System.out.println(container.getAuthServerUrl());
@@ -360,7 +360,7 @@ public class KattaTokenExchangeIT {
 			{
 				final String exchangedAccessToken = given()
 						.formParam("client_id", "cryptomatorvaults")
-						.formParam("client_secret", "")
+						.formParam("client_secret", "top-secret")
 						.formParam("grant_type", "urn:ietf:params:oauth:grant-type:token-exchange")
 						.formParam("subject_token_type", "urn:ietf:params:oauth:token-type:access_token")
 						.formParam("subject_token", accessToken)
@@ -403,7 +403,7 @@ public class KattaTokenExchangeIT {
 			{
 				final String exchangedAccessToken = given()
 						.formParam("client_id", "cryptomatorvaults")
-						.formParam("client_secret", "")
+						.formParam("client_secret", "top-secret")
 						.formParam("grant_type", "urn:ietf:params:oauth:grant-type:token-exchange")
 						.formParam("subject_token_type", "urn:ietf:params:oauth:token-type:access_token")
 						.formParam("subject_token", accessToken)

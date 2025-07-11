@@ -47,30 +47,10 @@
                                 <resource>
                                     <directory>../backend/src/main/resources/</directory>
                                     <includes>
-                                        <include>dev-realm.json</include>
+                                        <include>cryptomator-realm.json</include>
                                     </includes>
                                 </resource>
                             </resources>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-antrun-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>rename-resources</id>
-                        <phase>validate</phase>
-                        <goals>
-                            <goal>run</goal>
-                        </goals>
-                        <configuration>
-                            <target>
-                                <!-- rename to dev.json because of https://github.com/keycloak/keycloak/issues/37569 -->
-                                <move file="${project.build.directory}/classes/dev-realm.json"
-                                      tofile="${project.build.directory}/classes/dev.json"/>
-                            </target>
                         </configuration>
                     </execution>
                 </executions>

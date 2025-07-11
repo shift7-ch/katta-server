@@ -326,18 +326,12 @@
     },
     {
       "clientId": "cryptomatorvaults",
+      "name": "Cryptomator S3 Access",
       "serviceAccountsEnabled": false,
       "publicClient": false,
-      "name": "Cryptomator App",
       "enabled": true,
       "clientAuthenticatorType": "client-secret",
-      "secret": "",
-      "redirectUris": [
-        "http://127.0.0.1/*"
-      ],
-      "webOrigins": [
-        "+"
-      ],
+      "secret": "top-secret",
       "bearerOnly": false,
       "frontchannelLogout": false,
       "standardFlowEnabled": false,
@@ -345,18 +339,7 @@
       "directAccessGrantsEnabled": false,
       "protocol": "openid-connect",
       "attributes": {
-        "realm_client": "false",
-        "standard.token.exchange.enabled": "true",
-        "post.logout.redirect.uris": "+",
-        "pkce.code.challenge.method": "S256",
-        "oauth2.device.authorization.grant.enabled": false,
-        "oidc.ciba.grant.enabled": false,
-        "login_theme": "",
-        "display.on.consent.screen": "false",
-        "consent.screen.text": "",
-        "backchannel.logout.url": "",
-        "backchannel.logout.session.required": "true",
-        "backchannel.logout.revoke.offline.tokens": "false"
+        "standard.token.exchange.enabled": "true"
       },
       "protocolMappers": [
         {
