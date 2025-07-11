@@ -327,12 +327,20 @@
     {
       "clientId": "cryptomatorvaults",
       "name": "Cryptomator S3 Access",
-      "standardFlowEnabled": false,
       "serviceAccountsEnabled": false,
       "publicClient": false,
       "enabled": true,
       "clientAuthenticatorType": "client-secret",
       "secret": "top-secret",
+      "bearerOnly": false,
+      "frontchannelLogout": false,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "protocol": "openid-connect",
+      "attributes": {
+        "standard.token.exchange.enabled": "true"
+      },
       "protocolMappers": [
         {
           "name": "aud",
@@ -353,10 +361,7 @@
       ],
       "optionalClientScopes": [
         "address"
-      ],
-      "attributes": {
-        "standard.token.exchange.enabled": "true"
-      }
+      ]
     },
     {
       "clientId": "cryptomatorhub-system",
