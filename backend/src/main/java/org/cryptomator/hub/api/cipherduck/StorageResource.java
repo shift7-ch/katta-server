@@ -22,6 +22,7 @@ import org.eclipse.microprofile.jwt.JsonWebToken;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
+import org.keycloak.representations.AccessTokenResponse;
 
 import java.net.URI;
 import java.util.Map;
@@ -102,7 +103,7 @@ public class StorageResource {
 	@Transactional
 	@Operation(summary = "token exchange", description = "retrieves a downscoped access token for S3.")
 	@APIResponse(responseCode = "200", description = "success")
-	public Response exchangeS3Token(@QueryParam("vault") String vault) {
+	public AccessTokenResponse exchangeS3Token(@QueryParam("vault") String vault) {
 		return tokenExchangeApi.exchange("urn:ietf:params:oauth:grant-type:token-exchange",
 				jwt.getRawToken(),
 				"urn:ietf:params:oauth:token-type:access_token",
