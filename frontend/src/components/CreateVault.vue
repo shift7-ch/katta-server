@@ -442,6 +442,7 @@ import { STSClient,AssumeRoleWithWebIdentityCommand } from "@aws-sdk/client-sts"
 import { S3Client, PutObjectCommand, ListObjectsV2Command, GetBucketLocationCommand, HeadBucketCommand } from "@aws-sdk/client-s3";
 import authPromise from '../common/auth';
 import {AxiosError} from 'axios';
+import { base64url } from 'rfc4648';
 // \ end cipherduck extension
 
 enum State {
@@ -797,6 +798,30 @@ async function createVault() {
         if (!uvfVault.value) {
           throw new Error('Invalid state');
         }
+        // / start cipherduck extension
+        if (!uvfVault.value) {
+          throw new Error('Invalid state');
+        }
+        if (!selectedBackend.value) {
+          throw new Error('Invalid state');
+        }
+        if (!selectedRegion.value) {
+          throw new Error('Invalid state');
+        }
+
+        uvfVault.value.metadata.backend.provider = selectedBackend.value.id;
+        uvfVault.value.metadata.backend.defaultPath = selectedBackend.value.bucketPrefix + vault.value.id;
+        uvfVault.value.metadata.backend.nickname = vault.value.name;
+        uvfVault.value.metadata.backend.region = selectedRegion.value;
+        uvfVault.value.metadata.automaticAccessGrant.enabled = automaticAccessGrant.value;
+
+        if(isPermanent.value){
+            uvfVault.value.metadata.backend.username = vaultAccessKeyId.value;
+            uvfVault.value.metadata.backend.password = vaultSecretKey.value;
+            uvfVault.value.metadata.backend.defaultPath = vaultBucketName.value;
+        }
+        // \ end cipherduck extension
+
         ownerGrant.token = await uvfVault.value.encryptForUser(await userdata.ecdhPublicKey, true);
         const recoveryPublicKey = await uvfVault.value.recoveryKey.serializePublicKey();
         vault.value.uvfMetadataFile = await uvfVault.value.createMetadataFile(absBackendBaseURL, vault.value);
@@ -814,19 +839,6 @@ async function createVault() {
     if (!selectedRegion.value) {
       throw new Error('Invalid state');
     }
-
-    uvfVault.value.metadata.backend.provider = selectedBackend.value.id;
-    uvfVault.value.metadata.backend.defaultPath = selectedBackend.value.bucketPrefix + vault.value.id;
-    uvfVault.value.metadata.backend.nickname = vault.value.name;
-    uvfVault.value.metadata.backend.region = selectedRegion.value;
-    uvfVault.value.metadata.automaticAccessGrant.enabled = automaticAccessGrant.value;
-
-    if(isPermanent.value){
-        uvfVault.value.metadata.backend.username = vaultAccessKeyId.value;
-        uvfVault.value.metadata.backend.password = vaultSecretKey.value;
-        uvfVault.value.metadata.backend.defaultPath = vaultBucketName.value;
-    }
-
     // Decision 2024-02-01 upload vault template/create bucket before creating vault in hub and uploading JWE. This is the most delicate operation. No further rollback for now.
     if(isPermanent.value){
        await uploadVaultTemplate();
@@ -872,7 +884,7 @@ async function createVault() {
                   "s3:PutObject"
                 ],
                 "Resource": [
-                  "arn:aws:s3:::{}/vault.uvf",
+                  "arn:aws:s3:::{}/*.uvf",
                   "arn:aws:s3:::{}/*/"
                 ]
               }
@@ -899,17 +911,20 @@ async function createVault() {
             throw new Error('Invalid state: Missing SessionToken.');
         }
 
-        const rootDirHash = await uvfVault.value.computeRootDirIdHash(await uvfVault.value.computeRootDirId());
+        const rootDirId = await uvfVault.value.computeRootDirId();
+        const rootDirHash = await uvfVault.value.computeRootDirIdHash(rootDirId);
         if (!rootDirHash) {
             throw new Error('Invalid state: rootDirHash missing.');
         }
         if (!vault.value?.uvfMetadataFile) {
             throw new Error('Invalid state: uvfMetadataFile missing.');
         }
+        const dirFile = await uvfVault.value.encryptFile(rootDirId, uvfVault.value.metadata.initialSeedId);
         await backend.storage.put(vault.value.id, {
             vaultId: vault.value.id,
             storageConfigId: selectedBackend.value.id,
             vaultUvf: vault.value.uvfMetadataFile,
+            dirUvf: base64url.stringify(dirFile, { pad: false }),
             rootDirHash: rootDirHash,
             // https://github.com/awslabs/smithy-typescript/blob/697310da9aec949034f92598f5cefc2cc162ef4d/packages/types/src/identity/awsCredentialIdentity.ts#L24
             awsAccessKey: Credentials.AccessKeyId,

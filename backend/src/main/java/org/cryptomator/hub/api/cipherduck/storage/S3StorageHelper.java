@@ -16,6 +16,7 @@ import software.amazon.awssdk.services.s3.S3Configuration;
 import software.amazon.awssdk.services.s3.model.AccelerateConfiguration;
 import software.amazon.awssdk.services.s3.model.BucketAccelerateStatus;
 import software.amazon.awssdk.services.s3.model.BucketVersioningStatus;
+import software.amazon.awssdk.services.s3.model.CreateBucketConfiguration;
 import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
 import software.amazon.awssdk.services.s3.model.GetBucketAccelerateConfigurationRequest;
 import software.amazon.awssdk.services.s3.model.GetBucketAccelerateConfigurationResponse;
@@ -37,6 +38,7 @@ import software.amazon.awssdk.services.s3.model.ServerSideEncryptionRule;
 import software.amazon.awssdk.services.s3.model.VersioningConfiguration;
 
 import java.net.URI;
+import java.util.Base64;
 import java.util.Collections;
 
 public class S3StorageHelper {
@@ -83,7 +85,10 @@ public class S3StorageHelper {
 				throw new ClientErrorException(String.format("Bucket %s already exists or no permission to list.", bucketName), Response.Status.CONFLICT);
 			}
 
-			s3.createBucket(CreateBucketRequest.builder().bucket(bucketName).build());
+			s3.createBucket(CreateBucketRequest.builder()
+					.bucket(bucketName)
+					.createBucketConfiguration(CreateBucketConfiguration.builder().locationConstraint(region).build())
+					.build());
 			if (log.isInfoEnabled()) {
 				log.info(String.format("Upload vault template to %s (%s, %s)", bucketName, dto, storageConfig));
 			}
@@ -97,12 +102,19 @@ public class S3StorageHelper {
 			//        zip.file('vault.uvf', this.vaultUvf);
 			//        zip.folder('d')?.folder(this.rootDirHash.substring(0, 2))?.folder(this.rootDirHash.substring(2));
 			// create meta-data for your folder and set content-length to 0
-			final PutObjectRequest request2 = PutObjectRequest.builder()
+			final PutObjectRequest placeholderPutRequest = PutObjectRequest.builder()
 					.bucket(bucketName)
 					.key(String.format("d/%s/%s/", dto.rootDirHash().substring(0, 2), dto.rootDirHash().substring(2)))
 					.contentLength(0L)
 					.build();
-			s3.putObject(request2, RequestBody.empty());
+			s3.putObject(placeholderPutRequest, RequestBody.empty());
+
+			final PutObjectRequest dirUvfPutRequest = PutObjectRequest.builder()
+					.bucket(bucketName)
+					.key(String.format("d/%s/%s/dir.uvf", dto.rootDirHash().substring(0, 2), dto.rootDirHash().substring(2)))
+					.build();
+			s3.putObject(dirUvfPutRequest, RequestBody.fromBytes(Base64.getUrlDecoder().decode(dto.dirUvf())));
+
 
 			// enable versioning on the bucket.
 			{
