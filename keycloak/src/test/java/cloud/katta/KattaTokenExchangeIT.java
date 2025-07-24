@@ -87,7 +87,7 @@ public class KattaTokenExchangeIT {
 	 */
 	@Test
 	public void testDevRealm() throws JSONException {
-		try (final KeycloakContainer container = new KeycloakContainer("quay.io/keycloak/keycloak:26.2.2")
+		try (final KeycloakContainer container = new KeycloakContainer("quay.io/keycloak/keycloak:26.3.1")
 				// comment in for local debugging:
 				//				.withDebugFixedPort(5005, false)
 				//				.withCustomCommand("--log-level=DEBUG")
@@ -236,7 +236,7 @@ public class KattaTokenExchangeIT {
 	 * Serves as regression test.
 	 */
 	@ParameterizedTest
-	@CsvSource({"26.2.2,true"})
+	@CsvSource({"26.3.1,true"})
 	public void inspectTokenExchangeWithAdditionalScope(final String keycloakVersion) throws JSONException {
 		try (final KeycloakContainer container = new KeycloakContainer(String.format("quay.io/keycloak/keycloak:%s", keycloakVersion))
 				// comment in for local debugging:
@@ -320,7 +320,7 @@ public class KattaTokenExchangeIT {
 	@ParameterizedTest
 	@CsvSource({"true,true,true", "false,true,true", "true,false,true", "true,true,false"})
 	public void testKattaTokenExchange(final boolean sharedWithAlice, final boolean addMinioMapper, final boolean addAwsMapper) throws JSONException {
-		try (final KeycloakContainer container = new KeycloakContainer("quay.io/keycloak/keycloak:26.2.2")
+		try (final KeycloakContainer container = new KeycloakContainer("quay.io/keycloak/keycloak:26.3.1")
 				// comment in for local debugging:
 				//				.withDebugFixedPort(5005, false)
 				//				.withCustomCommand("--log-level=DEBUG")
@@ -451,7 +451,7 @@ public class KattaTokenExchangeIT {
 	 */
 	@Test
 	public void testNoDownScopingTokenRefresh() throws JSONException {
-		try (final KeycloakContainer container = new KeycloakContainer("quay.io/keycloak/keycloak:26.2.2")
+		try (final KeycloakContainer container = new KeycloakContainer("quay.io/keycloak/keycloak:26.3.1")
 				// comment in for local debugging:
 				//				.withDebugFixedPort(5005, false)
 				//				.withCustomCommand("--log-level=DEBUG")
