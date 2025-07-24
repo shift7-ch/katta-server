@@ -34,7 +34,7 @@ public class KeycloakSessionAndTokenTimeoutsSandboxIT {
 	 * @see <a href="https://stackoverflow.com/questions/52040265/how-to-specify-refresh-tokens-lifespan-in-keycloak/54679852#54679852">How to specify refresh tokens lifespan in Keycloak</a>
 	 */
 	@ParameterizedTest
-	@CsvSource({"25.0.6,5"})
+	@CsvSource({"26.3.1,5"})
 	public void inspectRefreshWithRespectToSsoSessionMaxLifespan(final String keycloakVersion, final int ssoSessionMaxLifespan) throws JSONException, InterruptedException {
 		try (final KeycloakContainer container = new KeycloakContainer(String.format("quay.io/keycloak/keycloak:%s", keycloakVersion))
 				.withFeaturesEnabled("token-exchange", "admin-fine-grained-authz")
