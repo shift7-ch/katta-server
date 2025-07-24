@@ -76,7 +76,7 @@
 import { ExclamationTriangleIcon } from '@heroicons/vue/20/solid';
 import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import backend, { NotFoundError, StorageProfileDto as StorageProfileDto2 } from '../../common/backend';
+import backend, { NotFoundError, StorageProfileDto } from '../../common/backend';
 import FetchError from '../FetchError.vue';
 import { openapi, OpenapiType, OpenapiSchema, OpenapiSchemas } from '../../openapi/index';
 
@@ -84,21 +84,25 @@ import { openapi, OpenapiType, OpenapiSchema, OpenapiSchemas } from '../../opena
 const { t } = useI18n({ useScope: 'global' });
 
 const props = defineProps<{
-  vaultId: string
+  storageprofileId: string
+}>();
+
+const emit = defineEmits<{
+  storageprofileUpdated: [updateStorageprofile: StorageProfileDto]
 }>();
 
 
 const onFetchError = ref<Error | null>();
 const allowRetryFetch = computed(() => onFetchError.value != null && !(onFetchError.value instanceof NotFoundError));  //fetch requests either list something, or query from th storageprofile In the latter, a 404 indicates the vault does not exists anymore.
 
-const storageprofile = ref<StorageProfileDto2>();
+const storageprofile = ref<StorageProfileDto>();
 
 onMounted(fetchData);
 
 async function fetchData() {
   onFetchError.value = null;
   try {
-    storageprofile.value = await backend.storageprofiles.getSingle(props.vaultId);
+    storageprofile.value = await backend.storageprofiles.getSingle(props.storageprofileId);
   } catch (error) {
     console.error('Fetching data failed.', error);
     onFetchError.value = error instanceof Error ? error : new Error('Unknown Error');

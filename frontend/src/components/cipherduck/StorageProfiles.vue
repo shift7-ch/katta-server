@@ -72,7 +72,7 @@
   </div>
 
   <SlideOver v-if="selectedStorageprofile != null" ref="StorageProfileDetailsSlideOver" :title="selectedStorageprofile.name" @close="selectedStorageprofile = null">
-    <StorageProfileDetails :vault-id="selectedStorageprofile.id" @storageprofile-updated="v => onSelectedStorageProfileUpdate(v)"></StorageProfileDetails>
+    <StorageProfileDetails :storageprofile-id="selectedStorageprofile.id" @storageprofile-updated="v => onSelectedStorageprofileUpdate(v)"></StorageProfileDetails>
   </SlideOver>
 </template>
 
@@ -124,7 +124,7 @@ function showStorageProfileDetails(storageprofile: StorageProfileDto) {
   nextTick(() => StorageProfileDetailsSlideOver.value?.show());
 }
 
-async function onSelectedStorageProfileUpdate(storageprofile: StorageProfileDto) {
+async function onSelectedStorageprofileUpdate(storageprofile: StorageProfileDto) {
   await fetchData();
   if (storageprofiles.value == null || storageprofile.id !== selectedStorageprofile.value?.id) {
     return;
