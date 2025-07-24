@@ -1,10 +1,8 @@
 package org.cryptomator.hub.cipherduck;
 
 import dasniko.testcontainers.keycloak.KeycloakContainer;
-import io.quarkus.runtime.configuration.ConfigUtils;
 import io.quarkus.test.common.QuarkusTestResourceLifecycleManager;
 
-import java.util.List;
 import java.util.Map;
 
 public class KeycloakContainerResource implements QuarkusTestResourceLifecycleManager {
@@ -12,15 +10,11 @@ public class KeycloakContainerResource implements QuarkusTestResourceLifecycleMa
 
 	@Override
 	public Map<String, String> start() {
-		container = new KeycloakContainer("quay.io/keycloak/keycloak:26.1.5")
+		container = new KeycloakContainer("quay.io/keycloak/keycloak:26.2.2")
 				// comment in for local debugging:
 				//				.withDebugFixedPort(5005, false)
 				//				.withCustomCommand("--log-level=DEBUG")
-				.withRealmImportFile("/dev.json")
-				// N.B. remove once we're Keycloak >= 26, see https://github.com/dasniko/testcontainers-keycloak/issues/152
-				.withEnv("KEYCLOAK_ADMIN", "admin")
-				.withEnv("KEYCLOAK_ADMIN_PASSWORD", "admin");
-
+				.withRealmImportFile("/cryptomator-realm.json");
 		container.start();
 		return Map.of();
 	}

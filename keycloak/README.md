@@ -36,4 +36,4 @@ The Cryptomator Theme is [based on the Base theme](https://github.com/keycloak/k
 
 Release builds are created for amd64 and arm64 by triggering [this GitHub Workflow](https://github.com/cryptomator/hub/actions/workflows/keycloak.yml).
 
-Please use a tag based on the base image, so we can easily know that e.g. `ghcr.io/cryptomator/keycloak:19.0.1.4` is based on `quay.io/keycloak/keycloak:19.0.1`.
+Please use a tag based on the base image, so we can easily know that e.g. `ghcr.io/shift7-ch/keycloak:19.0.1.4` is based on `quay.io/keycloak/keycloak:19.0.1`.

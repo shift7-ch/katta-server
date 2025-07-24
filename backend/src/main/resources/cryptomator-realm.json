@@ -1,0 +1,390 @@
+{
+  "id": "cryptomator",
+  "realm": "cryptomator",
+  "displayName": "Cryptomator Hub",
+  "loginTheme": "cryptomator",
+  "enabled": true,
+  "sslRequired": "external",
+  "defaultRole": {
+    "name": "user",
+    "description": "User"
+  },
+  "roles": {
+    "realm": [
+      {
+        "name": "user",
+        "description": "User",
+        "composite": false
+      },
+      {
+        "name": "create-vaults",
+        "description": "Can create vaults",
+        "composite": false
+      },
+      {
+        "name": "admin",
+        "description": "Administrator",
+        "composite": true,
+        "composites": {
+          "realm": [
+            "user",
+            "create-vaults"
+          ],
+          "client": {
+            "realm-management": [
+              "realm-admin"
+            ]
+          }
+        }
+      }
+    ]
+  },
+  "users": [
+    {
+      "username": "admin",
+      "firstName": "admin",
+      "lastName": "admin",
+      "email": "admin@localhost",
+      "enabled": true,
+      "attributes": {
+        "picture": "https://cryptomator.org/img/logo.svg"
+      },
+      "credentials": [
+        {
+          "type": "password",
+          "value": "admin"
+        }
+      ],
+      "realmRoles": [
+        "admin"
+      ]
+    },
+    {
+      "username": "alice",
+      "firstName": "alice",
+      "lastName": "alice",
+      "email": "alice@localhost",
+      "enabled": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "asd"
+        }
+      ],
+      "realmRoles": [
+        "user",
+        "create-vaults"
+      ]
+    },
+    {
+      "username": "bob",
+      "firstName": "bob",
+      "lastName": "bob",
+      "email": "bob@localhost",
+      "enabled": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "asd"
+        }
+      ],
+      "realmRoles": [
+        "user",
+        "create-vaults"
+      ]
+    },
+    {
+      "username": "carol",
+      "firstName": "carol",
+      "lastName": "carol",
+      "email": "carol@localhost",
+      "enabled": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "asd"
+        }
+      ],
+      "realmRoles": [
+        "user"
+      ],
+      "groups": [
+        "/groupies"
+      ]
+    },
+    {
+      "username": "dave",
+      "firstName": "dave",
+      "lastName": "dave",
+      "email": "dave@localhost",
+      "enabled": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "asd"
+        }
+      ],
+      "realmRoles": [
+        "user"
+      ],
+      "groups": [
+        "/groupies"
+      ]
+    },
+    {
+      "username": "erin",
+      "firstName": "erin",
+      "lastName": "erin",
+      "email": "erin@localhost",
+      "enabled": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "asd"
+        }
+      ],
+      "realmRoles": [
+        "user"
+      ],
+      "groups": [
+        "/groupies"
+      ]
+    },
+    {
+      "username": "system",
+      "email": "system@localhost",
+      "enabled": true,
+      "serviceAccountClientId": "cryptomatorhub-system",
+      "attributes": {
+        "picture": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGZpbGw9IiMwMDAiIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj4KCTxtYXNrIGlkPSJjbGlwIj4KCQk8Y2lyY2xlIGZpbGw9IiNGRkYiIHI9IjUwIiBjeD0iNTAiIGN5PSI1MCIvPgoJCTxnIGZpbGw9IiMwMDAiPgoJCTxjaXJjbGUgcj0iMjUiIGN4PSI1MCIgY3k9IjUwIiAvPgoJCTxjaXJjbGUgcj0iMTIiIGN4PSIwIiBjeT0iNTAiIC8+CgkJPGNpcmNsZSByPSIxMiIgY3g9IjUwIiBjeT0iMCIgLz4KCQk8Y2lyY2xlIHI9IjEyIiBjeD0iODUiIGN5PSIxNSIgLz4KCQk8Y2lyY2xlIHI9IjEyIiBjeD0iMTAwIiBjeT0iNTAiIC8+CgkJPGNpcmNsZSByPSIxMiIgY3g9Ijg1IiBjeT0iODUiIC8+CgkJPGNpcmNsZSByPSIxMiIgY3g9IjUwIiBjeT0iMTAwIiAvPgoJCTxjaXJjbGUgcj0iMTIiIGN4PSIxNSIgY3k9Ijg1IiAvPgoJCTxjaXJjbGUgcj0iMTIiIGN4PSIwIiBjeT0iNTAiIC8+CgkJPGNpcmNsZSByPSIxMiIgY3g9IjE1IiBjeT0iMTUiIC8+CgkJPC9nPgoJPC9tYXNrPgoJPGNpcmNsZSByPSI1MCIgY3g9IjUwIiBjeT0iNTAiIG1hc2s9InVybCgjY2xpcCkiIC8+Cjwvc3ZnPg=="
+      },
+      "clientRoles": {
+        "realm-management": [
+          "realm-admin"
+        ]
+      }
+    },
+    {
+      "username": "cli",
+      "email": "cli@localhost",
+      "enabled": true,
+      "serviceAccountClientId": "cryptomatorhub-cli",
+      "attributes": {
+        "picture": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj4KICAgIDxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9ImJsYWNrIi8+CiAgICA8cGF0aCBzdHJva2Utd2lkdGg9IjUiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgZD0iTTMwIDM3LjUgbDE1IDEyLjUgbC0xNSAxMi41ICBtMjAgMCBoMjAiIC8+Cjwvc3ZnPgo="
+      },
+      "realmRoles": [
+        "user",
+        "create-vaults"
+      ],
+      "clientRoles": {
+        "realm-management": [
+          "manage-users",
+          "view-users"
+        ]
+      }
+    }
+  ],
+  "groups": [
+    {
+      "name": "groupies",
+      "path": "/groupies",
+      "subGroups": [],
+      "attributes": {},
+      "realmRoles": [],
+      "clientRoles": {}
+    }
+  ],
+  "scopeMappings": [
+    {
+      "client": "cryptomatorhub",
+      "roles": [
+        "user",
+        "admin"
+      ]
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "cryptomatorhub",
+      "serviceAccountsEnabled": false,
+      "publicClient": true,
+      "name": "Cryptomator Hub",
+      "enabled": true,
+      "redirectUris": [
+        "http://localhost:8080/*",
+        "http://localhost:3000/*"
+      ],
+      "webOrigins": [
+        "+"
+      ],
+      "bearerOnly": false,
+      "frontchannelLogout": false,
+      "protocol": "openid-connect",
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      },
+      "protocolMappers": [
+        {
+          "name": "realm roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "access.token.claim": "true",
+            "claim.name": "realm_access.roles",
+            "jsonType.label": "String",
+            "multivalued": "true"
+          }
+        },
+        {
+          "name": "client roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-client-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "access.token.claim": "true",
+            "claim.name": "resource_access.${client_id}.roles",
+            "jsonType.label": "String",
+            "multivalued": "true",
+            "usermodel.clientRoleMapping.clientId": "cryptomatorhub"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "cryptomator",
+      "serviceAccountsEnabled": false,
+      "publicClient": true,
+      "name": "Cryptomator App",
+      "enabled": true,
+      "redirectUris": [
+        "http://127.0.0.1/*"
+      ],
+      "webOrigins": [
+        "+"
+      ],
+      "bearerOnly": false,
+      "frontchannelLogout": false,
+      "protocol": "openid-connect",
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      },
+      "protocolMappers": [
+        {
+          "name": "aud",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "cryptomator",
+            "id.token.claim": "false",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "false",
+            "multivalued": "true"
+          }
+        },
+        {
+          "name": "aud-cryptomatorvaults",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "cryptomatorvaults",
+            "id.token.claim": "false",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "false",
+            "multivalued": "true"
+          }
+        },
+        {
+          "name": "realm roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "access.token.claim": "true",
+            "claim.name": "realm_access.roles",
+            "jsonType.label": "String",
+            "multivalued": "true"
+          }
+        }
+      ],
+      "defaultClientScopes": [
+        "basic",
+        "web-origins",
+        "phone",
+        "profile",
+        "email"
+      ],
+      "optionalClientScopes": [
+        "acr",
+        "address",
+        "offline_access",
+        "microprofile-jwt",
+        "roles"
+      ]
+    },
+    {
+      "clientId": "cryptomatorvaults",
+      "name": "Cryptomator S3 Access",
+      "serviceAccountsEnabled": false,
+      "publicClient": false,
+      "enabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "top-secret",
+      "bearerOnly": false,
+      "frontchannelLogout": false,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "protocol": "openid-connect",
+      "attributes": {
+        "standard.token.exchange.enabled": "true"
+      },
+      "protocolMappers": [
+        {
+          "name": "aud",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "cryptomatorvaults",
+            "id.token.claim": "false",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "false",
+            "multivalued": "true"
+          }
+        }
+      ],
+      "defaultClientScopes": [
+        "basic"
+      ],
+      "optionalClientScopes": [
+        "address"
+      ]
+    },
+    {
+      "clientId": "cryptomatorhub-system",
+      "name": "Cryptomator Hub System",
+      "clientAuthenticatorType": "client-secret",
+      "secret": "top-secret",
+      "standardFlowEnabled": false,
+      "serviceAccountsEnabled": true,
+      "publicClient": false,
+      "enabled": true
+    },
+    {
+      "clientId": "cryptomatorhub-cli",
+      "name": "Cryptomator Hub CLI",
+      "clientAuthenticatorType": "client-secret",
+      "secret": "top-secret",
+      "standardFlowEnabled": false,
+      "serviceAccountsEnabled": true,
+      "publicClient": false,
+      "enabled": true
+    }
+  ],
+  "browserSecurityHeaders": {
+    "contentSecurityPolicy": "frame-src 'self'; frame-ancestors 'self' http://localhost:*; object-src 'none';"
+  }
+}

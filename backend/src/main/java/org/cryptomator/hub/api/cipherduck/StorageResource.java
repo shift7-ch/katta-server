@@ -4,10 +4,12 @@ import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.ClientErrorException;
+import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.cryptomator.hub.api.GoneException;
@@ -15,10 +17,12 @@ import org.cryptomator.hub.cipherduck.KeycloakCryptomatorVaultsHelper;
 import org.cryptomator.hub.entities.Group;
 import org.cryptomator.hub.entities.User;
 import org.cryptomator.hub.entities.Vault;
+import org.cryptomator.hub.entities.cipherduck.AccessTokenResponse;
 import org.cryptomator.hub.entities.cipherduck.StorageProfile;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.rest.client.inject.RestClient;
 
 import java.net.URI;
 import java.util.Map;
@@ -49,6 +53,9 @@ public class StorageResource {
 
 	@Inject
 	Group.Repository groupRepo;
+
+	@RestClient
+	KeycloakTokenExchangeApi tokenExchangeApi;
 
 
 	@PUT
@@ -87,5 +94,20 @@ public class StorageResource {
 		keycloakCryptomatorVaultsHelper.keycloakPrepareVault(vaultId.toString(), (StorageProfileS3STSDto) storageProfileDto, jwt.getSubject());
 
 		return Response.created(URI.create(".")).build();
+	}
+
+	@POST
+	@Path("/s3-token")
+	@RolesAllowed("user")
+	@Produces(MediaType.APPLICATION_JSON)
+	@Transactional
+	@Operation(summary = "token exchange", description = "retrieves a downscoped access token for S3.")
+	@APIResponse(responseCode = "200", description = "success")
+	public AccessTokenResponse exchangeS3Token(@QueryParam("vault") String vault) {
+		return tokenExchangeApi.exchange("urn:ietf:params:oauth:grant-type:token-exchange",
+				jwt.getRawToken(),
+				"urn:ietf:params:oauth:token-type:access_token",
+				"urn:ietf:params:oauth:token-type:access_token",
+				vault);
 	}
 }
