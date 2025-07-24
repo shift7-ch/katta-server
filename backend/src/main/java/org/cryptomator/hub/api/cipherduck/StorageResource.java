@@ -17,12 +17,12 @@ import org.cryptomator.hub.cipherduck.KeycloakCryptomatorVaultsHelper;
 import org.cryptomator.hub.entities.Group;
 import org.cryptomator.hub.entities.User;
 import org.cryptomator.hub.entities.Vault;
+import org.cryptomator.hub.entities.cipherduck.AccessTokenResponse;
 import org.cryptomator.hub.entities.cipherduck.StorageProfile;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
-import org.keycloak.representations.AccessTokenResponse;
 
 import java.net.URI;
 import java.util.Map;
