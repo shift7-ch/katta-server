@@ -46,26 +46,24 @@ jobs:
         run: npm ci --ignore-scripts
       - name: Build and test frontend
         working-directory: frontend
-        run: npm test
+        run: npm run test:coverage
       - name: Deploy frontend
         working-directory: frontend
         run: npm run dist
-      # / cipherduck start commented out
-      #      - name: SonarCloud Scan Frontend
-      #        uses: SonarSource/sonarqube-scan-action@v4
-      #        with:
-      #          projectBaseDir: frontend
-      #          args: >
-      #            -Dsonar.organization=cryptomator
-      #            -Dsonar.projectKey=cryptomator_hub_frontend
-      #            -Dsonar.typescript.tsconfigPath=tsconfig.json
-      #            -Dsonar.sources=src/
-      #            -Dsonar.tests=test/
-      #            -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
-      #        env:
-      #          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
-      #          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      # \ cipherduck start commented out
+      - name: SonarCloud Scan Frontend
+        uses: SonarSource/sonarqube-scan-action@v5
+        with:
+          projectBaseDir: frontend
+          args: >
+            -Dsonar.organization=cryptomator
+            -Dsonar.projectKey=cryptomator_hub_frontend
+            -Dsonar.typescript.tsconfigPath=tsconfig.json
+            -Dsonar.sources=src/
+            -Dsonar.tests=test/
+            -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       - uses: actions/setup-java@v4
         with:
           distribution: 'temurin'

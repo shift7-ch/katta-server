@@ -61,9 +61,9 @@ export class MemberKey {
    * @returns new key
    */
   public static async load(encodedKey: string): Promise<MemberKey> {
-    let rawKey: Uint8Array = new Uint8Array();
+    let rawKey: Uint8Array<ArrayBuffer> = new Uint8Array();
     try {
-      rawKey = base64.parse(encodedKey);
+      rawKey = base64.parse(encodedKey).slice();
       const memberKey = await crypto.subtle.importKey('raw', rawKey, MemberKey.KEY_DESIGNATION, true, MemberKey.KEY_USAGE);
       return new MemberKey(memberKey);
     } finally {
@@ -108,7 +108,7 @@ export class RecoveryKey {
    * @param publicKey the PKCS8-encoded private key
    * @returns recovery key for encrypting vault metadata
    */
-  public static async import(publicKey: CryptoKey | Uint8Array, privateKey?: CryptoKey | Uint8Array): Promise<RecoveryKey> {
+  public static async import(publicKey: CryptoKey | Uint8Array<ArrayBuffer>, privateKey?: CryptoKey | Uint8Array<ArrayBuffer>): Promise<RecoveryKey> {
     if (publicKey instanceof Uint8Array) {
       publicKey = await crypto.subtle.importKey('spki', publicKey, RecoveryKey.KEY_DESIGNATION, true, []);
     }
@@ -139,7 +139,7 @@ export class RecoveryKey {
     }
     const unpadded = decoded.subarray(0, -paddingLength);
     const checksum = unpadded.subarray(-2);
-    const rawkey = unpadded.subarray(0, -2);
+    const rawkey = unpadded.slice(0, -2);
     const crc32 = CRC32.compute(rawkey);
     if (checksum[0] !== (crc32 & 0xFF)
       || checksum[1] !== (crc32 >> 8 & 0xFF)) {
@@ -228,10 +228,10 @@ export class VaultMetadata {
     // / start cipherduck extension
     readonly backend: VaultMetadataJWEBackendDto,
     // \ end cipherduck extension
-    readonly seeds: Map<number, Uint8Array>,
+    readonly seeds: Map<number, Uint8Array<ArrayBuffer>>,
     readonly initialSeedId: number,
     readonly latestSeedId: number,
-    readonly kdfSalt: Uint8Array) {
+    readonly kdfSalt: Uint8Array<ArrayBuffer>) {
     if (!seeds.has(initialSeedId)) {
       throw new Error('Initial seed is missing');
     }
@@ -250,13 +250,13 @@ export class VaultMetadata {
     , backend: VaultMetadataJWEBackendDto
     // \ end cipherduck extension
     ): Promise<VaultMetadata> {
-    const initialSeedId = new Uint32Array(1);
+    const initialSeedId = new Uint8Array(4);
     const initialSeedValue = new Uint8Array(32);
     const kdfSalt = new Uint8Array(32);
     crypto.getRandomValues(initialSeedId);
     crypto.getRandomValues(initialSeedValue);
     crypto.getRandomValues(kdfSalt);
-    const initialSeedNo = initialSeedId[0];
+    const initialSeedNo = new DataView(initialSeedId.buffer).getInt32(0, false);
     const seeds: Map<number, Uint8Array> = new Map<number, Uint8Array>();
     seeds.set(initialSeedNo, initialSeedValue);
     return new VaultMetadata(automaticAccessGrant,
@@ -266,14 +266,14 @@ export class VaultMetadata {
       seeds, initialSeedNo, initialSeedNo, kdfSalt);
   }
 
-  public get initialSeed(): Uint8Array {
+  public get initialSeed(): Uint8Array<ArrayBuffer> {
     if (!this.seeds.has(this.initialSeedId)) {
       throw new Error('Illegal State');
     }
     return this.seeds.get(this.initialSeedId)!;
   }
 
-  public get latestSeed(): Uint8Array {
+  public get latestSeed(): Uint8Array<ArrayBuffer> {
     if (!this.seeds.has(this.latestSeedId)) {
       throw new Error('Illegal State');
     }
@@ -309,15 +309,15 @@ export class VaultMetadata {
   }
 
   public static async createFromJson(payload: MetadataPayload): Promise<VaultMetadata> {
-    const seeds = new Map<number, Uint8Array>();
+    const seeds = new Map<number, Uint8Array<ArrayBuffer>>();
     for (const key in payload.seeds) {
       const num = parseSeedId(key);
-      const value = base64url.parse(payload.seeds[key], { loose: true });
+      const value = base64url.parse(payload.seeds[key], { loose: true }).slice();
       seeds.set(num, value);
     }
     const initialSeedId = parseSeedId(payload['initialSeed']);
     const latestSeedId = parseSeedId(payload['latestSeed']);
-    const kdfSalt = base64url.parse(payload['kdfSalt'], { loose: true });
+    const kdfSalt = base64url.parse(payload['kdfSalt'], { loose: true }).slice();
     return new VaultMetadata(
       payload['org.cryptomator.automaticAccessGrant'],
       // / start cipherduck extension
@@ -418,7 +418,7 @@ export class UniversalVaultFormat implements AccessTokenProducing, VaultTemplate
     const metadata = await VaultMetadata.decryptWithMemberKey(vault.uvfMetadataFile, memberKey);
     let recoveryKey: RecoveryKey;
     if (payload.recoveryKey) {
-      recoveryKey = await RecoveryKey.import(recoveryPublicKey, base64.parse(payload.recoveryKey));
+      recoveryKey = await RecoveryKey.import(recoveryPublicKey, base64.parse(payload.recoveryKey).slice());
     } else {
       recoveryKey = await RecoveryKey.import(recoveryPublicKey);
     }
@@ -460,20 +460,20 @@ export class UniversalVaultFormat implements AccessTokenProducing, VaultTemplate
     return this.metadata.encrypt(apiURL, vault, this.memberKey, this.recoveryKey);
   }
 
-  public async computeRootDirId(): Promise<Uint8Array> {
+  public async computeRootDirId(): Promise<Uint8Array<ArrayBuffer>> {
     const initialSeed = await crypto.subtle.importKey('raw', this.metadata.initialSeed, { name: 'HKDF' }, false, ['deriveBits']);
     const rootDirId = await crypto.subtle.deriveBits({ name: 'HKDF', hash: 'SHA-512', salt: this.metadata.kdfSalt, info: UTF8.encode('rootDirId') }, initialSeed, 256);
     return new Uint8Array(rootDirId);
   }
 
-  public async computeRootDirIdHash(rootDirId: Uint8Array): Promise<string> {
+  public async computeRootDirIdHash(rootDirId: Uint8Array<ArrayBuffer>): Promise<string> {
     const initialSeed = await crypto.subtle.importKey('raw', this.metadata.initialSeed, { name: 'HKDF' }, false, ['deriveKey']);
     const hmacKey = await crypto.subtle.deriveKey({ name: 'HKDF', hash: 'SHA-512', salt: this.metadata.kdfSalt, info: UTF8.encode('hmac') }, initialSeed, { name: 'HMAC', hash: 'SHA-256', length: 512 }, false, ['sign']);
     const rootDirHash = await crypto.subtle.sign('HMAC', hmacKey, rootDirId);
     return base32.stringify(new Uint8Array(rootDirHash).slice(0, 20));
   }
 
-  public async encryptFile(content: Uint8Array, seedId: number): Promise<Uint8Array> {
+  public async encryptFile(content: Uint8Array<ArrayBuffer>, seedId: number): Promise<Uint8Array> {
     const seed = this.metadata.seeds.get(seedId);
     if (!seed) {
       throw new Error('Seed not found');
@@ -522,7 +522,7 @@ export class UniversalVaultFormat implements AccessTokenProducing, VaultTemplate
   }
 
   /** @inheritdoc */
-  public async encryptForUser(userPublicKey: CryptoKey | Uint8Array, isOwner?: boolean): Promise<string> {
+  public async encryptForUser(userPublicKey: CryptoKey | Uint8Array<ArrayBuffer>, isOwner?: boolean): Promise<string> {
     const payload: UvfAccessTokenPayload = {
       key: await this.memberKey.serializeKey(),
       recoveryKey: isOwner && this.recoveryKey.privateKey ? await this.recoveryKey.serializePrivateKey() : undefined
@@ -532,7 +532,7 @@ export class UniversalVaultFormat implements AccessTokenProducing, VaultTemplate
 }
 
 /**
- * Parses the 4 byte seed id from its base64url-encoded form to a 32 bit integer.
+ * Decodes a base64url-encoded 32 bit big endian number.
  * @param encoded base64url-encoded seed ID
  * @returns a 32 bit number
  * @throws Error if the input is invalid
@@ -542,16 +542,16 @@ function parseSeedId(encoded: string): number {
   if (bytes.length != 4) {
     throw new Error('Malformed seed ID');
   }
-  return new Uint32Array(bytes.buffer)[0];
+  return new DataView(bytes.buffer).getInt32(0, false);
 }
 
 /**
- * Encodes a 32 bit integer denoting the 4 byte seed id as a base64url-encoded string.
+ * Encodes the seed ID as a 32 bit big endian integer and base64url-encodes it.
  * @param id numeric seed ID
  * @returns a base6url-encoded seed ID
  */
 function stringifySeedId(id: number): string {
-  const ints = new Uint32Array([id]);
-  const bytes = new Uint8Array(ints.buffer);
+  const bytes = new Uint8Array(4);
+  new DataView(bytes.buffer).setInt32(0, id, false);
   return base64url.stringify(bytes, { pad: false });
 }

@@ -189,8 +189,8 @@ describe('UVF', () => {
 
       expect(uvf).to.be.not.null;
       expect(uvf.metadata).to.be.not.null;
-      expect(uvf.metadata.initialSeedId).to.eq(4072093980);
-      expect(uvf.metadata.latestSeedId).to.eq(369695552);
+      expect(uvf.metadata.initialSeedId).to.eq(473544690);
+      expect(uvf.metadata.latestSeedId).to.eq(1075513622);
       expect(base64url.stringify(uvf.metadata.kdfSalt, { pad: false })).to.eq('NIlr89R7FhochyP4yuXZmDqCnQ0dBB3UZ2D-6oiIjr8');
       expect(base64url.stringify(uvf.metadata.initialSeed, { pad: false })).to.eq('ypeBEsobvcr6wjGzmiPcTaeG7_gUfE5yuYB3ha_uSLs');
       expect(base64url.stringify(uvf.metadata.latestSeed, { pad: false })).to.eq('Ln0sA6lQeuJl7PW1NWiFpTOTogKdJBOUmXJloaJa78Y');
@@ -207,8 +207,8 @@ describe('UVF', () => {
 
       expect(uvf).to.be.not.null;
       expect(uvf.metadata).to.be.not.null;
-      expect(uvf.metadata.initialSeedId).to.eq(4072093980);
-      expect(uvf.metadata.latestSeedId).to.eq(369695552);
+      expect(uvf.metadata.initialSeedId).to.eq(473544690);
+      expect(uvf.metadata.latestSeedId).to.eq(1075513622);
       expect(base64url.stringify(uvf.metadata.kdfSalt, { pad: false })).to.eq('NIlr89R7FhochyP4yuXZmDqCnQ0dBB3UZ2D-6oiIjr8');
       expect(base64url.stringify(uvf.metadata.initialSeed, { pad: false })).to.eq('ypeBEsobvcr6wjGzmiPcTaeG7_gUfE5yuYB3ha_uSLs');
       expect(base64url.stringify(uvf.metadata.latestSeed, { pad: false })).to.eq('Ln0sA6lQeuJl7PW1NWiFpTOTogKdJBOUmXJloaJa78Y');
@@ -280,14 +280,14 @@ describe('UVF', () => {
       });
 
       it('computeRootDirIdHash() creates a truncated hmac', async () => {
-        const rootDirId = base64.parse('5WEGzwKkAHPwVSjT2Brr3P3zLz7oMiNpMn/qBvht7eM=');
+        const rootDirId = base64.parse('5WEGzwKkAHPwVSjT2Brr3P3zLz7oMiNpMn/qBvht7eM=').slice();
         const hash = await uvf.computeRootDirIdHash(rootDirId);
         expect(hash).to.have.a.lengthOf(32);
         expect(hash).to.eq('RZK7ZH7KBXULNEKBMGX3CU42PGUIAIX4');
       });
 
       it('encryptFile() creates some ciphertext', async () => {
-        const rootDirId = base64.parse('5WEGzwKkAHPwVSjT2Brr3P3zLz7oMiNpMn/qBvht7eM=');
+        const rootDirId = base64.parse('5WEGzwKkAHPwVSjT2Brr3P3zLz7oMiNpMn/qBvht7eM=').slice();
         const fileContent = await uvf.encryptFile(rootDirId, uvf.metadata.initialSeedId);
         expect(fileContent).to.have.a.lengthOf(128);
         expect(fileContent.slice(0, 4)).to.eql(new Uint8Array([0x75, 0x76, 0x66, 0x01])); // magic bytes
