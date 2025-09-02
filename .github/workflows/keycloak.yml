@@ -25,7 +25,7 @@ jobs:
       attestations: write
       packages: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
@@ -38,7 +38,7 @@ jobs:
         working-directory: keycloak/themes/cryptomator/common/resources
         run: npm run build
       # / cipherduck start addition
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
           java-version: ${{ env.JAVA_VERSION }}
@@ -70,7 +70,7 @@ jobs:
             ghcr.io/shift7-ch/keycloak:${{ github.event.inputs.tag }}
           # \ cipherduck end modification
       - name: Generate artifact attestation
-        uses: actions/attest-build-provenance@v2
+        uses: actions/attest-build-provenance@v3
         with:
           subject-name: ghcr.io/shift7-ch/keycloak
           subject-digest: ${{ steps.push.outputs.digest }}
