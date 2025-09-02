@@ -264,7 +264,6 @@
             <!-- \ end cipherduck extension -->
 
 
-            </div>
           </div>
 
           <div class="bg-gray-50 mt-4 px-4 py-3 sm:px-6">
