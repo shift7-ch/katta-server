@@ -10,6 +10,7 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.cryptomator.hub.api.GoneException;
@@ -23,6 +24,7 @@ import org.eclipse.microprofile.jwt.JsonWebToken;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
+import org.jboss.logging.Logger;
 
 import java.net.URI;
 import java.util.Map;
@@ -35,6 +37,8 @@ import static org.cryptomator.hub.api.cipherduck.storage.S3StorageHelper.makeS3B
 
 @Path("/storage")
 public class StorageResource {
+
+	private static final Logger log = Logger.getLogger(StorageResource.class);
 
 	@Inject
 	CipherduckConfig cipherduckConfig;
@@ -90,7 +94,7 @@ public class StorageResource {
 		makeS3Bucket((StorageProfileS3STSDto) storageProfileDto, storage);
 
 		final User currentUser = userRepo.findById(jwt.getSubject());
-		keycloakCryptomatorVaultsHelper.keycloakGrantAccessToVault( vaultId.toString(), currentUser.getId(), cipherduckConfig.keycloakClientIdCryptomatorVaults(), groupRepo);
+		keycloakCryptomatorVaultsHelper.keycloakGrantAccessToVault(vaultId.toString(), currentUser.getId(), cipherduckConfig.keycloakClientIdCryptomatorVaults(), groupRepo);
 		keycloakCryptomatorVaultsHelper.keycloakPrepareVault(vaultId.toString(), (StorageProfileS3STSDto) storageProfileDto, jwt.getSubject());
 
 		return Response.created(URI.create(".")).build();
@@ -103,11 +107,17 @@ public class StorageResource {
 	@Transactional
 	@Operation(summary = "token exchange", description = "retrieves a downscoped access token for S3.")
 	@APIResponse(responseCode = "200", description = "success")
+	@APIResponse(responseCode = "400", description = "bad request")
 	public AccessTokenResponse exchangeS3Token(@QueryParam("vault") String vault) {
-		return tokenExchangeApi.exchange("urn:ietf:params:oauth:grant-type:token-exchange",
-				jwt.getRawToken(),
-				"urn:ietf:params:oauth:token-type:access_token",
-				"urn:ietf:params:oauth:token-type:access_token",
-				vault);
+		try {
+			return tokenExchangeApi.exchange("urn:ietf:params:oauth:grant-type:token-exchange",
+					jwt.getRawToken(),
+					"urn:ietf:params:oauth:token-type:access_token",
+					"urn:ietf:params:oauth:token-type:access_token",
+					vault);
+		} catch (WebApplicationException e) {
+			log.error(e);
+			throw new WebApplicationException(Response.status(e.getResponse().getStatus()).entity(String.format("Received: '%s', status code %s from Keycloak.", e.getResponse().getStatusInfo().getReasonPhrase(), e.getResponse().getStatus())).build());
+		}
 	}
 }
