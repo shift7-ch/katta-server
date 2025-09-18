@@ -67,17 +67,12 @@ public class StorageResource {
 	@RolesAllowed("user")
 	@Produces(MediaType.APPLICATION_JSON)
 	@Transactional
-	@Operation(summary = "creates bucket and policy", description = "creates an S3 bucket and uploads policy for it.")
+	@Operation(summary = "creates bucket and policy", description = "creates an S3 bucket and uploads policy for it for call from Web Client (CORS).")
 	@APIResponse(responseCode = "200", description = "Bucket and Keycloak config created")
 	@APIResponse(responseCode = "400", description = "Could not create bucket")
-	@APIResponse(responseCode = "409", description = "Vault with this ID or bucket with this name already exists")
+	@APIResponse(responseCode = "409", description = "Bucket with this name already exists")
 	@APIResponse(responseCode = "410", description = "Storage profile is archived")
 	public Response createBucket(@PathParam("vaultId") UUID vaultId, final CreateS3STSBucketDto storage) {
-		Optional<Vault> vault = vaultRepo.findByIdOptional(vaultId);
-		if (vault.isPresent()) {
-			throw new ClientErrorException(String.format("Vault with ID %s already exists", vaultId), Response.Status.CONFLICT);
-		}
-
 		final Map<UUID, StorageProfileDto> storageConfigs = StorageProfile.findAll().<StorageProfile>stream().map(StorageProfileDto::fromEntity).collect(Collectors.toMap(StorageProfileDto::id, Function.identity()));
 		if (!storageConfigs.containsKey(storage.storageConfigId())) {
 			return Response.status(Response.Status.BAD_REQUEST).entity(String.format("Storage profile %s not found on this server", storage.storageConfigId())).build();
@@ -92,10 +87,6 @@ public class StorageResource {
 
 		// N.B. if the bucket already exists, this will fail, so we do not prevent calling this method several times.
 		makeS3Bucket((StorageProfileS3STSDto) storageProfileDto, storage);
-
-		final User currentUser = userRepo.findById(jwt.getSubject());
-		keycloakCryptomatorVaultsHelper.keycloakGrantAccessToVault(vaultId.toString(), currentUser.getId(), cipherduckConfig.keycloakClientIdCryptomatorVaults(), groupRepo);
-		keycloakCryptomatorVaultsHelper.keycloakPrepareVault(vaultId.toString(), (StorageProfileS3STSDto) storageProfileDto, jwt.getSubject());
 
 		return Response.created(URI.create(".")).build();
 	}

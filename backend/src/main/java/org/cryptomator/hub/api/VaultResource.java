@@ -6,7 +6,6 @@ import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.quarkus.security.identity.SecurityIdentity;
 import io.vertx.core.http.HttpServerRequest;
-import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
@@ -69,7 +68,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Stream;
-
 
 
 @Path("/vaults")
@@ -227,7 +225,7 @@ public class VaultResource {
 		}
 
 		// / start cipherduck extension
-		keycloakCryptomatorVaultsHelper.		keycloakGrantAccessToVault(vaultId.toString(), groupId, cipherduckConfig.keycloakClientIdCryptomatorVaults(), groupRepo);
+		keycloakCryptomatorVaultsHelper.keycloakGrantAccessToVault(vaultId.toString(), groupId, cipherduckConfig.keycloakClientIdCryptomatorVaults(), groupRepo);
 		// \ end cipherduck extension
 
 		return addAuthority(vault, group, role);
@@ -271,7 +269,7 @@ public class VaultResource {
 			// - Account reset: same situation as for addUser() and addGroup() before being granted access (masterkey): in the STS case, users can technically already gain access to the data at the storage level if they know/guess the STS endpoint etc, however they cannot decrypt yet.
 			// - Archiving: removeAuthority is not called in this case, so users still can renew access (get new temporary S3 credentials) at the storage level in the STS case.
 			//              However, they cannot get the masterkey any more (in all cases) nor the permanent storage credentials (in the non-STS case).
-			keycloakCryptomatorVaultsHelper.keycloakRemoveAccessToVault( vaultId.toString(), authorityId, "cryptomatorvaults", groupRepo);
+			keycloakCryptomatorVaultsHelper.keycloakRemoveAccessToVault(vaultId.toString(), authorityId, "cryptomatorvaults", groupRepo);
 			// \ end cipherduck extension
 
 
@@ -478,10 +476,20 @@ public class VaultResource {
 	@Transactional
 	@Operation(summary = "creates or updates a vault",
 			description = "Creates or updates a vault with the given vault id. The creationTime in the vaultDto is always ignored. On creation, the current server time is used and the archived field is ignored. On update, only the name, description, and archived fields are considered.")
+	// / start cipherduck extension
+	@Parameter(name = "minio", in = ParameterIn.QUERY, description = "the role to grant to this user (defaults to False)")
+	@Parameter(name = "aws", in = ParameterIn.QUERY, description = "the role to grant to this user (defaults to False)")
+	// \ end cipherduck extension
 	@APIResponse(responseCode = "200", description = "existing vault updated")
 	@APIResponse(responseCode = "201", description = "new vault created")
 	@APIResponse(responseCode = "402", description = "number of licensed seats is exceeded")
-	public Response createOrUpdate(@PathParam("vaultId") UUID vaultId, @Valid @NotNull VaultDto vaultDto) {
+	public Response createOrUpdate(
+			@PathParam("vaultId") UUID vaultId, @Valid @NotNull VaultDto vaultDto
+			// / start cipherduck extension
+			, @QueryParam("minio") @DefaultValue("false") boolean minio
+			, @QueryParam("aws") @DefaultValue("false") boolean aws
+			// \ end cipherduck extension
+	) {
 		User currentUser = userRepo.findById(jwt.getSubject());
 		Optional<Vault> existingVault = vaultRepo.findByIdOptional(vaultId);
 		final Vault vault;
@@ -505,6 +513,12 @@ public class VaultResource {
 		vault.setArchived(existingVault.isPresent() && vaultDto.archived);
 		vault.setUvfMetadataFile(vaultDto.uvfMetadataFile);
 		vault.setUvfKeySet(vaultDto.uvfKeySet);
+
+
+		// / start cipherduck extension
+		keycloakCryptomatorVaultsHelper.keycloakPrepareVault(vaultId.toString(), minio, aws);
+		keycloakCryptomatorVaultsHelper.keycloakGrantAccessToVault(vaultId.toString(), jwt.getSubject(), cipherduckConfig.keycloakClientIdCryptomatorVaults(), groupRepo);
+		// \ end cipherduck extension
 
 		vaultRepo.persistAndFlush(vault); // trigger PersistenceException before we continue with
 		if (existingVault.isEmpty()) {
@@ -588,7 +602,8 @@ public class VaultResource {
 						   @JsonProperty("uvfMetadataFile") String uvfMetadataFile,
 						   @JsonProperty("uvfKeySet") String uvfKeySet,
 						   // Legacy properties ("Vault Admin Password"):
-						   @JsonProperty("masterkey") @OnlyBase64Chars String masterkey, @JsonProperty("iterations") Integer iterations, @JsonProperty("salt") @OnlyBase64Chars String salt,
+						   @JsonProperty("masterkey") @OnlyBase64Chars String masterkey, @JsonProperty("iterations") Integer iterations,
+						   @JsonProperty("salt") @OnlyBase64Chars String salt,
 						   @JsonProperty("authPublicKey") @OnlyBase64Chars String authPublicKey, @JsonProperty("authPrivateKey") @OnlyBase64Chars String authPrivateKey
 
 	) {
