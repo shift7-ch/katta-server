@@ -477,8 +477,8 @@ public class VaultResource {
 	@Operation(summary = "creates or updates a vault",
 			description = "Creates or updates a vault with the given vault id. The creationTime in the vaultDto is always ignored. On creation, the current server time is used and the archived field is ignored. On update, only the name, description, and archived fields are considered.")
 	// / start cipherduck extension
-	@Parameter(name = "minio", in = ParameterIn.QUERY, description = "the role to grant to this user (defaults to False)")
-	@Parameter(name = "aws", in = ParameterIn.QUERY, description = "the role to grant to this user (defaults to False)")
+	@Parameter(name = "minio", in = ParameterIn.QUERY, description = "whether configuration for STS MinIO needs to be synched to Keycloak (defaults to false)")
+	@Parameter(name = "aws", in = ParameterIn.QUERY, description = "whether configuration for STS MinIO needs to be synched to AWS (defaults to false)")
 	// \ end cipherduck extension
 	@APIResponse(responseCode = "200", description = "existing vault updated")
 	@APIResponse(responseCode = "201", description = "new vault created")
