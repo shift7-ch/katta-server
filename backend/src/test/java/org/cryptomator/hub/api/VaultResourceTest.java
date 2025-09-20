@@ -1,7 +1,7 @@
 package org.cryptomator.hub.api;
 
 import io.quarkus.security.identity.SecurityIdentity;
-import io.quarkus.test.security.TestSecurity;
+import jakarta.ws.rs.NotFoundException;
 import org.cryptomator.hub.api.cipherduck.CipherduckConfig;
 import org.cryptomator.hub.cipherduck.KeycloakCryptomatorVaultsHelper;
 import org.cryptomator.hub.entities.EffectiveVaultAccess;
@@ -22,6 +22,8 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class VaultResourceTest {
 	private VaultResource vaultResource;
@@ -104,14 +106,32 @@ class VaultResourceTest {
 	}
 
 	@Test
+	public void testAddUserFailing() {
+		assertThrows(NotFoundException.class, () -> vaultResource.addUser(vaultId, "bob", VaultAccess.Role.MEMBER));
+		Mockito.verify(keycloakCryptomatorVaultsHelper, Mockito.times(0)).keycloakGrantAccessToVault(vaultId.toString(), "bob", "pesto", groupRepo);
+	}
+
+	@Test
 	public void testAddGroup() {
 		vaultResource.addGroup(vaultId, "good cops", VaultAccess.Role.MEMBER);
 		Mockito.verify(keycloakCryptomatorVaultsHelper, Mockito.times(1)).keycloakGrantAccessToVault(vaultId.toString(), "good cops", "pesto", groupRepo);
 	}
 
 	@Test
+	public void testAddGroupFailing() {
+		assertThrows(NotFoundException.class, () -> vaultResource.addGroup(vaultId, "bad cops", VaultAccess.Role.MEMBER));
+		Mockito.verify(keycloakCryptomatorVaultsHelper, Mockito.times(0)).keycloakGrantAccessToVault(vaultId.toString(), "bad cops", "pesto", groupRepo);
+	}
+
+	@Test
 	public void testRemoveAuthority() {
 		vaultResource.removeAuthority(vaultId, "good cops");
 		Mockito.verify(keycloakCryptomatorVaultsHelper, Mockito.times(1)).keycloakRemoveAccessToVault(vaultId.toString(), "good cops", "pesto", groupRepo);
+	}
+
+	@Test
+	public void testRemoveAuthorityFailing() {
+		assertThrows(NotFoundException.class, () -> vaultResource.removeAuthority(vaultId, "bad cops"));
+		Mockito.verify(keycloakCryptomatorVaultsHelper, Mockito.times(0)).keycloakRemoveAccessToVault(vaultId.toString(), "bad cops", "pesto", groupRepo);
 	}
 }
