@@ -269,9 +269,8 @@ public class VaultResource {
 			// - Account reset: same situation as for addUser() and addGroup() before being granted access (masterkey): in the STS case, users can technically already gain access to the data at the storage level if they know/guess the STS endpoint etc, however they cannot decrypt yet.
 			// - Archiving: removeAuthority is not called in this case, so users still can renew access (get new temporary S3 credentials) at the storage level in the STS case.
 			//              However, they cannot get the masterkey any more (in all cases) nor the permanent storage credentials (in the non-STS case).
-			keycloakCryptomatorVaultsHelper.keycloakRemoveAccessToVault(vaultId.toString(), authorityId, "cryptomatorvaults", groupRepo);
+			keycloakCryptomatorVaultsHelper.keycloakRemoveAccessToVault(vaultId.toString(), authorityId, cipherduckConfig.keycloakClientIdCryptomatorVaults(), groupRepo);
 			// \ end cipherduck extension
-
 
 			return Response.status(Response.Status.NO_CONTENT).build();
 		} else {
