@@ -1,13 +1,14 @@
 package org.cryptomator.hub.cipherduck;
 
-import dasniko.testcontainers.keycloak.KeycloakContainer;
-import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.resteasy.reactive.ClientWebApplicationException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.KeycloakBuilder;
 import org.keycloak.admin.client.resource.ClientScopeResource;
 import org.keycloak.admin.client.resource.RealmResource;
 
@@ -17,23 +18,36 @@ import static org.cryptomator.hub.cipherduck.KeycloakCryptomatorVaultsHelper.key
 import static org.cryptomator.hub.cipherduck.KeycloakCryptomatorVaultsHelper.keycloakPrepareVault;
 import static org.junit.jupiter.api.Assertions.*;
 
-// Run as QuarkusTest as Keycloak admin client fails with no resteasy client on class path
-// Re-using Keycloak devservice fails as no way found to unset oidc quarkus.oidc.auth-server-url in test profile (as Keycloak mocked/disabled in other Quarkus tests)
+// N.B. @Inject Keycloak points at points at 8180, use KeycloakBuilder with quarkus.oidc.auth-server-url instead
 @QuarkusTest
-@QuarkusTestResource(KeycloakContainerResource.class)
 class KeycloakCryptomatorVaultsHelperIT {
-	@InjectKeycloakContainer
-	KeycloakContainer container;
+	@ConfigProperty(name = "quarkus.oidc.auth-server-url")
+	String keycloakAuthServerUrl;
+
+	@ConfigProperty(name = "hub.keycloak.realm")
+	String keycloakRealm;
+
+	@ConfigProperty(name = "hub.keycloak.oidc.cryptomator-vaults-client-id", defaultValue = "")
+	String keycloakClientIdCryptomatorVaults;
+
+	@ConfigProperty(name = "hub.keycloak.system-client-id", defaultValue = "")
+	String keycloakSystemClientId;
+
+	@ConfigProperty(name = "hub.keycloak.system-client-secret", defaultValue = "")
+	String keycloakSystemClientSecret;
 
 	@ParameterizedTest
 	@CsvSource({"true,true,2", "true,false,1", "false,true,1", "false,false,0"})
 	public void testKeycloakPrepareVault(final boolean minio, final boolean aws, final int expected) {
-		final Keycloak keycloak = container.getKeycloakAdminClient();
-
+		final Keycloak keycloak = KeycloakBuilder.builder()
+				.grantType(OAuth2Constants.CLIENT_CREDENTIALS)
+				.serverUrl(keycloakAuthServerUrl.replace(String.format("/realms/%s", keycloakRealm), ""))
+				.realm("cryptomator")
+				.clientId(keycloakSystemClientId)
+				.clientSecret(keycloakSystemClientSecret)
+				.build();
+		final RealmResource realm = keycloak.realm(keycloakRealm);
 		final String vaultId = UUID.randomUUID().toString();
-
-		final String keycloakRealm = "cryptomator";
-		final RealmResource realm = keycloak.realm("cryptomator");
 
 		final ClientScopeResource clientScopeResource = realm.clientScopes().get(vaultId);
 		final ClientWebApplicationException exc = assertThrows(ClientWebApplicationException.class, () -> clientScopeResource.getProtocolMappers().getMappers());
@@ -44,13 +58,19 @@ class KeycloakCryptomatorVaultsHelperIT {
 
 	@Test
 	public void testKeycloakGrantAccessToVault() {
-		final Keycloak keycloak = container.getKeycloakAdminClient();
+		final Keycloak keycloak = KeycloakBuilder.builder()
+				.grantType(OAuth2Constants.CLIENT_CREDENTIALS)
+				.serverUrl(keycloakAuthServerUrl.replace(String.format("/realms/%s", keycloakRealm), ""))
+				.realm("cryptomator")
+				.clientId(keycloakSystemClientId)
+				.clientSecret(keycloakSystemClientSecret)
+				.build();
+		final RealmResource realm = keycloak.realm(keycloakRealm);
 
 		final String vaultId = UUID.randomUUID().toString();
-		final String alice = keycloak.realm("cryptomator").users().searchByFirstName("alice", true).getFirst().getId();
-
-		assertNull(keycloak.realm("cryptomator").users().get(alice).roles().getAll().getClientMappings());
-		keycloakGrantAccessToVault(vaultId, alice, "cryptomatorvaults", keycloak, "cryptomator", false);
-		assertTrue(keycloak.realm("cryptomator").users().get(alice).roles().getAll().getClientMappings().get("cryptomatorvaults").getMappings().stream().anyMatch(r -> r.getName().equals(vaultId)));
+		final String alice = realm.users().searchByFirstName("alice", true).getFirst().getId();
+		assertNull(realm.users().get(alice).roles().getAll().getClientMappings());
+		keycloakGrantAccessToVault(vaultId, alice, keycloakClientIdCryptomatorVaults, keycloak, keycloakRealm, false);
+		assertTrue(realm.users().get(alice).roles().getAll().getClientMappings().get(keycloakClientIdCryptomatorVaults).getMappings().stream().anyMatch(r -> r.getName().equals(vaultId)));
 	}
 }

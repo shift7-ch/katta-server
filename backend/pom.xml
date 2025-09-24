@@ -179,12 +179,6 @@
       <groupId>software.amazon.awssdk</groupId>
       <artifactId>aws-crt-client</artifactId>
     </dependency>
-    <dependency>
-      <groupId>com.github.dasniko</groupId>
-      <artifactId>testcontainers-keycloak</artifactId>
-      <version>3.7.0</version>
-      <scope>test</scope>
-    </dependency>
     <!-- \ end cipherduck extension -->
   </dependencies>
 
