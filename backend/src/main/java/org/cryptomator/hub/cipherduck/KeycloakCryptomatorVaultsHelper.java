@@ -36,10 +36,7 @@ public class KeycloakCryptomatorVaultsHelper {
 	@ConfigProperty(name = "hub.keycloak.realm")
 	String keycloakRealm;
 
-	public void keycloakPrepareVault(final String vaultId, final StorageProfileS3STSDto storageConfig, final String userOrGroupId) {
-		final boolean minio = storageConfig.stsRoleArn() != null && storageConfig.stsRoleArn2() == null;
-		final boolean aws = storageConfig.stsRoleArn() != null && storageConfig.stsRoleArn2() != null;
-
+	public void keycloakPrepareVault(final String vaultId, final boolean minio, final boolean aws) {
 		keycloakPrepareVault(vaultId, getKeycloak(), keycloakRealm, minio, aws);
 	}
 
