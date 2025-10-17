@@ -37,7 +37,6 @@ public class KeycloakSessionAndTokenTimeoutsSandboxIT {
 	@CsvSource({"26.3.1,5"})
 	public void inspectRefreshWithRespectToSsoSessionMaxLifespan(final String keycloakVersion, final int ssoSessionMaxLifespanSeconds) throws JSONException, InterruptedException {
 		try (final KeycloakContainer container = new KeycloakContainer(String.format("quay.io/keycloak/keycloak:%s", keycloakVersion))
-				.withFeaturesEnabled("token-exchange", "admin-fine-grained-authz")
 				// comment in for local debugging:
 				//              .withDebugFixedPort(5005, false)
 				//              .withCustomCommand("--log-level=DEBUG")
@@ -54,19 +53,14 @@ public class KeycloakSessionAndTokenTimeoutsSandboxIT {
 			container.start();
 			System.out.println(container.getAuthServerUrl());
 
-			final Keycloak keycloak = Keycloak.getInstance(
-					container.getAuthServerUrl(),
-					"master",
-					"admin",
-					"admin",
-					"admin-cli");
+			final Keycloak keycloakAdminClient = container.getKeycloakAdminClient();
 
 			// enable direct access grant for client cryptomator
-			final RealmResource realm = keycloak.realm("cryptomator");
+			final RealmResource realm = keycloakAdminClient.realm("cryptomator");
 			final ClientRepresentation cryptomatorClient = realm.clients().findByClientId("cryptomator").getFirst();
 
 			cryptomatorClient.setDirectAccessGrantsEnabled(true);
-			keycloak.realm("cryptomator").clients().get(cryptomatorClient.getId()).update(cryptomatorClient);
+			keycloakAdminClient.realm("cryptomator").clients().get(cryptomatorClient.getId()).update(cryptomatorClient);
 
 			// set ssoSessionMaxLifespan
 			final RealmRepresentation realmRepresentation = realm.toRepresentation();
@@ -137,7 +131,6 @@ public class KeycloakSessionAndTokenTimeoutsSandboxIT {
 	@CsvSource({"26.3.1,5"})
 	public void inspectRefreshWithOfflineAccess(final String keycloakVersion, final int ssoSessionMaxLifespanSeconds) throws JSONException, InterruptedException {
 		try (final KeycloakContainer container = new KeycloakContainer(String.format("quay.io/keycloak/keycloak:%s", keycloakVersion))
-				.withFeaturesEnabled("token-exchange", "admin-fine-grained-authz")
 				// comment in for local debugging:
 				//              .withDebugFixedPort(5005, false)
 				//              .withCustomCommand("--log-level=DEBUG")
@@ -154,19 +147,14 @@ public class KeycloakSessionAndTokenTimeoutsSandboxIT {
 			container.start();
 			System.out.println(container.getAuthServerUrl());
 
-			final Keycloak keycloak = Keycloak.getInstance(
-					container.getAuthServerUrl(),
-					"master",
-					"admin",
-					"admin",
-					"admin-cli");
+			final Keycloak keycloakAdminClient = container.getKeycloakAdminClient();
 
 			// enable direct access grant for client cryptomator
-			final RealmResource realm = keycloak.realm("cryptomator");
+			final RealmResource realm = keycloakAdminClient.realm("cryptomator");
 			final ClientRepresentation cryptomatorClient = realm.clients().findByClientId("cryptomator").getFirst();
 
 			cryptomatorClient.setDirectAccessGrantsEnabled(true);
-			keycloak.realm("cryptomator").clients().get(cryptomatorClient.getId()).update(cryptomatorClient);
+			keycloakAdminClient.realm("cryptomator").clients().get(cryptomatorClient.getId()).update(cryptomatorClient);
 
 			// set ssoSessionMaxLifespan
 			final RealmRepresentation realmRepresentation = realm.toRepresentation();
@@ -230,7 +218,6 @@ public class KeycloakSessionAndTokenTimeoutsSandboxIT {
 	@CsvSource({"26.3.1,5,5"})
 	public void inspectRefreshWithOfflineAccessMaxOffline(final String keycloakVersion, final int ssoSessionMaxLifespanSeconds, final int offlineSessionMaxLifespan) throws JSONException, InterruptedException {
 		try (final KeycloakContainer container = new KeycloakContainer(String.format("quay.io/keycloak/keycloak:%s", keycloakVersion))
-				.withFeaturesEnabled("token-exchange", "admin-fine-grained-authz")
 				// comment in for local debugging:
 				//              .withDebugFixedPort(5005, false)
 				//              .withCustomCommand("--log-level=DEBUG")
@@ -247,19 +234,14 @@ public class KeycloakSessionAndTokenTimeoutsSandboxIT {
 			container.start();
 			System.out.println(container.getAuthServerUrl());
 
-			final Keycloak keycloak = Keycloak.getInstance(
-					container.getAuthServerUrl(),
-					"master",
-					"admin",
-					"admin",
-					"admin-cli");
+			final Keycloak keycloakAdminClient = container.getKeycloakAdminClient();
 
 			// enable direct access grant for client cryptomator
-			final RealmResource realm = keycloak.realm("cryptomator");
+			final RealmResource realm = keycloakAdminClient.realm("cryptomator");
 			final ClientRepresentation cryptomatorClient = realm.clients().findByClientId("cryptomator").getFirst();
 
 			cryptomatorClient.setDirectAccessGrantsEnabled(true);
-			keycloak.realm("cryptomator").clients().get(cryptomatorClient.getId()).update(cryptomatorClient);
+			keycloakAdminClient.realm("cryptomator").clients().get(cryptomatorClient.getId()).update(cryptomatorClient);
 
 			// set ssoSessionMaxLifespan
 			final RealmRepresentation realmRepresentation = realm.toRepresentation();
