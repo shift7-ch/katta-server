@@ -43,7 +43,7 @@ public class KeycloakSessionAndTokenTimeoutsSandboxIT {
 				//              .withCustomCommand("--log-level=DEBUG")
 				// see https://github.com/dasniko/testcontainers-keycloak/blob/main/README.md
 				//     https://github.com/dasniko/keycloak-extensions-demo/blob/1523b9c153f4325373c8d6787bfeb6c95d3dfed8/docker-compose.yml#L25
-				.withRealmImportFile("/dev-realm.json")
+				.withRealmImportFile("/cryptomator-realm.json")
 				// Keycloak < 25 seems to expose /health/started on default port, and not on management port as expected in testcontainers-keycloak:
 				//   https://github.com/dasniko/testcontainers-keycloak/blame/d910aa6d6919c0e0f9cd50f97c9bf878eb24f753/src/main/java/dasniko/testcontainers/keycloak/ExtendableKeycloakContainer.java#L203
 				.waitingFor(Wait.forLogMessage(".*Listening.*", 1))
