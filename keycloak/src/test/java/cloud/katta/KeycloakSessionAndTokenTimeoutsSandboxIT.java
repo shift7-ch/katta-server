@@ -10,7 +10,6 @@ import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.testcontainers.containers.wait.strategy.Wait;
 
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
@@ -34,7 +33,7 @@ public class KeycloakSessionAndTokenTimeoutsSandboxIT {
 	 * @see <a href="https://stackoverflow.com/questions/52040265/how-to-specify-refresh-tokens-lifespan-in-keycloak/54679852#54679852">How to specify refresh tokens lifespan in Keycloak</a>
 	 */
 	@ParameterizedTest
-	@CsvSource({"26.3.1,5"})
+	@CsvSource({"26.3.3,5", "26.4.1,5"})
 	public void inspectRefreshWithRespectToSsoSessionMaxLifespan(final String keycloakVersion, final int ssoSessionMaxLifespanSeconds) throws JSONException, InterruptedException {
 		try (final KeycloakContainer container = new KeycloakContainer(String.format("quay.io/keycloak/keycloak:%s", keycloakVersion))
 				// comment in for local debugging:
@@ -122,7 +121,7 @@ public class KeycloakSessionAndTokenTimeoutsSandboxIT {
 	 * </ul>
 	 */
 	@ParameterizedTest
-	@CsvSource({"26.3.1,5"})
+	@CsvSource({"26.3.3,5,5", "26.4.1,5,5"})
 	public void inspectRefreshWithOfflineAccess(final String keycloakVersion, final int ssoSessionMaxLifespanSeconds) throws JSONException, InterruptedException {
 		try (final KeycloakContainer container = new KeycloakContainer(String.format("quay.io/keycloak/keycloak:%s", keycloakVersion))
 				// comment in for local debugging:
@@ -203,7 +202,7 @@ public class KeycloakSessionAndTokenTimeoutsSandboxIT {
 	 *
 	 */
 	@ParameterizedTest
-	@CsvSource({"26.3.1,5,5"})
+	@CsvSource({"26.3.3,5,5", "26.4.1,5,5"})
 	public void inspectRefreshWithOfflineAccessMaxOffline(final String keycloakVersion, final int ssoSessionMaxLifespanSeconds, final int offlineSessionMaxLifespan) throws JSONException, InterruptedException {
 		try (final KeycloakContainer container = new KeycloakContainer(String.format("quay.io/keycloak/keycloak:%s", keycloakVersion))
 				// comment in for local debugging:
