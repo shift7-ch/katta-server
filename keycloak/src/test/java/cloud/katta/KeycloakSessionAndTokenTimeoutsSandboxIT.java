@@ -199,7 +199,7 @@ public class KeycloakSessionAndTokenTimeoutsSandboxIT {
 	}
 
 	/**
-	 *
+	 * Document <a href="https://www.keycloak.org/docs/latest/server_admin/#_offline-access">Keycloak Offline Access</a> with offlineSessionMaxLifespan.
 	 */
 	@ParameterizedTest
 	@CsvSource({"26.3.3,5,5", "26.4.1,5,5"})
