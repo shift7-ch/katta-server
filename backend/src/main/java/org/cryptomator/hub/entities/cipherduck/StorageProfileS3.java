@@ -5,6 +5,7 @@ import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -32,4 +33,34 @@ public class StorageProfileS3 extends StorageProfile {// TODO make sealed?
 
 	@Column
 	public String storageClass = "STANDARD";
+
+	//======================================================================
+	// (2) STS only: bucket creation (only relevant for Desktop client)
+	//======================================================================
+	@Column
+	public String region;
+
+	@Column
+	public List<String> regions;
+
+	@Column
+	public String bucketPrefix;
+
+	@Column
+	public String stsRoleArnClient;
+
+	@Column
+	public String stsRoleArnHub;
+
+	@Column
+	public String stsEndpoint = null;
+
+	@Column
+	public Boolean bucketVersioning = true;
+
+	@Column
+	public Boolean bucketAcceleration = true;
+
+	@Column
+	public String bucketEncryption;
 }
