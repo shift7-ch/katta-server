@@ -49,7 +49,7 @@ CREATE TABLE "storage_profile_s3_sts"
     "stsRoleArn"         VARCHAR NOT NULL,
     "stsRoleArn2"        VARCHAR,
     "stsDurationSeconds" INT4,
-
+    "stsSessionTag"      VARCHAR,
 
 	CONSTRAINT "STORAGE_PROFILE_S3_STS_PK" PRIMARY KEY ("id"),
 	CONSTRAINT "STORAGE_PROFILE_S3_STS_FK_STORAGE_PROFILE_S3" FOREIGN KEY ("id") REFERENCES "storage_profile_s3" ("id") ON DELETE CASCADE

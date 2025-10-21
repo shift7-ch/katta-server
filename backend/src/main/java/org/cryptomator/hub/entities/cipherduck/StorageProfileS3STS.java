@@ -24,4 +24,6 @@ public class StorageProfileS3STS extends StorageProfileS3 { // TODO make sealed/
 	@Column
 	public Integer stsDurationSeconds = null;
 
+	@Column
+	public String stsSessionTag;
 }
