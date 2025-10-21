@@ -188,6 +188,7 @@ export type StorageProfileDto = {
     stsRoleArn: string;
     stsRoleArn2: string;
     stsDurationSeconds: number;
+    stsSessionTag: string;
     archived: boolean;
 }
 
