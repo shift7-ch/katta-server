@@ -1758,14 +1758,15 @@
         "security": [
           {
             "SecurityScheme": [
-              "user"
+              "user",
+              "admin"
             ]
           }
         ]
       }
     },
     "/api/storageprofile/s3": {
-      "put": {
+      "post": {
         "requestBody": {
           "content": {
             "application/json": {
@@ -1835,14 +1836,15 @@
         "security": [
           {
             "SecurityScheme": [
-              "user"
+              "user",
+              "admin"
             ]
           }
         ]
       }
     },
     "/api/storageprofile/s3sts": {
-      "put": {
+      "post": {
         "requestBody": {
           "content": {
             "application/json": {
@@ -1920,7 +1922,8 @@
         "security": [
           {
             "SecurityScheme": [
-              "user"
+              "user",
+              "admin"
             ]
           }
         ]

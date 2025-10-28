@@ -9,6 +9,7 @@ import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.FormParam;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
@@ -34,7 +35,7 @@ public class StorageProfileResource {
 	@Inject
 	CipherduckConfig cipherduckConfig;
 
-	@PUT
+	@POST
 	@Path("/s3")
 	@RolesAllowed("admin")
 	@Transactional
@@ -57,7 +58,7 @@ public class StorageProfileResource {
 		}
 	}
 
-	@PUT
+	@POST
 	@Path("/s3sts")
 	@RolesAllowed("admin")
 	@Transactional
@@ -82,19 +83,19 @@ public class StorageProfileResource {
 
 	@GET
 	@Path("/")
-	@RolesAllowed("user")
+	@RolesAllowed({"user", "admin"})
 	@Produces(MediaType.APPLICATION_JSON)
 	@Transactional
 	@Operation(summary = "get configs for storage backends", description = "get list of configs for storage backends")
 	@APIResponse(responseCode = "201", description = "uploaded storage configuration")
 	@APIResponse(responseCode = "403", description = "not a user")
 	public List<StorageProfileDto> getStorageProfiles(@Nullable @QueryParam("archived") Boolean archived) {
-		return StorageProfileS3.findAll().<StorageProfile>stream().map(StorageProfileDto::fromEntity).collect(Collectors.toList());
+		return StorageProfileS3.findAll().<StorageProfile>stream().map(StorageProfileDto::fromEntity).filter(dto -> (archived == null) || archived.equals(dto.archived)).collect(Collectors.toList());
 	}
 
 	@GET
 	@Path("/s3")
-	@RolesAllowed("user")
+	@RolesAllowed({"user", "admin"})
 	@Produces(MediaType.APPLICATION_JSON)
 	@Transactional
 	@Operation(summary = "get configs for storage backends", description = "get list of configs for storage backends")
@@ -106,7 +107,7 @@ public class StorageProfileResource {
 
 	@GET
 	@Path("/{profileId}")
-	@RolesAllowed("user")
+	@RolesAllowed({"user", "admin"})
 	@Produces(MediaType.APPLICATION_JSON)
 	@Transactional
 	@Operation(summary = "gets a storage profile")
@@ -120,13 +121,17 @@ public class StorageProfileResource {
 	@Path("/{profileId}")
 	@RolesAllowed("admin")
 	@Transactional
-	@Produces(MediaType.APPLICATION_FORM_URLENCODED)
+	@Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+	@Produces(MediaType.APPLICATION_JSON)
 	@Operation(summary = "archive a storage profile")
 	@APIResponse(responseCode = "204", description = "storage profile archived")
 	@APIResponse(responseCode = "403", description = "not an admin")
-	public Response archive(@PathParam("profileId") UUID profileId, @FormParam("archived") final boolean archived) {
-		final StorageProfile storageProfile = StorageProfileS3.<StorageProfile>findByIdOptional(profileId).orElseThrow(NotFoundException::new);
-		storageProfile.setArchived(archived).persistAndFlush();
+	public Response archive(@PathParam("profileId") UUID profileId, @FormParam("archived") final Boolean archived) {
+		if (archived == null) {
+			return Response.status(Response.Status.BAD_REQUEST).build();
+		}
+		final StorageProfile entity = StorageProfileS3.<StorageProfile>findByIdOptional(profileId).orElseThrow(NotFoundException::new);
+		entity.setArchived(archived).persistAndFlush();
 		return Response.status(Response.Status.NO_CONTENT).build();
 	}
 }
