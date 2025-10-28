@@ -6,20 +6,11 @@ import jakarta.persistence.Id;
 import org.cryptomator.hub.entities.cipherduck.StorageProfile;
 import org.cryptomator.hub.entities.cipherduck.StorageProfileS3;
 import org.cryptomator.hub.entities.cipherduck.StorageProfileS3STS;
-import org.eclipse.microprofile.openapi.annotations.media.DiscriminatorMapping;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 import java.util.UUID;
 
-@Schema(
-		title = "StorageProfile",
-		oneOf = {StorageProfileS3Dto.class, StorageProfileS3STSDto.class},
-		discriminatorMapping = {
-				@DiscriminatorMapping(value = "S3", schema = StorageProfileS3Dto.class),
-				@DiscriminatorMapping(value = "S3STS", schema = StorageProfileS3STSDto.class),
-		},
-		discriminatorProperty = "protocol"
-)
+
 // pro-memoria @Schema
 // - "required" is taken from @JSONProperty
 // - "defaultValue" needs to be repeated

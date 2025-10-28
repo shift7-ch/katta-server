@@ -7,6 +7,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import java.util.List;
 import java.util.UUID;
 
+@Schema(title = "StorageProfileS3STSDto")
 public final class StorageProfileS3STSDto extends StorageProfileS3Dto {
 
 	//----------------------------------------------------------------------
@@ -72,6 +73,7 @@ public final class StorageProfileS3STSDto extends StorageProfileS3Dto {
 		final StorageProfileS3STS storageProfile = new StorageProfileS3STS();
 		storageProfile.id = this.id;
 		storageProfile.name = this.name;
+		storageProfile.protocol = this.protocol;
 		storageProfile.archived = this.archived;
 		storageProfile.scheme = this.scheme;
 		storageProfile.hostname = this.hostname;

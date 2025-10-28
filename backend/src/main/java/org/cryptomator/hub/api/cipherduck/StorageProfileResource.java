@@ -39,6 +39,7 @@ public class StorageProfileResource {
 	@RolesAllowed("admin")
 	@Transactional
 	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
 	@APIResponse(responseCode = "200", description = "uploaded storage configuration")
 	@APIResponse(responseCode = "400", description = "Constraint violation")
 	@APIResponse(responseCode = "403", description = "not an admin")
@@ -46,11 +47,11 @@ public class StorageProfileResource {
 	public Response uploadStorageProfile(final StorageProfileS3Dto c) {
 		try {
 			final StorageProfileS3 entity = c.toEntity();
-			if (StorageProfile.findByIdOptional(entity.id).isPresent()) {
+			if (StorageProfileS3.findByIdOptional(entity.id).isPresent()) {
 				throw new ClientErrorException(Response.Status.CONFLICT);
 			}
 			entity.persistAndFlush();
-			return Response.created(URI.create(".")).build();
+			return Response.created(URI.create(".")).contentLocation(URI.create(".")).entity(entity).type(MediaType.APPLICATION_JSON).build();
 		} catch (ConstraintViolationException e) {
 			return Response.status(Response.Status.BAD_REQUEST).entity(e).build();
 		}
@@ -61,18 +62,19 @@ public class StorageProfileResource {
 	@RolesAllowed("admin")
 	@Transactional
 	@Consumes(MediaType.APPLICATION_JSON)
-	@APIResponse(responseCode = "200", description = "uploaded storage configuration")
+	@Produces(MediaType.APPLICATION_JSON)
+	@APIResponse(responseCode = "201", description = "uploaded storage configuration")
 	@APIResponse(responseCode = "400", description = "Constraint violation")
 	@APIResponse(responseCode = "403", description = "not an admin")
 	@APIResponse(responseCode = "409", description = "Storage profile with ID already exists")
 	public Response uploadStorageProfile(final StorageProfileS3STSDto c) {
 		try {
 			final StorageProfileS3STS entity = c.toEntity();
-			if (StorageProfile.findByIdOptional(entity.id).isPresent()) {
+			if (StorageProfileS3STS.findByIdOptional(entity.id).isPresent()) {
 				throw new ClientErrorException(Response.Status.CONFLICT);
 			}
 			entity.persistAndFlush();
-			return Response.created(URI.create(".")).build();
+			return Response.created(URI.create(".")).contentLocation(URI.create(".")).entity(entity).type(MediaType.APPLICATION_JSON).build();
 		} catch (ConstraintViolationException e) {
 			return Response.status(Response.Status.BAD_REQUEST).entity(e).build();
 		}
@@ -84,10 +86,10 @@ public class StorageProfileResource {
 	@Produces(MediaType.APPLICATION_JSON)
 	@Transactional
 	@Operation(summary = "get configs for storage backends", description = "get list of configs for storage backends")
-	@APIResponse(responseCode = "200", description = "uploaded storage configuration")
+	@APIResponse(responseCode = "201", description = "uploaded storage configuration")
 	@APIResponse(responseCode = "403", description = "not a user")
 	public List<StorageProfileDto> getStorageProfiles(@Nullable @QueryParam("archived") Boolean archived) {
-		return StorageProfile.findAll().<StorageProfile>stream().map(StorageProfileDto::fromEntity).filter(p -> (null == archived) || (archived.booleanValue() == p.archived)).collect(Collectors.toList());
+		return StorageProfileS3.findAll().<StorageProfile>stream().map(StorageProfileDto::fromEntity).collect(Collectors.toList());
 	}
 
 	@GET
@@ -99,7 +101,7 @@ public class StorageProfileResource {
 	@APIResponse(responseCode = "200", description = "uploaded storage configuration")
 	@APIResponse(responseCode = "403", description = "not a user")
 	public List<StorageProfileS3Dto> getStorageProfilesS3() {
-		return StorageProfile.findAll().<StorageProfile>stream().map(StorageProfileDto::fromEntity).filter(StorageProfileS3Dto.class::isInstance).map(StorageProfileS3Dto.class::cast).collect(Collectors.toList());
+		return StorageProfileS3.findAll().<StorageProfile>stream().map(StorageProfileDto::fromEntity).filter(StorageProfileS3Dto.class::isInstance).map(StorageProfileS3Dto.class::cast).collect(Collectors.toList());
 	}
 
 	@GET
@@ -111,7 +113,7 @@ public class StorageProfileResource {
 	@APIResponse(responseCode = "200")
 	@APIResponse(responseCode = "403", description = "not a user")
 	public StorageProfileDto get(@PathParam("profileId") UUID profileId) {
-		return StorageProfileDto.fromEntity(StorageProfile.<StorageProfile>findByIdOptional(profileId).orElseThrow(NotFoundException::new));
+		return StorageProfileS3Dto.fromEntity(StorageProfileS3.<StorageProfile>findByIdOptional(profileId).orElseThrow(NotFoundException::new));
 	}
 
 	@PUT
@@ -123,9 +125,8 @@ public class StorageProfileResource {
 	@APIResponse(responseCode = "204", description = "storage profile archived")
 	@APIResponse(responseCode = "403", description = "not an admin")
 	public Response archive(@PathParam("profileId") UUID profileId, @FormParam("archived") final boolean archived) {
-		final StorageProfile storageProfile = StorageProfile.<StorageProfile>findByIdOptional(profileId).orElseThrow(NotFoundException::new);
+		final StorageProfile storageProfile = StorageProfileS3.<StorageProfile>findByIdOptional(profileId).orElseThrow(NotFoundException::new);
 		storageProfile.setArchived(archived).persistAndFlush();
 		return Response.status(Response.Status.NO_CONTENT).build();
 	}
-
 }

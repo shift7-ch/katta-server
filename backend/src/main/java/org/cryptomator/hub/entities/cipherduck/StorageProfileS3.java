@@ -1,16 +1,13 @@
 package org.cryptomator.hub.entities.cipherduck;
 
 import jakarta.persistence.Column;
-import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 
 import java.util.List;
-import java.util.UUID;
 
 @Entity
 @Table(name = "storage_profile_s3")
-@DiscriminatorValue("S3")
 public class StorageProfileS3 extends StorageProfile {// TODO make sealed?
 
 	//======================================================================

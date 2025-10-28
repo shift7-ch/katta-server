@@ -8,6 +8,7 @@ import software.amazon.awssdk.regions.Region;
 import java.util.List;
 import java.util.UUID;
 
+@Schema(title = "StorageProfileS3Dto")
 public sealed class StorageProfileS3Dto extends StorageProfileDto permits StorageProfileS3STSDto {
 
 	public enum S3_STORAGE_CLASSES {
@@ -116,6 +117,7 @@ public sealed class StorageProfileS3Dto extends StorageProfileDto permits Storag
 		final StorageProfileS3 storageProfile = new StorageProfileS3();
 		storageProfile.id = this.id;
 		storageProfile.name = this.name;
+		storageProfile.protocol = this.protocol;
 		storageProfile.archived = this.archived;
 		storageProfile.scheme = this.scheme;
 		storageProfile.hostname = this.hostname;
