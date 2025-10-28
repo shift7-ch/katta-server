@@ -47,10 +47,10 @@ public class StorageProfileS3 extends StorageProfile {// TODO make sealed?
 	public String bucketPrefix;
 
 	@Column
-	public String stsRoleArnClient;
+	public String stsRoleCreateBucketClient;
 
 	@Column
-	public String stsRoleArnHub;
+	public String stsRoleCreateBucketHub;
 
 	@Column
 	public String stsEndpoint = null;

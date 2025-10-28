@@ -12,13 +12,13 @@ public final class StorageProfileS3STSDto extends StorageProfileS3Dto {
 	//----------------------------------------------------------------------
 	// (3b) STS client profile custom properties
 	//----------------------------------------------------------------------
-	@JsonProperty(value = "stsRoleArn", required = true)
+	@JsonProperty(value = "stsRoleAccessBucketAssumeRoleWithWebIdentity", required = true)
 	@Schema(description = "roleArn to for STS AssumeRoleWithWebIdentity (AWS and MinIO)", example = "arn:aws:iam::930717317329:role/cipherduck_chain_01")
-	String stsRoleArn;
+	String stsRoleAccessBucketAssumeRoleWithWebIdentity;
 
-	@JsonProperty(value = "stsRoleArn2")
+	@JsonProperty(value = "stsRoleAccessBucketAssumeRoleTaggedSession")
 	@Schema(description = "roleArn to assume for STS AssumeRole in role chaining (AWS only, not MinIO)", example = "arn:aws:iam::930717317329:role/cipherduck_chain_02", nullable = true)
-	String stsRoleArn2;
+	String stsRoleAccessBucketAssumeRoleTaggedSession;
 
 
 	@JsonProperty(value = "stsDurationSeconds", required = false)
@@ -33,10 +33,10 @@ public final class StorageProfileS3STSDto extends StorageProfileS3Dto {
 		// jackson
 	}
 
-	public StorageProfileS3STSDto(final UUID id, final String name, final Protocol protocol, final boolean archived, final String scheme, final String hostname, final Integer port, final boolean withPathStyleAccessEnabled, final S3_STORAGE_CLASSES storageClass, final String region, final List<String> regions, final String bucketPrefix, final String stsRoleArnClient, final String stsRoleArnHub, final String stsEndpoint, final boolean bucketVersioning, final Boolean bucketAcceleration, final S3_SERVERSIDE_ENCRYPTION bucketEncryption, final String stsRoleArn, final String stsRoleArn2, final Integer stsDurationSeconds, final String stsSessionTag) {
-		super(id, name, protocol, archived, scheme, hostname, port, withPathStyleAccessEnabled, storageClass, region, regions, bucketPrefix, stsRoleArnClient, stsRoleArnHub, stsEndpoint, bucketVersioning, bucketAcceleration, bucketEncryption);
-		this.stsRoleArn = stsRoleArn;
-		this.stsRoleArn2 = stsRoleArn2;
+	public StorageProfileS3STSDto(final UUID id, final String name, final Protocol protocol, final boolean archived, final String scheme, final String hostname, final Integer port, final boolean withPathStyleAccessEnabled, final S3_STORAGE_CLASSES storageClass, final String region, final List<String> regions, final String bucketPrefix, final String stsRoleCreateBucketClient, final String stsRoleCreateBucketHub, final String stsEndpoint, final boolean bucketVersioning, final Boolean bucketAcceleration, final S3_SERVERSIDE_ENCRYPTION bucketEncryption, final String stsRoleAccessBucketAssumeRoleWithWebIdentity, final String stsRoleAccessBucketAssumeRoleTaggedSession, final Integer stsDurationSeconds, final String stsSessionTag) {
+		super(id, name, protocol, archived, scheme, hostname, port, withPathStyleAccessEnabled, storageClass, region, regions, bucketPrefix, stsRoleCreateBucketClient, stsRoleCreateBucketHub, stsEndpoint, bucketVersioning, bucketAcceleration, bucketEncryption);
+		this.stsRoleAccessBucketAssumeRoleWithWebIdentity = stsRoleAccessBucketAssumeRoleWithWebIdentity;
+		this.stsRoleAccessBucketAssumeRoleTaggedSession = stsRoleAccessBucketAssumeRoleTaggedSession;
 		this.stsDurationSeconds = stsDurationSeconds;
 		this.stsSessionTag = stsSessionTag;
 	}
@@ -55,14 +55,14 @@ public final class StorageProfileS3STSDto extends StorageProfileS3Dto {
 				storageProfile.region,
 				storageProfile.regions,
 				storageProfile.bucketPrefix,
-				storageProfile.stsRoleArnClient,
-				storageProfile.stsRoleArnHub,
+				storageProfile.stsRoleCreateBucketClient,
+				storageProfile.stsRoleCreateBucketHub,
 				storageProfile.stsEndpoint,
 				storageProfile.bucketVersioning,
 				storageProfile.bucketAcceleration,
 				S3_SERVERSIDE_ENCRYPTION.valueOf(storageProfile.bucketEncryption),
-				storageProfile.stsRoleArn,
-				storageProfile.stsRoleArn2,
+				storageProfile.stsRoleAccessBucketAssumeRoleWithWebIdentity,
+				storageProfile.stsRoleAccessBucketAssumeRoleTaggedSession,
 				storageProfile.stsDurationSeconds,
 				storageProfile.stsSessionTag
 		);
@@ -81,25 +81,25 @@ public final class StorageProfileS3STSDto extends StorageProfileS3Dto {
 		storageProfile.region = this.region;
 		storageProfile.regions = this.regions;
 		storageProfile.bucketPrefix = this.bucketPrefix;
-		storageProfile.stsRoleArnClient = this.stsRoleArnClient;
-		storageProfile.stsRoleArnHub = this.stsRoleArnHub;
+		storageProfile.stsRoleCreateBucketClient = this.stsRoleCreateBucketClient;
+		storageProfile.stsRoleCreateBucketHub = this.stsRoleCreateBucketHub;
 		storageProfile.stsEndpoint = this.stsEndpoint;
 		storageProfile.bucketVersioning = this.bucketVersioning;
 		storageProfile.bucketAcceleration = this.bucketAcceleration;
 		storageProfile.bucketEncryption = this.bucketEncryption.name();
-		storageProfile.stsRoleArn = this.stsRoleArn;
-		storageProfile.stsRoleArn2 = this.stsRoleArn2;
+		storageProfile.stsRoleAccessBucketAssumeRoleWithWebIdentity = this.stsRoleAccessBucketAssumeRoleWithWebIdentity;
+		storageProfile.stsRoleAccessBucketAssumeRoleTaggedSession = this.stsRoleAccessBucketAssumeRoleTaggedSession;
 		storageProfile.stsDurationSeconds = this.stsDurationSeconds;
 		storageProfile.stsSessionTag = this.stsSessionTag;
 		return storageProfile;
 	}
 
-	public String stsRoleArn() {
-		return stsRoleArn;
+	public String stsRoleAccessBucketAssumeRoleWithWebIdentity() {
+		return stsRoleAccessBucketAssumeRoleWithWebIdentity;
 	}
 
-	public String stsRoleArn2() {
-		return stsRoleArn2;
+	public String stsRoleAccessBucketAssumeRoleTaggedSession() {
+		return stsRoleAccessBucketAssumeRoleTaggedSession;
 	}
 
 	public Integer stsDurationSeconds() {

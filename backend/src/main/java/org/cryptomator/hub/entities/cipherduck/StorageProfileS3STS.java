@@ -16,10 +16,10 @@ public class StorageProfileS3STS extends StorageProfileS3 { // TODO make sealed/
 	// (3b) STS client profile custom properties
 	//----------------------------------------------------------------------
 	@Column
-	public String stsRoleArn;
+	public String stsRoleAccessBucketAssumeRoleWithWebIdentity;
 
 	@Column
-	public String stsRoleArn2;
+	public String stsRoleAccessBucketAssumeRoleTaggedSession;
 
 	@Column
 	public Integer stsDurationSeconds = null;

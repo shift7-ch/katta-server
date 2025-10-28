@@ -2,6 +2,30 @@
   "openapi" : "3.1.0",
   "components" : {
     "schemas" : {
+      "AccessTokenResponse" : {
+        "type" : "object",
+        "properties" : {
+          "access_token" : {
+            "type" : "string"
+          },
+          "issued_token_type" : {
+            "type" : "string"
+          },
+          "token_type" : {
+            "type" : "string"
+          },
+          "expires_in" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "scope" : {
+            "type" : "string"
+          },
+          "refresh_token" : {
+            "type" : "string"
+          }
+        }
+      },
       "AuditEventDto" : {
         "type" : "object",
         "properties" : {
@@ -333,59 +357,7 @@
       },
       "StorageProfileS3Dto" : {
         "type" : "object",
-        "required" : [ "id", "name", "protocol", "archived", "storageClass" ],
-        "properties" : {
-          "id" : {
-            "description" : "Technical identifier for a storage profile. Must be unique UUID. Clients will use this as vendor in profile and provider in vault bookmark",
-            "type" : "string",
-            "$ref" : "#/components/schemas/UUID"
-          },
-          "name" : {
-            "type" : "string",
-            "description" : "Displayed when choosing type of a new vault in dropdown."
-          },
-          "protocol" : {
-            "description" : "Storage protocol: S3 (permanent credentials) or S3STS (STS).",
-            "type" : "string",
-            "$ref" : "#/components/schemas/Protocol"
-          },
-          "archived" : {
-            "type" : "boolean",
-            "description" : "For archived storage profiles, no vaults can be created any more."
-          },
-          "scheme" : {
-            "type" : [ "string", "null" ],
-            "description" : "Scheme of S3 endpoint for template upload/bucket creation. Defaults to default for protocol, i.e. https in most cases.",
-            "example" : "https"
-          },
-          "hostname" : {
-            "type" : [ "string", "null" ],
-            "description" : "Hostname S3 endpoint for template upload/bucket creation. Defaults to AWS SDK default.",
-            "example" : "s3-us-gov-west-1.amazonaws.com"
-          },
-          "port" : {
-            "type" : [ "integer", "null" ],
-            "format" : "int32",
-            "description" : "Port S3 endpoint for template upload/bucket creation. Defaults to default port for scheme.",
-            "example" : 443
-          },
-          "withPathStyleAccessEnabled" : {
-            "type" : "boolean",
-            "description" : "Whether to use path style for S3 endpoint for template upload/bucket creation.",
-            "example" : false,
-            "default" : false
-          },
-          "storageClass" : {
-            "description" : "Storage class for upload. Defaults to STANDARD",
-            "type" : "string",
-            "example" : "STANDARD",
-            "$ref" : "#/components/schemas/S3_STORAGE_CLASSES"
-          }
-        }
-      },
-      "StorageProfileS3STSDto" : {
-        "type" : "object",
-        "required" : [ "id", "name", "protocol", "archived", "storageClass", "region", "regions", "bucketPrefix", "stsRoleArnClient", "stsRoleArnHub", "bucketVersioning", "bucketEncryption", "stsRoleArn" ],
+        "required" : [ "id", "name", "protocol", "archived", "storageClass", "region", "regions", "bucketPrefix", "stsRoleCreateBucketClient", "stsRoleCreateBucketHub", "bucketVersioning", "bucketEncryption" ],
         "properties" : {
           "id" : {
             "description" : "Technical identifier for a storage profile. Must be unique UUID. Clients will use this as vendor in profile and provider in vault bookmark",
@@ -451,14 +423,112 @@
             "description" : "Buckets are create with name <bucket prefix><vault UUID>.",
             "example" : "cipherduck"
           },
-          "stsRoleArnClient" : {
+          "stsRoleCreateBucketClient" : {
             "type" : "string",
-            "description" : "STS role for clients to assume to create buckets. Will be the same as stsRoleArnHub for AWS, different for MinIO.",
+            "description" : "STS role for clients to assume to create buckets. Will be the same as stsRoleCreateBucketHub for AWS, different for MinIO.",
             "example" : "arn:aws:iam::<ACCOUNT ID>:role/cipherduck-createbucket"
           },
-          "stsRoleArnHub" : {
+          "stsRoleCreateBucketHub" : {
             "type" : "string",
-            "description" : "STS role for frontend to assume to create buckets (used with inline policy and passed to hub storage). Will be the same as stsRoleArnClient for AWS, different for MinIO.",
+            "description" : "STS role for frontend to assume to create buckets (used with inline policy and passed to hub storage). Will be the same as stsRoleCreateBucketClient for AWS, different for MinIO.",
+            "example" : "arn:aws:iam::<ACCOUNT ID>:role/cipherduck-createbucket"
+          },
+          "stsEndpoint" : {
+            "type" : [ "string", "null" ],
+            "description" : "STS endpoint to use for AssumeRoleWithWebIdentity and AssumeRole for getting a temporary access token passed to the storage. Defaults to AWS SDK default."
+          },
+          "bucketVersioning" : {
+            "type" : "boolean",
+            "description" : "Enable bucket versioning upon bucket creation",
+            "default" : true
+          },
+          "bucketAcceleration" : {
+            "type" : [ "boolean", "null" ],
+            "description" : "Enable bucket versioning upon bucket creation (null for MinIO)"
+          },
+          "bucketEncryption" : {
+            "description" : "Enable bucket versioning upon bucket creation",
+            "type" : "string",
+            "$ref" : "#/components/schemas/S3_SERVERSIDE_ENCRYPTION"
+          }
+        }
+      },
+      "StorageProfileS3STSDto" : {
+        "type" : "object",
+        "required" : [ "id", "name", "protocol", "archived", "storageClass", "region", "regions", "bucketPrefix", "stsRoleCreateBucketClient", "stsRoleCreateBucketHub", "bucketVersioning", "bucketEncryption", "stsRoleAccessBucketAssumeRoleWithWebIdentity", "stsSessionTag" ],
+        "properties" : {
+          "id" : {
+            "description" : "Technical identifier for a storage profile. Must be unique UUID. Clients will use this as vendor in profile and provider in vault bookmark",
+            "type" : "string",
+            "$ref" : "#/components/schemas/UUID"
+          },
+          "name" : {
+            "type" : "string",
+            "description" : "Displayed when choosing type of a new vault in dropdown."
+          },
+          "protocol" : {
+            "description" : "Storage protocol: S3 (permanent credentials) or S3STS (STS).",
+            "type" : "string",
+            "$ref" : "#/components/schemas/Protocol"
+          },
+          "archived" : {
+            "type" : "boolean",
+            "description" : "For archived storage profiles, no vaults can be created any more."
+          },
+          "scheme" : {
+            "type" : [ "string", "null" ],
+            "description" : "Scheme of S3 endpoint for template upload/bucket creation. Defaults to default for protocol, i.e. https in most cases.",
+            "example" : "https"
+          },
+          "hostname" : {
+            "type" : [ "string", "null" ],
+            "description" : "Hostname S3 endpoint for template upload/bucket creation. Defaults to AWS SDK default.",
+            "example" : "s3-us-gov-west-1.amazonaws.com"
+          },
+          "port" : {
+            "type" : [ "integer", "null" ],
+            "format" : "int32",
+            "description" : "Port S3 endpoint for template upload/bucket creation. Defaults to default port for scheme.",
+            "example" : 443
+          },
+          "withPathStyleAccessEnabled" : {
+            "type" : "boolean",
+            "description" : "Whether to use path style for S3 endpoint for template upload/bucket creation.",
+            "example" : false,
+            "default" : false
+          },
+          "storageClass" : {
+            "description" : "Storage class for upload. Defaults to STANDARD",
+            "type" : "string",
+            "example" : "STANDARD",
+            "$ref" : "#/components/schemas/S3_STORAGE_CLASSES"
+          },
+          "region" : {
+            "type" : "string",
+            "description" : "Default region selected in the frontend/client to create bucket in.",
+            "example" : "443",
+            "default" : "us-east-1"
+          },
+          "regions" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            },
+            "description" : "List of selectable regions in the frontend/client to create bucket in. Defaults to full list from AWS SDK."
+          },
+          "bucketPrefix" : {
+            "type" : "string",
+            "description" : "Buckets are create with name <bucket prefix><vault UUID>.",
+            "example" : "cipherduck"
+          },
+          "stsRoleCreateBucketClient" : {
+            "type" : "string",
+            "description" : "STS role for clients to assume to create buckets. Will be the same as stsRoleCreateBucketHub for AWS, different for MinIO.",
+            "example" : "arn:aws:iam::<ACCOUNT ID>:role/cipherduck-createbucket"
+          },
+          "stsRoleCreateBucketHub" : {
+            "type" : "string",
+            "description" : "STS role for frontend to assume to create buckets (used with inline policy and passed to hub storage). Will be the same as stsRoleCreateBucketClient for AWS, different for MinIO.",
             "example" : "arn:aws:iam::<ACCOUNT ID>:role/cipherduck-createbucket"
           },
           "stsEndpoint" : {
@@ -479,12 +549,12 @@
             "type" : "string",
             "$ref" : "#/components/schemas/S3_SERVERSIDE_ENCRYPTION"
           },
-          "stsRoleArn" : {
+          "stsRoleAccessBucketAssumeRoleWithWebIdentity" : {
             "type" : "string",
             "description" : "roleArn to for STS AssumeRoleWithWebIdentity (AWS and MinIO)",
             "example" : "arn:aws:iam::930717317329:role/cipherduck_chain_01"
           },
-          "stsRoleArn2" : {
+          "stsRoleAccessBucketAssumeRoleTaggedSession" : {
             "type" : [ "string", "null" ],
             "description" : "roleArn to assume for STS AssumeRole in role chaining (AWS only, not MinIO)",
             "example" : "arn:aws:iam::930717317329:role/cipherduck_chain_02"
@@ -493,6 +563,11 @@
             "type" : [ "integer", "null" ],
             "format" : "int32",
             "description" : "Token lifetime for STS tokens assumed. Defaults to AWS/MinIO defaults"
+          },
+          "stsSessionTag" : {
+            "type" : "string",
+            "description" : "Session tag to use for role chaining (AWS only, not MinIO). Defaults to \"Vault\"",
+            "default" : "Vault"
           }
         }
       },
@@ -1335,7 +1410,14 @@
         } ],
         "responses" : {
           "200" : {
-            "description" : "success"
+            "description" : "success",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AccessTokenResponse"
+                }
+              }
+            }
           },
           "400" : {
             "description" : "bad request"
@@ -1356,7 +1438,7 @@
     "/api/storage/{vaultId}" : {
       "put" : {
         "summary" : "creates bucket and policy",
-        "description" : "creates an S3 bucket and uploads policy for it.",
+        "description" : "creates an S3 bucket and uploads policy for it for call from Web Client (CORS).",
         "parameters" : [ {
           "name" : "vaultId",
           "in" : "path",
@@ -1383,7 +1465,7 @@
             "description" : "Could not create bucket"
           },
           "409" : {
-            "description" : "Vault with this ID or bucket with this name already exists"
+            "description" : "Bucket with this name already exists"
           },
           "410" : {
             "description" : "Storage profile is archived"
@@ -2069,7 +2151,7 @@
         "summary" : "creates or updates a vault",
         "description" : "Creates or updates a vault with the given vault id. The creationTime in the vaultDto is always ignored. On creation, the current server time is used and the archived field is ignored. On update, only the name, description, and archived fields are considered.",
         "parameters" : [ {
-          "description" : "the role to grant to this user (defaults to False)",
+          "description" : "whether configuration for STS MinIO needs to be synched to Keycloak (defaults to false)",
           "in" : "query",
           "name" : "minio",
           "schema" : {
@@ -2077,7 +2159,7 @@
             "default" : false
           }
         }, {
-          "description" : "the role to grant to this user (defaults to False)",
+          "description" : "whether configuration for STS MinIO needs to be synched to AWS (defaults to false)",
           "in" : "query",
           "name" : "aws",
           "schema" : {

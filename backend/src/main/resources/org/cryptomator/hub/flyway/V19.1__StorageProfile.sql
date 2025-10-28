@@ -27,8 +27,8 @@ CREATE TABLE "storage_profile_s3"
     "region"            VARCHAR,
     "regions"           text[],
     "bucketPrefix"      VARCHAR NOT NULL,
-    "stsRoleArnClient"  VARCHAR NOT NULL,
-    "stsRoleArnHub"     VARCHAR NOT NULL,
+    "stsRoleCreateBucketClient"  VARCHAR NOT NULL,
+    "stsRoleCreateBucketHub"     VARCHAR NOT NULL,
     "stsEndpoint"       VARCHAR,
     "bucketVersioning"  bool NOT NULL,
     "bucketAcceleration" bool,
@@ -46,8 +46,8 @@ CREATE TABLE "storage_profile_s3_sts"
     "id"                UUID NOT NULL,
 
     -- (3b) client profile custom properties
-    "stsRoleArn"         VARCHAR NOT NULL,
-    "stsRoleArn2"        VARCHAR,
+    "stsRoleAccessBucketAssumeRoleWithWebIdentity"  VARCHAR NOT NULL,
+    "stsRoleAccessBucketAssumeRoleTaggedSession"    VARCHAR,
     "stsDurationSeconds" INT4,
     "stsSessionTag"      VARCHAR,
 

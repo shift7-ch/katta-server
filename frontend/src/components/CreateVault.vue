@@ -935,7 +935,7 @@ async function createVault() {
             ]
           }`.replaceAll("{}", uvfVault.value.metadata.backend.defaultPath),
           // Required. ARN of the role that the caller is assuming.
-          RoleArn: selectedBackend.value.stsRoleArnHub
+          RoleArn: selectedBackend.value.stsRoleCreateBucketHub
         }
 
 
