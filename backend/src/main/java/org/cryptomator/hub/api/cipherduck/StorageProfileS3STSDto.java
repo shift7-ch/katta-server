@@ -34,16 +34,7 @@ public final class StorageProfileS3STSDto extends StorageProfileS3Dto {
 	}
 
 	public StorageProfileS3STSDto(final UUID id, final String name, final Protocol protocol, final boolean archived, final String scheme, final String hostname, final Integer port, final boolean withPathStyleAccessEnabled, final S3_STORAGE_CLASSES storageClass, final String region, final List<String> regions, final String bucketPrefix, final String stsRoleArnClient, final String stsRoleArnHub, final String stsEndpoint, final boolean bucketVersioning, final Boolean bucketAcceleration, final S3_SERVERSIDE_ENCRYPTION bucketEncryption, final String stsRoleArn, final String stsRoleArn2, final Integer stsDurationSeconds, final String stsSessionTag) {
-		super(id, name, protocol, archived, scheme, hostname, port, withPathStyleAccessEnabled, storageClass);
-		this.region = region;
-		this.regions = regions;
-		this.bucketPrefix = bucketPrefix;
-		this.stsRoleArnClient = stsRoleArnClient;
-		this.stsRoleArnHub = stsRoleArnHub;
-		this.stsEndpoint = stsEndpoint;
-		this.bucketVersioning = bucketVersioning;
-		this.bucketAcceleration = bucketAcceleration;
-		this.bucketEncryption = bucketEncryption;
+		super(id, name, protocol, archived, scheme, hostname, port, withPathStyleAccessEnabled, storageClass, region, regions, bucketPrefix, stsRoleArnClient, stsRoleArnHub, stsEndpoint, bucketVersioning, bucketAcceleration, bucketEncryption);
 		this.stsRoleArn = stsRoleArn;
 		this.stsRoleArn2 = stsRoleArn2;
 		this.stsDurationSeconds = stsDurationSeconds;

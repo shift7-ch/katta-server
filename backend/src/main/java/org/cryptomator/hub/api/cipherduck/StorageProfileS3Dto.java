@@ -88,17 +88,28 @@ public sealed class StorageProfileS3Dto extends StorageProfileDto permits Storag
 		// jackson
 	}
 
-	public StorageProfileS3Dto(final UUID id, final String name, final Protocol protocol, final boolean archived, final String scheme, final String hostname, final Integer port, final boolean withPathStyleAccessEnabled, final S3_STORAGE_CLASSES storageClass) {
+	public StorageProfileS3Dto(final UUID id, final String name, final Protocol protocol, final boolean archived, final String scheme, final String hostname, final Integer port, final boolean withPathStyleAccessEnabled, final S3_STORAGE_CLASSES storageClass, final String region, final List<String> regions, final String bucketPrefix, final String stsRoleArnClient, final String stsRoleArnHub, final String stsEndpoint, final boolean bucketVersioning, final Boolean bucketAcceleration, final S3_SERVERSIDE_ENCRYPTION bucketEncryption) {
 		super(id, name, protocol, archived);
 		this.scheme = scheme;
 		this.hostname = hostname;
 		this.port = port;
 		this.withPathStyleAccessEnabled = withPathStyleAccessEnabled;
 		this.storageClass = storageClass;
+
+		this.region = region;
+		this.regions = regions;
+		this.bucketPrefix = bucketPrefix;
+		this.stsRoleArnClient = stsRoleArnClient;
+		this.stsRoleArnHub = stsRoleArnHub;
+		this.stsEndpoint = stsEndpoint;
+		this.bucketVersioning = bucketVersioning;
+		this.bucketAcceleration = bucketAcceleration;
+		this.bucketEncryption = bucketEncryption;
+
 	}
 
 	static StorageProfileS3Dto fromEntity(final StorageProfileS3 storageProfile) {
-		return new StorageProfileS3Dto(storageProfile.id, storageProfile.name, Protocol.s3, storageProfile.archived, storageProfile.scheme, storageProfile.hostname, storageProfile.port, storageProfile.withPathStyleAccessEnabled, S3_STORAGE_CLASSES.valueOf(storageProfile.storageClass));
+		return new StorageProfileS3Dto(storageProfile.id, storageProfile.name, Protocol.s3, storageProfile.archived, storageProfile.scheme, storageProfile.hostname, storageProfile.port, storageProfile.withPathStyleAccessEnabled, S3_STORAGE_CLASSES.valueOf(storageProfile.storageClass), storageProfile.region, storageProfile.regions, storageProfile.bucketPrefix, storageProfile.stsRoleArnClient, storageProfile.stsRoleArnHub, storageProfile.stsEndpoint, storageProfile.bucketVersioning, storageProfile.bucketAcceleration, S3_SERVERSIDE_ENCRYPTION.valueOf(storageProfile.bucketEncryption));
 	}
 
 	public StorageProfileS3 toEntity() {
@@ -111,6 +122,15 @@ public sealed class StorageProfileS3Dto extends StorageProfileDto permits Storag
 		storageProfile.port = this.port;
 		storageProfile.withPathStyleAccessEnabled = this.withPathStyleAccessEnabled;
 		storageProfile.storageClass = this.storageClass.name();
+		storageProfile.region = this.region;
+		storageProfile.regions = this.regions;
+		storageProfile.bucketPrefix = this.bucketPrefix;
+		storageProfile.stsRoleArnClient = this.stsRoleArnClient;
+		storageProfile.stsRoleArnHub = this.stsRoleArnHub;
+		storageProfile.stsEndpoint = this.stsEndpoint;
+		storageProfile.bucketVersioning = this.bucketVersioning;
+		storageProfile.bucketAcceleration = this.bucketAcceleration;
+		storageProfile.bucketEncryption = this.bucketEncryption.name();
 		return storageProfile;
 	}
 
