@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Schema(title = "StorageProfileS3STSDto")
-public final class StorageProfileS3STSDto extends StorageProfileS3Dto {
+public final class StorageProfileS3STSDto extends StorageProfileS3StaticDto {
 
 	//----------------------------------------------------------------------
 	// (3b) STS client profile custom properties

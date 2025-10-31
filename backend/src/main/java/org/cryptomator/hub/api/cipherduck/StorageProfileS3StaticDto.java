@@ -1,7 +1,7 @@
 package org.cryptomator.hub.api.cipherduck;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.cryptomator.hub.entities.cipherduck.StorageProfileS3;
+import org.cryptomator.hub.entities.cipherduck.StorageProfileS3Static;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import software.amazon.awssdk.regions.Region;
 
@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Schema(title = "StorageProfileS3Dto")
-public sealed class StorageProfileS3Dto extends StorageProfileDto permits StorageProfileS3STSDto {
+public sealed class StorageProfileS3StaticDto extends StorageProfileDto permits StorageProfileS3STSDto {
 
 	public enum S3_STORAGE_CLASSES {
 		STANDARD, INTELLIGENT_TIERING, STANDARD_IA, ONEZONE_IA, REDUCED_REDUNDANCY, GLACIER, GLACIER_IR, DEEP_ARCHIVE
@@ -85,11 +85,11 @@ public sealed class StorageProfileS3Dto extends StorageProfileDto permits Storag
 	@Schema(description = "Enable bucket versioning upon bucket creation", required = true)
 	S3_SERVERSIDE_ENCRYPTION bucketEncryption = S3_SERVERSIDE_ENCRYPTION.NONE;
 
-	public StorageProfileS3Dto() {
+	public StorageProfileS3StaticDto() {
 		// jackson
 	}
 
-	public StorageProfileS3Dto(final UUID id, final String name, final Protocol protocol, final boolean archived, final String scheme, final String hostname, final Integer port, final boolean withPathStyleAccessEnabled, final S3_STORAGE_CLASSES storageClass, final String region, final List<String> regions, final String bucketPrefix, final String stsRoleCreateBucketClient, final String stsRoleCreateBucketHub, final String stsEndpoint, final boolean bucketVersioning, final Boolean bucketAcceleration, final S3_SERVERSIDE_ENCRYPTION bucketEncryption) {
+	public StorageProfileS3StaticDto(final UUID id, final String name, final Protocol protocol, final boolean archived, final String scheme, final String hostname, final Integer port, final boolean withPathStyleAccessEnabled, final S3_STORAGE_CLASSES storageClass, final String region, final List<String> regions, final String bucketPrefix, final String stsRoleCreateBucketClient, final String stsRoleCreateBucketHub, final String stsEndpoint, final boolean bucketVersioning, final Boolean bucketAcceleration, final S3_SERVERSIDE_ENCRYPTION bucketEncryption) {
 		super(id, name, protocol, archived);
 		this.scheme = scheme;
 		this.hostname = hostname;
@@ -109,12 +109,12 @@ public sealed class StorageProfileS3Dto extends StorageProfileDto permits Storag
 
 	}
 
-	static StorageProfileS3Dto fromEntity(final StorageProfileS3 storageProfile) {
-		return new StorageProfileS3Dto(storageProfile.id, storageProfile.name, Protocol.s3, storageProfile.archived, storageProfile.scheme, storageProfile.hostname, storageProfile.port, storageProfile.withPathStyleAccessEnabled, S3_STORAGE_CLASSES.valueOf(storageProfile.storageClass), storageProfile.region, storageProfile.regions, storageProfile.bucketPrefix, storageProfile.stsRoleCreateBucketClient, storageProfile.stsRoleCreateBucketHub, storageProfile.stsEndpoint, storageProfile.bucketVersioning, storageProfile.bucketAcceleration, S3_SERVERSIDE_ENCRYPTION.valueOf(storageProfile.bucketEncryption));
+	static StorageProfileS3StaticDto fromEntity(final StorageProfileS3Static storageProfile) {
+		return new StorageProfileS3StaticDto(storageProfile.id, storageProfile.name, Protocol.s3static, storageProfile.archived, storageProfile.scheme, storageProfile.hostname, storageProfile.port, storageProfile.withPathStyleAccessEnabled, S3_STORAGE_CLASSES.valueOf(storageProfile.storageClass), storageProfile.region, storageProfile.regions, storageProfile.bucketPrefix, storageProfile.stsRoleCreateBucketClient, storageProfile.stsRoleCreateBucketHub, storageProfile.stsEndpoint, storageProfile.bucketVersioning, storageProfile.bucketAcceleration, S3_SERVERSIDE_ENCRYPTION.valueOf(storageProfile.bucketEncryption));
 	}
 
-	public StorageProfileS3 toEntity() {
-		final StorageProfileS3 storageProfile = new StorageProfileS3();
+	public StorageProfileS3Static toEntity() {
+		final StorageProfileS3Static storageProfile = new StorageProfileS3Static();
 		storageProfile.id = this.id;
 		storageProfile.name = this.name;
 		storageProfile.protocol = this.protocol;

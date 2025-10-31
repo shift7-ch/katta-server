@@ -17,8 +17,8 @@
         <p class="ml-3 text-sm text-yellow-700">{{ t('vaultDetails.warning.archived') }}</p>
       </div>
     </div>
-    <div v-if="storageprofile['protocol'] == 'S3'">
-      <div v-for="(item,key) in openapi.components.schemas.StorageProfileS3Dto.properties">
+    <div v-if="storageprofile['protocol'] == 'S3STATIC'">
+      <div v-for="(item,key) in openapi.components.schemas.StorageProfileS3StaticDto.properties">
         <h3 class="font-medium text-gray-900"><span v-if="!(item as OpenapiType).nullable" style="color: red;">* </span>{{ key }}</h3>
         <div class="mt-2 flex items-center justify-between">
           <p class="text-sm text-gray-600">{{ storageprofile[key] }}</p>
@@ -27,14 +27,14 @@
           <p class="text-sm text-gray-400">{{ item.description }}</p>
         </div>
         <div class="mt-2 flex items-center justify-between">
-          <p class="text-sm text-gray-400">type: {{ openapi.components.schemas.StorageProfileS3Dto.properties[key].type }}</p>
+          <p class="text-sm text-gray-400">type: {{ openapi.components.schemas.StorageProfileS3StaticDto.properties[key].type }}</p>
         </div>
-        <div v-if="(openapi.components.schemas.StorageProfileS3Dto.properties[key] as OpenapiType)?.allOf">
+        <div v-if="(openapi.components.schemas.StorageProfileS3StaticDto.properties[key] as OpenapiType)?.allOf">
           <div class="mt-2 flex items-center justify-between">
-            <p v-if="((openapi.components.schemas as OpenapiSchemas)?.[((openapi.components.schemas.StorageProfileS3Dto.properties[key] as OpenapiType)?.allOf?.[0].$ref.split('/').pop()) ?? ''] as OpenapiSchema)?.enum" class="text-sm text-gray-400">enum: {{ ((openapi.components.schemas as OpenapiSchemas)?.[((openapi.components.schemas.StorageProfileS3Dto.properties[key] as OpenapiType)?.allOf?.[0].$ref.split('/').pop()) ?? ''] as OpenapiSchema)?.enum }}</p>
+            <p v-if="((openapi.components.schemas as OpenapiSchemas)?.[((openapi.components.schemas.StorageProfileS3StaticDto.properties[key] as OpenapiType)?.allOf?.[0].$ref.split('/').pop()) ?? ''] as OpenapiSchema)?.enum" class="text-sm text-gray-400">enum: {{ ((openapi.components.schemas as OpenapiSchemas)?.[((openapi.components.schemas.StorageProfileS3StaticDto.properties[key] as OpenapiType)?.allOf?.[0].$ref.split('/').pop()) ?? ''] as OpenapiSchema)?.enum }}</p>
           </div>
           <div class="mt-2 flex items-center justify-between">
-            <p v-if="((openapi.components.schemas as OpenapiSchemas)?.[((openapi.components.schemas.StorageProfileS3Dto.properties[key] as OpenapiType)?.allOf?.[0].$ref.split('/').pop()) ?? ''] as OpenapiSchema)?.pattern" class="text-sm text-gray-400">pattern: {{ ((openapi.components.schemas as OpenapiSchemas)?.[((openapi.components.schemas.StorageProfileS3Dto.properties[key] as OpenapiType)?.allOf?.[0].$ref.split('/').pop()) ?? ''] as OpenapiSchema)?.pattern }}</p>
+            <p v-if="((openapi.components.schemas as OpenapiSchemas)?.[((openapi.components.schemas.StorageProfileS3StaticDto.properties[key] as OpenapiType)?.allOf?.[0].$ref.split('/').pop()) ?? ''] as OpenapiSchema)?.pattern" class="text-sm text-gray-400">pattern: {{ ((openapi.components.schemas as OpenapiSchemas)?.[((openapi.components.schemas.StorageProfileS3StaticDto.properties[key] as OpenapiType)?.allOf?.[0].$ref.split('/').pop()) ?? ''] as OpenapiSchema)?.pattern }}</p>
           </div>
         </div>
         <div class="mt-2 flex items-center justify-between">

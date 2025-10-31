@@ -6,7 +6,7 @@ import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "storage_profile_s3_sts")
-public class StorageProfileS3STS extends StorageProfileS3 { // TODO make sealed/final?
+public class StorageProfileS3STS extends StorageProfileS3Static { // TODO make sealed/final?
 
 	//----------------------------------------------------------------------
 	// (3b) STS client profile custom properties

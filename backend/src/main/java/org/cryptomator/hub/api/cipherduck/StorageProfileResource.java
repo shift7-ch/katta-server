@@ -18,8 +18,8 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.cryptomator.hub.entities.cipherduck.StorageProfile;
-import org.cryptomator.hub.entities.cipherduck.StorageProfileS3;
 import org.cryptomator.hub.entities.cipherduck.StorageProfileS3STS;
+import org.cryptomator.hub.entities.cipherduck.StorageProfileS3Static;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.hibernate.exception.ConstraintViolationException;
@@ -37,7 +37,7 @@ public class StorageProfileResource {
 
 
 	@POST
-	@Path("/s3")
+	@Path("/s3static")
 	@RolesAllowed("admin")
 	@Transactional
 	@Consumes(MediaType.APPLICATION_JSON)
@@ -46,10 +46,10 @@ public class StorageProfileResource {
 	@APIResponse(responseCode = "400", description = "Constraint violation")
 	@APIResponse(responseCode = "403", description = "not an admin")
 	@APIResponse(responseCode = "409", description = "Storage profile with ID already exists")
-	public Response uploadStorageProfile(final StorageProfileS3Dto c) {
+	public Response uploadStorageProfile(final StorageProfileS3StaticDto c) {
 		try {
-			final StorageProfileS3 entity = c.toEntity();
-			if (StorageProfileS3.findByIdOptional(entity.id).isPresent()) {
+			final StorageProfileS3Static entity = c.toEntity();
+			if (StorageProfileS3Static.findByIdOptional(entity.id).isPresent()) {
 				throw new ClientErrorException(Response.Status.CONFLICT);
 			}
 			entity.persistAndFlush();
@@ -91,7 +91,7 @@ public class StorageProfileResource {
 	@APIResponse(responseCode = "200", description = "list of storage configuration")
 	@APIResponse(responseCode = "403", description = "not a user")
 	public List<StorageProfileDto> getStorageProfiles(@Nullable @QueryParam("archived") Boolean archived) {
-		return StorageProfileS3.findAll().<StorageProfile>stream().map(StorageProfileDto::fromEntity).filter(dto -> (archived == null) || archived.equals(dto.archived)).collect(Collectors.toList());
+		return StorageProfileS3Static.findAll().<StorageProfile>stream().map(StorageProfileDto::fromEntity).filter(dto -> (archived == null) || archived.equals(dto.archived)).collect(Collectors.toList());
 	}
 
 	@GET
@@ -103,7 +103,7 @@ public class StorageProfileResource {
 	@APIResponse(responseCode = "200")
 	@APIResponse(responseCode = "403", description = "not a user")
 	public StorageProfileDto get(@PathParam("profileId") UUID profileId) {
-		return StorageProfileS3Dto.fromEntity(StorageProfileS3.<StorageProfile>findByIdOptional(profileId).orElseThrow(NotFoundException::new));
+		return StorageProfileS3StaticDto.fromEntity(StorageProfileS3Static.<StorageProfile>findByIdOptional(profileId).orElseThrow(NotFoundException::new));
 	}
 
 	@PUT
@@ -119,7 +119,7 @@ public class StorageProfileResource {
 		if (archived == null) {
 			return Response.status(Response.Status.BAD_REQUEST).build();
 		}
-		final StorageProfile entity = StorageProfileS3.<StorageProfile>findByIdOptional(profileId).orElseThrow(NotFoundException::new);
+		final StorageProfile entity = StorageProfileS3Static.<StorageProfile>findByIdOptional(profileId).orElseThrow(NotFoundException::new);
 		entity.setArchived(archived).persistAndFlush();
 		return Response.status(Response.Status.NO_CONTENT).build();
 	}

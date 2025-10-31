@@ -1,4 +1,4 @@
-CREATE TABLE "storage_profile_s3"
+CREATE TABLE "storage_profile_s3_static"
 (
 	"id"                UUID NOT NULL,
    "name"              VARCHAR,

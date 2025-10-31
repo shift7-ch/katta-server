@@ -7,8 +7,8 @@ import jakarta.persistence.Table;
 import java.util.List;
 
 @Entity
-@Table(name = "storage_profile_s3")
-public class StorageProfileS3 extends StorageProfile {// TODO make sealed?
+@Table(name = "storage_profile_s3_static")
+public class StorageProfileS3Static extends StorageProfile {// TODO make sealed?
 
 	//======================================================================
 	// (1) STS and permanent:

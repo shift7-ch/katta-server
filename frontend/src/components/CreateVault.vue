@@ -1063,7 +1063,7 @@ function setRegionsOnSelectStorage(storage: StorageProfileDto){
     if (!selectedBackend.value) {
       throw new Error('Invalid state.');
     }
-    isPermanent.value = selectedBackend.value['protocol'] === 'S3';
+    isPermanent.value = selectedBackend.value['protocol'] === 'S3STATIC';
     console.log('   isPermanent: ' + isPermanent.value);
 }
 

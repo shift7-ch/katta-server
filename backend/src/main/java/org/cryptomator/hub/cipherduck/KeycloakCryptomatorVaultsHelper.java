@@ -4,7 +4,6 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.core.Response;
 import org.cryptomator.hub.api.VaultResource;
-import org.cryptomator.hub.api.cipherduck.StorageProfileS3STSDto;
 import org.cryptomator.hub.entities.Group;
 import org.cryptomator.hub.entities.Vault;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
