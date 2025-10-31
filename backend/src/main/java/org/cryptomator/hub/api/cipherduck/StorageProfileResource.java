@@ -95,18 +95,6 @@ public class StorageProfileResource {
 	}
 
 	@GET
-	@Path("/s3")
-	@RolesAllowed({"user", "admin"})
-	@Produces(MediaType.APPLICATION_JSON)
-	@Transactional
-	@Operation(summary = "get configs for storage backends", description = "get list of configs for storage backends")
-	@APIResponse(responseCode = "200", description = "list of storage configuration")
-	@APIResponse(responseCode = "403", description = "not a user")
-	public List<StorageProfileS3Dto> getStorageProfilesS3() {
-		return StorageProfileS3.findAll().<StorageProfile>stream().map(StorageProfileDto::fromEntity).filter(StorageProfileS3Dto.class::isInstance).map(StorageProfileS3Dto.class::cast).collect(Collectors.toList());
-	}
-
-	@GET
 	@Path("/{profileId}")
 	@RolesAllowed({"user", "admin"})
 	@Produces(MediaType.APPLICATION_JSON)

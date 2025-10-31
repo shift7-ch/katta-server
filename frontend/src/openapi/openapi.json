@@ -1831,42 +1831,6 @@
             ]
           }
         ]
-      },
-      "get": {
-        "summary": "get configs for storage backends",
-        "description": "get list of configs for storage backends",
-        "responses": {
-          "200": {
-            "description": "list of storage configuration",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/StorageProfileS3Dto"
-                  }
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "not a user"
-          },
-          "401": {
-            "description": "Not Authorized"
-          }
-        },
-        "tags": [
-          "Storage Profile Resource"
-        ],
-        "security": [
-          {
-            "SecurityScheme": [
-              "user",
-              "admin"
-            ]
-          }
-        ]
       }
     },
     "/api/storageprofile/s3sts": {

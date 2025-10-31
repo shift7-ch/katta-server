@@ -101,21 +101,6 @@ public class StorageProfileResourceIT {
 
 		@Test
 		@Order(2)
-		@DisplayName("GET /storageprofile/s3 returns 200")
-		public void testGetS3SStorageProfiles() {
-			final List<StorageProfileS3STSDto> dtos = given()
-					.when().get("/storageprofile/s3")
-					.then().statusCode(200)
-					.extract()
-					.as(new TypeRef<List<StorageProfileS3STSDto>>() {
-					});
-			assertEquals(2, dtos.size());
-			assertEquals(1, dtos.stream().filter(dto -> dto.protocol.equals(StorageProfileDto.Protocol.s3)).count());
-			assertEquals(1, dtos.stream().filter(dto -> dto.protocol.equals(StorageProfileDto.Protocol.s3sts)).count());
-		}
-
-		@Test
-		@Order(2)
 		@DisplayName("GET /storageprofile returns 200")
 		public void testGetStorageProfiles() {
 			final List<StorageProfileS3STSDto> dtos = given()
