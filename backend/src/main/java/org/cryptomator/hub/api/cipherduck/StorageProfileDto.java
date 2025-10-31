@@ -6,6 +6,7 @@ import jakarta.persistence.Id;
 import org.cryptomator.hub.entities.cipherduck.StorageProfile;
 import org.cryptomator.hub.entities.cipherduck.StorageProfileS3;
 import org.cryptomator.hub.entities.cipherduck.StorageProfileS3STS;
+import org.eclipse.microprofile.openapi.annotations.media.DiscriminatorMapping;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 import java.util.UUID;
@@ -14,6 +15,17 @@ import java.util.UUID;
 // pro-memoria @Schema
 // - "required" is taken from @JSONProperty
 // - "defaultValue" needs to be repeated
+@Schema(
+
+		title = "StorageProfile",
+		oneOf = {StorageProfileS3Dto.class, StorageProfileS3STSDto.class},
+		discriminatorMapping = {
+				// TODO make it s3static
+				@DiscriminatorMapping(value = "S3", schema = StorageProfileS3Dto.class),
+				@DiscriminatorMapping(value = "S3STS", schema = StorageProfileS3STSDto.class),
+		},
+		discriminatorProperty = "protocol"
+)
 public abstract sealed class StorageProfileDto permits StorageProfileS3Dto {
 	public enum Protocol {
 		s3("S3"),

@@ -348,6 +348,22 @@
         }
       },
       "StorageProfileDto": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/StorageProfileS3Dto"
+          },
+          {
+            "$ref": "#/components/schemas/StorageProfileS3STSDto"
+          }
+        ],
+        "title": "StorageProfile",
+        "discriminator": {
+          "propertyName": "protocol",
+          "mapping": {
+            "S3": "#/components/schemas/StorageProfileS3Dto",
+            "S3STS": "#/components/schemas/StorageProfileS3STSDto"
+          }
+        },
         "type": "object",
         "required": [
           "id",
@@ -1742,8 +1758,18 @@
           }
         ],
         "responses": {
-          "201": {
-            "description": "uploaded storage configuration"
+          "200": {
+            "description": "list of storage configuration",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/StorageProfileDto"
+                  }
+                }
+              }
+            }
           },
           "403": {
             "description": "not a user"
@@ -1778,7 +1804,7 @@
           "required": true
         },
         "responses": {
-          "200": {
+          "201": {
             "description": "uploaded storage configuration"
           },
           "400": {
@@ -1811,7 +1837,7 @@
         "description": "get list of configs for storage backends",
         "responses": {
           "200": {
-            "description": "uploaded storage configuration",
+            "description": "list of storage configuration",
             "content": {
               "application/json": {
                 "schema": {
