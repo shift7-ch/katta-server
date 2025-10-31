@@ -35,13 +35,14 @@ public class StorageProfileResource {
 	@Inject
 	CipherduckConfig cipherduckConfig;
 
+
 	@POST
 	@Path("/s3")
 	@RolesAllowed("admin")
 	@Transactional
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	@APIResponse(responseCode = "200", description = "uploaded storage configuration")
+	@APIResponse(responseCode = "201", description = "uploaded storage configuration")
 	@APIResponse(responseCode = "400", description = "Constraint violation")
 	@APIResponse(responseCode = "403", description = "not an admin")
 	@APIResponse(responseCode = "409", description = "Storage profile with ID already exists")
@@ -87,7 +88,7 @@ public class StorageProfileResource {
 	@Produces(MediaType.APPLICATION_JSON)
 	@Transactional
 	@Operation(summary = "get configs for storage backends", description = "get list of configs for storage backends")
-	@APIResponse(responseCode = "201", description = "uploaded storage configuration")
+	@APIResponse(responseCode = "200", description = "list of storage configuration")
 	@APIResponse(responseCode = "403", description = "not a user")
 	public List<StorageProfileDto> getStorageProfiles(@Nullable @QueryParam("archived") Boolean archived) {
 		return StorageProfileS3.findAll().<StorageProfile>stream().map(StorageProfileDto::fromEntity).filter(dto -> (archived == null) || archived.equals(dto.archived)).collect(Collectors.toList());
@@ -99,7 +100,7 @@ public class StorageProfileResource {
 	@Produces(MediaType.APPLICATION_JSON)
 	@Transactional
 	@Operation(summary = "get configs for storage backends", description = "get list of configs for storage backends")
-	@APIResponse(responseCode = "200", description = "uploaded storage configuration")
+	@APIResponse(responseCode = "200", description = "list of storage configuration")
 	@APIResponse(responseCode = "403", description = "not a user")
 	public List<StorageProfileS3Dto> getStorageProfilesS3() {
 		return StorageProfileS3.findAll().<StorageProfile>stream().map(StorageProfileDto::fromEntity).filter(StorageProfileS3Dto.class::isInstance).map(StorageProfileS3Dto.class::cast).collect(Collectors.toList());
