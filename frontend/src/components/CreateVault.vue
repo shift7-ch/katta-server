@@ -935,7 +935,7 @@ async function createVault() {
             ]
           }`.replaceAll("{}", uvfVault.value.metadata.backend.defaultPath),
           // Required. ARN of the role that the caller is assuming.
-          RoleArn: selectedBackend.value.stsRoleArnHub
+          RoleArn: selectedBackend.value.stsRoleCreateBucketHub
         }
 
 
@@ -1063,7 +1063,7 @@ function setRegionsOnSelectStorage(storage: StorageProfileDto){
     if (!selectedBackend.value) {
       throw new Error('Invalid state.');
     }
-    isPermanent.value = selectedBackend.value['protocol'] === 'S3';
+    isPermanent.value = selectedBackend.value['protocol'] === 'S3STATIC';
     console.log('   isPermanent: ' + isPermanent.value);
 }
 

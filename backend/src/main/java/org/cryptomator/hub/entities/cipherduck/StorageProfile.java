@@ -2,19 +2,16 @@ package org.cryptomator.hub.entities.cipherduck;
 
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.Column;
-import jakarta.persistence.DiscriminatorColumn;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Inheritance;
 import jakarta.persistence.InheritanceType;
-import jakarta.persistence.Table;
+import org.cryptomator.hub.api.cipherduck.StorageProfileDto;
 
 import java.util.UUID;
 
 @Entity
-@Table(name = "storage_profile")
-@Inheritance(strategy = InheritanceType.JOINED)
-@DiscriminatorColumn(name = "protocol")
+@Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
 public class StorageProfile extends PanacheEntityBase { // TODO make sealed?
 	@Id
 	@Column(name = "id", nullable = false)
@@ -25,6 +22,9 @@ public class StorageProfile extends PanacheEntityBase { // TODO make sealed?
 
 	@Column(name = "archived", nullable = false)
 	public boolean archived;
+
+	@Column(name = "protocol", nullable = false)
+	public StorageProfileDto.Protocol protocol;
 
 	public StorageProfile setArchived(boolean archived) {
 		this.archived = archived;

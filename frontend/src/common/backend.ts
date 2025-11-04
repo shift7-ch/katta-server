@@ -172,8 +172,8 @@ export type StorageProfileDto = {
     name: string;
     protocol: string;
     bucketPrefix: string;
-    stsRoleArnClient: string;
-    stsRoleArnHub: string;
+    stsRoleCreateBucketClient: string;
+    stsRoleCreateBucketHub: string;
     stsEndpoint: string;
     bucketVersioning: string;
     bucketAcceleration: string;
@@ -185,9 +185,10 @@ export type StorageProfileDto = {
     scheme: string;
     hostname: string;
     port: number;
-    stsRoleArn: string;
-    stsRoleArn2: string;
+    stsRoleAccessBucketAssumeRoleWithWebIdentity: string;
+    stsRoleAccessBucketAssumeRoleTaggedSession: string;
     stsDurationSeconds: number;
+    stsSessionTag: string;
     archived: boolean;
 }
 
