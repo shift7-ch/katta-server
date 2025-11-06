@@ -5,6 +5,7 @@ import org.cryptomator.hub.entities.cipherduck.StorageProfileS3STS;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 @Schema(title = "StorageProfileS3STSDto")
@@ -110,5 +111,25 @@ public final class StorageProfileS3STSDto extends StorageProfileS3StaticDto {
 
 	public String stsSessionTag() {
 		return stsSessionTag;
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+		if (!super.equals(o)) return false;
+
+		StorageProfileS3STSDto s3STSDto = (StorageProfileS3STSDto) o;
+		return Objects.equals(stsRoleAccessBucketAssumeRoleWithWebIdentity, s3STSDto.stsRoleAccessBucketAssumeRoleWithWebIdentity) && Objects.equals(stsRoleAccessBucketAssumeRoleTaggedSession, s3STSDto.stsRoleAccessBucketAssumeRoleTaggedSession) && Objects.equals(stsDurationSeconds, s3STSDto.stsDurationSeconds) && Objects.equals(stsSessionTag, s3STSDto.stsSessionTag);
+	}
+
+	@Override
+	public int hashCode() {
+		int result = super.hashCode();
+		result = 31 * result + Objects.hashCode(stsRoleAccessBucketAssumeRoleWithWebIdentity);
+		result = 31 * result + Objects.hashCode(stsRoleAccessBucketAssumeRoleTaggedSession);
+		result = 31 * result + Objects.hashCode(stsDurationSeconds);
+		result = 31 * result + Objects.hashCode(stsSessionTag);
+		return result;
 	}
 }

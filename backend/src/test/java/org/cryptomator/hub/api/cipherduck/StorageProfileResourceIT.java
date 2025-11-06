@@ -1,17 +1,20 @@
 package org.cryptomator.hub.api.cipherduck;
 
+import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.security.TestSecurity;
 import io.quarkus.test.security.oidc.Claim;
 import io.quarkus.test.security.oidc.OidcSecurity;
 import io.restassured.common.mapper.TypeRef;
 import io.restassured.http.ContentType;
+import org.cryptomator.hub.api.cipherduck.storage.S3StorageHelper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
+import org.mockito.Mockito;
 
 import java.util.Arrays;
 import java.util.List;
@@ -20,10 +23,14 @@ import java.util.UUID;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.text.IsEqualIgnoringCase.equalToIgnoringCase;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.times;
 
 @QuarkusTest
 @DisplayName("Resource /storageprofile")
 public class StorageProfileResourceIT {
+	@InjectMock
+	S3StorageHelper s3StorageHelper;
+
 	@Nested
 	@DisplayName("As admin user1")
 	@TestSecurity(user = "User Name 1", roles = {"admin", "user"})
@@ -31,7 +38,7 @@ public class StorageProfileResourceIT {
 			@Claim(key = "sub", value = "user1")
 	})
 	@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-	public class CreateVaults {
+	public class CreateStorageProfile {
 		@Test
 		@Order(1)
 		@DisplayName("POST /storageprofile/s3static returns 201")
@@ -213,6 +220,52 @@ public class StorageProfileResourceIT {
 
 		@Test
 		@Order(4)
+		@DisplayName("PUT /storage/{vaultId} returns 201")
+		public void testCreateStorage() {
+			final String vaultId = UUID.randomUUID().toString();
+			var createS3STSBucketDto = new CreateS3STSBucketDto(
+					vaultId,
+					UUID.fromString("844bd517-96d4-4787-bcfa-238e103149f6"),
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+			);
+			var vaultDto = new StorageProfileS3STSDto(
+					UUID.fromString("844bd517-96d4-4787-bcfa-238e103149f6"),
+					"AWS S3 STS",
+					StorageProfileDto.Protocol.valueOf("s3static"),
+					false,
+					null,
+					null,
+					null,
+					false,
+					StorageProfileS3StaticDto.S3_STORAGE_CLASSES.STANDARD,
+					"eu-west-1",
+					Arrays.asList("eu-west-1", "eu-west-2", "eu-west-3"),
+					"katta-test-",
+					"arn:aws:iam::430118840017:role/testing.katta.cloud-kc-realms-chipotle-createbucket",
+					"arn:aws:iam::430118840017:role/testing.katta.cloud-kc-realms-chipotle-createbucket",
+					null,
+					true,
+					null,
+					StorageProfileS3StaticDto.S3_SERVERSIDE_ENCRYPTION.NONE,
+					"arn:aws:iam::430118840017:role/testing.katta.cloud-kc-realms-chipotle-sts-chain-01",
+					"JsonNullable[arn:aws:iam::430118840017:role/testing.katta.cloud-kc-realms-chipotle-sts-chain-02]",
+					null,
+					"Vault"
+			);
+			given().contentType(ContentType.JSON).body(createS3STSBucketDto)
+					.when().put("/storage/{vaultId}", vaultId)
+					.then().statusCode(201);
+			Mockito.verify(s3StorageHelper, times(1)).makeS3Bucket(vaultDto, createS3STSBucketDto);
+		}
+
+		@Test
+		@Order(4)
 		@DisplayName("PUT /storageprofile/{profileId} archiving returns 204")
 		public void testArchiveS3StorageProfile() {
 			given().formParam("archived", true)
@@ -255,6 +308,27 @@ public class StorageProfileResourceIT {
 		}
 
 		@Test
+		@Order(4)
+		@DisplayName("PUT /storage/{vaultId} returns 410")
+		public void testCreateStorageArchived() {
+			final String vaultId = UUID.randomUUID().toString();
+			var createS3STSBucketDto = new CreateS3STSBucketDto(
+					vaultId,
+					UUID.fromString("844bd517-96d4-4787-bcfa-238e103149f6"),
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+			);
+			given().contentType(ContentType.JSON).body(createS3STSBucketDto)
+					.when().put("/storage/{vaultId}", vaultId)
+					.then().statusCode(410);
+		}
+
+		@Test
 		@Order(6)
 		@DisplayName("GET /storageprofile returns 200")
 		public void testGetArchivedStorageProfiles() {
@@ -281,5 +355,6 @@ public class StorageProfileResourceIT {
 					});
 			assertEquals(0, dtos.size());
 		}
+
 	}
 }

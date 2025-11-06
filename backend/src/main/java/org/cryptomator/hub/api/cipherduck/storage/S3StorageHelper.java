@@ -1,6 +1,7 @@
 package org.cryptomator.hub.api.cipherduck.storage;
 
 
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.ws.rs.ClientErrorException;
 import jakarta.ws.rs.core.Response;
 import org.cryptomator.hub.api.cipherduck.CreateS3STSBucketDto;
@@ -41,10 +42,11 @@ import java.net.URI;
 import java.util.Base64;
 import java.util.Collections;
 
+@ApplicationScoped
 public class S3StorageHelper {
 	private static final Logger log = Logger.getLogger(S3StorageHelper.class);
 
-	public static void makeS3Bucket(
+	public void makeS3Bucket(
 			final StorageProfileS3STSDto storageConfig,
 			final CreateS3STSBucketDto dto
 	) {

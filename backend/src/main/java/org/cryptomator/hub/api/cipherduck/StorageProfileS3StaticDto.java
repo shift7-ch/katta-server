@@ -6,6 +6,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import software.amazon.awssdk.regions.Region;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 @Schema(title = "StorageProfileS3Dto")
@@ -190,5 +191,33 @@ public sealed class StorageProfileS3StaticDto extends StorageProfileDto permits 
 
 	public S3_SERVERSIDE_ENCRYPTION bucketEncryption() {
 		return bucketEncryption;
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+
+		StorageProfileS3StaticDto that = (StorageProfileS3StaticDto) o;
+		return Objects.equals(scheme, that.scheme) && Objects.equals(hostname, that.hostname) && Objects.equals(port, that.port) && Objects.equals(withPathStyleAccessEnabled, that.withPathStyleAccessEnabled) && storageClass == that.storageClass && Objects.equals(region, that.region) && Objects.equals(regions, that.regions) && Objects.equals(bucketPrefix, that.bucketPrefix) && Objects.equals(stsRoleCreateBucketClient, that.stsRoleCreateBucketClient) && Objects.equals(stsRoleCreateBucketHub, that.stsRoleCreateBucketHub) && Objects.equals(stsEndpoint, that.stsEndpoint) && Objects.equals(bucketVersioning, that.bucketVersioning) && Objects.equals(bucketAcceleration, that.bucketAcceleration) && bucketEncryption == that.bucketEncryption;
+	}
+
+	@Override
+	public int hashCode() {
+		int result = Objects.hashCode(scheme);
+		result = 31 * result + Objects.hashCode(hostname);
+		result = 31 * result + Objects.hashCode(port);
+		result = 31 * result + Objects.hashCode(withPathStyleAccessEnabled);
+		result = 31 * result + Objects.hashCode(storageClass);
+		result = 31 * result + Objects.hashCode(region);
+		result = 31 * result + Objects.hashCode(regions);
+		result = 31 * result + Objects.hashCode(bucketPrefix);
+		result = 31 * result + Objects.hashCode(stsRoleCreateBucketClient);
+		result = 31 * result + Objects.hashCode(stsRoleCreateBucketHub);
+		result = 31 * result + Objects.hashCode(stsEndpoint);
+		result = 31 * result + Objects.hashCode(bucketVersioning);
+		result = 31 * result + Objects.hashCode(bucketAcceleration);
+		result = 31 * result + Objects.hashCode(bucketEncryption);
+		return result;
 	}
 }
