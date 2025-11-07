@@ -82,7 +82,7 @@ async function reactivateVault() {
   const dto =  { ...props.vault };
   dto.archived = false;
   try {
-    const updatedVault = await backend.vaults.createOrUpdateVault(dto);
+    const updatedVault = await backend.vaults.createOrUpdateVault(dto, true, true);
     emit('reactivated', updatedVault);
     open.value = false;
   } catch (error) {

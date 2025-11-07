@@ -421,8 +421,15 @@ class VaultService {
     return addFallbackPictures ? users.map(fillInMissingPicture) : users;
   }
 
-  public async createOrUpdateVault(vault: VaultDto): Promise<VaultDto> {
-    return axiosAuth.put(`/vaults/${vault.id}`, vault)
+  public async createOrUpdateVault(vault: VaultDto
+    // / start cipherduck extension
+    , aws: boolean
+    , minio: boolean
+    // \ end cipherduck extension
+    ): Promise<VaultDto> {
+    // / start cipherduck modification
+    return axiosAuth.put(`/vaults/${vault.id}?aws=${aws}&minio=${minio}` , vault)
+    // \ end cipherduck modification
       .then(response => response.data)
       .catch((error) => rethrowAndConvertIfExpected(error, 402, 404));
   }

@@ -82,7 +82,7 @@ async function archiveVault() {
   const dto = { ...props.vault };
   dto.archived = true;
   try {
-    const updatedVault = await backend.vaults.createOrUpdateVault(dto);
+    const updatedVault = await backend.vaults.createOrUpdateVault(dto, true, true);
     emit('archived', updatedVault);
     open.value = false;
   } catch (error) {

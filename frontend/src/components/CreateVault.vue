@@ -1239,7 +1239,7 @@ async function createVault() {
     }
     // \ end cipherduck extension
 
-    await backend.vaults.createOrUpdateVault(vault.value);
+    await backend.vaults.createOrUpdateVault(vault.value, true, true);
     await backend.vaults.grantAccess(vault.value.id, ownerGrant);
     state.value = State.Finished;
   } catch (error) {
