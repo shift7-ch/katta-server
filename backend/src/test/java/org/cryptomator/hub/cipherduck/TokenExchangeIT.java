@@ -21,6 +21,9 @@ import java.io.UncheckedIOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.security.GeneralSecurityException;
+import java.util.Date;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
 public class TokenExchangeIT {
@@ -51,18 +54,40 @@ public class TokenExchangeIT {
 		var initialAccessToken = new ObjectMapper().reader().readTree(authResponse.body()).get("access_token").asText();
 
 		// 2. Call the token exchange endpoint
-		var tokenExchangeResponse = RestAssured.given()
-				.auth().oauth2(initialAccessToken)
-				.queryParam("vault", "address") // "address" is one of cryptomatorvaults' optional client scope. In production there will be scopes for each vault
-				.post("/storage/s3-token");
-		Assertions.assertEquals(200, tokenExchangeResponse.statusCode());
+		Date oldExpiresAt = null;
+		{
+			var tokenExchangeResponse = RestAssured.given()
+					.auth().oauth2(initialAccessToken)
+					.queryParam("vault", "address") // "address" is one of cryptomatorvaults' optional client scope. In production there will be scopes for each vault
+					.post("/storage/s3-token");
+			Assertions.assertEquals(200, tokenExchangeResponse.statusCode());
 
-		var exchangedAccessToken = new ObjectMapper().reader().readTree(tokenExchangeResponse.body().asString()).get("access_token").asText();
-		var jwt = JWT.decode(exchangedAccessToken);
-		Assertions.assertEquals(1, jwt.getAudience().size());
-		Assertions.assertEquals("cryptomatorvaults", jwt.getAudience().getFirst());
-		Assertions.assertEquals("cryptomatorvaults", jwt.getClaim("azp").asString());
-		MatcherAssert.assertThat(jwt.getClaim("scope").asString(), Matchers.containsStringIgnoringCase("address"));
+			var exchangedAccessToken = new ObjectMapper().reader().readTree(tokenExchangeResponse.body().asString()).get("access_token").asText();
+			var jwt = JWT.decode(exchangedAccessToken);
+			Assertions.assertEquals(1, jwt.getAudience().size());
+			Assertions.assertEquals("cryptomatorvaults", jwt.getAudience().getFirst());
+			Assertions.assertEquals("cryptomatorvaults", jwt.getClaim("azp").asString());
+			MatcherAssert.assertThat(jwt.getClaim("scope").asString(), Matchers.containsStringIgnoringCase("address"));
+			oldExpiresAt = jwt.getExpiresAt();
+			System.out.println(oldExpiresAt);
+		}
+		Thread.sleep(1000);
+		{
+			var tokenExchangeResponse = RestAssured.given()
+					.auth().oauth2(initialAccessToken)
+					.queryParam("vault", "address") // "address" is one of cryptomatorvaults' optional client scope. In production there will be scopes for each vault
+					.post("/storage/s3-token");
+			Assertions.assertEquals(200, tokenExchangeResponse.statusCode());
+
+			var exchangedAccessToken = new ObjectMapper().reader().readTree(tokenExchangeResponse.body().asString()).get("access_token").asText();
+			var jwt = JWT.decode(exchangedAccessToken);
+			Assertions.assertEquals(1, jwt.getAudience().size());
+			Assertions.assertEquals("cryptomatorvaults", jwt.getAudience().getFirst());
+			Assertions.assertEquals("cryptomatorvaults", jwt.getClaim("azp").asString());
+			MatcherAssert.assertThat(jwt.getClaim("scope").asString(), Matchers.containsStringIgnoringCase("address"));
+			System.out.println(jwt.getExpiresAt());
+			assertTrue(jwt.getExpiresAt().after(oldExpiresAt));
+		}
 	}
 
 	@Test
