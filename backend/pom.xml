@@ -17,6 +17,10 @@
     <surefire-plugin.version>3.5.4</surefire-plugin.version>
     <failsafe-plugin.version>3.5.4</failsafe-plugin.version>
     <junit-tree-reporter.version>1.4.0</junit-tree-reporter.version>
+
+    <!-- / start cipherduck extension -->
+    <keycloak.version>26.0.7</keycloak.version>
+    <!-- \ end cipherduck extension -->
   </properties>
 
   <dependencyManagement>
@@ -52,6 +56,10 @@
     <dependency>
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-arc</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-devservices-keycloak</artifactId>
     </dependency>
     <dependency>
       <groupId>io.quarkus</groupId>
@@ -178,6 +186,24 @@
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
       <artifactId>aws-crt-client</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.github.dasniko</groupId>
+      <artifactId>testcontainers-keycloak</artifactId>
+      <version>3.9.0</version>
+      <scope>test</scope>
+    </dependency>
+    <!-- io.quarkus:quarkus-keycloak-admin-rest-client:jar:3.20.3 not enough: RestEasy 3 or 4 not found on classpath -->
+    <dependency>
+      <groupId>org.jboss.resteasy</groupId>
+      <artifactId>resteasy-client</artifactId>
+      <version>6.2.9.Final</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.keycloak</groupId>
+      <artifactId>keycloak-admin-client</artifactId>
+      <version>${keycloak.version}</version>
     </dependency>
     <!-- \ end cipherduck extension -->
   </dependencies>
