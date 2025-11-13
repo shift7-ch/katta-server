@@ -78,13 +78,13 @@ import java.util.UUID;
  */
 public class KattaTokenExchangeIT {
 
-    /**
+    private static final String currentKeycloakImage = "quay.io/keycloak/keycloak:26.4.5";/**
      * Test (P2) and (P3) on the initial token before token-exchange with our dev realm. Serves as regression test.
      */
     @Test
     public void testDevRealm() throws JSONException {
         RestAssured.useRelaxedHTTPSValidation();
-        try (final KeycloakContainer container = new KeycloakContainer("quay.io/keycloak/keycloak:26.3.1")
+        try (final KeycloakContainer container = new KeycloakContainer(currentKeycloakImage)
                 // comment in for local debugging:
                 //				.withDebugFixedPort(5005, false)
                 //				.withCustomCommand("--log-level=DEBUG")
@@ -234,7 +234,7 @@ public class KattaTokenExchangeIT {
      * Serves as regression test.
      */
     @ParameterizedTest
-    @CsvSource({"26.3.1,true"})
+    @CsvSource({"26.4.5,true"})
     public void inspectTokenExchangeWithAdditionalScope(final String keycloakVersion) throws JSONException {
         RestAssured.useRelaxedHTTPSValidation();
         try (final KeycloakContainer container = new KeycloakContainer(String.format("quay.io/keycloak/keycloak:%s", keycloakVersion))
@@ -321,7 +321,7 @@ public class KattaTokenExchangeIT {
     @CsvSource({"true,true,true", "false,true,true", "true,false,true", "true,true,false"})
     public void testKattaTokenExchange(final boolean sharedWithAlice, final boolean addMinioMapper, final boolean addAwsMapper) throws JSONException {
         RestAssured.useRelaxedHTTPSValidation();
-        try (final KeycloakContainer container = new KeycloakContainer("quay.io/keycloak/keycloak:26.3.1")
+        try (final KeycloakContainer container = new KeycloakContainer(currentKeycloakImage)
                 // comment in for local debugging:
                 //				.withDebugFixedPort(5005, false)
                 //				.withCustomCommand("--log-level=DEBUG")
@@ -454,7 +454,7 @@ public class KattaTokenExchangeIT {
     @Test
     public void testNoDownScopingTokenRefresh() throws JSONException {
         RestAssured.useRelaxedHTTPSValidation();
-        try (final KeycloakContainer container = new KeycloakContainer("quay.io/keycloak/keycloak:26.3.1")
+        try (final KeycloakContainer container = new KeycloakContainer(currentKeycloakImage)
                 // comment in for local debugging:
                 //				.withDebugFixedPort(5005, false)
                 //				.withCustomCommand("--log-level=DEBUG")
