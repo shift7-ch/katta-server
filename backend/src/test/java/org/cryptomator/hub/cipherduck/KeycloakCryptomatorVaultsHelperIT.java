@@ -1,76 +1,63 @@
 package org.cryptomator.hub.cipherduck;
 
+import dasniko.testcontainers.keycloak.KeycloakContainer;
+import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
+import static org.cryptomator.hub.cipherduck.KeycloakCryptomatorVaultsHelper.keycloakGrantAccessToVault;
+import static org.cryptomator.hub.cipherduck.KeycloakCryptomatorVaultsHelper.keycloakPrepareVault;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.resteasy.reactive.ClientWebApplicationException;
+import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
-import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.Keycloak;
-import org.keycloak.admin.client.KeycloakBuilder;
 import org.keycloak.admin.client.resource.ClientScopeResource;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.admin.client.resource.ServerInfoResource;
 
 import java.util.UUID;
 
-import static org.cryptomator.hub.cipherduck.KeycloakCryptomatorVaultsHelper.keycloakGrantAccessToVault;
-import static org.cryptomator.hub.cipherduck.KeycloakCryptomatorVaultsHelper.keycloakPrepareVault;
-import static org.junit.jupiter.api.Assertions.*;
-
-// N.B. @Inject Keycloak points at points at 8180, use KeycloakBuilder with quarkus.oidc.auth-server-url instead
 @QuarkusTest
+@QuarkusTestResource(KeycloakTestResourceLifecycleManager.class)
 class KeycloakCryptomatorVaultsHelperIT {
-	@ConfigProperty(name = "quarkus.oidc.auth-server-url")
-	String keycloakAuthServerUrl;
+    @ConfigProperty(name = "hub.keycloak.realm")
+    String keycloakRealm;
 
-	@ConfigProperty(name = "hub.keycloak.realm")
-	String keycloakRealm;
+    @ConfigProperty(name = "hub.keycloak.oidc.cryptomator-vaults-client-id", defaultValue = "")
+    String keycloakClientIdCryptomatorVaults;
 
-	@ConfigProperty(name = "hub.keycloak.oidc.cryptomator-vaults-client-id", defaultValue = "")
-	String keycloakClientIdCryptomatorVaults;
+    @KeycloakTestResourceLifecycleManager.InjectKeycloakContainer
+    KeycloakContainer container;
 
-	@ConfigProperty(name = "hub.keycloak.system-client-id", defaultValue = "")
-	String keycloakSystemClientId;
+    @ParameterizedTest
+    @CsvSource({"true,true,2", "true,false,1", "false,true,1", "false,false,0"})
+    public void testKeycloakPrepareVault(final boolean minio, final boolean aws, final int expected) {
+        final Keycloak keycloak = container.getKeycloakAdminClient();
 
-	@ConfigProperty(name = "hub.keycloak.system-client-secret", defaultValue = "")
-	String keycloakSystemClientSecret;
+        Keycloak admin = container.getKeycloakAdminClient();
+        ServerInfoResource serverInfoResource = admin.serverInfo();
+        assertNotNull(serverInfoResource.getInfo());
 
-	@ParameterizedTest
-	@CsvSource({"true,true,2", "true,false,1", "false,true,1", "false,false,0"})
-	public void testKeycloakPrepareVault(final boolean minio, final boolean aws, final int expected) {
-		final Keycloak keycloak = KeycloakBuilder.builder()
-				.grantType(OAuth2Constants.CLIENT_CREDENTIALS)
-				.serverUrl(keycloakAuthServerUrl.replace(String.format("/realms/%s", keycloakRealm), ""))
-				.realm("cryptomator")
-				.clientId(keycloakSystemClientId)
-				.clientSecret(keycloakSystemClientSecret)
-				.build();
-		final RealmResource realm = keycloak.realm(keycloakRealm);
-		final String vaultId = UUID.randomUUID().toString();
+        final RealmResource realm = keycloak.realm(keycloakRealm);
+        final String vaultId = UUID.randomUUID().toString();
 
-		final ClientScopeResource clientScopeResource = realm.clientScopes().get(vaultId);
-		final ClientWebApplicationException exc = assertThrows(ClientWebApplicationException.class, () -> clientScopeResource.getProtocolMappers().getMappers());
-		assertEquals(404, exc.getResponse().getStatus());
-		keycloakPrepareVault(vaultId, keycloak, keycloakRealm, minio, aws);
-		assertEquals(expected, clientScopeResource.getProtocolMappers().getMappers().size());
-	}
+        final ClientScopeResource clientScopeResource = realm.clientScopes().get(vaultId);
+        final ClientWebApplicationException exc = assertThrows(ClientWebApplicationException.class, () -> clientScopeResource.getProtocolMappers().getMappers());
+        assertEquals(404, exc.getResponse().getStatus());
+        keycloakPrepareVault(vaultId, keycloak, keycloakRealm, minio, aws);
+        assertEquals(expected, clientScopeResource.getProtocolMappers().getMappers().size());
+    }
 
-	@Test
-	public void testKeycloakGrantAccessToVault() {
-		final Keycloak keycloak = KeycloakBuilder.builder()
-				.grantType(OAuth2Constants.CLIENT_CREDENTIALS)
-				.serverUrl(keycloakAuthServerUrl.replace(String.format("/realms/%s", keycloakRealm), ""))
-				.realm("cryptomator")
-				.clientId(keycloakSystemClientId)
-				.clientSecret(keycloakSystemClientSecret)
-				.build();
-		final RealmResource realm = keycloak.realm(keycloakRealm);
+    @Test
+    public void testKeycloakGrantAccessToVault() {
+        final Keycloak keycloak = container.getKeycloakAdminClient();
+        final RealmResource realm = keycloak.realm(keycloakRealm);
 
-		final String vaultId = UUID.randomUUID().toString();
-		final String alice = realm.users().searchByFirstName("alice", true).getFirst().getId();
-		assertNull(realm.users().get(alice).roles().getAll().getClientMappings());
-		keycloakGrantAccessToVault(vaultId, alice, keycloakClientIdCryptomatorVaults, keycloak, keycloakRealm, false);
-		assertTrue(realm.users().get(alice).roles().getAll().getClientMappings().get(keycloakClientIdCryptomatorVaults).getMappings().stream().anyMatch(r -> r.getName().equals(vaultId)));
-	}
+        final String vaultId = UUID.randomUUID().toString();
+        final String alice = realm.users().searchByFirstName("alice", true).getFirst().getId();
+        assertNull(realm.users().get(alice).roles().getAll().getClientMappings());
+        keycloakGrantAccessToVault(vaultId, alice, keycloakClientIdCryptomatorVaults, keycloak, keycloakRealm, false);
+        assertTrue(realm.users().get(alice).roles().getAll().getClientMappings().get(keycloakClientIdCryptomatorVaults).getMappings().stream().anyMatch(r -> r.getName().equals(vaultId)));
+    }
 }
