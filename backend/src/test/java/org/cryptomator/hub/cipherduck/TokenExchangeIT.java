@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.coffeelibs.tinyoauth2client.TinyOAuth2;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.RestAssured;
+import io.restassured.response.ValidatableResponse;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
@@ -15,6 +16,10 @@ import org.htmlunit.html.HtmlPage;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -23,6 +28,7 @@ import java.net.http.HttpClient;
 import java.security.GeneralSecurityException;
 import java.util.Date;
 
+import static io.restassured.RestAssured.given;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
@@ -34,7 +40,35 @@ public class TokenExchangeIT {
 	@Test
 	@DisplayName("authenticate as public client 'cryptomator' and exchange token for 'cryptomatorvaults'")
 	public void testTokenExchange() throws GeneralSecurityException, IOException, InterruptedException {
-		// 1. Authenticate as public client using Authorization Code Flow with PKCE
+
+		// 0. set ssoSessionMaxLifespan to 5s
+		{
+			final String initialAccessToken =
+					given()
+							.header("Content-Type", "application/x-www-form-urlencoded")
+							.formParam("client_id", "admin-cli")
+							.formParam("grant_type", "password")
+							.formParam("username", "admin")
+							.formParam("password", "admin")
+							.when()
+							.post(URI.create(keycloakAuthServerUrl.replace("cryptomator", "master") + "/protocol/openid-connect/token"))
+							.then()
+							.statusCode(200)
+							.extract().path("access_token");
+			try (Keycloak keycloak = Keycloak.getInstance(keycloakAuthServerUrl.replace("/realms/cryptomator", ""), "master", "admin-cli", initialAccessToken)) {
+				final RealmResource realm = keycloak.realm("cryptomator");
+				final ClientRepresentation cryptomatorClient = realm.clients().findByClientId("cryptomator").getFirst();
+				cryptomatorClient.setDirectAccessGrantsEnabled(true);
+				realm.clients().get(cryptomatorClient.getId()).update(cryptomatorClient);
+				// set ssoSessionMaxLifespan
+				final RealmRepresentation realmRepresentation = realm.toRepresentation();
+				final int ssoSessionMaxLifespanSeconds = 5;
+				realmRepresentation.setSsoSessionMaxLifespan(ssoSessionMaxLifespanSeconds); // seconds, see https://www.keycloak.org/docs-api/latest/javadocs/org/keycloak/models/RealmModel.html
+				realm.update(realmRepresentation);
+			}
+		}
+
+		// 1. Authenticate as public client using Authorization Code Flow with PKCE, getting offline token
 		var authResponse = TinyOAuth2.client("cryptomator") //
 				.withTokenEndpoint(URI.create(keycloakAuthServerUrl + "/protocol/openid-connect/token")) //
 				.authorizationCodeGrant(URI.create(keycloakAuthServerUrl + "/protocol/openid-connect/auth")) //
@@ -49,9 +83,10 @@ public class TokenExchangeIT {
 					} catch (IOException e) {
 						throw new UncheckedIOException(e);
 					}
-				}, "openid", "profile", "email"); // scopes of initial token
+				}, "openid", "profile", "email", "offline_access"); // scopes of initial token
 		Assertions.assertEquals(200, authResponse.statusCode());
 		var initialAccessToken = new ObjectMapper().reader().readTree(authResponse.body()).get("access_token").asText();
+		var initialRefreshToken = new ObjectMapper().reader().readTree(authResponse.body()).get("refresh_token").asText();
 
 		// 2. Call the token exchange endpoint
 		Date oldExpiresAt = null;
@@ -71,10 +106,39 @@ public class TokenExchangeIT {
 			oldExpiresAt = jwt.getExpiresAt();
 			System.out.println(oldExpiresAt);
 		}
-		Thread.sleep(1000);
+
+		// 2bis. wait for session expiry
 		{
+			Thread.sleep(8000);
 			var tokenExchangeResponse = RestAssured.given()
 					.auth().oauth2(initialAccessToken)
+					.queryParam("vault", "address") // "address" is one of cryptomatorvaults' optional client scope. In production there will be scopes for each vault
+					.post("/storage/s3-token");
+			// 200 with offline_access, 401 unauthorized without offline_access
+			Assertions.assertEquals(200, tokenExchangeResponse.statusCode());
+		}
+
+		// 3. get access token with refresh token
+		final ValidatableResponse refreshTokenGrant = given()
+				.header("Content-Type", "application/x-www-form-urlencoded")
+				.formParam("client_id", "cryptomator")
+				.formParam("grant_type", "refresh_token")
+				.formParam("refresh_token", initialRefreshToken)
+				// needs offline_access again - otherwise 400 below!
+				.formParam("scope", "phone offline_access")
+				.when()
+				.post(URI.create(keycloakAuthServerUrl + "/protocol/openid-connect/token"))
+				.then()
+				.log().everything()
+				.statusCode(200);
+		final String refreshedAccessToken =
+				refreshTokenGrant
+						.extract().path("access_token");
+
+		// 4. do token exchange
+		{
+			var tokenExchangeResponse = RestAssured.given()
+					.auth().oauth2(refreshedAccessToken)
 					.queryParam("vault", "address") // "address" is one of cryptomatorvaults' optional client scope. In production there will be scopes for each vault
 					.post("/storage/s3-token");
 			Assertions.assertEquals(200, tokenExchangeResponse.statusCode());
