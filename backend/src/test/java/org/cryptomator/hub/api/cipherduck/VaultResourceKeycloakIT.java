@@ -14,6 +14,7 @@ import org.cryptomator.hub.api.VaultResource;
 import org.cryptomator.hub.cipherduck.KeycloakCryptomatorVaultsHelper;
 import org.cryptomator.hub.cipherduck.KeycloakTestResourceLifecycleManager;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.text.IsEqualIgnoringCase.equalToIgnoringCase;
@@ -70,9 +71,9 @@ public class VaultResourceKeycloakIT {
         public void testCreateVault1() {
             var uuid = UUID.fromString("7E57C0DE-0000-4000-8000-000100008888");
             var vaultDto = new VaultResource.VaultDto(uuid, "My Vault", "Test vault 3", false, Instant.parse("2112-12-21T21:12:21Z"), "uvfMetadata3", "uvfKeySet3", "masterkey3", 42, "NaCl", "authPubKey3", "authPrvKey3");
-
             given().contentType(ContentType.JSON).body(vaultDto)
                     .queryParam("minio", true)
+                    .queryParam("aws", true)
                     .when().put("/vaults/{vaultId}", "7E57C0DE-0000-4000-8000-000100008888")
                     .then().statusCode(201)
                     .body("id", equalToIgnoringCase("7E57C0DE-0000-4000-8000-000100008888"))
@@ -90,9 +91,14 @@ public class VaultResourceKeycloakIT {
             given().contentType(ContentType.JSON)
                     .body(vaultDto)
                     .queryParam("minio", true)
+                    .queryParam("aws", true)
                     .when().put("/vaults/{vaultId}", "7E57C0DE-0000-4000-8000-000100008888")
-                    .then().statusCode(500)
-                    .body(containsString("Received: 'Server response is: 409' when invoking REST Client method:"));
+                    .then().statusCode(200)
+                    .body("id", equalToIgnoringCase("7E57C0DE-0000-4000-8000-000100008888"))
+                    .body("name", equalTo("VaultUpdated"))
+                    .body("description", equalTo("Vault updated."))
+                    .body("archived", equalTo(true))
+                    .body("creationTime", not("2222-11-11T11:11:11Z"));
         }
     }
 }
