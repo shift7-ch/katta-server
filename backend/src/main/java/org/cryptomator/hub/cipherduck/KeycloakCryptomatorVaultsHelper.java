@@ -33,7 +33,7 @@ public class KeycloakCryptomatorVaultsHelper {
 	Keycloak keycloak;
 
 	@ConfigProperty(name = "hub.keycloak.realm")
-	String keycloakRealm;
+	protected String keycloakRealm;
 
 	public void keycloakPrepareVault(final String vaultId, final boolean minio, final boolean aws) {
 		keycloakPrepareVault(vaultId, getKeycloak(), keycloakRealm, minio, aws);
