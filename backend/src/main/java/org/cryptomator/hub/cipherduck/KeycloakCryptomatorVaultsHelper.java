@@ -81,24 +81,38 @@ public class KeycloakCryptomatorVaultsHelper {
         ensureClientScopeForVaultExists(vaultId, realm);
 
         final ClientScopeResource clientScopeResource = realm.clientScopes().get(vaultId);
-        if (minio != null && minio) {
+        if (minio != null) {
             final ProtocolMapperRepresentation minioProtocolMapper = minioProtocolMapper(vaultId);
             final Optional<ProtocolMapperRepresentation> mapper = clientScopeResource.getProtocolMappers().getMappers().stream().filter(m -> m.getName().contains("MinIO")).findFirst();
             if (mapper.isEmpty()) {
-                clientScopeResource.getProtocolMappers().createMapper(List.of(minioProtocolMapper));
+                if (minio) {
+                    clientScopeResource.getProtocolMappers().createMapper(List.of(minioProtocolMapper));
+                }
             } else {
-                minioProtocolMapper.setId(mapper.get().getId());
-                clientScopeResource.getProtocolMappers().update(mapper.get().getId(), minioProtocolMapper);
+                final String mapperId = mapper.get().getId();
+                if (minio) {
+                    minioProtocolMapper.setId(mapperId);
+                    clientScopeResource.getProtocolMappers().update(mapperId, minioProtocolMapper);
+                } else {
+                    clientScopeResource.getProtocolMappers().delete(mapperId);
+                }
             }
         }
-        if (aws != null && aws) {
+        if (aws != null) {
             final ProtocolMapperRepresentation awsProtocolMapper = awsProtocolMapper(vaultId);
             final Optional<ProtocolMapperRepresentation> mapper = clientScopeResource.getProtocolMappers().getMappers().stream().filter(m -> m.getName().contains("AWS")).findFirst();
             if (mapper.isEmpty()) {
-                clientScopeResource.getProtocolMappers().createMapper(List.of(awsProtocolMapper));
+                if (aws) {
+                    clientScopeResource.getProtocolMappers().createMapper(List.of(awsProtocolMapper));
+                }
             } else {
-                awsProtocolMapper.setId(mapper.get().getId());
-                clientScopeResource.getProtocolMappers().update(mapper.get().getId(), awsProtocolMapper);
+                final String mapperId = mapper.get().getId();
+                if (aws) {
+                    awsProtocolMapper.setId(mapperId);
+                    clientScopeResource.getProtocolMappers().update(mapperId, awsProtocolMapper);
+                } else {
+                    clientScopeResource.getProtocolMappers().delete(mapperId);
+                }
             }
         }
     }

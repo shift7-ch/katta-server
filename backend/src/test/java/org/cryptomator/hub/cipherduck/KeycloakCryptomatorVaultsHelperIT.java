@@ -59,6 +59,11 @@ class KeycloakCryptomatorVaultsHelperIT {
         // must not change:
         keycloakPrepareVault(vaultId, keycloak, keycloakRealm, true, true);
         assertEquals(2, clientScopeResource.getProtocolMappers().getMappers().size());
+
+        keycloakPrepareVault(vaultId, keycloak, keycloakRealm, false, null);
+        assertEquals(1, clientScopeResource.getProtocolMappers().getMappers().size());
+        keycloakPrepareVault(vaultId, keycloak, keycloakRealm, null, false);
+        assertEquals(0, clientScopeResource.getProtocolMappers().getMappers().size());
     }
 
     @Test
