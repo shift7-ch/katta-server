@@ -36,16 +36,11 @@ public class KeycloakCryptomatorVaultsHelper {
         keycloakPrepareVault(vaultId, getKeycloak(), keycloakRealm, minio, aws);
     }
 
-    public void keycloakGrantAccessToVault(final String vaultId, final String userOrGroupId, final String clientId, final Group.Repository groupRepo) {
-        var group = groupRepo.findByIdOptional(userOrGroupId);
-        final boolean isGroup = group.isPresent();
-
+    public void keycloakGrantAccessToVault(final String vaultId, final String userOrGroupId, final String clientId, final boolean isGroup) {
         keycloakGrantAccessToVault(vaultId, userOrGroupId, clientId, getKeycloak(), keycloakRealm, isGroup);
     }
 
-    public void keycloakRemoveAccessToVault(final String vaultId, final String userOrGroupId, final String clientId, final Group.Repository groupRepo) {
-        final boolean isGroup = groupRepo.findByIdOptional(userOrGroupId).isPresent();
-
+    public void keycloakRemoveAccessToVault(final String vaultId, final String userOrGroupId, final String clientId, final boolean isGroup) {
         keycloakRemoveAccessToVault(vaultId, userOrGroupId, clientId, getKeycloak(), keycloakRealm, isGroup);
     }
 
