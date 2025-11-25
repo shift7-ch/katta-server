@@ -4,7 +4,6 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.core.Response;
 import org.cryptomator.hub.api.VaultResource;
-import org.cryptomator.hub.entities.Group;
 import org.cryptomator.hub.entities.Vault;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.logging.Logger;
@@ -32,7 +31,7 @@ public class KeycloakCryptomatorVaultsHelper {
     @ConfigProperty(name = "hub.keycloak.realm")
     protected String keycloakRealm;
 
-    public void keycloakPrepareVault(final String vaultId, final boolean minio, final boolean aws) {
+    public void keycloakPrepareVault(final String vaultId, final Boolean minio, final Boolean aws) {
         keycloakPrepareVault(vaultId, getKeycloak(), keycloakRealm, minio, aws);
     }
 
@@ -74,7 +73,7 @@ public class KeycloakCryptomatorVaultsHelper {
         }
     }
 
-    protected static void keycloakPrepareVault(final String vaultId, final Keycloak keycloak, final String keycloakRealm, final boolean minio, final boolean aws) {
+    protected static void keycloakPrepareVault(final String vaultId, final Keycloak keycloak, final String keycloakRealm, final Boolean minio, final Boolean aws) {
         // https://www.keycloak.org/docs-api/21.1.1/rest-api
         final RealmResource realm = keycloak.realm(keycloakRealm);
 
@@ -82,7 +81,7 @@ public class KeycloakCryptomatorVaultsHelper {
         ensureClientScopeForVaultExists(vaultId, realm);
 
         final ClientScopeResource clientScopeResource = realm.clientScopes().get(vaultId);
-        if (minio) {
+        if (minio != null && minio) {
             final ProtocolMapperRepresentation minioProtocolMapper = minioProtocolMapper(vaultId);
             final Optional<ProtocolMapperRepresentation> mapper = clientScopeResource.getProtocolMappers().getMappers().stream().filter(m -> m.getName().contains("MinIO")).findFirst();
             if (mapper.isEmpty()) {
@@ -92,7 +91,7 @@ public class KeycloakCryptomatorVaultsHelper {
                 clientScopeResource.getProtocolMappers().update(mapper.get().getId(), minioProtocolMapper);
             }
         }
-        if (aws) {
+        if (aws != null && aws) {
             final ProtocolMapperRepresentation awsProtocolMapper = awsProtocolMapper(vaultId);
             final Optional<ProtocolMapperRepresentation> mapper = clientScopeResource.getProtocolMappers().getMappers().stream().filter(m -> m.getName().contains("AWS")).findFirst();
             if (mapper.isEmpty()) {

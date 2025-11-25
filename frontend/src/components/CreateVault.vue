@@ -568,6 +568,7 @@ import { S3Client, PutObjectCommand, ListObjectsV2Command, GetBucketLocationComm
 import authPromise from '../common/auth';
 import {AxiosError} from 'axios';
 import { base64urlnopad } from '@scure/base';
+import { isAwsHostname } from '../../src/common/katta';
 // \ end cipherduck extension
 
 enum State {
@@ -1238,8 +1239,10 @@ async function createVault() {
         });
     }
     // \ end cipherduck extension
+    var minio = (!isPermanent.value) && (selectedBackend.value.hostname != null);
+    var aws = (!isPermanent.value) && ((selectedBackend.value.hostname == null) || isAwsHostname(selectedBackend.value.hostname ));
 
-    await backend.vaults.createOrUpdateVault(vault.value, true, true);
+    await backend.vaults.createOrUpdateVault(vault.value, minio, aws);
     await backend.vaults.grantAccess(vault.value.id, ownerGrant);
     state.value = State.Finished;
   } catch (error) {

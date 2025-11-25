@@ -601,8 +601,8 @@ public class VaultResource {
 	public Response createOrUpdate(
 			@PathParam("vaultId") UUID vaultId, @Valid @NotNull VaultDto vaultDto
 			// / start cipherduck extension
-			, @QueryParam("minio") @DefaultValue("false") boolean minio
-			, @QueryParam("aws") @DefaultValue("false") boolean aws
+			, @QueryParam("minio") Boolean minio
+			, @QueryParam("aws") Boolean aws
 			// \ end cipherduck extension
 	) {
 		User currentUser = userRepo.findById(jwt.getSubject());

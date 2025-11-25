@@ -90,8 +90,6 @@ public class VaultResourceKeycloakIT {
             var vaultDto = new VaultResource.VaultDto(uuid, "VaultUpdated", "Vault updated.", true, Instant.parse("2222-11-11T11:11:11Z"), "doNotUpdateEither", "doNotUpdateEither", "doNotUpdateEither", 27, "doNotUpdateEither", "doNotUpdateEither", "doNotUpdateEither");
             given().contentType(ContentType.JSON)
                     .body(vaultDto)
-                    .queryParam("minio", true)
-                    .queryParam("aws", true)
                     .when().put("/vaults/{vaultId}", "7E57C0DE-0000-4000-8000-000100008888")
                     .then().statusCode(200)
                     .body("id", equalToIgnoringCase("7E57C0DE-0000-4000-8000-000100008888"))
