@@ -1242,7 +1242,7 @@ async function createVault() {
     var minio = (!isPermanent.value) && (selectedBackend.value.hostname != null);
     var aws = (!isPermanent.value) && ((selectedBackend.value.hostname == null) || isAwsHostname(selectedBackend.value.hostname ));
 
-    await backend.vaults.createOrUpdateVault(vault.value, minio, aws);
+    await backend.vaults.createOrUpdateVault(vault.value, aws, minio);
     await backend.vaults.grantAccess(vault.value.id, ownerGrant);
     state.value = State.Finished;
   } catch (error) {
