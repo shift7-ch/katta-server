@@ -10,6 +10,7 @@ import org.cryptomator.hub.entities.User;
 import org.cryptomator.hub.entities.Vault;
 import org.cryptomator.hub.entities.VaultAccess;
 import org.cryptomator.hub.entities.events.EventLogger;
+import org.cryptomator.hub.license.HubLicenseEntitlements;
 import org.cryptomator.hub.license.LicenseHolder;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 import org.junit.jupiter.api.BeforeEach;
@@ -19,6 +20,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mockito;
 
 import java.time.Instant;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -81,7 +83,7 @@ class VaultResourceTest {
 		Mockito.when(userRepo.findById("alice")).thenReturn(user);
 		Mockito.when(userRepo.findByIdOptional("alice")).thenReturn(Optional.of(user));
 		Mockito.when(cipherduckConfig.keycloakClientIdCryptomatorVaults()).thenReturn("pesto");
-		Mockito.when(license.getSeats()).thenReturn(1L);
+		Mockito.when(license.getEntitlements()).thenReturn(HubLicenseEntitlements.create().withSeats(1L));
 		Mockito.when(vaultRepo.findById(vaultId)).thenReturn(new Vault());
 		Mockito.when(groupRepo.findByIdOptional("good cops")).thenReturn(Optional.of(new Group()));
 		Mockito.when(vaultAccessRepo.deleteById(new VaultAccess.Id(vaultId, "good cops"))).thenReturn(true);
@@ -91,7 +93,7 @@ class VaultResourceTest {
 	@CsvSource({"false,false", "false,true", "true,false", "true,true"})
 	public void testCreateOrUpdate(final boolean minio, final boolean aws) {
 		final UUID vaultId = UUID.randomUUID();
-		var vaultDto = new VaultResource.VaultDto(vaultId, "My Vault", "Test vault 4", false, Instant.parse("2112-12-21T21:12:21Z"), "uvfMetadata3", "uvfKeySet3", "masterkey3", 42, "NaCl", "authPubKey3", "authPrvKey3");
+		var vaultDto = new VaultResource.VaultDto(vaultId, "My Vault", Instant.parse("2112-12-21T21:12:21Z"), "Test vault 4", false, 0, Map.of(), "uvfMetadata3", "uvfKeySet3", "masterkey3", 42, "NaCl", "authPubKey3", "authPrvKey3");
 
 		vaultResource.createOrUpdate(vaultId, vaultDto, minio, aws);
 
