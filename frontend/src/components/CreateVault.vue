@@ -567,7 +567,7 @@ import { STSClient,AssumeRoleWithWebIdentityCommand } from "@aws-sdk/client-sts"
 import { S3Client, PutObjectCommand, ListObjectsV2Command, GetBucketLocationCommand, HeadBucketCommand } from "@aws-sdk/client-s3";
 import authPromise from '../common/auth';
 import {AxiosError} from 'axios';
-import { base64url } from 'rfc4648';
+import { base64urlnopad } from '@scure/base';
 // \ end cipherduck extension
 
 enum State {
@@ -740,7 +740,6 @@ const vaultBucketName = ref('');
 const automaticAccessGrant = ref<boolean>(true);
 const onOpenBookmarkError = ref<Error | null>(null);
 const onUploadTemplateError = ref<Error | null>(null);
-const onDownloadTemplateError = ref<Error | null>(null);
 
 class ErrorWithCodeHint extends Error {
   constructor(public message: string, public codehint: string) {
@@ -988,7 +987,8 @@ async function validateVaultDetails() {
                 `);
             }
             else{
-              onCreateError.value = error;
+              console.error('Uploading template failed.', error);
+              error instanceof Error ? error : new Error('Unknown Error');
             }
             return;
         }
@@ -1227,7 +1227,7 @@ async function createVault() {
             vaultId: vault.value.id,
             storageConfigId: selectedBackend.value.id,
             vaultUvf: vault.value.uvfMetadataFile,
-            dirUvf: base64url.stringify(dirFile, { pad: false }),
+            dirUvf: base64urlnopad.encode(dirFile),
             rootDirHash: rootDirHash,
             // https://github.com/awslabs/smithy-typescript/blob/697310da9aec949034f92598f5cefc2cc162ef4d/packages/types/src/identity/awsCredentialIdentity.ts#L24
             awsAccessKey: Credentials.AccessKeyId,
