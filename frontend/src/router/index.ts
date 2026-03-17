@@ -6,7 +6,14 @@ import userdata from '../common/userdata';
 import AdminSettings from '../components/AdminSettings.vue';
 import AuditLog from '../components/AuditLog.vue';
 import AuthenticatedMain from '../components/AuthenticatedMain.vue';
+import GroupDetail from '../components/authority/GroupDetail.vue';
+import GroupEditCreate from '../components/authority/GroupEditCreate.vue';
+import GroupList from '../components/authority/GroupList.vue';
+import UserDetail from '../components/authority/UserDetail.vue';
+import UserEditCreate from '../components/authority/UserEditCreate.vue';
+import UserList from '../components/authority/UserList.vue';
 import CreateVault from '../components/CreateVault.vue';
+import EmergencyAccessVaultList from '../components/emergencyaccess/EmergencyAccessVaultList.vue';
 import Forbidden from '../components/Forbidden.vue';
 import InitialSetup from '../components/InitialSetup.vue';
 import NotFound from '../components/NotFound.vue';
@@ -63,6 +70,60 @@ const routes: RouteRecordRaw[] = [
     path: '/app', /* required but unused */
     component: AuthenticatedMain,
     children: [
+      {
+        path: 'emergency-access',
+        component: EmergencyAccessVaultList
+      },
+      {
+        path: 'users',
+        beforeEnter: checkRole('admin'),
+        children: [
+          {
+            path: '',
+            component: UserList
+          },
+          {
+            path: 'create',
+            component: UserEditCreate,
+            props: { id: undefined, mode: 'CREATE' },
+          },
+          {
+            path: ':id',
+            component: UserDetail,
+            props: (route) => ({ id: route.params.id as string }),
+          },
+          {
+            path: ':id/edit',
+            component: UserEditCreate,
+            props: (route) => ({ id: route.params.id as string, mode: 'EDIT' }),
+          },
+        ]
+      },
+      {
+        path: 'groups',
+        beforeEnter: checkRole('admin'),
+        children: [
+          {
+            path: '',
+            component: GroupList
+          },
+          {
+            path: 'create',
+            component: GroupEditCreate,
+            props: { id: undefined, mode: 'CREATE' },
+          },
+          {
+            path: ':id',
+            component: GroupDetail,
+            props: (route) => ({ id: route.params.id as string }),
+          },
+          {
+            path: ':id/edit',
+            component: GroupEditCreate,
+            props: (route) => ({ id: route.params.id as string, mode: 'EDIT' }),
+          },
+        ]
+      },
       {
         path: 'vaults',
         component: VaultList

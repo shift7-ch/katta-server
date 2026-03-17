@@ -1,7 +1,7 @@
+import { base32, base64, base64urlnopad } from '@scure/base';
 import JSZip from 'jszip';
-import { base32, base64, base64url } from 'rfc4648';
 import { VaultDto } from './backend';
-import { AccessTokenPayload, AccessTokenProducing, JsonWebKeySet, OtherVaultMember, UserKeys, VaultTemplateProducing, getJwkThumbprintStr } from './crypto';
+import { AccessTokenPayload, AccessTokenProducing, JsonWebKeySet, OtherVaultMember, RecoveryKeyProducing, UserKeys, VaultTemplateProducing, getJwkThumbprintStr } from './crypto';
 import { JWE, JWEHeader, JsonJWE, Recipient } from './jwe';
 import { CRC32, UTF8, wordEncoder } from './util';
 // / start cipherduck extension
@@ -63,7 +63,7 @@ export class MemberKey {
   public static async load(encodedKey: string): Promise<MemberKey> {
     let rawKey: Uint8Array<ArrayBuffer> = new Uint8Array();
     try {
-      rawKey = base64.parse(encodedKey).slice();
+      rawKey = base64.decode(encodedKey) as Uint8Array<ArrayBuffer>;
       const memberKey = await crypto.subtle.importKey('raw', rawKey, MemberKey.KEY_DESIGNATION, true, MemberKey.KEY_USAGE);
       return new MemberKey(memberKey);
     } finally {
@@ -77,7 +77,7 @@ export class MemberKey {
    */
   public async serializeKey(): Promise<string> {
     const bytes = await crypto.subtle.exportKey('raw', this.key);
-    return base64.stringify(new Uint8Array(bytes), { pad: true });
+    return base64.encode(new Uint8Array(bytes));
   }
 }
 // #endregion
@@ -154,11 +154,7 @@ export class RecoveryKey {
     return new RecoveryKey(publicKey, privateKey);
   }
 
-  /**
-   * Encodes the private key as a list of words
-   * @returns private key in a human-readable encoding
-   */
-  public async createRecoveryKey(): Promise<string> {
+  public async createRawRecoveryKey(): Promise<Uint8Array> {
     if (!this.privateKey) {
       throw new Error('Private key not available');
     }
@@ -175,10 +171,19 @@ export class RecoveryKey {
     const numPaddingBytes = 3 - (combined.length % 3);
     const padding = new Uint8Array(numPaddingBytes);
     padding.fill(numPaddingBytes & 0xFF); // 01 or 02 02 or 03 03 03
-    const padded = new Uint8Array([...combined, ...padding]);
+
+    return new Uint8Array([...combined, ...padding]);
+  }
+
+  /**
+   * Encodes the private key as a list of words
+   * @returns private key in a human-readable encoding
+   */
+  public async createRecoveryKey(): Promise<string> {
+    const recoveryKeyBytes = await this.createRawRecoveryKey();
 
     // encode using human-readable words:
-    return wordEncoder.encodePadded(padded);
+    return wordEncoder.encodePadded(recoveryKeyBytes);
   }
 
   /**
@@ -190,7 +195,7 @@ export class RecoveryKey {
       throw new Error('Private key not available');
     }
     const bytes = await crypto.subtle.exportKey('pkcs8', this.privateKey);
-    return base64.stringify(new Uint8Array(bytes), { pad: true });
+    return base64.encode(new Uint8Array(bytes));
   }
 
   /**
@@ -257,7 +262,7 @@ export class VaultMetadata {
     crypto.getRandomValues(initialSeedValue);
     crypto.getRandomValues(kdfSalt);
     const initialSeedNo = new DataView(initialSeedId.buffer).getInt32(0, false);
-    const seeds: Map<number, Uint8Array> = new Map<number, Uint8Array>();
+    const seeds: Map<number, Uint8Array<ArrayBuffer>> = new Map<number, Uint8Array<ArrayBuffer>>();
     seeds.set(initialSeedNo, initialSeedValue);
     return new VaultMetadata(automaticAccessGrant,
       // / start cipherduck extension
@@ -312,12 +317,12 @@ export class VaultMetadata {
     const seeds = new Map<number, Uint8Array<ArrayBuffer>>();
     for (const key in payload.seeds) {
       const num = parseSeedId(key);
-      const value = base64url.parse(payload.seeds[key], { loose: true }).slice();
+      const value = base64urlnopad.decode(payload.seeds[key]) as Uint8Array<ArrayBuffer>;
       seeds.set(num, value);
     }
     const initialSeedId = parseSeedId(payload['initialSeed']);
     const latestSeedId = parseSeedId(payload['latestSeed']);
-    const kdfSalt = base64url.parse(payload['kdfSalt'], { loose: true }).slice();
+    const kdfSalt = base64urlnopad.decode(payload['kdfSalt']) as Uint8Array<ArrayBuffer>;
     return new VaultMetadata(
       payload['org.cryptomator.automaticAccessGrant'],
       // / start cipherduck extension
@@ -358,7 +363,7 @@ export class VaultMetadata {
     const encodedSeeds: Record<string, string> = {};
     for (const [key, value] of this.seeds) {
       const seedId = stringifySeedId(key);
-      encodedSeeds[seedId] = base64url.stringify(value, { pad: false });
+      encodedSeeds[seedId] = base64urlnopad.encode(value);
     }
     return {
       fileFormat: 'AES-256-GCM-32k',
@@ -367,7 +372,7 @@ export class VaultMetadata {
       initialSeed: stringifySeedId(this.initialSeedId),
       latestSeed: stringifySeedId(this.latestSeedId),
       kdf: 'HKDF-SHA512',
-      kdfSalt: base64url.stringify(this.kdfSalt, { pad: false }),
+      kdfSalt: base64urlnopad.encode(this.kdfSalt),
       'org.cryptomator.automaticAccessGrant': this.automaticAccessGrant
       // / start cipherduck extension
       ,'cloud.katta.storage': this.backend
@@ -381,7 +386,7 @@ export class VaultMetadata {
 /**
  * A UVF-formatted Vault
  */
-export class UniversalVaultFormat implements AccessTokenProducing, VaultTemplateProducing {
+export class UniversalVaultFormat implements AccessTokenProducing, VaultTemplateProducing, RecoveryKeyProducing {
   private constructor(readonly metadata: VaultMetadata, readonly memberKey: MemberKey, readonly recoveryKey: RecoveryKey) { }
 
   public static async create(automaticAccessGrant: VaultMetadataJWEAutomaticAccessGrantDto
@@ -423,11 +428,16 @@ export class UniversalVaultFormat implements AccessTokenProducing, VaultTemplate
     const metadata = await VaultMetadata.decryptWithMemberKey(vault.uvfMetadataFile, memberKey);
     let recoveryKey: RecoveryKey;
     if (payload.recoveryKey) {
-      recoveryKey = await RecoveryKey.import(recoveryPublicKey, base64.parse(payload.recoveryKey).slice());
+      recoveryKey = await RecoveryKey.import(recoveryPublicKey, base64.decode(payload.recoveryKey) as Uint8Array<ArrayBuffer>);
     } else {
       recoveryKey = await RecoveryKey.import(recoveryPublicKey);
     }
     return new UniversalVaultFormat(metadata, memberKey, recoveryKey);
+  }
+
+  /** @inheritdoc */
+  public async createPaddedRecoveryKeyBytes(): Promise<Uint8Array> {
+    return this.recoveryKey.createRawRecoveryKey();
   }
 
   /**
@@ -475,7 +485,7 @@ export class UniversalVaultFormat implements AccessTokenProducing, VaultTemplate
     const initialSeed = await crypto.subtle.importKey('raw', this.metadata.initialSeed, { name: 'HKDF' }, false, ['deriveKey']);
     const hmacKey = await crypto.subtle.deriveKey({ name: 'HKDF', hash: 'SHA-512', salt: this.metadata.kdfSalt, info: UTF8.encode('hmac') }, initialSeed, { name: 'HMAC', hash: 'SHA-256', length: 512 }, false, ['sign']);
     const rootDirHash = await crypto.subtle.sign('HMAC', hmacKey, rootDirId);
-    return base32.stringify(new Uint8Array(rootDirHash).slice(0, 20));
+    return base32.encode(new Uint8Array(rootDirHash).slice(0, 20));
   }
 
   public async encryptFile(content: Uint8Array<ArrayBuffer>, seedId: number): Promise<Uint8Array> {
@@ -543,7 +553,7 @@ export class UniversalVaultFormat implements AccessTokenProducing, VaultTemplate
  * @throws Error if the input is invalid
  */
 function parseSeedId(encoded: string): number {
-  const bytes = base64url.parse(encoded, { loose: true });
+  const bytes = base64urlnopad.decode(encoded);
   if (bytes.length != 4) {
     throw new Error('Malformed seed ID');
   }
@@ -558,5 +568,5 @@ function parseSeedId(encoded: string): number {
 function stringifySeedId(id: number): string {
   const bytes = new Uint8Array(4);
   new DataView(bytes.buffer).setInt32(0, id, false);
-  return base64url.stringify(bytes, { pad: false });
+  return base64urlnopad.encode(bytes);
 }

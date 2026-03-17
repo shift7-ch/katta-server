@@ -1,6 +1,6 @@
 <template>
-  <div v-if="vaults == null">
-    <div v-if="onFetchError == null">
+  <div v-if="!vaults">
+    <div v-if="!onFetchError">
       {{ t('common.loading') }}
     </div>
     <div v-else>
@@ -8,9 +8,9 @@
     </div>
   </div>
 
-  <LicenseAlert v-if="isLicenseViolated && isAdmin != undefined && licenseStatus" :is-admin="isAdmin" :license-status="licenseStatus" />
+  <LicenseAlert v-if="isLicenseViolated && licenseStatus" :is-admin="isAdmin" :license-status="licenseStatus" />
 
-  <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
+  <h2 class="text-2xl font-bold leading-9 text-gray-900 sm:text-3xl sm:truncate">
     {{ t('vaultList.title') }}
   </h2>
 
@@ -78,7 +78,7 @@
     <!-- \ end cipherduck extension -->
   </div>
 
-  <div v-if="filteredVaults != null && filteredVaults.length > 0" class="mt-5 bg-white shadow-sm overflow-hidden rounded-md">
+  <div v-if="filteredVaults && filteredVaults.length > 0" class="mt-5 bg-white shadow-sm rounded-md">
     <ul class="divide-y divide-gray-200">
       <li v-for="(vault, index) in filteredVaults" :key="vault.masterkey">
         <a tabindex="0" class="block hover:bg-gray-50" :class="{'ring-2 ring-inset ring-primary': selectedVault == vault, 'rounded-t-md': index == 0, 'rounded-b-md': index == filteredVaults.length - 1}" @click="showVaultDetails(vault)">
@@ -94,6 +94,22 @@
               <p v-if="showVaultIDs && (vault.id.length > 0)" class="truncate text-sm text-gray-500 mt-2">{{ vault.id }}</p>
               <!-- \ end cipherduck extension -->
             </div>
+            <div v-if="ownedVaults?.some(ownedVault => ownedVault.id == vault.id) && !isCommunityLicense && settings?.enableEmergencyAccess">
+              <EmergencyBadge
+                v-if="settings && settings.defaultMinMembers > emergencyAccessMembers(vault).length"
+                type="insufficientCouncilMembers"
+                :title="t('emergencyAccess.badge.insufficientCouncilMembers.title')"
+                :message="t('emergencyAccess.badge.insufficientCouncilMembers.message', [settings.defaultMinMembers])"
+                position="right"
+              />
+              <EmergencyBadge
+                v-else-if="vault.requiredEmergencyKeyShares > emergencyAccessMembers(vault).length"
+                type="broken"
+                :title="t('emergencyAccess.badge.broken.title')"
+                :message="t('emergencyAccess.badge.broken.message')"
+                position="right"
+              />
+            </div>
             <div class="ml-5 shrink-0">
               <ChevronRightIcon class="h-5 w-5 text-gray-400" aria-hidden="true" />
             </div>
@@ -103,7 +119,7 @@
     </ul>
   </div>
 
-  <div v-else-if="query === '' && filteredVaults != null && filteredVaults.length == 0" class="mt-3 text-center">
+  <div v-else-if="query === '' && filteredVaults && filteredVaults.length == 0" class="mt-3 text-center">
     <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
       <path vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10.5v6m3-3H9m4.06-7.19l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" />
     </svg>
@@ -111,7 +127,7 @@
     <p v-if="canCreateVaults" class="mt-1 text-sm text-gray-500">{{ t('vaultList.empty.description') }}</p>
   </div>
 
-  <div v-else-if="query !== '' && filteredVaults != null && filteredVaults.length == 0" class="mt-3 text-center">
+  <div v-else-if="query !== '' && filteredVaults && filteredVaults.length == 0" class="mt-3 text-center">
     <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
       <path vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.75 15.75l-2.489-2.489m0 0a3.375 3.375 0 10-4.773-4.773 3.375 3.375 0 004.774 4.774zM21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
     </svg>
@@ -119,7 +135,7 @@
     <p class="mt-1 text-sm text-gray-500">{{ t('vaultList.filter.result.empty.description') }}</p>
   </div>
 
-  <SlideOver v-if="selectedVault != null" ref="vaultDetailsSlideOver" :title="selectedVault.name" @close="selectedVault = null">
+  <SlideOver v-if="selectedVault" ref="vaultDetailsSlideOver" :title="selectedVault.name" @close="selectedVault = undefined">
     <VaultDetails :vault-id="selectedVault.id" :vault-role="roleOfSelectedVault" @vault-updated="v => onSelectedVaultUpdate(v)" @license-status-updated="l => licenseUpdated(l)"></VaultDetails>
   </SlideOver>
 </template>
@@ -127,25 +143,31 @@
 <script setup lang="ts">
 import { Listbox, ListboxButton, ListboxOption, ListboxOptions, Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/vue';
 import { ArrowPathIcon, ArrowTopRightOnSquareIcon, ChevronDownIcon, PlusIcon } from '@heroicons/vue/20/solid';
-import { CheckIcon, ChevronRightIcon, ChevronUpDownIcon } from '@heroicons/vue/24/solid';
+import { CheckIcon, ChevronRightIcon, ChevronUpDownIcon, ExclamationTriangleIcon } from '@heroicons/vue/24/solid';
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import auth from '../common/auth';
-import backend, { LicenseUserInfoDto, VaultDto, VaultRole } from '../common/backend';
+import backend, { LicenseUserInfoDto, SettingsDto, UserDto, VaultDto, VaultRole } from '../common/backend';
+import userdata from '../common/userdata';
 import FetchError from './FetchError.vue';
 import LicenseAlert from './LicenseAlert.vue';
+import ContentBanner from './ContentBanner.vue';
 import SlideOver from './SlideOver.vue';
 import VaultDetails from './VaultDetails.vue';
+import EmergencyBadge from './emergencyaccess/EmergencyBadge.vue';
 
 const { t } = useI18n({ useScope: 'global' });
 
+const me = ref<UserDto>();
+
 const vaultDetailsSlideOver = ref<typeof SlideOver>();
-const onFetchError = ref<Error | null>();
+const onFetchError = ref<Error>();
 
 const vaults = ref<VaultDto[]>();
+const settings = ref<SettingsDto>();
 const accessibleVaults = ref<VaultDto[]>();
 const ownedVaults = ref<VaultDto[]>();
-const selectedVault = ref<VaultDto | null>(null);
+const selectedVault = ref<VaultDto>();
 
 const roleOfSelectedVault = computed<VaultRole | 'NONE'>(() => {
   if (ownedVaults.value?.some(ownedVault => ownedVault.id == selectedVault.value?.id)) {
@@ -168,6 +190,10 @@ const isLicenseViolated = computed(() => {
   }
 });
 
+const isCommunityLicense = computed(() => {
+  return !licenseStatus.value?.expiresAt;
+});
+
 const filterOptions = ref< {[key: string]: string} >({
   accessibleVaults: t('vaultList.filter.entry.accessibleVaults'),
   ownedVaults: t('vaultList.filter.entry.ownedVaults')
@@ -186,10 +212,13 @@ const filteredVaults = computed(() =>
 onMounted(fetchData);
 
 async function fetchData() {
-  onFetchError.value = null;
+  onFetchError.value = undefined;
   try {
+    me.value = await userdata.me;
     isAdmin.value = (await auth).hasRole('admin');
     canCreateVaults.value = (await auth).hasRole('create-vaults');
+
+    settings.value = await backend.settings.get();
 
     if (isAdmin.value) {
       filterOptions.value['allVaults'] = t('vaultList.filter.entry.allVaults');
@@ -221,9 +250,13 @@ function showVaultDetails(vault: VaultDto) {
   nextTick(() => vaultDetailsSlideOver.value?.show());
 }
 
+function emergencyAccessMembers(vault: VaultDto): string[] {
+  return Object.keys(vault.emergencyKeyShares);
+}
+
 async function onSelectedVaultUpdate(vault: VaultDto) {
   await fetchData();
-  if (vaults.value == null || vault.id !== selectedVault.value?.id) {
+  if (vaults.value === undefined || vault.id !== selectedVault.value?.id) {
     return;
   }
   const index = vaults.value?.findIndex(v => v.id === vault.id);

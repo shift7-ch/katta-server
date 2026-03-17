@@ -12,7 +12,7 @@ import jakarta.persistence.InheritanceType;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
 
-import java.util.List;
+import java.util.Collection;
 import java.util.Objects;
 import java.util.stream.Stream;
 
@@ -26,12 +26,6 @@ import java.util.stream.Stream;
 				FROM Authority a
 				WHERE LOWER(a.name) LIKE :name
 				""")
-@NamedQuery(name = "Authority.allInList",
-		query = """
-				SELECT a
-				FROM Authority a
-				WHERE a.id IN :ids
-				""")
 public class Authority {
 
 	@Id
@@ -40,6 +34,9 @@ public class Authority {
 
 	@Column(name = "name", nullable = false)
 	private String name;
+
+	@Column(name = "picture_url")
+	private String pictureUrl;
 
 	public String getId() {
 		return id;
@@ -57,12 +54,17 @@ public class Authority {
 		this.name = name;
 	}
 
+	public String getPictureUrl() {
+		return pictureUrl;
+	}
+
+	public void setPictureUrl(String pictureUrl) {
+		this.pictureUrl = pictureUrl;
+	}
+
 	@Override
 	public String toString() {
-		return "Authority{" +
-				"id='" + id + '\'' +
-				", name='" + name + '\'' +
-				'}';
+		return "Authority{id='" + id + "'}";
 	}
 
 	@Override
@@ -70,13 +72,12 @@ public class Authority {
 		if (this == o) return true;
 		if (o == null || getClass() != o.getClass()) return false;
 		Authority authority = (Authority) o;
-		return Objects.equals(id, authority.id)
-				&& Objects.equals(name, authority.name);
+		return Objects.equals(id, authority.id);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, name);
+		return Objects.hash(id);
 	}
 
 	@ApplicationScoped
@@ -86,8 +87,11 @@ public class Authority {
 			return find("#Authority.byName", Parameters.with("name", '%' + name.toLowerCase() + '%')).stream();
 		}
 
-		public Stream<Authority> findAllInList(List<String> ids) {
-			return find("#Authority.allInList", Parameters.with("ids", ids)).stream();
+		public Stream<Authority> findAllInList(Collection<String> ids) {
+			return Batch.of(200).run(ids, Stream.empty(), (batch, result) -> {
+				var partial = find("WHERE id IN :ids", Parameters.with("ids", batch));
+				return Stream.concat(result, partial.stream());
+			});
 		}
 	}
 }
