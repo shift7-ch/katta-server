@@ -423,8 +423,8 @@ class VaultService {
 
   public async createOrUpdateVault(vault: VaultDto
     // / start cipherduck extension
-    , aws: boolean | null
-    , minio: boolean | null
+    , aws: boolean | null = null
+    , minio: boolean | null = null
     // \ end cipherduck extension
     ): Promise<VaultDto> {
     // / start cipherduck modification

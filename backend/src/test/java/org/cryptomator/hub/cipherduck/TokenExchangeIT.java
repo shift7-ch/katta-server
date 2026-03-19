@@ -32,7 +32,7 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 
 @QuarkusTest
-@QuarkusTestResource(KeycloakTestResourceLifecycleManager.class)
+@QuarkusTestResource(value = KeycloakTestResourceLifecycleManager.class, restrictToAnnotatedClass = true)
 public class TokenExchangeIT {
 
     @Inject

@@ -1,8 +1,7 @@
 package org.cryptomator.hub.cipherduck;
 
 import dasniko.testcontainers.keycloak.KeycloakContainer;
-import io.quarkus.test.common.TestResourceScope;
-import io.quarkus.test.common.WithTestResource;
+import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import static org.cryptomator.hub.cipherduck.KeycloakCryptomatorVaultsHelper.*;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -19,7 +18,7 @@ import org.keycloak.admin.client.resource.ServerInfoResource;
 import java.util.UUID;
 
 @QuarkusTest
-@WithTestResource(value = KeycloakTestResourceLifecycleManager.class, scope = TestResourceScope.RESTRICTED_TO_CLASS) // alice must be clean.
+@QuarkusTestResource(value = KeycloakTestResourceLifecycleManager.class, restrictToAnnotatedClass = true)// alice must be clean.
 class KeycloakCryptomatorVaultsHelperIT {
     @ConfigProperty(name = "hub.keycloak.realm")
     String keycloakRealm;
@@ -29,6 +28,7 @@ class KeycloakCryptomatorVaultsHelperIT {
 
     @KeycloakTestResourceLifecycleManager.InjectKeycloakContainer
     KeycloakContainer container;
+
 
     @ParameterizedTest
     @CsvSource(nullValues = "null", value = {"true,true,2", "true,false,1", "false,true,1", "false,false,0", "true,null,1", "null,true,1", "null,null,0"})

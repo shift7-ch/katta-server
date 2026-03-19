@@ -13,19 +13,23 @@ import java.util.Map;
 // - not to start Keycloak for all tests (too heavy - however, this might be achieved using a profile for tests requiring Keycloak: https://quarkus.io/guides/getting-started-testing#writing-a-profile).
 // Alternatively, instead of dasniko.testcontainers.keycloak, custom io.quarkus.test.keycloak.server.KeycloakTestResourceLifecycleManager might be used.
 public class KeycloakTestResourceLifecycleManager implements QuarkusTestResourceLifecycleManager {
-    private static final String currentKeycloakImage = "quay.io/keycloak/keycloak:26.4.5";
-    private KeycloakContainer container;
+    private static final String currentKeycloakImage = "quay.io/keycloak/keycloak:26.5.5";
+    private static KeycloakContainer container;
 
     @Override
     public Map<String, String> start() {
-        RestAssured.useRelaxedHTTPSValidation();
-        container = new KeycloakContainer(currentKeycloakImage)
-                // comment in for local debugging:
-                //				.withDebugFixedPort(5005, false)
-                //				.withCustomCommand("--log-level=DEBUG")
-                .withRealmImportFile("/cryptomator-realm.json")
-                .useTls();
-        container.start();
+        try {
+            RestAssured.useRelaxedHTTPSValidation();
+            container = new KeycloakContainer(currentKeycloakImage)
+                    // comment in for local debugging:
+                    //				.withDebugFixedPort(5005, false)
+                    //				.withCustomCommand("--log-level=DEBUG")
+                    .withRealmImportFile("/cryptomator-realm.json")
+                    .useTls();
+            container.start();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
 
         System.out.println(container.getAuthServerUrl());
         return Map.of("quarkus.oidc.auth-server-url", container.getAuthServerUrl() + "/realms/cryptomator");
@@ -46,5 +50,17 @@ public class KeycloakTestResourceLifecycleManager implements QuarkusTestResource
     @Retention(RetentionPolicy.RUNTIME)
     @Target({ElementType.FIELD})
     public @interface InjectKeycloakContainer {
+    }
+
+    public static void main(String[] args) throws InterruptedException {
+        container = new KeycloakContainer(currentKeycloakImage)
+                // comment in for local debugging:
+                //				.withDebugFixedPort(5005, false)
+                //				.withCustomCommand("--log-level=DEBUG")
+                .withRealmImportFile("/cryptomator-realm.json")
+                .useTls();
+        container.start();
+        System.out.println(container.getAuthServerUrl());
+        Thread.sleep(5000000);
     }
 }

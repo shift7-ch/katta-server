@@ -1,6 +1,7 @@
-package org.cryptomator.hub.api.cipherduck;
+package org.cryptomator.hub.cipherduck;
 
 import dasniko.testcontainers.keycloak.KeycloakContainer;
+import io.quarkus.test.InjectMock;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusMock;
 import io.quarkus.test.junit.QuarkusTest;
@@ -11,23 +12,25 @@ import io.restassured.RestAssured;
 import static io.restassured.RestAssured.given;
 import io.restassured.http.ContentType;
 import org.cryptomator.hub.api.VaultResource;
-import org.cryptomator.hub.cipherduck.KeycloakCryptomatorVaultsHelper;
-import org.cryptomator.hub.cipherduck.KeycloakTestResourceLifecycleManager;
+import org.cryptomator.hub.license.HubLicenseEntitlements;
+import org.cryptomator.hub.license.LicenseHolder;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import static org.hamcrest.CoreMatchers.not;
-import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.text.IsEqualIgnoringCase.equalToIgnoringCase;
 import org.junit.jupiter.api.*;
 import org.keycloak.admin.client.Keycloak;
+import org.mockito.Mockito;
 
 import java.time.Instant;
+import java.util.Map;
 import java.util.UUID;
+
 
 
 @QuarkusTest
 @DisplayName("Resource /vaults")
-@QuarkusTestResource(KeycloakTestResourceLifecycleManager.class)
+@QuarkusTestResource(value = KeycloakTestResourceLifecycleManager.class, restrictToAnnotatedClass = true)
 public class VaultResourceKeycloakIT {
     @ConfigProperty(name = "hub.keycloak.realm")
     String keycloakRealm;
@@ -35,13 +38,20 @@ public class VaultResourceKeycloakIT {
     @KeycloakTestResourceLifecycleManager.InjectKeycloakContainer
     KeycloakContainer container;
 
+    @InjectMock
+    LicenseHolder licenseHolder;
+
     @BeforeEach
-    public void beforeAll() {
+    public void setup() {
         RestAssured.enableLoggingOfRequestAndResponseIfValidationFails();
         // https://quarkus.io/guides/getting-started-testing#quarkus_mock
         KeycloakCryptomatorVaultsHelperFromContainer mock = new KeycloakCryptomatorVaultsHelperFromContainer();
 
         QuarkusMock.installMockForType(mock, KeycloakCryptomatorVaultsHelper.class);
+
+        var entitlements = HubLicenseEntitlements.create().withSeats(5L);
+        Mockito.doReturn(entitlements).when(licenseHolder).getEntitlements();
+        Mockito.doReturn(false).when(licenseHolder).isExpired();
     }
 
     public class KeycloakCryptomatorVaultsHelperFromContainer extends KeycloakCryptomatorVaultsHelper {
@@ -70,7 +80,7 @@ public class VaultResourceKeycloakIT {
         @DisplayName("PUT /vaults/7E57C0DE-0000-4000-8000-000100007777 returns 201")
         public void testCreateVault1() {
             var uuid = UUID.fromString("7E57C0DE-0000-4000-8000-000100007777");
-            var vaultDto = new VaultResource.VaultDto(uuid, "My Vault", "Test vault 3", false, Instant.parse("2112-12-21T21:12:21Z"), "uvfMetadata3", "uvfKeySet3", "masterkey3", 42, "NaCl", "authPubKey3", "authPrvKey3");
+            var vaultDto = new VaultResource.VaultDto(uuid, "My Vault", Instant.parse("2112-12-21T21:12:21Z"), "Test vault 3", false, 0, Map.of(), "uvfMetadata3", "uvfKeySet3", "masterkey3", 42, "NaCl", "authPubKey3", "authPrvKey3");
             given().contentType(ContentType.JSON).body(vaultDto)
                     .queryParam("minio", true)
                     .queryParam("aws", true)
@@ -87,7 +97,7 @@ public class VaultResourceKeycloakIT {
         @DisplayName("PUT /vaults/7E57C0DE-0000-4000-8000-000100007777 returns 200, updating only name, description and archive flag")
         public void testUpdateVault() {
             var uuid = UUID.fromString("7E57C0DE-0000-4000-8000-000100007777");
-            var vaultDto = new VaultResource.VaultDto(uuid, "VaultUpdated", "Vault updated.", true, Instant.parse("2222-11-11T11:11:11Z"), "doNotUpdateEither", "doNotUpdateEither", "doNotUpdateEither", 27, "doNotUpdateEither", "doNotUpdateEither", "doNotUpdateEither");
+            var vaultDto = new VaultResource.VaultDto(uuid, "VaultUpdated", Instant.parse("2222-11-11T11:11:11Z"), "Vault updated.", true, 0, Map.of(), "doNotUpdateEither", "doNotUpdateEither", "doNotUpdateEither", 27, "doNotUpdateEither", "doNotUpdateEither", "doNotUpdateEither");
             given().contentType(ContentType.JSON)
                     .body(vaultDto)
                     .when().put("/vaults/{vaultId}", "7E57C0DE-0000-4000-8000-000100007777")

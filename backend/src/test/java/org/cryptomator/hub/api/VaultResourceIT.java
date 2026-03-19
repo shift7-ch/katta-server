@@ -16,6 +16,7 @@ import static io.restassured.RestAssured.when;
 import io.restassured.http.ContentType;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
+import jakarta.validation.Validator;
 import jakarta.ws.rs.core.Response;
 import org.cryptomator.hub.cipherduck.KeycloakCryptomatorVaultsHelper;
 import org.cryptomator.hub.entities.*;
@@ -76,7 +77,8 @@ public class VaultResourceIT {
 	User.Repository userRepo;
 	@Inject
 	EffectiveGroupMembership.Repository effectiveGroupMembershipRepo;
-	@InjectValidator validator;
+    @Inject
+    Validator validator;
 	@InjectMock
 	LicenseHolder licenseHolder;
 	@InjectMock
@@ -492,7 +494,7 @@ public class VaultResourceIT {
 		@CsvSource(nullValues = "null", value = {"true,true", "true,false", "false,true", "false,false", "true,null", "null,true", "null,null"})
 		public void test(final Boolean minio, final Boolean aws) {
 			var uuid = UUID.fromString("7E57C0DE-0000-4000-8000-000100008888");
-			var vaultDto = new VaultResource.VaultDto(uuid, "VaultUpdated", "Vault updated.", true, Instant.parse("2222-11-11T11:11:11Z"), "Rainbow", "Rainbow", "Rainbow", 27, "Rainbow", "Rainbow", "Rainbow");
+			var vaultDto = new VaultResource.VaultDto(uuid, "VaultUpdated", Instant.parse("2222-11-11T11:11:11Z"), "Vault updated.", true,0, Map.of(), "Rainbow", "Rainbow", "Rainbow", 27, "Rainbow", "Rainbow", "Rainbow");
 			given().contentType(ContentType.JSON)
 					.body(vaultDto)
 					.queryParam("minio", minio)
