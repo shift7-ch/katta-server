@@ -930,8 +930,8 @@ async function validateVaultDetails() {
       catch (error) {
         console.log(error)
         // https://stackoverflow.com/questions/47668509/the-authorization-header-is-malformed-the-region-us-east-1-is-wrong-expectin
-        if (error?.Code == "AuthorizationHeaderMalformed" && error?.Region != undefined) {
-          selectedRegion.value = error.Region
+        if ((error as any)?.Code == "AuthorizationHeaderMalformed" && (error as any)?.Region != undefined) {
+          selectedRegion.value = (error as any).Region
         }
         else {
           if (selectedRegion.value === undefined) { // MinIO returns undefined
