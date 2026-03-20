@@ -10,16 +10,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
-import jakarta.ws.rs.BadRequestException;
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.DELETE;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.NotFoundException;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.PUT;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -132,8 +123,8 @@ public class EmergencyAccessResource {
 	@Path("/{processId}/complete")
 	@RolesAllowed("user")
 	@Operation(summary = "completes an existing recovery process")
-	@APIResponse(responseCode = "204")
-	@APIResponse(responseCode = "404")
+	@APIResponse(responseCode = "204", description = "existing recovery process completed")
+	@APIResponse(responseCode = "404", description = "existing recovery process not found")
 	@Transactional
 	public Response complete(@PathParam("processId") UUID processId) {
 		var currentUserId = jwt.getSubject();
@@ -150,8 +141,8 @@ public class EmergencyAccessResource {
 	@Path("/{processId}/abort")
 	@RolesAllowed("user")
 	@Operation(summary = "aborts an existing recovery process")
-	@APIResponse(responseCode = "204")
-	@APIResponse(responseCode = "404")
+	@APIResponse(responseCode = "204", description = "existing recovery process aborted")
+	@APIResponse(responseCode = "404", description = "existing recovery process not found")
 	@Transactional
 	public Response abort(@PathParam("processId") UUID processId) {
 		var currentUserId = jwt.getSubject();
@@ -200,8 +191,10 @@ public class EmergencyAccessResource {
 	}
 
 	@JsonInclude(JsonInclude.Include.NON_NULL)
-	public record RecoveredKeyShareDto(@JsonProperty("processPrivateKey") @ValidJWE String processPrivateKey, @JsonProperty("unrecoveredKeyShare") @ValidJWE String unrecoveredKeyShare,
-									   @JsonProperty("recoveredKeyShare") @ValidJWE String recoveredKeyShare, @JsonProperty("signedProcessInfo") @ValidJWS String signedProcessInfo) {
+	public record RecoveredKeyShareDto(@JsonProperty("processPrivateKey") @ValidJWE String processPrivateKey,
+									   @JsonProperty("unrecoveredKeyShare") @ValidJWE String unrecoveredKeyShare,
+									   @JsonProperty("recoveredKeyShare") @ValidJWE String recoveredKeyShare,
+									   @JsonProperty("signedProcessInfo") @ValidJWS String signedProcessInfo) {
 
 		public static RecoveredKeyShareDto fromEntity(RecoveredEmergencyKeyShares entity) {
 			return new RecoveredKeyShareDto(entity.getProcessPrivateKey(), entity.getUnrecoveredKeyShare(), entity.getRecoveredKeyShare(), entity.getSignedProcessInfo());
