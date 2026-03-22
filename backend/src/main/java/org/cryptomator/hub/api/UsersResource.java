@@ -241,7 +241,7 @@ public class UsersResource {
 
 	@GET
 	@Path("/")
-	@RolesAllowed("admin")
+	@RolesAllowed({"admin", "user"})
 	@Produces(MediaType.APPLICATION_JSON)
 	@Transactional
 	@Operation(summary = "list all users with counts")
@@ -351,7 +351,7 @@ public class UsersResource {
 
 	@GET
 	@Path("/{id}")
-	@RolesAllowed("admin")
+	@RolesAllowed({"admin", "user"})
 	@Produces(MediaType.APPLICATION_JSON)
 	@NoCache
 	@Transactional
