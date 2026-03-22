@@ -10,11 +10,11 @@
   --font-body: 'Open Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
 
   --color-current: currentColor;
-  --color-primary: #800000;
-  --color-primary-light: #8e231e;
+  --color-primary: oklch(53.3% 0.094 282.3);
+  --color-primary-light: oklch(60.5% 0.083 281.8);
 
   --background-image-paper: url('../img/bg-paper.png');
-  --background-image-logo: url('../img/katta-logo.png');
+  --background-image-logo: url('../img/logo.png');
 }
 
 /*

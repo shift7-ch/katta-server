@@ -142,7 +142,7 @@
   "unlockSuccess.accountSetup.title": "الإعداد مطلوب",
   "unlockSuccess.accountSetup.description": "أكمل إعداد حسابك واسترد مفتاح حسابك.",
   "unlockSuccess.deviceSetup.title": "جهاز جديد",
-  "unlockSuccess.deviceSetup.description": "الرجاء إدخال مفتاح حسابك في Cryptomator لتفويض ذلك.",
+  "unlockSuccess.deviceSetup.description": "الرجاء إدخال مفتاح حسابك في Katta لتفويض ذلك.",
   "unlockSuccess.deviceSetup.goToProfile": "اعرض مفتاح الحساب في ملفي الشخصي",
   "vaultDetails.description.header": "الوصف",
   "vaultDetails.description.empty": "لم يتم تقديم وصف.",

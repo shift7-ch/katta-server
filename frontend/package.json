@@ -1,8 +1,8 @@
 {
   "type": "module",
-  "name": "cryptomator-hub",
+  "name": "katta",
   "version": "1.5.0",
-  "description": "Web-Frontend for Cryptomator Hub",
+  "description": "Web-Frontend for Katta",
   "author": "Skymatic GmbH",
   "license": "AGPL-3.0-or-later",
   "private": true,
