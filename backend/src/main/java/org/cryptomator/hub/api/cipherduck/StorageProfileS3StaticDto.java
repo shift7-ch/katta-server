@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
-@Schema(title = "StorageProfileS3Dto")
+@Schema(title = "StorageProfileS3StaticDto")
 public sealed class StorageProfileS3StaticDto extends StorageProfileDto permits StorageProfileS3STSDto {
 
 	public enum S3_STORAGE_CLASSES {
