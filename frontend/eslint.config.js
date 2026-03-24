@@ -2,13 +2,21 @@
 import eslint from "@eslint/js";
 import pluginVue from 'eslint-plugin-vue';
 import tseslint from 'typescript-eslint';
+import { defineConfig } from 'eslint/config';
 
-export default tseslint.config(
+export default defineConfig(
+{
+    ignores: [
+        'coverage/**',
+        'dist/**',
+        'node_modules/**'
+    ]
+},
 {
     files: ['src/**/*.ts', 'test/**/*.ts'],
     extends: [
         eslint.configs.recommended,
-        ...tseslint.configs.recommended,
+        tseslint.configs.recommended,
     ],
     plugins: {
         '@typescript-eslint': tseslint.plugin,
@@ -39,6 +47,7 @@ export default tseslint.config(
         'semi': ['error', 'always'],
         'space-infix-ops': 'error',
         'indent': ['error', 2, { SwitchCase: 1 }],
+        'complexity': ['warn', { max: 10 }],
     }
 },
 {
@@ -51,8 +60,8 @@ export default tseslint.config(
     files: ['src/**/*.vue'],
     extends: [
         eslint.configs.recommended,
-        ...tseslint.configs.recommended,
-        ...pluginVue.configs["flat/recommended"],
+        tseslint.configs.recommended,
+        pluginVue.configs["flat/recommended"],
     ],
     plugins: {
         '@typescript-eslint': tseslint.plugin,
@@ -89,9 +98,11 @@ export default tseslint.config(
         'vue/html-closing-bracket-spacing': 'off',
         'vue/html-self-closing': 'off',
         'vue/max-attributes-per-line': 'off',
+        'vue/multi-word-component-names': 'off',
         'vue/padding-line-between-blocks': 'error',
         'vue/singleline-html-element-content-newline': 'off',
         'vue/space-infix-ops': 'error',
+        'complexity': ['warn', { max: 15 }],
     },
 }
 );

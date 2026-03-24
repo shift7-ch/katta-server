@@ -3,6 +3,7 @@ package org.cryptomator.hub.api;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTVerificationException;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.quarkus.security.identity.SecurityIdentity;
 import io.vertx.core.http.HttpServerRequest;
@@ -12,6 +13,7 @@ import jakarta.inject.Inject;
 import jakarta.persistence.NoResultException;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -47,7 +49,9 @@ import org.cryptomator.hub.entities.events.EventLogger;
 import org.cryptomator.hub.entities.events.VaultKeyRetrievedEvent;
 import org.cryptomator.hub.filters.ActiveLicense;
 import org.cryptomator.hub.filters.VaultRole;
+import org.cryptomator.hub.keycloak.RealmRole;
 import org.cryptomator.hub.license.LicenseHolder;
+import org.cryptomator.hub.metrics.VaultUnlockMetrics;
 import org.cryptomator.hub.validation.NoHtmlOrScriptChars;
 import org.cryptomator.hub.validation.OnlyBase64Chars;
 import org.cryptomator.hub.validation.ValidId;
@@ -63,10 +67,14 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import java.net.URI;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 
@@ -78,20 +86,29 @@ public class VaultResource {
 
 	@Inject
 	AccessToken.Repository accessTokenRepo;
+
 	@Inject
 	Group.Repository groupRepo;
+
 	@Inject
 	User.Repository userRepo;
+
+	@Inject
+	Authority.Repository authorityRepo;
+
 	@Inject
 	EffectiveVaultAccess.Repository effectiveVaultAccessRepo;
+
 	/**
 	 * @deprecated to be removed in <a href="https://github.com/cryptomator/hub/issues/333">#333</a>
 	 */
 	@Inject
 	@Deprecated(since = "1.3.0", forRemoval = true)
 	LegacyAccessToken.Repository legacyAccessTokenRepo;
+
 	@Inject
 	Vault.Repository vaultRepo;
+
 	@Inject
 	VaultAccess.Repository vaultAccessRepo;
 
@@ -103,6 +120,9 @@ public class VaultResource {
 
 	@Inject
 	LicenseHolder license;
+
+	@Inject
+	VaultUnlockMetrics vaultUnlockMetrics;
 
 	@Context
 	HttpServerRequest request;
@@ -133,6 +153,18 @@ public class VaultResource {
 	}
 
 	@GET
+	@Path("/recoverable")
+	@RolesAllowed("user")
+	@Produces(MediaType.APPLICATION_JSON)
+	@Transactional
+	@Operation(summary = "list all recoverable vaults", description = "list all vaults that can be recovered by the currently logged in user")
+	public List<VaultDto> getRecoverable() {
+		var currentUserId = jwt.getSubject();
+		final Stream<Vault> resultStream = vaultRepo.findRecoverable(currentUserId);
+		return resultStream.map(VaultDto::fromEntity).toList();
+	}
+
+	@GET
 	@Path("/some")
 	@RolesAllowed("admin")
 	@Produces(MediaType.APPLICATION_JSON)
@@ -156,7 +188,7 @@ public class VaultResource {
 	@GET
 	@Path("/{vaultId}/members")
 	@RolesAllowed("user")
-	@VaultRole(VaultAccess.Role.OWNER) // may throw 403
+	@VaultRole(value = VaultAccess.Role.OWNER, bypassForEmergencyAccess = true) // may throw 403
 	@Transactional
 	@Produces(MediaType.APPLICATION_JSON)
 	@Operation(summary = "list vault members", description = "list all users or groups that this vault has been shared with directly (not inherited via group membership)")
@@ -171,9 +203,74 @@ public class VaultResource {
 	}
 
 	@PUT
+	@Path("/{vaultId}/members")
+	@RolesAllowed("user")
+	@VaultRole(value = VaultAccess.Role.OWNER, bypassForEmergencyAccess = true) // may throw 403
+	@Transactional
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Operation(summary = "set vault members", description = "replaces all direct vault members with the given ones")
+	@APIResponse(responseCode = "204", description = "members updated")
+	@APIResponse(responseCode = "400", description = "invalid members in request body")
+	@APIResponse(responseCode = "403", description = "not a vault owner")
+	@APIResponse(responseCode = "404", description = "vault not found")
+	public Response setDirectMembers(@PathParam("vaultId") UUID vaultId, @NotEmpty Map<String, VaultAccess.Role> memberRoles) {
+		var vault = vaultRepo.findById(vaultId);
+		if (vault == null) {
+			throw new NotFoundException("Vault not found.");
+		}
+		var newVaultAccess = authorityRepo.findAllInList(memberRoles.keySet()).map(authority -> {
+			assert memberRoles.containsKey(authority.getId());
+			return VaultAccess.create(vault, authority, memberRoles.get(authority.getId()));
+		}).toList();
+		if (newVaultAccess.isEmpty()) {
+			throw new BadRequestException("No (valid) members given.");
+		}
+		var oldVaultAccess = vaultAccessRepo.forVault(vaultId).toList();
+
+		// determine diff:
+		Set<VaultAccess.Id> newIds = newVaultAccess.stream().map(VaultAccess::getId).collect(Collectors.toSet());
+		Set<VaultAccess.Id> oldIds = oldVaultAccess.stream().map(VaultAccess::getId).collect(Collectors.toSet());
+		Predicate<VaultAccess> isNew = va -> newIds.contains(va.getId());
+		Predicate<VaultAccess> isOld = va -> oldIds.contains(va.getId());
+		Predicate<VaultAccess> hasChangedRole = va -> memberRoles.get(va.getId().authorityId()) != va.getRole();
+		var addedMembers = newVaultAccess.stream()
+				.filter(isOld.negate()).toList();
+		var removedMembers = oldVaultAccess.stream()
+				.filter(isNew.negate()).toList();
+		var updatedMembers = oldVaultAccess.stream()
+				.filter(isNew)
+				.filter(hasChangedRole)
+				.peek(va -> va.setRole(memberRoles.get(va.getId().authorityId())))
+				.toList();
+
+		// resolve group members and simulate new seat count:
+		var effectiveUsers = new HashSet<User>();
+		effectiveUsers.addAll(userRepo.getEffectiveGroupUsers(memberRoles.keySet()));
+		effectiveUsers.addAll(userRepo.findByIds(memberRoles.keySet()).toList());
+		var newSeatOccupyingUsers = new HashSet<>(effectiveVaultAccessRepo.usersSeatedOnOtherVaults(vaultId).toList()); // initialize with users already having access to other vaults
+		newSeatOccupyingUsers.addAll(effectiveUsers.stream().map(User::getId).toList()); // add all users that will have access to this vault after the operation (avoid double counting by using a set)
+		if (newSeatOccupyingUsers.size() > license.getEntitlements().seats()) {
+			throw new PaymentRequiredException("License seats exceeded. Cannot add more users.");
+		}
+
+		// Audit Log
+		addedMembers.forEach(va -> eventLogger.logVaultMemberAdded(jwt.getSubject(), vaultId, va.getId().authorityId(), va.getRole()));
+		removedMembers.forEach(va -> eventLogger.logVaultMemberRemoved(jwt.getSubject(), vaultId, va.getId().authorityId()));
+		updatedMembers.forEach(va -> eventLogger.logVaultMemberUpdated(jwt.getSubject(), vaultId, va.getId().authorityId(), va.getRole()));
+
+		// replace all:
+		vaultAccessRepo.delete(vaultId, removedMembers.stream().map(VaultAccess::getId).map(VaultAccess.Id::authorityId).toList());
+		vaultAccessRepo.persist(addedMembers);
+		vaultAccessRepo.persist(updatedMembers);
+
+		return Response.noContent().build();
+	}
+
+
+	@PUT
 	@Path("/{vaultId}/users/{userId}")
 	@RolesAllowed("user")
-	@VaultRole(VaultAccess.Role.OWNER) // may throw 403
+	@VaultRole(value = VaultAccess.Role.OWNER, bypassForEmergencyAccess = true) // may throw 403
 	@Transactional
 	@Produces(MediaType.APPLICATION_JSON)
 	@Operation(summary = "adds a user to this vault or updates her role")
@@ -188,7 +285,7 @@ public class VaultResource {
 		var vault = vaultRepo.findById(vaultId); // should always be found, since @VaultRole filter would have triggered
 		var user = userRepo.findByIdOptional(userId).orElseThrow(NotFoundException::new);
 		var usedSeats = effectiveVaultAccessRepo.countSeatOccupyingUsers();
-		if (usedSeats < license.getSeats() // free seats available
+		if (usedSeats < license.getEntitlements().seats() // free seats available
 				|| effectiveVaultAccessRepo.isUserOccupyingSeat(userId)) { // or user already sitting
 
 			// / start cipherduck extension
@@ -220,7 +317,7 @@ public class VaultResource {
 		var group = groupRepo.findByIdOptional(groupId).orElseThrow(NotFoundException::new);
 
 		//usersInGroup - usersInGroupAndPartOfAtLeastOneVault + usersOfAtLeastOneVault
-		if (userRepo.countEffectiveGroupUsers(groupId) - effectiveVaultAccessRepo.countSeatOccupyingUsersOfGroup(groupId) + effectiveVaultAccessRepo.countSeatOccupyingUsers() > license.getSeats()) {
+		if (userRepo.countEffectiveGroupUsers(groupId) - effectiveVaultAccessRepo.countSeatOccupyingUsersOfGroup(groupId) + effectiveVaultAccessRepo.countSeatOccupyingUsers() > license.getEntitlements().seats()) {
 			throw new PaymentRequiredException("Adding this group would exceed available license seats.");
 		}
 
@@ -254,7 +351,7 @@ public class VaultResource {
 	@DELETE
 	@Path("/{vaultId}/authority/{authorityId}")
 	@RolesAllowed("user")
-	@VaultRole(VaultAccess.Role.OWNER) // may throw 403
+	@VaultRole(value = VaultAccess.Role.OWNER, bypassForEmergencyAccess = true) // may throw 403
 	@Transactional
 	@Produces(MediaType.APPLICATION_JSON)
 	@Operation(summary = "remove a user or group from this vault", description = "revokes the given authority's access rights from this vault. If the given authority is no member, the request is a no-op.")
@@ -281,7 +378,7 @@ public class VaultResource {
 	@GET
 	@Path("/{vaultId}/users-requiring-access-grant")
 	@RolesAllowed("user")
-	@VaultRole(VaultAccess.Role.OWNER) // may throw 403
+	@VaultRole(value = VaultAccess.Role.OWNER, bypassForEmergencyAccess = true) // may throw 403
 	@Transactional
 	@Produces(MediaType.APPLICATION_JSON)
 	@Operation(summary = "list members requiring access tokens", description = "lists all members, that have permissions but lack an access token")
@@ -320,16 +417,24 @@ public class VaultResource {
 		}
 
 		var accessTokenSeats = effectiveVaultAccessRepo.countSeatOccupyingUsersWithAccessToken();
-		if (accessTokenSeats > license.getSeats()) {
+		if (accessTokenSeats > license.getEntitlements().seats()) {
 			throw new PaymentRequiredException("Number of effective vault users exceeds available license seats");
 		}
 		var ipAddress = request.remoteAddress().hostAddress();
 		try {
 			var access = legacyAccessTokenRepo.unlock(vaultId, deviceId, jwt.getSubject());
 			eventLogger.logVaultKeyRetrieved(jwt.getSubject(), vaultId, VaultKeyRetrievedEvent.Result.SUCCESS, ipAddress, deviceId);
-			var subscriptionStateHeaderName = "Hub-Subscription-State";
-			var subscriptionStateHeaderValue = license.isSet() ? "ACTIVE" : "INACTIVE"; // license expiration is not checked here, because it is checked in the ActiveLicense filter
-			return Response.ok(access.getJwe()).header(subscriptionStateHeaderName, subscriptionStateHeaderValue).build();
+			var response = Response.ok(access.getJwe());
+			var iosLicense = license.getEntitlements().iosLicense();
+			var androidLicense = license.getEntitlements().androidLicense();
+			if (iosLicense != null) {
+				response = response.header("Hub-Subscription-State", "ACTIVE"); // license expiration is not checked here, because it is checked in the ActiveLicense filter
+				response = response.header("Hub-iOS-License", iosLicense);
+			}
+			if (androidLicense != null) {
+				response = response.header("Hub-Android-License", androidLicense);
+			}
+			return response.build();
 		} catch (NoResultException e) {
 			eventLogger.logVaultKeyRetrieved(jwt.getSubject(), vaultId, VaultKeyRetrievedEvent.Result.UNAUTHORIZED, ipAddress, deviceId);
 			throw new ForbiddenException("Access to this device not granted.");
@@ -350,18 +455,22 @@ public class VaultResource {
 	@APIResponse(responseCode = "449", description = "User account not yet initialized. Retry after setting up user")
 	@ActiveLicense // may throw 402
 	public Response unlock(@PathParam("vaultId") UUID vaultId, @QueryParam("evenIfArchived") @DefaultValue("false") boolean ignoreArchived) {
+		vaultUnlockMetrics.recordUnlock();
 		var vault = vaultRepo.findById(vaultId); // should always be found, since @VaultRole filter would have triggered
 		if (vault.isArchived() && !ignoreArchived) {
+			vaultUnlockMetrics.recordFailure();
 			throw new GoneException("Vault is archived.");
 		}
 
 		var accessTokenSeats = effectiveVaultAccessRepo.countSeatOccupyingUsersWithAccessToken();
-		if (accessTokenSeats > license.getSeats()) {
+		if (accessTokenSeats > license.getEntitlements().seats()) {
+			vaultUnlockMetrics.recordFailure();
 			throw new PaymentRequiredException("Number of effective vault users exceeds available license seats");
 		}
 
 		var user = userRepo.findById(jwt.getSubject());
 		if (user.getEcdhPublicKey() == null) {
+			vaultUnlockMetrics.recordFailure();
 			throw new ActionRequiredException("User account not initialized.");
 		}
 		var ipAddress = request.remoteAddress().hostAddress();
@@ -369,13 +478,21 @@ public class VaultResource {
 		var access = accessTokenRepo.unlock(vaultId, jwt.getSubject());
 		if (access != null) {
 			eventLogger.logVaultKeyRetrieved(jwt.getSubject(), vaultId, VaultKeyRetrievedEvent.Result.SUCCESS, ipAddress, deviceId);
-			var subscriptionStateHeaderName = "Hub-Subscription-State";
-			var subscriptionStateHeaderValue = license.isSet() ? "ACTIVE" : "INACTIVE"; // license expiration is not checked here, because it is checked in the ActiveLicense filter
-			return Response.ok(access.getVaultKey(), MediaType.TEXT_PLAIN_TYPE).header(subscriptionStateHeaderName, subscriptionStateHeaderValue).build();
-		} else if (vaultRepo.findById(vaultId) == null) {
-			throw new NotFoundException("No such vault.");
+			vaultUnlockMetrics.recordSuccess();
+			var response = Response.ok(access.getVaultKey(), MediaType.TEXT_PLAIN_TYPE);
+			var iosLicense = license.getEntitlements().iosLicense();
+			var androidLicense = license.getEntitlements().androidLicense();
+			if (iosLicense != null) {
+				response = response.header("Hub-Subscription-State", "ACTIVE"); // license expiration is not checked here, because it is checked in the ActiveLicense filter
+				response = response.header("Hub-iOS-License", iosLicense);
+			}
+			if (androidLicense != null) {
+				response = response.header("Hub-Android-License", androidLicense);
+			}
+			return response.build();
 		} else {
 			eventLogger.logVaultKeyRetrieved(jwt.getSubject(), vaultId, VaultKeyRetrievedEvent.Result.UNAUTHORIZED, ipAddress, deviceId);
+			vaultUnlockMetrics.recordFailure();
 			throw new ForbiddenException("Access to this vault not granted.");
 		}
 	}
@@ -415,13 +532,13 @@ public class VaultResource {
 	@POST
 	@Path("/{vaultId}/access-tokens")
 	@RolesAllowed("user")
-	@VaultRole(VaultAccess.Role.OWNER) // may throw 403
+	@VaultRole(value = VaultAccess.Role.OWNER, bypassForEmergencyAccess = true) // may throw 403
 	@Transactional
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Operation(summary = "adds user-specific vault keys", description = "Stores one or more user-vaultkey-tuples, as defined in the request body ({user1: token1, user2: token2, ...}).")
 	@APIResponse(responseCode = "200", description = "all keys stored")
 	@APIResponse(responseCode = "402", description = "number of users granted access exceeds available license seats")
-	@APIResponse(responseCode = "403", description = "not a vault owner")
+	@APIResponse(responseCode = "403", description = "not a vault owner or emergency access council member")
 	@APIResponse(responseCode = "404", description = "at least one user has not been found")
 	public Response grantAccess(@PathParam("vaultId") UUID vaultId, @NotEmpty Map<String, String> tokens) {
 		var vault = vaultRepo.findById(vaultId); // should always be found, since @VaultRole filter would have triggered
@@ -430,7 +547,7 @@ public class VaultResource {
 		long occupiedSeats = effectiveVaultAccessRepo.countSeatOccupyingUsers();
 		long usersWithoutSeat = tokens.size() - effectiveVaultAccessRepo.countSeatsOccupiedByUsers(tokens.keySet().stream().toList());
 
-		if (occupiedSeats + usersWithoutSeat > license.getSeats()) {
+		if (occupiedSeats + usersWithoutSeat > license.getEntitlements().seats()) {
 			throw new PaymentRequiredException("Number of effective vault users greater than or equal to the available license seats");
 		}
 
@@ -452,7 +569,7 @@ public class VaultResource {
 	@GET
 	@Path("/{vaultId}")
 	@RolesAllowed("user")
-	// @VaultRole(VaultAccess.Role.MEMBER) // TODO: members and admin may do this...
+	@VaultRole(value = {VaultAccess.Role.MEMBER, VaultAccess.Role.OWNER}, bypassForRealmRole = true, realmRole = RealmRole.ADMIN, onMissingVault = VaultRole.OnMissingVault.NOT_FOUND)
 	@Produces(MediaType.APPLICATION_JSON)
 	@Transactional
 	@Operation(summary = "gets a vault")
@@ -460,16 +577,13 @@ public class VaultResource {
 	@APIResponse(responseCode = "403", description = "requesting user is neither a vault member nor has the admin role")
 	public VaultDto get(@PathParam("vaultId") UUID vaultId) {
 		Vault vault = vaultRepo.findByIdOptional(vaultId).orElseThrow(NotFoundException::new);
-		if (vault.getEffectiveMembers().stream().noneMatch(u -> u.getId().equals(jwt.getSubject())) && !identity.getRoles().contains("admin")) {
-			throw new ForbiddenException("Requesting user is not a member of the vault");
-		}
 		return VaultDto.fromEntity(vault);
 	}
 
 	@PUT
 	@Path("/{vaultId}")
 	@RolesAllowed("user") // general authentication. VaultRole filter will check for specific access rights
-	@VaultRole(value = VaultAccess.Role.OWNER, onMissingVault = VaultRole.OnMissingVault.REQUIRE_REALM_ROLE, realmRole = "create-vaults")
+	@VaultRole(value = VaultAccess.Role.OWNER, onMissingVault = VaultRole.OnMissingVault.REQUIRE_REALM_ROLE, realmRole = RealmRole.CREATE_VAULTS, bypassForEmergencyAccess = true)
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
 	@Transactional
@@ -498,7 +612,7 @@ public class VaultResource {
 		} else {
 			//if license is exceeded block vault creation, independent if the user is already sitting
 			var usedSeats = effectiveVaultAccessRepo.countSeatOccupyingUsers();
-			if (usedSeats > license.getSeats()) {
+			if (usedSeats > license.getEntitlements().seats()) {
 				throw new PaymentRequiredException("Number of effective vault users exceeds available license seats");
 			}
 			// create new vault:
@@ -510,6 +624,9 @@ public class VaultResource {
 		vault.setName(vaultDto.name);
 		vault.setDescription(vaultDto.description);
 		vault.setArchived(existingVault.isPresent() && vaultDto.archived);
+		var oldEmergencyKeyShares = vault.getEmergencyKeyShares().values();
+		vault.setRequiredEmergencyKeyShares(vaultDto.requiredEmergencyKeyShares);
+		vault.setEmergencyKeyShares(vaultDto.emergencyKeyShares);
 		vault.setUvfMetadataFile(vaultDto.uvfMetadataFile);
 		vault.setUvfKeySet(vaultDto.uvfKeySet);
 
@@ -520,6 +637,16 @@ public class VaultResource {
 		// \ end cipherduck extension
 
 		vaultRepo.persistAndFlush(vault); // trigger PersistenceException before we continue with
+
+		// does this request update emergency key shares?
+		if (!oldEmergencyKeyShares.containsAll(vaultDto.emergencyKeyShares.values())) {
+			var emergencyAccessCouncilMembers = String.join("\", \"", vaultDto.emergencyKeyShares.keySet());
+			var settings = """
+					{ "requiredEmergencyKeyShares": %d, "emergencyCouncilMemberIds": ["%s"] }
+					""".formatted(vaultDto.requiredEmergencyKeyShares, emergencyAccessCouncilMembers);
+			eventLogger.logEmergencyAccessSetup(vault.getId(), currentUser.getId(), settings, request.remoteAddress().hostAddress());
+		}
+
 		if (existingVault.isEmpty()) {
 			eventLogger.logVaultCreated(currentUser.getId(), vault.getId(), vault.getName(), vault.getDescription());
 			var access = new VaultAccess();
@@ -592,12 +719,14 @@ public class VaultResource {
 		return Response.ok(VaultDto.fromEntity(vault), MediaType.APPLICATION_JSON).build();
 	}
 
-
+	@JsonInclude(JsonInclude.Include.NON_NULL)
 	public record VaultDto(@JsonProperty("id") @NotNull UUID id,
 						   @JsonProperty("name") @NoHtmlOrScriptChars @NotBlank String name,
+						   @JsonProperty("creationTime") Instant creationTime,
 						   @JsonProperty("description") @NoHtmlOrScriptChars String description,
 						   @JsonProperty("archived") boolean archived,
-						   @JsonProperty("creationTime") Instant creationTime,
+						   @JsonProperty("requiredEmergencyKeyShares") @Min(0) int requiredEmergencyKeyShares,
+						   @JsonProperty("emergencyKeyShares") Map<String, String> emergencyKeyShares,
 						   @JsonProperty("uvfMetadataFile") String uvfMetadataFile,
 						   @JsonProperty("uvfKeySet") String uvfKeySet,
 						   // Legacy properties ("Vault Admin Password"):
@@ -608,10 +737,32 @@ public class VaultResource {
 	) {
 
 		public static VaultDto fromEntity(Vault entity) {
-			return new VaultDto(entity.getId(), entity.getName(), entity.getDescription(), entity.isArchived(), entity.getCreationTime().truncatedTo(ChronoUnit.MILLIS), entity.getUvfMetadataFile(), entity.getUvfKeySet(),
+			return new VaultDto(entity.getId(), entity.getName(), entity.getCreationTime().truncatedTo(ChronoUnit.MILLIS), entity.getDescription(), entity.isArchived(), entity.getRequiredEmergencyKeyShares(), entity.getEmergencyKeyShares(),
+					// uvf:
+					entity.getUvfMetadataFile(), entity.getUvfKeySet(),
 					// legacy properties:
 					entity.getMasterkey(), entity.getIterations(), entity.getSalt(), entity.getAuthenticationPublicKey(), entity.getAuthenticationPrivateKey());
 		}
 
+	}
+
+	public record VaultDtoWithRole(
+			@JsonProperty("id") UUID id,
+			@JsonProperty("name") String name,
+			@JsonProperty("description") String description,
+			@JsonProperty("archived") boolean archived,
+			@JsonProperty("creationTime") Instant creationTime,
+			@JsonProperty("role") VaultAccess.Role role
+	) {
+		public static VaultDtoWithRole from(Vault vault, VaultAccess.Role role) {
+			return new VaultDtoWithRole(
+					vault.getId(),
+					vault.getName(),
+					vault.getDescription(),
+					vault.isArchived(),
+					vault.getCreationTime().truncatedTo(ChronoUnit.MILLIS),
+					role
+			);
+		}
 	}
 }

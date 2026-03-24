@@ -114,14 +114,62 @@ export type AuditEventVaultOwnershipClaimDto = AuditEventDtoBase & {
   vaultId: string;
 }
 
-export type AuditEventDto = AuditEventDeviceRegisterDto | AuditEventDeviceRemoveDto | AuditEventSettingWotUpdateDto | AuditEventSignedWotIdDto | AuditEventUserAccountResetDto | AuditEventUserKeysChangeDto | AuditEventUserSetupCodeChangeDto | AuditEventVaultCreateDto | AuditEventVaultUpdateDto | AuditEventVaultAccessGrantDto | AuditEventVaultKeyRetrieveDto | AuditEventVaultMemberAddDto | AuditEventVaultMemberRemoveDto | AuditEventVaultMemberUpdateDto | AuditEventVaultOwnershipClaimDto;
+export type AuditEventEmergencyAccessSetupDto = AuditEventDtoBase & {
+  type: 'EMERGENCY_ACCESS_SETUP',
+  vaultId: string;
+  ownerId: string;
+  settings: string; // contains stringified JSON
+  ipAddress: string;
+}
+
+export type AuditEventEmergencyAccessSettingsChangedDto = AuditEventDtoBase & {
+  type: 'EMERGENCY_ACCESS_SETTINGS_UPDATED',
+  adminId: string;
+  enableEmergencyAccess: boolean;
+  councilMemberIds: string;
+  requiredKeyShares: number;
+  minMembers: number;
+  allowChoosingCouncil: boolean;
+}
+
+export type AuditEventEmergencyAccessRecoveryStartedDto = AuditEventDtoBase & {
+  type: 'EMERGENCY_ACCESS_RECOVERY_STARTED',
+  vaultId: string;
+  processId: string;
+  councilMemberId: string;
+  recoveryType: string;
+  details: string;
+}
+
+export type AuditEventEmergencyAccessRecoveryApprovedDto = AuditEventDtoBase & {
+  type: 'EMERGENCY_ACCESS_RECOVERY_APPROVED',
+  processId: string;
+  councilMemberId: string;
+  ipAddress: string;
+}
+
+export type AuditEventEmergencyAccessRecoveryCompletedDto = AuditEventDtoBase & {
+  type: 'EMERGENCY_ACCESS_RECOVERY_COMPLETED',
+  processId: string;
+  councilMemberId: string;
+  ipAddress: string;
+}
+
+export type AuditEventEmergencyAccessRecoveryAbortedDto = AuditEventDtoBase & {
+  type: 'EMERGENCY_ACCESS_RECOVERY_ABORTED';
+  processId: string;
+  councilMemberId: string;
+  ipAddress: string;
+}
+
+export type AuditEventDto = AuditEventDeviceRegisterDto | AuditEventDeviceRemoveDto | AuditEventSettingWotUpdateDto | AuditEventSignedWotIdDto | AuditEventUserAccountResetDto | AuditEventUserKeysChangeDto | AuditEventUserSetupCodeChangeDto | AuditEventVaultCreateDto | AuditEventVaultUpdateDto | AuditEventVaultAccessGrantDto | AuditEventVaultKeyRetrieveDto | AuditEventVaultMemberAddDto | AuditEventVaultMemberRemoveDto | AuditEventVaultMemberUpdateDto | AuditEventVaultOwnershipClaimDto | AuditEventEmergencyAccessSetupDto | AuditEventEmergencyAccessSettingsChangedDto | AuditEventEmergencyAccessRecoveryStartedDto | AuditEventEmergencyAccessRecoveryApprovedDto | AuditEventEmergencyAccessRecoveryCompletedDto | AuditEventEmergencyAccessRecoveryAbortedDto;
 
 /* Entity Cache */
 
 export class AuditLogEntityCache {
-  private vaults: Map<string, Deferred<VaultDto>>;
-  private authorities: Map<string, Deferred<AuthorityDto>>;
-  private devices: Map<string, Deferred<DeviceDto>>;
+  private readonly vaults: Map<string, Deferred<VaultDto>>;
+  private readonly authorities: Map<string, Deferred<AuthorityDto>>;
+  private readonly devices: Map<string, Deferred<DeviceDto>>;
 
   constructor() {
     this.vaults = new Map();
@@ -153,9 +201,9 @@ export class AuditLogEntityCache {
     }
   }
 
-  private debouncedResolvePendingVaults = debounce(async () => await this.resolvePendingEntities<VaultDto>(this.vaults, backend.vaults.listSome), 100);
-  private debouncedResolvePendingAuthorities = debounce(async () => await this.resolvePendingEntities<AuthorityDto>(this.authorities, backend.authorities.listSome), 100);
-  private debouncedResolvePendingDevices = debounce(async () => {
+  private readonly debouncedResolvePendingVaults = debounce(async () => await this.resolvePendingEntities<VaultDto>(this.vaults, backend.vaults.listSome), 100);
+  private readonly debouncedResolvePendingAuthorities = debounce(async () => await this.resolvePendingEntities<AuthorityDto>(this.authorities, backend.authorities.listSome), 100);
+  private readonly debouncedResolvePendingDevices = debounce(async () => {
     await this.resolvePendingEntities<DeviceDto>(
       this.devices,
       (deviceIds: string[]) =>

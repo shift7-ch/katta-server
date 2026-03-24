@@ -4,7 +4,7 @@
       {{ t('common.loading') }}
     </div>
     <div v-else>
-      <FetchError :error="onFetchError" :retry="allowRetryFetch ? fetchData : null"/>
+      <FetchError :error="onFetchError" :retry="allowRetryFetch ? fetchData : undefined"/>
     </div>
   </div>
 
@@ -92,15 +92,15 @@ const emit = defineEmits<{
 }>();
 
 
-const onFetchError = ref<Error | null>();
-const allowRetryFetch = computed(() => onFetchError.value != null && !(onFetchError.value instanceof NotFoundError));  //fetch requests either list something, or query from th storageprofile In the latter, a 404 indicates the vault does not exists anymore.
+const onFetchError = ref<Error>();
+const allowRetryFetch = computed(() => onFetchError.value && !(onFetchError.value instanceof NotFoundError));  //fetch requests either list something, or query from th vault. In the latter, a 404 indicates the vault does not exists anymore.
 
 const storageprofile = ref<StorageProfileDto>();
 
 onMounted(fetchData);
 
 async function fetchData() {
-  onFetchError.value = null;
+  onFetchError.value = undefined;
   try {
     storageprofile.value = await backend.storageprofiles.getSingle(props.storageprofileId);
   } catch (error) {

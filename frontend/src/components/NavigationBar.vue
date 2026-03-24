@@ -18,8 +18,8 @@
             <!-- \ end cipherduck extension -->
           </router-link>
           <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
-            <router-link v-for="item in navigation" :key="item.name" v-slot="{ isActive, href, navigate }" :to="item.to" custom>
-              <a :href="href" :class="[isActive ? 'border-primary text-white' : 'border-transparent text-gray-300 hover:border-gray-300 hover:text-white', ' inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium']" @click="navigate">
+            <router-link v-for="item in navigation" :key="item.name" v-slot="{ href, navigate }" :to="item.to" custom>
+              <a :href="href" :class="[route.path.startsWith(item.to) ? 'border-primary text-white' : 'border-transparent text-gray-300 hover:border-gray-300 hover:text-white', 'inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium']" @click="navigate">
                 {{ t(item.name) }}
               </a>
             </router-link>
@@ -71,16 +71,18 @@
 <script setup lang="ts">
 import { Disclosure, DisclosureButton, DisclosurePanel, Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/vue';
 import { ArrowRightStartOnRectangleIcon, Bars3Icon, ListBulletIcon, UserIcon, WrenchIcon, XMarkIcon } from '@heroicons/vue/24/outline';
-import { FunctionalComponent, onMounted, ref } from 'vue';
+import { computed, FunctionalComponent, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useRoute } from 'vue-router';
 import auth from '../common/auth';
-import { UserDto } from '../common/backend';
+import backend, { LicenseUserInfoDto, UserDto, VaultDto } from '../common/backend';
 
 const { t } = useI18n({ useScope: 'global' });
+const route = useRoute();
 
-const navigation = [
-  { name: 'nav.vaults', to: '/app/vaults' },
-];
+const navigation = ref([
+  { name: 'nav.vaults', to: '/app/vaults' }
+]);
 
 type ProfileDropdownItem = { icon: FunctionalComponent, name: string, to: string };
 
@@ -111,12 +113,45 @@ const profileDropdown = ref<ProfileDropdownItem[][]>([]);
 const props = defineProps<{
   me : UserDto
 }>();
+const licenseStatus = ref<LicenseUserInfoDto>();
+
+const isCommunityLicense = computed(() => {
+  return !licenseStatus.value?.expiresAt;
+});
 
 onMounted(async () => {
   if ((await auth).hasRole('admin')) {
+    navigation.value.push(
+      { name: 'nav.users', to: '/app/users' },
+      { name: 'nav.groups', to: '/app/groups' }
+    );
     profileDropdown.value = [profileDropdownSections.infoSection, profileDropdownSections.adminSection, profileDropdownSections.hubSection];
   } else {
     profileDropdown.value = [profileDropdownSections.infoSection, profileDropdownSections.hubSection];
   }
+
+  licenseStatus.value = await backend.license.getUserInfo();
+  const emergencyAccessEnabled = (await backend.settings.get()).enableEmergencyAccess;
+  if (!isCommunityLicense.value && emergencyAccessEnabled){
+    const recoverableVaults = ref<VaultDto[]>([]);
+
+    try {
+      const recoverable = await backend.vaults.listRecoverable().catch(() => [] as VaultDto[]);
+
+      const map = new Map<string, VaultDto>();
+      recoverable.forEach(v => {
+        map.set(v.id, v);
+      });
+      recoverableVaults.value = Array.from(map.values());
+    } catch (e) {
+      console.error('Failed to load emergency-access vaults:', e);
+      recoverableVaults.value = [];
+    }
+
+    if (recoverableVaults.value.length > 0 && !navigation.value.some(i => i.to === '/app/emergency-access')) {
+      navigation.value.push({ name: 'nav.emergencyAccess', to: '/app/emergency-access' });
+    }
+  }
 });
+
 </script>

@@ -1,6 +1,10 @@
 <template>
+  <ContentBanner v-if="cfg.entitlements.showTrialHint" type="info" :title="t('trial.enterpriseFeature.title')" class="mb-12">
+    {{ t('trial.enterpriseFeature.description') }} <!-- TODO: link to feature comparison? -->
+  </ContentBanner>
+
   <div v-if="state == State.Loading">
-    <div v-if="onFetchError == null">
+    <div v-if="!onFetchError">
       {{ t('common.loading') }}
     </div>
     <div v-else>
@@ -63,7 +67,7 @@
                     <input id="filter-end-date" v-model="endDateFilter" type="text" class="shadow-xs focus:ring-primary focus:border-primary block w-full sm:text-sm border-gray-300 rounded-md" :class="{ 'border-red-300 text-red-900 focus:ring-red-500 focus:border-red-500': !endDateFilterIsValid }" placeholder="yyyy-MM-dd" />
                   </div>
                   <div class="sm:grid sm:grid-cols-2 sm:items-center sm:gap-2">
-                    <label class="block text-sm font-medium text-gray-700 flex items-center">
+                    <label for="event-type-filter" class="block text-sm font-medium text-gray-700 flex items-center">
                       {{ t('auditLog.type') }}
                       <button 
                         type="button" 
@@ -76,7 +80,7 @@
                       </button>
                     </label>
                   </div>
-                  <Listbox v-model="selectedEventTypes" as="div" multiple>
+                  <Listbox id="event-type-filter" v-model="selectedEventTypes" as="div" multiple>
                     <div class="relative w-88">
                       <ListboxButton class="relative w-full rounded-md border border-gray-300 bg-white py-2 pl-3 pr-10 text-left shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary text-sm">
                         <div class="flex flex-wrap gap-2">
@@ -159,6 +163,12 @@
                   </td>
                   <AuditLogDetailsDeviceRegister v-if="auditEvent.type == 'DEVICE_REGISTER'" :event="auditEvent" />
                   <AuditLogDetailsDeviceRemove v-else-if="auditEvent.type == 'DEVICE_REMOVE'" :event="auditEvent" />
+                  <AuditLogDetailsEmergencyAccessSetup v-else-if="auditEvent.type == 'EMERGENCY_ACCESS_SETUP'" :event="auditEvent" />
+                  <AuditLogDetailsEmergencyAccessSettingsUpdated v-else-if="auditEvent.type == 'EMERGENCY_ACCESS_SETTINGS_UPDATED'" :event="auditEvent" />
+                  <AuditLogDetailsEmergencyAccessRecoveryStarted v-else-if="auditEvent.type == 'EMERGENCY_ACCESS_RECOVERY_STARTED'" :event="auditEvent" />
+                  <AuditLogDetailsEmergencyAccessRecoveryApproved v-else-if="auditEvent.type == 'EMERGENCY_ACCESS_RECOVERY_APPROVED'" :event="auditEvent" />
+                  <AuditLogDetailsEmergencyAccessRecoveryCompleted v-else-if="auditEvent.type == 'EMERGENCY_ACCESS_RECOVERY_COMPLETED'" :event="auditEvent" />
+                  <AuditLogDetailsEmergencyAccessRecoveryAborted v-else-if="auditEvent.type == 'EMERGENCY_ACCESS_RECOVERY_ABORTED'" :event="auditEvent" />
                   <AuditLogDetailsSettingWotUpdate v-else-if="auditEvent.type == 'SETTING_WOT_UPDATE'" :event="auditEvent" />
                   <AuditLogDetailsSignedWotId v-else-if="auditEvent.type == 'SIGN_WOT_ID'" :event="auditEvent" />
                   <AuditLogDetailsUserAccountReset v-else-if="auditEvent.type == 'USER_ACCOUNT_RESET'" :event="auditEvent" />
@@ -198,7 +208,7 @@
               </tfoot>
             </table>
           </div>
-          <p v-if="onFetchError != null" class="text-sm text-red-900 mt-2">{{ onFetchError.message }}</p>
+          <p v-if="onFetchError" class="text-sm text-red-900 mt-2">{{ onFetchError.message }}</p>
         </div>
       </div>
     </div>
@@ -229,6 +239,12 @@ import auditlog, { AuditEventDto } from '../common/auditlog';
 import { PaymentRequiredError } from '../common/backend';
 import AuditLogDetailsDeviceRegister from './AuditLogDetailsDeviceRegister.vue';
 import AuditLogDetailsDeviceRemove from './AuditLogDetailsDeviceRemove.vue';
+import AuditLogDetailsEmergencyAccessSetup from './AuditLogDetailsEmergencyAccessSetup.vue';
+import AuditLogDetailsEmergencyAccessSettingsUpdated from './AuditLogDetailsEmergencyAccessSettingsUpdated.vue';
+import AuditLogDetailsEmergencyAccessRecoveryStarted from './AuditLogDetailsEmergencyAccessRecoveryStarted.vue';
+import AuditLogDetailsEmergencyAccessRecoveryApproved from './AuditLogDetailsEmergencyAccessRecoveryApproved.vue';
+import AuditLogDetailsEmergencyAccessRecoveryCompleted from './AuditLogDetailsEmergencyAccessRecoveryCompleted.vue';
+import AuditLogDetailsEmergencyAccessRecoveryAborted from './AuditLogDetailsEmergencyAccessRecoveryAborted.vue';
 import AuditLogDetailsSettingWotUpdate from './AuditLogDetailsSettingWotUpdate.vue';
 import AuditLogDetailsSignedWotId from './AuditLogDetailsSignedWotId.vue';
 import AuditLogDetailsUserAccountReset from './AuditLogDetailsUserAccountReset.vue';
@@ -243,6 +259,8 @@ import AuditLogDetailsVaultUpdate from './AuditLogDetailsVaultUpdate.vue';
 import AuditLogUserKeysChange from './AuditLogUserKeysChange.vue';
 import AuditLogUserSetupCodeChanged from './AuditLogUserSetupCodeChanged.vue';
 import FetchError from './FetchError.vue';
+import config, { ConfigDto } from '../common/config';
+import ContentBanner from './ContentBanner.vue';
 
 enum State {
   Loading,
@@ -252,9 +270,10 @@ enum State {
 
 const { t } = useI18n({ useScope: 'global' });
 
+const cfg = ref<ConfigDto>(config.get());
 const state = ref(State.Loading);
 const auditEvents = ref<AuditEventDto[]>([]);
-const onFetchError = ref<Error | null>();
+const onFetchError = ref<Error>();
 
 const startDate = ref(beginOfDate(new Date(new Date().setMonth(new Date().getMonth() - 1))));
 const startDateFilter = ref(startDate.value.toISOString().split('T')[0]);
@@ -299,6 +318,12 @@ const eventTypeOptions = Object.fromEntries(
   Object.entries({
     DEVICE_REGISTER: t('auditLog.details.device.register'),
     DEVICE_REMOVE: t('auditLog.details.device.remove'),
+    EMERGENCY_ACCESS_SETUP: t('auditLog.details.emergencyaccess.setup'),
+    EMERGENCY_ACCESS_SETTINGS_UPDATED: t('auditLog.details.emergencyaccess.settingsUpdated'),
+    EMERGENCY_ACCESS_RECOVERY_STARTED: t('auditLog.details.emergencyaccess.recoveryStarted'),
+    EMERGENCY_ACCESS_RECOVERY_APPROVED: t('auditLog.details.emergencyaccess.recoveryApproved'),
+    EMERGENCY_ACCESS_RECOVERY_COMPLETED: t('auditLog.details.emergencyaccess.recoveryCompleted'),
+    EMERGENCY_ACCESS_RECOVERY_ABORTED: t('auditLog.details.emergencyaccess.recoveryAborted'),
     SETTING_WOT_UPDATE: t('auditLog.details.setting.wot.update'),
     SIGN_WOT_ID: t('auditLog.details.wot.signedIdentity'),
     USER_ACCOUNT_RESET: t('auditLog.details.user.account.reset'),
@@ -330,7 +355,7 @@ watch(selectedEventTypes, (newSelection, oldSelection) => {
 });
 
 async function fetchData(page: number = 0) {
-  onFetchError.value = null;
+  onFetchError.value = undefined;
   try {
     // Fetch one more event than the page size to determine if there is a next page
     const events = await auditlog.service.getAllEvents(startDate.value, endDate.value, selectedEventTypes.value, lastIdOfPreviousPage[page], selectedOrder.value, pageSize.value + 1);
@@ -401,7 +426,7 @@ function validateDateFilterValue(dateFilterValue: string): Date | null {
     return null;
   }
   const date = new Date(dateFilterValue);
-  if (isNaN(date.getTime())) {
+  if (Number.isNaN(date.getTime())) {
     return null;
   } else {
     return date;

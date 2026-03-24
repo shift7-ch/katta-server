@@ -1,6 +1,6 @@
 <template>
-  <div v-if="me == null">
-    <div v-if="onFetchError == null">
+  <div v-if="me === undefined">
+    <div v-if="!onFetchError">
       {{ t('common.loading') }}
     </div>
     <div v-else>
@@ -45,13 +45,13 @@
                   <tr>
                     <td class="py-4 text-sm text-gray-500">
                       <div class="grid place-items-center h-12 aspect-square">
-                        <span v-if="device.type == 'BROWSER'" :title="'Browser'">
+                        <span v-if="device.type == 'BROWSER'" :title="t('deviceType.browser')">
                           <WindowIcon class="size-5" aria-hidden="true" />
                         </span>
-                        <span v-else-if="device.type == 'DESKTOP'" :title="'Desktop'">
+                        <span v-else-if="device.type == 'DESKTOP'" :title="t('deviceType.desktop')">
                           <ComputerDesktopIcon class="size-5" aria-hidden="true" />
                         </span>
-                        <span v-else-if="device.type == 'MOBILE'" :title="'Mobile'">
+                        <span v-else-if="device.type == 'MOBILE'" :title="t('deviceType.mobile')">
                           <DevicePhoneMobileIcon class="size-5" aria-hidden="true" />
                         </span>
                       </div>
@@ -78,7 +78,7 @@
                     </td>
                   </tr>
                   <!-- TODO: good styling -->
-                  <tr v-if="onRemoveDeviceError[device.id] != null" class="bg-red-50">
+                  <tr v-if="onRemoveDeviceError[device.id]" class="bg-red-50">
                     <td colspan="5" class="px-6 py-3 text-center text-xs font-medium text-red-500 uppercase tracking-wider">
                       {{ t('common.unexpectedError', [onRemoveDeviceError[device.id].message]) }}
                     </td>
@@ -105,15 +105,15 @@ const { t, d } = useI18n({ useScope: 'global' });
 
 const me = ref<UserDto>();
 const myDevice = ref<DeviceDto>();
-const onFetchError = ref<Error | null>();
-const onRemoveDeviceError = ref< {[id: string]: Error} >({});
+const onFetchError = ref<Error>();
+const onRemoveDeviceError = ref<Record<string, Error>>({});
 
 onMounted(async () => {
   await fetchData();
 });
 
 async function fetchData() {
-  onFetchError.value = null;
+  onFetchError.value = undefined;
   try {
     me.value = await userdata.meWithLastAccess;
     myDevice.value = await userdata.browser;

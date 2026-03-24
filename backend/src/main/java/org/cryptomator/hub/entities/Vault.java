@@ -3,16 +3,20 @@ package org.cryptomator.hub.entities;
 import io.quarkus.hibernate.orm.panache.PanacheRepositoryBase;
 import io.quarkus.panache.common.Parameters;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
+import jakarta.persistence.MapKeyColumn;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.transaction.Transactional;
 import org.hibernate.annotations.Immutable;
 
 import java.security.KeyFactory;
@@ -22,8 +26,10 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
 import java.time.Instant;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -46,6 +52,18 @@ import java.util.stream.Stream;
 				INNER JOIN EffectiveVaultAccess a ON a.id.vaultId = v.id AND a.id.authorityId = :userId
 				WHERE a.id.role = :role
 				""")
+@NamedQuery(name = "Vault.recoverableByUser",
+		query = """
+				SELECT DISTINCT v
+				FROM Vault v
+				INNER JOIN v.emergencyKeyShares keyShares WHERE KEY(keyShares) = :councilMemberId
+				UNION
+				SELECT DISTINCT v
+				FROM EmergencyRecoveryProcess process
+				INNER JOIN RecoveredEmergencyKeyShares share ON share.id.recoveryId = process.id
+				INNER JOIN Vault v ON v.id = process.vaultId
+				WHERE share.id.councilMemberId = :councilMemberId
+				""")
 @NamedQuery(name = "Vault.allInList",
 		query = """
 				SELECT v
@@ -66,14 +84,6 @@ public class Vault {
 			inverseJoinColumns = @JoinColumn(name = "authority_id", referencedColumnName = "id")
 	)
 	private Set<Authority> directMembers = new HashSet<>();
-
-	@ManyToMany
-	@Immutable
-	@JoinTable(name = "effective_vault_access",
-			joinColumns = @JoinColumn(name = "vault_id", referencedColumnName = "id"),
-			inverseJoinColumns = @JoinColumn(name = "authority_id", referencedColumnName = "id")
-	)
-	private Set<Authority> effectiveMembers = new HashSet<>();
 
 	@OneToMany(mappedBy = "vault", fetch = FetchType.LAZY)
 	private Set<AccessToken> accessTokens = new HashSet<>();
@@ -104,6 +114,18 @@ public class Vault {
 
 	@Column(name = "archived", nullable = false)
 	private boolean archived;
+
+	@Column(name = "required_emergency_key_shares", nullable = false)
+	private int requiredEmergencyKeyShares;
+
+	@ElementCollection(fetch = FetchType.EAGER)
+	@CollectionTable(
+			name = "emergency_key_shares",
+			joinColumns = @JoinColumn(name = "vault_id")
+	)
+	@MapKeyColumn(name = "council_member_id")
+	@Column(name = "emergency_key_share")
+	private Map<String, String> emergencyKeyShares = new HashMap<>();
 
 	@Column(name = "uvf_metadata_file")
 	private String uvfMetadataFile;
@@ -142,18 +164,6 @@ public class Vault {
 
 	public Set<Authority> getDirectMembers() {
 		return directMembers;
-	}
-
-	public void setDirectMembers(Set<Authority> directMembers) {
-		this.directMembers = directMembers;
-	}
-
-	public Set<Authority> getEffectiveMembers() {
-		return effectiveMembers;
-	}
-
-	public void setEffectiveMembers(Set<Authority> effectiveMembers) {
-		this.effectiveMembers = effectiveMembers;
 	}
 
 	public Set<AccessToken> getAccessTokens() {
@@ -236,6 +246,23 @@ public class Vault {
 		this.archived = archived;
 	}
 
+	public int getRequiredEmergencyKeyShares() {
+		return requiredEmergencyKeyShares;
+	}
+
+	public void setRequiredEmergencyKeyShares(int requiredEmergencyKeyShares) {
+		this.requiredEmergencyKeyShares = requiredEmergencyKeyShares;
+	}
+
+	public Map<String, String> getEmergencyKeyShares() {
+		return Map.copyOf(emergencyKeyShares);
+	}
+
+	public void setEmergencyKeyShares(Map<String, String> emergencyKeyShares) {
+		this.emergencyKeyShares.clear();
+		this.emergencyKeyShares.putAll(emergencyKeyShares);
+	}
+
 	public String getUvfMetadataFile() {
 		return uvfMetadataFile;
 	}
@@ -257,19 +284,12 @@ public class Vault {
 		if (this == o) return true;
 		if (o == null || getClass() != o.getClass()) return false;
 		Vault vault = (Vault) o;
-		return Objects.equals(id, vault.id)
-				&& Objects.equals(name, vault.name)
-				&& Objects.equals(salt, vault.salt)
-				&& Objects.equals(iterations, vault.iterations)
-				&& Objects.equals(masterkey, vault.masterkey)
-				&& Objects.equals(archived, vault.archived)
-				&& Objects.equals(uvfMetadataFile, vault.uvfMetadataFile)
-				&& Objects.equals(uvfKeySet, vault.uvfKeySet);
+		return Objects.equals(id, vault.id);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(id, name, salt, iterations, masterkey, archived, uvfMetadataFile, uvfKeySet);
+		return Objects.hash(id);
 	}
 
 	@Override
@@ -282,6 +302,10 @@ public class Vault {
 				", salt='" + salt + '\'' +
 				", iterations='" + iterations + '\'' +
 				", masterkey='" + masterkey + '\'' +
+				", authenticationPublicKey='" + authenticationPublicKey + '\'' +
+				", authenticationPrivateKey='" + authenticationPrivateKey + '\'' +
+				", requiredEmergencyKeyShares='" + requiredEmergencyKeyShares + '\'' +
+				", emergencyKeyShares=" + emergencyKeyShares.keySet().stream().collect(Collectors.joining(", ")) +
 				", archived='" + archived + '\'' +
 				", uvfMetadataFile='" + uvfMetadataFile + '\'' +
 				", uvfKeySet='" + uvfKeySet + '\'' +
@@ -295,12 +319,28 @@ public class Vault {
 			return find("#Vault.accessibleByUser", Parameters.with("userId", userId)).stream();
 		}
 
+		public Stream<Vault> findRecoverable(String userId) {
+			return find("#Vault.recoverableByUser", Parameters.with("councilMemberId", userId)).stream();
+		}
+
 		public Stream<Vault> findAccessibleByUser(String userId, VaultAccess.Role role) {
 			return find("#Vault.accessibleByUserAndRole", Parameters.with("userId", userId).and("role", role)).stream();
 		}
 
 		public Stream<Vault> findAllInList(List<UUID> ids) {
-			return find("#Vault.allInList", Parameters.with("ids", ids)).stream();
+			return Batch.of(200).run(ids, Stream.of(), (batch, result) -> {
+				Stream<Vault> partialResult = find("#Vault.allInList", Parameters.with("ids", batch)).stream();
+				return Stream.concat(result, partialResult);
+			});
+		}
+
+		@Transactional(Transactional.TxType.REQUIRED)
+		public void deleteEmergencyKeySharesForUser(String userId) {
+			var adjustedVaults = findRecoverable(userId).map(v -> {
+				v.emergencyKeyShares.remove(userId);
+				return v;
+			});
+			persist(adjustedVaults);
 		}
 	}
 }
