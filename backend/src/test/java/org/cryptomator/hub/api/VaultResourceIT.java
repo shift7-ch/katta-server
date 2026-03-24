@@ -16,7 +16,7 @@ import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Validator;
 import jakarta.ws.rs.core.Response;
-import org.cryptomator.hub.cipherduck.KeycloakCryptomatorVaultsHelper;
+import org.cryptomator.hub.katta.KeycloakCryptomatorVaultsHelper;
 import org.cryptomator.hub.entities.EffectiveGroupMembership;
 import org.cryptomator.hub.entities.EffectiveVaultAccess;
 import org.cryptomator.hub.entities.Group;
