@@ -5,21 +5,23 @@ import com.auth0.jwt.algorithms.Algorithm;
 import io.agroal.api.AgroalDataSource;
 import io.quarkus.narayana.jta.QuarkusTransaction;
 import io.quarkus.test.InjectMock;
+import io.quarkus.test.junit.QuarkusMock;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.security.TestSecurity;
 import io.quarkus.test.security.oidc.Claim;
 import io.quarkus.test.security.oidc.OidcSecurity;
 import io.restassured.RestAssured;
+
+import static io.restassured.RestAssured.given;
+import static io.restassured.RestAssured.when;
+
 import io.restassured.http.ContentType;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Validator;
-import org.cryptomator.hub.entities.EffectiveGroupMembership;
-import org.cryptomator.hub.entities.EffectiveVaultAccess;
-import org.cryptomator.hub.entities.Group;
-import org.cryptomator.hub.entities.User;
-import org.cryptomator.hub.entities.Vault;
-import org.cryptomator.hub.entities.VaultAccess;
+import jakarta.ws.rs.core.Response;
+import org.cryptomator.hub.cipherduck.KeycloakCryptomatorVaultsHelper;
+import org.cryptomator.hub.entities.*;
 import org.cryptomator.hub.entities.events.EventLogger;
 import org.cryptomator.hub.entities.events.VaultKeyRetrievedEvent;
 import org.cryptomator.hub.license.HubLicenseEntitlements;
@@ -28,21 +30,27 @@ import org.cryptomator.hub.metrics.VaultUnlockMetrics;
 import org.cryptomator.hub.rollback.DBRollbackAfter;
 import org.cryptomator.hub.rollback.DBRollbackBefore;
 import org.flywaydb.core.Flyway;
+
+import static org.hamcrest.CoreMatchers.hasItems;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
+
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Order;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
-import org.junit.jupiter.api.TestMethodOrder;
+
+import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.text.IsEqualIgnoringCase.equalToIgnoringCase;
+
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.*;
+import org.keycloak.admin.client.resource.GroupsResource;
+import org.keycloak.admin.client.resource.UsersResource;
+import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
 import org.mockito.Mockito;
 
 import java.security.GeneralSecurityException;
@@ -55,16 +63,6 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-
-import static io.restassured.RestAssured.given;
-import static io.restassured.RestAssured.when;
-import static org.hamcrest.CoreMatchers.hasItems;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
-import static org.hamcrest.Matchers.comparesEqualTo;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.text.IsEqualIgnoringCase.equalToIgnoringCase;
 
 @QuarkusTest
 @DisplayName("Resource /vaults")
@@ -96,9 +94,15 @@ public class VaultResourceIT {
 	@SuppressWarnings("unused") // needed for @DBRollbackBefore, @DBRollbackAfter
 	public Flyway flyway;
 
+	@InjectMock
+	KeycloakCryptomatorVaultsHelper keycloakCryptomatorVaultsHelper;
+
 	@BeforeAll
 	static void beforeAll() {
 		RestAssured.enableLoggingOfRequestAndResponseIfValidationFails();
+		// https://quarkus.io/guides/getting-started-testing#quarkus_mock
+		KeycloakCryptomatorVaultsHelperMock mock = Mockito.mock(KeycloakCryptomatorVaultsHelperMock.class);
+		QuarkusMock.installMockForType(mock, KeycloakCryptomatorVaultsHelper.class);
 	}
 
 	@BeforeEach
@@ -152,7 +156,7 @@ public class VaultResourceIT {
 
 		@Test
 		void testValidDto() {
-			var dto = new VaultResource.VaultDto(VALID_ID, VALID_NAME, Instant.parse("2020-02-20T20:20:20Z"), "foobarbaz", false, 0, Map.of(),  VALID_UVF_METADATA_FILE, VALID_UVF_RECOVERY_KEY, VALID_MASTERKEY, 8, VALID_SALT, VALID_AUTH_PUB, VALID_AUTH_PRI);
+			var dto = new VaultResource.VaultDto(VALID_ID, VALID_NAME, Instant.parse("2020-02-20T20:20:20Z"), "foobarbaz", false, 0, Map.of(), VALID_UVF_METADATA_FILE, VALID_UVF_RECOVERY_KEY, VALID_MASTERKEY, 8, VALID_SALT, VALID_AUTH_PUB, VALID_AUTH_PRI);
 			var violations = validator.validate(dto);
 			MatcherAssert.assertThat(violations, Matchers.empty());
 		}
@@ -196,7 +200,6 @@ public class VaultResourceIT {
 			when().get("/vaults/{vaultId}/access-token", "7E57C0DE-0000-4000-8000-000100001111")
 					.then().statusCode(200)
 					.body(is("jwe.jwe.jwe.vault1.user1"));
-
 			Mockito.verify(vaultUnlockMetrics).recordUnlock();
 			Mockito.verify(vaultUnlockMetrics).recordSuccess();
 		}
@@ -207,7 +210,6 @@ public class VaultResourceIT {
 			when().get("/vaults/{vaultId}/access-token", "7E57C0DE-0000-4000-8000-000100002222")
 					.then().statusCode(200)
 					.body(is("jwe.jwe.jwe.vault2.user1"));
-
 			Mockito.verify(vaultUnlockMetrics).recordUnlock();
 			Mockito.verify(vaultUnlockMetrics).recordSuccess();
 		}
@@ -218,7 +220,6 @@ public class VaultResourceIT {
 			when().get("/vaults/{vaultId}/access-token?evenIfArchived=true", "7E57C0DE-0000-4000-8000-000100001111")
 					.then().statusCode(200)
 					.body(is("jwe.jwe.jwe.vault1.user1"));
-
 			Mockito.verify(vaultUnlockMetrics).recordUnlock();
 			Mockito.verify(vaultUnlockMetrics).recordSuccess();
 		}
@@ -246,7 +247,6 @@ public class VaultResourceIT {
 		void testUnlockArchived1() {
 			when().get("/vaults/{vaultId}/access-token", "7E57C0DE-0000-4000-8000-00010000AAAA")
 					.then().statusCode(410);
-
 			Mockito.verify(vaultUnlockMetrics).recordUnlock();
 			Mockito.verify(vaultUnlockMetrics).recordFailure();
 		}
@@ -256,7 +256,6 @@ public class VaultResourceIT {
 		void testUnlockArchived2() {
 			when().get("/vaults/{vaultId}/access-token?evenIfArchived=false", "7E57C0DE-0000-4000-8000-00010000AAAA")
 					.then().statusCode(410);
-
 			Mockito.verify(vaultUnlockMetrics).recordUnlock();
 			Mockito.verify(vaultUnlockMetrics).recordFailure();
 		}
@@ -266,7 +265,6 @@ public class VaultResourceIT {
 		void testUnlockArchived3() throws SQLException {
 			when().get("/vaults/{vaultId}/access-token?evenIfArchived=true", "7E57C0DE-0000-4000-8000-00010000AAAA")
 					.then().statusCode(200);
-
 			Mockito.verify(vaultUnlockMetrics).recordUnlock();
 			Mockito.verify(vaultUnlockMetrics).recordSuccess();
 		}
@@ -346,6 +344,7 @@ public class VaultResourceIT {
 			given().contentType(ContentType.JSON).body(vaultDto)
 					.when().put("/vaults/{vaultId}", "7E57C0DE-0000-4000-8000-000100003333")
 					.then().statusCode(403);
+
 		}
 
 	}
@@ -439,9 +438,12 @@ public class VaultResourceIT {
 		@Test
 		@DisplayName("POST /vaults/7E57C0DE-0000-4000-8000-000100001111/access-tokens returns 200 for [user998, user999]")
 		void testGrantAccess1() {
+
 			given().contentType(ContentType.JSON).body(Map.of("user998", "jwe.jwe.jwe.vault1.user998", "user999", "jwe.jwe.jwe.vault1.user999"))
 					.when().post("/vaults/{vaultId}/access-tokens/", "7E57C0DE-0000-4000-8000-000100001111")
 					.then().statusCode(200);
+
+
 		}
 
 		@Test
@@ -484,6 +486,33 @@ public class VaultResourceIT {
 					.then().statusCode(200);
 		}
 
+	}
+
+
+	@Nested
+	@DisplayName("Keycloak sync")
+	@TestSecurity(user = "User Name 1", roles = {"user", "create-vaults"})
+	@OidcSecurity(claims = {
+			@Claim(key = "sub", value = "user1")
+	})
+	public class KeycloakVaultsHelper {
+		@ParameterizedTest
+		@CsvSource(nullValues = "null", value = {"true,true", "true,false", "false,true", "false,false", "true,null", "null,true", "null,null"})
+		public void test(final Boolean minio, final Boolean aws) {
+			var uuid = UUID.fromString("7E57C0DE-0000-4000-8000-000100008888");
+			var vaultDto = new VaultResource.VaultDto(uuid, "VaultUpdated", Instant.parse("2222-11-11T11:11:11Z"), "Vault updated.", true, 0, Map.of(), "Rainbow", "Rainbow", "Rainbow", 27, "Rainbow", "Rainbow", "Rainbow");
+			given().contentType(ContentType.JSON)
+					.body(vaultDto)
+					.queryParam("minio", minio)
+					.queryParam("aws", aws)
+					.when().put("/vaults/{vaultId}", "7E57C0DE-0000-4000-8000-000100008888")
+					.then()
+					.body("id", equalToIgnoringCase("7E57C0DE-0000-4000-8000-000100008888"))
+					.body("name", equalTo("VaultUpdated"))
+					.body("description", equalTo("Vault updated."))
+					.body("creationTime", not("2222-11-11T11:11:11Z"));
+			Mockito.verify(keycloakCryptomatorVaultsHelper, Mockito.times(1)).keycloakPrepareVault("7e57c0de-0000-4000-8000-000100008888", minio, aws);
+		}
 	}
 
 	@Nested
@@ -666,9 +695,7 @@ public class VaultResourceIT {
 		void getMembersOfVault2c() {
 			given().when().get("/vaults/{vaultId}/members", "7E57C0DE-0000-4000-8000-000100002222")
 					.then().statusCode(200)
-					.body("id", not(hasItems("user2")))
-					.body("id", hasItems("group1", "group2"))
-			;
+					.body("id", not(hasItems("user2"))).body("id", hasItems("group1", "group2"));
 		}
 	}
 
@@ -681,6 +708,7 @@ public class VaultResourceIT {
 	@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 	@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 	class ManageAccessAsUser1 {
+
 
 		@Test
 		@Order(1)
@@ -700,7 +728,7 @@ public class VaultResourceIT {
 
 		@Test
 		@Order(3)
-		@DisplayName("GET /vaults/7E57C0DE-0000-4000-8000-000100001111/members does contain group2 with memberSize=3")
+		@DisplayName("GET /vaults/7E57C0DE-0000-4000-8000-000100001111/members does contain group2with memberSize=3")
 		void getMembersOfVault1a() {
 			given().when().get("/vaults/{vaultId}/members", "7E57C0DE-0000-4000-8000-000100001111")
 					.then().statusCode(200)
@@ -731,6 +759,7 @@ public class VaultResourceIT {
 			given().contentType(ContentType.JSON).body(Map.of("user999", "jwe.jwe.jwe.vault2.user999"))
 					.when().post("/vaults/{vaultId}/access-tokens/", "7E57C0DE-0000-4000-8000-000100001111")
 					.then().statusCode(200);
+
 
 			given().when().get("/vaults/{vaultId}/users-requiring-access-grant", "7E57C0DE-0000-4000-8000-000100001111")
 					.then().statusCode(200)
@@ -1064,6 +1093,52 @@ public class VaultResourceIT {
 			given().param("ids", "7e57c0de-0000-4000-8000-000100001111")
 					.when().get("/vaults/some")
 					.then().statusCode(403);
+		}
+	}
+
+
+	public static class KeycloakCryptomatorVaultsHelperMock extends KeycloakCryptomatorVaultsHelper {
+		@Override
+		public Keycloak getKeycloak() {
+			final Keycloak keycloakMock = Mockito.mock(Keycloak.class);
+			final RealmResource realmResourceMock = Mockito.mock(RealmResource.class);
+			final ClientsResource clientsResourceMock = Mockito.mock(ClientsResource.class);
+			final ClientResource clientResourceMock = Mockito.mock(ClientResource.class);
+			final ClientRepresentation clientRepresentationMock = Mockito.mock(ClientRepresentation.class);
+			final ClientScopesResource clientScopesResourceMock = Mockito.mock(ClientScopesResource.class);
+			final ClientScopeResource clientScopeResourceMock = Mockito.mock(ClientScopeResource.class);
+			final RoleMappingResource roleMappingResourceMock = Mockito.mock(RoleMappingResource.class);
+			final RoleScopeResource roleScopeResourceMock = Mockito.mock(RoleScopeResource.class);
+			final Response responseMock = Mockito.mock(Response.class);
+			final RolesResource rolesResourceMock = Mockito.mock(RolesResource.class);
+			final RoleResource roleResourceMock = Mockito.mock(RoleResource.class);
+			final RoleRepresentation roleRepresentationMock = Mockito.mock(RoleRepresentation.class);
+			final org.keycloak.admin.client.resource.UsersResource usersResourceMock = Mockito.mock(UsersResource.class);
+			final UserResource userResourceMock = Mockito.mock(UserResource.class);
+			final org.keycloak.admin.client.resource.GroupsResource groupsResourceMock = Mockito.mock(GroupsResource.class);
+			final GroupResource groupResourceMock = Mockito.mock(GroupResource.class);
+			Mockito.when(keycloakMock.realm(Mockito.anyString())).thenReturn(realmResourceMock);
+			Mockito.when(realmResourceMock.clients()).thenReturn(clientsResourceMock);
+			Mockito.when(realmResourceMock.clientScopes()).thenReturn(clientScopesResourceMock);
+			Mockito.when(clientScopesResourceMock.findAll()).thenReturn(List.of());
+			Mockito.when(clientScopesResourceMock.create(Mockito.any())).thenReturn(responseMock);
+			Mockito.when(clientScopesResourceMock.get(Mockito.anyString())).thenReturn(clientScopeResourceMock);
+			Mockito.when(responseMock.getStatus()).thenReturn(201);
+			Mockito.when(clientsResourceMock.findByClientId(Mockito.anyString())).thenReturn(List.of(clientRepresentationMock));
+			Mockito.when(clientsResourceMock.get(Mockito.anyString())).thenReturn(clientResourceMock);
+			Mockito.when(clientScopeResourceMock.getScopeMappings()).thenReturn(roleMappingResourceMock);
+			Mockito.when(clientRepresentationMock.getId()).thenReturn("");
+			Mockito.when(clientResourceMock.roles()).thenReturn(rolesResourceMock);
+			Mockito.when(roleMappingResourceMock.clientLevel(Mockito.anyString())).thenReturn(roleScopeResourceMock);
+			Mockito.when(rolesResourceMock.get(Mockito.anyString())).thenReturn(roleResourceMock);
+			Mockito.when(roleResourceMock.toRepresentation()).thenReturn(roleRepresentationMock);
+			Mockito.when(realmResourceMock.users()).thenReturn(usersResourceMock);
+			Mockito.when(usersResourceMock.get(Mockito.anyString())).thenReturn(userResourceMock);
+			Mockito.when(userResourceMock.roles()).thenReturn(roleMappingResourceMock);
+			Mockito.when(realmResourceMock.groups()).thenReturn(groupsResourceMock);
+			Mockito.when(groupsResourceMock.group(Mockito.anyString())).thenReturn(groupResourceMock);
+			Mockito.when(groupResourceMock.roles()).thenReturn(roleMappingResourceMock);
+			return keycloakMock;
 		}
 	}
 }

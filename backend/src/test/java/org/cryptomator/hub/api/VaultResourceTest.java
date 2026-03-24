@@ -98,42 +98,42 @@ class VaultResourceTest {
 		vaultResource.createOrUpdate(vaultId, vaultDto, minio, aws);
 
 		Mockito.verify(keycloakCryptomatorVaultsHelper, Mockito.times(1)).keycloakPrepareVault(vaultId.toString(), minio, aws);
-		Mockito.verify(keycloakCryptomatorVaultsHelper, Mockito.times(1)).keycloakGrantAccessToVault(vaultId.toString(), "alice", "pesto", groupRepo);
+		Mockito.verify(keycloakCryptomatorVaultsHelper, Mockito.times(1)).keycloakGrantAccessToVault(vaultId.toString(), "alice", "pesto", false);
 	}
 
 	@Test
 	public void testAddUser() {
 		vaultResource.addUser(vaultId, "alice", VaultAccess.Role.MEMBER);
-		Mockito.verify(keycloakCryptomatorVaultsHelper, Mockito.times(1)).keycloakGrantAccessToVault(vaultId.toString(), "alice", "pesto", groupRepo);
+		Mockito.verify(keycloakCryptomatorVaultsHelper, Mockito.times(1)).keycloakGrantAccessToVault(vaultId.toString(), "alice", "pesto", false);
 	}
 
 	@Test
 	public void testAddUserFailing() {
 		assertThrows(NotFoundException.class, () -> vaultResource.addUser(vaultId, "bob", VaultAccess.Role.MEMBER));
-		Mockito.verify(keycloakCryptomatorVaultsHelper, Mockito.times(0)).keycloakGrantAccessToVault(vaultId.toString(), "bob", "pesto", groupRepo);
+		Mockito.verify(keycloakCryptomatorVaultsHelper, Mockito.times(0)).keycloakGrantAccessToVault(vaultId.toString(), "bob", "pesto", false);
 	}
 
 	@Test
 	public void testAddGroup() {
 		vaultResource.addGroup(vaultId, "good cops", VaultAccess.Role.MEMBER);
-		Mockito.verify(keycloakCryptomatorVaultsHelper, Mockito.times(1)).keycloakGrantAccessToVault(vaultId.toString(), "good cops", "pesto", groupRepo);
+		Mockito.verify(keycloakCryptomatorVaultsHelper, Mockito.times(1)).keycloakGrantAccessToVault(vaultId.toString(), "good cops", "pesto", true);
 	}
 
 	@Test
 	public void testAddGroupFailing() {
 		assertThrows(NotFoundException.class, () -> vaultResource.addGroup(vaultId, "bad cops", VaultAccess.Role.MEMBER));
-		Mockito.verify(keycloakCryptomatorVaultsHelper, Mockito.times(0)).keycloakGrantAccessToVault(vaultId.toString(), "bad cops", "pesto", groupRepo);
+		Mockito.verify(keycloakCryptomatorVaultsHelper, Mockito.times(0)).keycloakGrantAccessToVault(vaultId.toString(), "bad cops", "pesto", true);
 	}
 
 	@Test
 	public void testRemoveAuthority() {
 		vaultResource.removeAuthority(vaultId, "good cops");
-		Mockito.verify(keycloakCryptomatorVaultsHelper, Mockito.times(1)).keycloakRemoveAccessToVault(vaultId.toString(), "good cops", "pesto", groupRepo);
+		Mockito.verify(keycloakCryptomatorVaultsHelper, Mockito.times(1)).keycloakRemoveAccessToVault(vaultId.toString(), "good cops", "pesto", true);
 	}
 
 	@Test
 	public void testRemoveAuthorityFailing() {
 		assertThrows(NotFoundException.class, () -> vaultResource.removeAuthority(vaultId, "bad cops"));
-		Mockito.verify(keycloakCryptomatorVaultsHelper, Mockito.times(0)).keycloakRemoveAccessToVault(vaultId.toString(), "bad cops", "pesto", groupRepo);
+		Mockito.verify(keycloakCryptomatorVaultsHelper, Mockito.times(0)).keycloakRemoveAccessToVault(vaultId.toString(), "bad cops", "pesto", true);
 	}
 }

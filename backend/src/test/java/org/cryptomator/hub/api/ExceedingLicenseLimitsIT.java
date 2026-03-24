@@ -1,30 +1,25 @@
 package org.cryptomator.hub.api;
 
 import io.quarkus.test.InjectMock;
+import io.quarkus.test.junit.QuarkusMock;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.security.TestSecurity;
 import io.quarkus.test.security.oidc.Claim;
 import io.quarkus.test.security.oidc.OidcSecurity;
+import io.restassured.RestAssured;
+import static io.restassured.RestAssured.given;
+import static io.restassured.RestAssured.when;
 import io.restassured.http.ContentType;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
-import org.cryptomator.hub.entities.EffectiveGroupMembership;
-import org.cryptomator.hub.entities.Group;
-import org.cryptomator.hub.entities.User;
-import org.cryptomator.hub.entities.Vault;
-import org.cryptomator.hub.entities.VaultAccess;
+import org.cryptomator.hub.cipherduck.KeycloakCryptomatorVaultsHelper;
+import org.cryptomator.hub.entities.*;
 import org.cryptomator.hub.license.HubLicenseEntitlements;
 import org.cryptomator.hub.license.LicenseHolder;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assumptions;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
-import org.junit.jupiter.api.TestMethodOrder;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.text.IsEqualIgnoringCase.equalToIgnoringCase;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mockito;
@@ -34,12 +29,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-
-import static io.restassured.RestAssured.given;
-import static io.restassured.RestAssured.when;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.text.IsEqualIgnoringCase.equalToIgnoringCase;
 
 @QuarkusTest
 @TestSecurity(user = "User Name 1", roles = {"user", "create-vaults"})
@@ -67,6 +56,14 @@ class ExceedingLicenseLimitsIT {
 
 	public ExceedingLicenseLimitsIT(VaultResourceIT vaultResourceIT) {
 		this.vaultResourceIT = vaultResourceIT;
+	}
+
+	@BeforeAll
+	static void beforeAll() {
+		RestAssured.enableLoggingOfRequestAndResponseIfValidationFails();
+		// https://quarkus.io/guides/getting-started-testing#quarkus_mock
+		VaultResourceIT.KeycloakCryptomatorVaultsHelperMock mock = Mockito.mock(VaultResourceIT.KeycloakCryptomatorVaultsHelperMock.class);
+		QuarkusMock.installMockForType(mock, KeycloakCryptomatorVaultsHelper.class);
 	}
 
 	@BeforeAll

@@ -4,7 +4,6 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.core.Response;
 import org.cryptomator.hub.api.VaultResource;
-import org.cryptomator.hub.entities.Group;
 import org.cryptomator.hub.entities.Vault;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.logging.Logger;
@@ -21,6 +20,7 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -33,22 +33,17 @@ public class KeycloakCryptomatorVaultsHelper {
 	Keycloak keycloak;
 
 	@ConfigProperty(name = "hub.keycloak.realm")
-	String keycloakRealm;
+	protected String keycloakRealm;
 
-	public void keycloakPrepareVault(final String vaultId, final boolean minio, final boolean aws) {
+	public void keycloakPrepareVault(final String vaultId, final Boolean minio, final Boolean aws) {
 		keycloakPrepareVault(vaultId, getKeycloak(), keycloakRealm, minio, aws);
 	}
 
-	public void keycloakGrantAccessToVault(final String vaultId, final String userOrGroupId, final String clientId, final Group.Repository groupRepo) {
-		var group = groupRepo.findByIdOptional(userOrGroupId);
-		final boolean isGroup = group.isPresent();
-
+	public void keycloakGrantAccessToVault(final String vaultId, final String userOrGroupId, final String clientId, final boolean isGroup) {
 		keycloakGrantAccessToVault(vaultId, userOrGroupId, clientId, getKeycloak(), keycloakRealm, isGroup);
 	}
 
-	public void keycloakRemoveAccessToVault(final String vaultId, final String userOrGroupId, final String clientId, final Group.Repository groupRepo) {
-		final boolean isGroup = groupRepo.findByIdOptional(userOrGroupId).isPresent();
-
+	public void keycloakRemoveAccessToVault(final String vaultId, final String userOrGroupId, final String clientId, final boolean isGroup) {
 		keycloakRemoveAccessToVault(vaultId, userOrGroupId, clientId, getKeycloak(), keycloakRealm, isGroup);
 	}
 
@@ -65,7 +60,7 @@ public class KeycloakCryptomatorVaultsHelper {
 			throw new RuntimeException(String.format("There are %s clients with clientId %s, expected to found exactly one.", byClientId.size(), clientId));
 		}
 		final ClientRepresentation cryptomatorVaultsClientRepresentation = byClientId.getFirst();
-		ClientResource cryptomatorVaultsClientResource = realm.clients().get(cryptomatorVaultsClientRepresentation.getId());
+		final ClientResource cryptomatorVaultsClientResource = realm.clients().get(cryptomatorVaultsClientRepresentation.getId());
 
 		for (final RoleRepresentation roleRepresentation : cryptomatorVaultsClientResource.roles().list()) {
 			final String vaultId = roleRepresentation.getName();
@@ -82,7 +77,7 @@ public class KeycloakCryptomatorVaultsHelper {
 		}
 	}
 
-	protected static void keycloakPrepareVault(final String vaultId, final Keycloak keycloak, final String keycloakRealm, final boolean minio, final boolean aws) {
+	protected static void keycloakPrepareVault(final String vaultId, final Keycloak keycloak, final String keycloakRealm, final Boolean minio, final Boolean aws) {
 		// https://www.keycloak.org/docs-api/21.1.1/rest-api
 		final RealmResource realm = keycloak.realm(keycloakRealm);
 
@@ -90,13 +85,39 @@ public class KeycloakCryptomatorVaultsHelper {
 		ensureClientScopeForVaultExists(vaultId, realm);
 
 		final ClientScopeResource clientScopeResource = realm.clientScopes().get(vaultId);
-		if (minio) {
+		if (minio != null) {
 			final ProtocolMapperRepresentation minioProtocolMapper = minioProtocolMapper(vaultId);
-			clientScopeResource.getProtocolMappers().createMapper(List.of(minioProtocolMapper));
+			final Optional<ProtocolMapperRepresentation> mapper = clientScopeResource.getProtocolMappers().getMappers().stream().filter(m -> m.getName().contains("MinIO")).findFirst();
+			if (mapper.isEmpty()) {
+				if (minio) {
+					clientScopeResource.getProtocolMappers().createMapper(List.of(minioProtocolMapper));
+				}
+			} else {
+				final String mapperId = mapper.get().getId();
+				if (minio) {
+					minioProtocolMapper.setId(mapperId);
+					clientScopeResource.getProtocolMappers().update(mapperId, minioProtocolMapper);
+				} else {
+					clientScopeResource.getProtocolMappers().delete(mapperId);
+				}
+			}
 		}
-		if (aws) {
+		if (aws != null) {
 			final ProtocolMapperRepresentation awsProtocolMapper = awsProtocolMapper(vaultId);
-			clientScopeResource.getProtocolMappers().createMapper(List.of(awsProtocolMapper));
+			final Optional<ProtocolMapperRepresentation> mapper = clientScopeResource.getProtocolMappers().getMappers().stream().filter(m -> m.getName().contains("AWS")).findFirst();
+			if (mapper.isEmpty()) {
+				if (aws) {
+					clientScopeResource.getProtocolMappers().createMapper(List.of(awsProtocolMapper));
+				}
+			} else {
+				final String mapperId = mapper.get().getId();
+				if (aws) {
+					awsProtocolMapper.setId(mapperId);
+					clientScopeResource.getProtocolMappers().update(mapperId, awsProtocolMapper);
+				} else {
+					clientScopeResource.getProtocolMappers().delete(mapperId);
+				}
+			}
 		}
 	}
 
@@ -121,7 +142,7 @@ public class KeycloakCryptomatorVaultsHelper {
 		return awsProtocolMapper;
 	}
 
-	protected static ProtocolMapperRepresentation minioProtocolMapper(String vaultId) {
+	protected static ProtocolMapperRepresentation minioProtocolMapper(final String vaultId) {
 		final ProtocolMapperRepresentation minioProtocolMapper = new ProtocolMapperRepresentation();
 		minioProtocolMapper.setName(String.format("Hard-coded mapper for vault %s (MinIO)", vaultId));
 		minioProtocolMapper.setProtocolMapper("oidc-hardcoded-claim-mapper");

@@ -78,7 +78,7 @@ import java.util.UUID;
  */
 public class KattaTokenExchangeIT {
 
-    private static final String currentKeycloakImage = "quay.io/keycloak/keycloak:26.4.5";
+    private static final String currentKeycloakImage = "quay.io/keycloak/keycloak:26.5.5";
 
     /**
      * Test (P2) and (P3) on the initial token before token-exchange with our dev realm. Serves as regression test.
@@ -236,7 +236,7 @@ public class KattaTokenExchangeIT {
      * Serves as regression test.
      */
     @ParameterizedTest
-    @CsvSource({"26.4.5,true"})
+    @CsvSource({"26.5.5,true"})
     public void inspectTokenExchangeWithAdditionalScope(final String keycloakVersion) throws JSONException {
         RestAssured.useRelaxedHTTPSValidation();
         try (final KeycloakContainer container = new KeycloakContainer(String.format("quay.io/keycloak/keycloak:%s", keycloakVersion))
