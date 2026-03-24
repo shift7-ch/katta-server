@@ -8,8 +8,7 @@ on:
         required: true
 
 env:
-  NODE_VERSION: 20
-  JAVA_VERSION: 22
+  NODE_VERSION: 22
 
 defaults:
   run:
