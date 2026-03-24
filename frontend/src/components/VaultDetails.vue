@@ -18,9 +18,9 @@
       </div>
     </div>
 
-    <!-- / start cipherduck extension -->
+    <!-- / start katta extension -->
     <p v-if="showVaultIDs && (vault.id.length > 0)" class="truncate text-sm text-gray-500 mt-2">{{ vault.id }}</p>
-    <!-- \ end cipherduck extension -->
+    <!-- \ end katta extension -->
 
     <div>
       <h3 class="font-medium text-gray-900">{{ t('vaultDetails.description.header') }}</h3>
@@ -156,13 +156,13 @@
       <!-- vault is archived -->
       <div v-else-if="vault.archived" class="mt-2 flex flex-col gap-2">
         <!-- downloadTemplate button -->
-        <!-- / start cipherduck modification -->
+        <!-- / start katta modification -->
         <!--
         <button v-if="vaultRole == 'OWNER'" type="button" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-xs text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-primary" @click="showDownloadVaultTemplateDialog()">
           {{ t('vaultDetails.actions.downloadVaultTemplate') }}
         </button>
         -->
-        <!-- \ end cipherduck modification -->
+        <!-- \ end katta modification -->
         <!-- displayRecoveryKey button (Vault Format 8 only) -->
         <button v-if="vaultRole == 'OWNER' && vaultFormat8" type="button" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-xs text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-primary" @click="showDisplayRecoveryKeyDialog()">
           {{ t('vaultDetails.actions.displayRecoveryKey') }}
@@ -191,13 +191,13 @@
           {{ t('vaultDetails.actions.editVaultMetadata') }}
         </button>
         <!-- downloadTemplate button -->
-        <!-- / start cipherduck modification -->
+        <!-- / start katta modification -->
         <!--
         <button v-if="vaultRole == 'OWNER'" type="button" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-xs text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-primary" @click="showDownloadVaultTemplateDialog()">
           {{ t('vaultDetails.actions.downloadVaultTemplate') }}
         </button>
         -->
-        <!-- \ end cipherduck modification -->
+        <!-- \ end katta modification -->
         <!-- displayRecoveryKey button -->
         <button v-if="vaultRole == 'OWNER' && (vaultFormat8 || uvfVault?.recoveryKey.privateKey)" type="button" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-xs text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-primary" @click="showDisplayRecoveryKeyDialog()">
           {{ t('vaultDetails.actions.displayRecoveryKey') }}
@@ -262,9 +262,9 @@ import SearchInputGroup from './SearchInputGroup.vue';
 import TrustDetails from './TrustDetails.vue';
 import GrantEmergencyAccessDialog from './emergencyaccess/GrantEmergencyAccessDialog.vue';
 
-// / start cipherduck extension
+// / start katta extension
 import { showVaultIDs } from '../common/settings';
-// \ end cipherduck extension
+// \ end katta extension
 
 const { t, d } = useI18n({ useScope: 'global' });
 
@@ -499,12 +499,12 @@ function showEditVaultMetadataDialog() {
   nextTick(() => editVaultMetadataDialog.value?.show());
 }
 
-// / start cipherduck modification
+// / start katta modification
 //function showDownloadVaultTemplateDialog() {
 //  downloadingVaultTemplate.value = true;
 //  nextTick(() => downloadVaultTemplateDialog.value?.show());
 //}
-// \ end cipherduck modification -->
+// \ end katta modification -->
 
 function showDisplayRecoveryKeyDialog() {
   displayingRecoveryKey.value = true;

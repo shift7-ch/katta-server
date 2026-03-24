@@ -94,9 +94,9 @@ const profileDropdownSections = {
     [
       { icon: ListBulletIcon, name: 'nav.profile.auditlog', to: '/app/admin/auditlog' },
       { icon: WrenchIcon, name: 'nav.profile.admin', to: '/app/admin/settings' }
-      // / start cipherduck extension
+      // / start katta extension
       ,{ icon: WrenchIcon, name: 'nav.profile.storageprofiles', to: '/app/admin/storageprofiles' }
-      // \ end cipherduck extension
+      // \ end katta extension
 
     ],
 

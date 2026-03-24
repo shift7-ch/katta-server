@@ -35,8 +35,7 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import org.cryptomator.hub.api.cipherduck.CipherduckConfig;
-import org.cryptomator.hub.cipherduck.KeycloakCryptomatorVaultsHelper;
+import org.cryptomator.hub.api.katta.KattaConfig;
 import org.cryptomator.hub.entities.AccessToken;
 import org.cryptomator.hub.entities.Authority;
 import org.cryptomator.hub.entities.EffectiveVaultAccess;
@@ -49,6 +48,7 @@ import org.cryptomator.hub.entities.events.EventLogger;
 import org.cryptomator.hub.entities.events.VaultKeyRetrievedEvent;
 import org.cryptomator.hub.filters.ActiveLicense;
 import org.cryptomator.hub.filters.VaultRole;
+import org.cryptomator.hub.katta.KeycloakCryptomatorVaultsHelper;
 import org.cryptomator.hub.keycloak.RealmRole;
 import org.cryptomator.hub.license.LicenseHolder;
 import org.cryptomator.hub.metrics.VaultUnlockMetrics;
@@ -127,13 +127,13 @@ public class VaultResource {
 	@Context
 	HttpServerRequest request;
 
-	// / start cipherduck extension
+	// / start katta extension
 	@Inject
-	CipherduckConfig cipherduckConfig;
+	KattaConfig kattaConfig;
 
 	@Inject
 	KeycloakCryptomatorVaultsHelper keycloakCryptomatorVaultsHelper;
-	// \ end cipherduck extension
+	// \ end katta extension
 
 	@GET
 	@Path("/accessible")
@@ -288,9 +288,9 @@ public class VaultResource {
 		if (usedSeats < license.getEntitlements().seats() // free seats available
 				|| effectiveVaultAccessRepo.isUserOccupyingSeat(userId)) { // or user already sitting
 
-			// / start cipherduck extension
-			keycloakCryptomatorVaultsHelper.keycloakGrantAccessToVault(vaultId.toString(), userId, cipherduckConfig.keycloakClientIdCryptomatorVaults(), false);
-			// \ end cipherduck extension
+			// / start katta extension
+			keycloakCryptomatorVaultsHelper.keycloakGrantAccessToVault(vaultId.toString(), userId, kattaConfig.keycloakClientIdCryptomatorVaults(), false);
+			// \ end katta extension
 
 			return addAuthority(vault, user, role);
 		} else {
@@ -321,9 +321,9 @@ public class VaultResource {
 			throw new PaymentRequiredException("Adding this group would exceed available license seats.");
 		}
 
-		// / start cipherduck extension
-		keycloakCryptomatorVaultsHelper.keycloakGrantAccessToVault(vaultId.toString(), groupId, cipherduckConfig.keycloakClientIdCryptomatorVaults(), true);
-		// \ end cipherduck extension
+		// / start katta extension
+		keycloakCryptomatorVaultsHelper.keycloakGrantAccessToVault(vaultId.toString(), groupId, kattaConfig.keycloakClientIdCryptomatorVaults(), true);
+		// \ end katta extension
 
 		return addAuthority(vault, group, role);
 	}
@@ -361,15 +361,15 @@ public class VaultResource {
 		if (vaultAccessRepo.deleteById(new VaultAccess.Id(vaultId, authorityId))) {
 			eventLogger.logVaultMemberRemoved(jwt.getSubject(), vaultId, authorityId);
 
-			// / start cipherduck extension
+			// / start katta extension
 			// Decision: when resetting an account or archiving a vault, access to the bucket doesn't need to be revoked.
 			// - Account reset: same situation as for addUser() and addGroup() before being granted access (masterkey): in the STS case, users can technically already gain access to the data at the storage level if they know/guess the STS endpoint etc, however they cannot decrypt yet.
 			// - Archiving: removeAuthority is not called in this case, so users still can renew access (get new temporary S3 credentials) at the storage level in the STS case.
 			//              However, they cannot get the masterkey any more (in all cases) nor the permanent storage credentials (in the non-STS case).
 			var group = groupRepo.findByIdOptional(authorityId);
 			final boolean isGroup = group.isPresent();
-			keycloakCryptomatorVaultsHelper.keycloakRemoveAccessToVault(vaultId.toString(), authorityId, cipherduckConfig.keycloakClientIdCryptomatorVaults(), isGroup);
-			// \ end cipherduck extension
+			keycloakCryptomatorVaultsHelper.keycloakRemoveAccessToVault(vaultId.toString(), authorityId, kattaConfig.keycloakClientIdCryptomatorVaults(), isGroup);
+			// \ end katta extension
 
 			return Response.status(Response.Status.NO_CONTENT).build();
 		} else {
@@ -591,19 +591,19 @@ public class VaultResource {
 	@Transactional
 	@Operation(summary = "creates or updates a vault",
 			description = "Creates or updates a vault with the given vault id. The creationTime in the vaultDto is always ignored. On creation, the current server time is used and the archived field is ignored. On update, only the name, description, and archived fields are considered.")
-	// / start cipherduck extension
+	// / start katta extension
 	@Parameter(name = "minio", in = ParameterIn.QUERY, description = "whether configuration for STS MinIO needs to be synched to Keycloak (defaults to false)")
 	@Parameter(name = "aws", in = ParameterIn.QUERY, description = "whether configuration for STS MinIO needs to be synched to AWS (defaults to false)")
-	// \ end cipherduck extension
+	// \ end katta extension
 	@APIResponse(responseCode = "200", description = "existing vault updated")
 	@APIResponse(responseCode = "201", description = "new vault created")
 	@APIResponse(responseCode = "402", description = "number of licensed seats is exceeded")
 	public Response createOrUpdate(
 			@PathParam("vaultId") UUID vaultId, @Valid @NotNull VaultDto vaultDto
-			// / start cipherduck extension
+			// / start katta extension
 			, @QueryParam("minio") Boolean minio
 			, @QueryParam("aws") Boolean aws
-			// \ end cipherduck extension
+			// \ end katta extension
 	) {
 		User currentUser = userRepo.findById(jwt.getSubject());
 		Optional<Vault> existingVault = vaultRepo.findByIdOptional(vaultId);
@@ -633,10 +633,10 @@ public class VaultResource {
 		vault.setUvfKeySet(vaultDto.uvfKeySet);
 
 
-		// / start cipherduck extension
+		// / start katta extension
 		keycloakCryptomatorVaultsHelper.keycloakPrepareVault(vaultId.toString(), minio, aws);
-		keycloakCryptomatorVaultsHelper.keycloakGrantAccessToVault(vaultId.toString(), jwt.getSubject(), cipherduckConfig.keycloakClientIdCryptomatorVaults(), false);
-		// \ end cipherduck extension
+		keycloakCryptomatorVaultsHelper.keycloakGrantAccessToVault(vaultId.toString(), jwt.getSubject(), kattaConfig.keycloakClientIdCryptomatorVaults(), false);
+		// \ end katta extension
 
 		vaultRepo.persistAndFlush(vault); // trigger PersistenceException before we continue with
 

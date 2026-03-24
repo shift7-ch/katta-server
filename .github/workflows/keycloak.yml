@@ -46,7 +46,7 @@ jobs:
         working-directory: keycloak/themes/katta/common/resources
         # \ cipherduck end modification
         run: npm run build
-      # / cipherduck start addition
+      # / katta start addition
       - uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
@@ -56,7 +56,7 @@ jobs:
         working-directory: keycloak
         run: >
           mvn -B clean verify
-      # \ cipherduck end addition
+      # \ katta end addition
       - name: Set up QEMU
         uses: docker/setup-qemu-action@ce360397dd3f832beb865e1373c09c0e9f86d70a # v4.0.0
       - name: Set up Docker Buildx
@@ -74,10 +74,10 @@ jobs:
           context: keycloak
           platforms: linux/amd64,linux/arm64
           push: true
-          # / cipherduck start modification
+          # / katta start modification
           tags: |
             ghcr.io/shift7-ch/keycloak:${{ github.event.inputs.tag }}
-          # \ cipherduck end modification
+          # \ katta end modification
       - name: Generate artifact attestation
         uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 # v4.1.0
         with:

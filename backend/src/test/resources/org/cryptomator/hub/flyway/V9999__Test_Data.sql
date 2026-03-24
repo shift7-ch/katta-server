@@ -14,9 +14,9 @@ WHERE "id" = 0;
 INSERT INTO "authority" ("id", "type", "name")
 VALUES
 	('user1', 'USER', 'User Name 1'),
-	-- / cipherduck start addition (ITs going through to Keycloak as well use alice user; user repo must contain the currentUser, alice in this in this case)
+	-- / katta start addition (ITs going through to Keycloak as well use alice user; user repo must contain the currentUser, alice in this in this case)
 	('alice', 'USER', 'Alice for ITs accessing Keycloak'),
-	-- \ cipherduck end addition
+	-- \ katta end addition
 	('user2', 'USER', 'User Name 2'),
 	('group1', 'GROUP', 'Group Name 1'),
     ('group2', 'GROUP', 'Group Name 2');
@@ -24,9 +24,9 @@ VALUES
 INSERT INTO "user_details" ("id", "ecdh_publickey", "ecdsa_publickey", "privatekeys", "setupcode")
 VALUES
 	('user1', 'ecdh_public1', 'ecdsa_public1', 'private1', 'setup1'),
-	-- / cipherduck start addition
+	-- / katta start addition
 	('alice', NULL, NULL, NULL, NULL),
-	-- \ cipherduck end addition
+	-- \ katta end addition
 	('user2', NULL, NULL, NULL, NULL);
 
 INSERT INTO "group_details" ("id")

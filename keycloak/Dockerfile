@@ -11,9 +11,9 @@ RUN mkdir -p /mnt/rootfs
 RUN dnf install --installroot /mnt/rootfs curl --releasever 9 --setopt install_weak_deps=false --nodocs -y; dnf --installroot /mnt/rootfs clean all
 
 FROM quay.io/keycloak/keycloak:26.5.5
-# / cipherduck start addition
+# / katta start addition
 LABEL maintainer="info@shift7.ch"
-# \ cipherduck start addition
+# \ katta start addition
 COPY --from=builder /opt/keycloak/ /opt/keycloak/
 COPY --from=ubi-micro-build /mnt/rootfs /
 COPY /themes/katta /opt/keycloak/themes/katta

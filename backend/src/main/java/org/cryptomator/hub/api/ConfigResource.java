@@ -35,14 +35,14 @@ public class ConfigResource {
     @ConfigProperty(name = "hub.keycloak.oidc.cryptomator-client-id", defaultValue = "")
     String keycloakClientIdCryptomator;
 
-    // / start cipherduck extension
+    // / start katta extension
     @Inject
     @ConfigProperty(name = "hub.keycloak.oidc.cryptomator-vaults-client-id", defaultValue = "")
     String keycloakClientIdCryptomatorVaults;
 
     @Inject
     Settings.Repository settingsRepo;
-    // \ end cipherduck extension
+    // \ end katta extension
 
     @Inject
     @ConfigProperty(name = "quarkus.oidc.auth-server-url")
@@ -68,10 +68,10 @@ public class ConfigResource {
         var tokenUri = replacePrefix(oidcConfData.getTokenUri(), trimTrailingSlash(internalRealmUrl), publicRealmUri);
 
         return new ConfigDto(keycloakPublicUrl, keycloakRealm, keycloakClientIdHub, keycloakClientIdCryptomator, authUri, tokenUri, Instant.now().truncatedTo(ChronoUnit.MILLIS), 4, license.getEntitlements(), billingUrl
-                // / start cipherduck extension
+                // / start katta extension
                 , keycloakClientIdCryptomatorVaults
                 , settingsRepo.get().getHubId()
-                // \ end cipherduck extension
+                // \ end katta extension
         );
     }
 
@@ -103,10 +103,10 @@ public class ConfigResource {
                             @JsonProperty("serverTime") Instant serverTime, @JsonProperty("apiLevel") Integer apiLevel,
                             @JsonProperty("entitlements") HubLicenseEntitlements entitlements,
                             @JsonProperty("billingUrl") String billingUrl
-                            // / start cipherduck extension
+                            // / start katta extension
             , @JsonProperty("keycloakClientIdCryptomatorVaults") String keycloakClientIdCryptomatorVaults
             , @JsonProperty("uuid") String uuid
-                            // \ end cipherduck extension
+                            // \ end katta extension
     ) {
     }
 

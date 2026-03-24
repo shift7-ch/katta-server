@@ -36,9 +36,9 @@ function checkRole(role: string): NavigationGuardWithThis<undefined> {
     }
   };
 }
-// / start cipherduck extension
-import StorageProfiles from '../components/cipherduck/StorageProfiles.vue';
-// \ end cipherduck extension
+// / start katta extension
+import StorageProfiles from '../components/katta/StorageProfiles.vue';
+// \ end katta extension
 
 const routes: RouteRecordRaw[] = [
   {
@@ -167,12 +167,12 @@ const routes: RouteRecordRaw[] = [
             path: 'auditlog',
             component: AuditLog,
           },
-          // / start cipherduck extension
+          // / start katta extension
           {
             path: 'storageprofiles',
             component: StorageProfiles,
           },
-          // \ end cipherduck extension
+          // \ end katta extension
         ]
       },
     ]

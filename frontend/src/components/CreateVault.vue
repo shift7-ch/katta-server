@@ -124,7 +124,7 @@
               <input id="vaultDescription" v-model="vault.description" :disabled="processing" type="text" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-xs sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200"/>
             </div>
 
-            <!-- / start cipherduck extension -->
+            <!-- / start katta extension -->
             <div class="col-span-6 sm:col-span-3">
                 <label for="vaultName" class="block text-sm font-medium text-gray-700">{{ t('CreateVaultS3.enterVaultDetails.storage') }}</label>
                 <Listbox as="div" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200" v-model="selectedBackend"
@@ -261,7 +261,7 @@
                 <label for="vaultName" class="block text-sm font-medium text-gray-700">{{ t('CreateVaultS3.enterVaultDetails.automaticAccessGrant') }}</label>
                 <input id="automaticAccessGrant" v-model="automaticAccessGrant" name="automaticAccessGrant" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" required>
             </div>
-            <!-- \ end cipherduck extension -->
+            <!-- \ end katta extension -->
 
 
           </div>
@@ -492,9 +492,9 @@
           </h3>
           <div class="mt-2">
             <p class="text-sm text-gray-500">
-              <!-- / start cipherduck modification -->
+              <!-- / start katta modification -->
               {{ t('CreateVaultS3.success.description') }}
-              <!-- \ end cipherduck modification -->
+              <!-- \ end katta modification -->
             </p>
           </div>
         </div>
@@ -512,7 +512,7 @@
           </p>
           <!-- TODO: not beautiful-->
         </div>
-        <!-- / start cipherduck modification -->
+        <!-- / start katta modification -->
         <div class="mt-5 sm:mt-6">
           <button type="button" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-d1 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary" @click="openBookmark()">
             <ArrowTopRightOnSquareIcon class="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
@@ -523,7 +523,7 @@
         <div class="mt-5 sm:mt-6">
           <p v-if="onUploadTemplateError != null " class="text-sm text-red-900 mr-4">{{ t('CreateVaultS3.error.uploadTemplateFailed') }}{{ onUploadTemplateError.message == null ? '' : ': ' + onUploadTemplateError.message }}</p> <!-- TODO: not beautiful-->
         </div>
-        <!-- \ end cipherduck modification -->
+        <!-- \ end katta modification -->
         <div class="mt-2">
           <router-link to="/app/vaults" class="text-sm text-gray-500">
             {{ t('createVault.success.return') }}
@@ -553,7 +553,7 @@ import EmergencyScenarioVisualization from './emergencyaccess/EmergencyScenarioV
 import MultiUserSelectInputGroup from './MultiUserSelectInputGroup.vue';
 import VaultCreationProgress from './VaultCreationProgress.vue';
 import { DecodeVf8RecoveryKeyError, VaultFormat8 } from '../common/vaultFormat8';
-// / start cipherduck extension
+// / start katta extension
 import { StorageProfileDto, VaultMetadataJWEBackendDto } from '../common/backend';
 import {
      Listbox,
@@ -569,7 +569,7 @@ import authPromise from '../common/auth';
 import {AxiosError} from 'axios';
 import { base64urlnopad } from '@scure/base';
 import { isAwsHostname } from '../../src/common/katta';
-// \ end cipherduck extension
+// \ end katta extension
 
 enum State {
   Initial,
@@ -729,7 +729,7 @@ const isGrantButtonDisabled = computed(() => {
   return isInvalidKeyShares.value || isInvaildCouncilMembers.value || hasTooFewCouncilMembers.value;
 });
 
-// / start cipherduck extension
+// / start katta extension
 const selectedBackend = ref<StorageProfileDto | null >(null);
 const selectedRegion = ref<string | undefined>();
 const isPermanent = ref(false);
@@ -748,7 +748,7 @@ class ErrorWithCodeHint extends Error {
     this.codehint = codehint;
   }
 }
-// \ end cipherduck extension
+// \ end katta extension
 onMounted(initialize);
 const licenseStatus = ref<LicenseUserInfoDto>();
 
@@ -774,13 +774,13 @@ async function initialize() {
     state.value = State.EnterVaultDetails;
   }
   licenseStatus.value = await backend.license.getUserInfo();
-  // / start cipherduck extension
+  // / start katta extension
   // get only non-archived storage profiles for new vaults
   backends.value = await backend.storageprofiles.get(false);
   selectedBackend.value = backends.value[0];
   setRegionsOnSelectStorage(selectedBackend.value);
   selectedRegion.value = selectedBackend.value.region;
-  // \ end cipherduck extension
+  // \ end katta extension
 
 }
 
@@ -884,26 +884,26 @@ async function validateVaultDetails() {
     onCreateError.value = new FormValidationFailedError();
     return;
   }
-  // / start cipherduck extension
+  // / start katta extension
     if(isPermanent.value){
         console.log("validateS3");
         if(!selectedBackend.value){
-            // TODO https://github.com/shift7-ch/cipherduck-hub/issues/31 localization
+            // TODO https://github.com/shift7-ch/katta-hub/issues/31 localization
             onCreateError.value = new Error('Select a vault storage location.');
             return
         }
         if(!vaultAccessKeyId.value){
-            // TODO https://github.com/shift7-ch/cipherduck-hub/issues/31 localization
+            // TODO https://github.com/shift7-ch/katta-hub/issues/31 localization
             onCreateError.value = new Error('Enter the username and re-try.');
             return;
         }
         if(!vaultSecretKey.value){
-            // TODO https://github.com/shift7-ch/cipherduck-hub/issues/31 localization
+            // TODO https://github.com/shift7-ch/katta-hub/issues/31 localization
             onCreateError.value = new Error('Enter the password and re-try.');
             return;
         }
         if(!vaultBucketName.value){
-            // TODO https://github.com/shift7-ch/cipherduck-hub/issues/31 localization
+            // TODO https://github.com/shift7-ch/katta-hub/issues/31 localization
             onCreateError.value = new Error('Enter the bucket name and re-try.');
             return;
         }
@@ -958,7 +958,7 @@ async function validateVaultDetails() {
             const responseListObjects = await client.send(commandListObjects);
             console.log(responseListObjects);
             if(responseListObjects.KeyCount != 0){
-                // TODO https://github.com/shift7-ch/cipherduck-hub/issues/31 localization
+                // TODO https://github.com/shift7-ch/katta-hub/issues/31 localization
                 onCreateError.value = new Error('Bucket not empty, cannot upload template. Empty the bucket manually and re-try.');
                 return;
             }
@@ -966,7 +966,7 @@ async function validateVaultDetails() {
             console.log(error);
             // TODO review can we improve whether this is a CORS problem? FF message is "NetworkError when attempting to fetch resource", Safari "Load failed".
             if(error instanceof TypeError){
-                // TODO https://github.com/shift7-ch/cipherduck-hub/issues/31 localization
+                // TODO https://github.com/shift7-ch/katta-hub/issues/31 localization
                 onCreateError.value = new ErrorWithCodeHint(error.message + ". Check your bucket CORS settings.", `
                 aws s3api put-bucket-cors --endpoint-url ${endpoint} --bucket ${vaultBucketName.value} --cors-configuration file://cors.json
 
@@ -1003,7 +1003,7 @@ async function validateVaultDetails() {
     else{
         // we assume CORS settings are set correctly by admins
     }
-    // \ end cipherduck extension
+    // \ end katta extension
   if (props.recover) {
     await createVault();
   } else {
@@ -1108,7 +1108,7 @@ async function createVault() {
         if (!uvfVault.value) {
           throw new Error('Invalid state');
         }
-        // / start cipherduck extension
+        // / start katta extension
         if (!uvfVault.value) {
           throw new Error('Invalid state');
         }
@@ -1130,7 +1130,7 @@ async function createVault() {
             uvfVault.value.metadata.backend.password = vaultSecretKey.value;
             uvfVault.value.metadata.backend.defaultPath = vaultBucketName.value;
         }
-        // \ end cipherduck extension
+        // \ end katta extension
 
         ownerGrant.token = await uvfVault.value.encryptForUser(await userdata.ecdhPublicKey, true);
         const recoveryPublicKey = await uvfVault.value.recoveryKey.serializePublicKey();
@@ -1139,7 +1139,7 @@ async function createVault() {
         break;
       }
     }
-    // / start cipherduck extension
+    // / start katta extension
     if (!uvfVault.value) {
       throw new Error('Invalid state');
     }
@@ -1244,7 +1244,7 @@ async function createVault() {
 
         });
     }
-    // \ end cipherduck extension
+    // \ end katta extension
     var minio = (!isPermanent.value) && (selectedBackend.value.hostname != null);
     var aws = (!isPermanent.value) && ((selectedBackend.value.hostname == null) || isAwsHostname(selectedBackend.value.hostname ));
 
@@ -1254,7 +1254,7 @@ async function createVault() {
   } catch (error) {
     console.error('Creating vault failed.', error);
 
-    // / start cipherduck extension
+    // / start katta extension
     if(typeof(error) === 'string'){
         onCreateError.value = new Error(error);
     }
@@ -1280,7 +1280,7 @@ async function createVault() {
     else {
         onCreateError.value = new Error('Unknown reason');
     }
-    // \ end cipherduck extension
+    // \ end katta extension
   } finally {
     processing.value = false;
   }
@@ -1311,11 +1311,11 @@ async function downloadVaultTemplate() {
   }
 }
 
-// / start cipherduck extension
+// / start katta extension
 async function openBookmark() {
   onOpenBookmarkError.value = null;
   try {
-    window.location.href = `x-cipherduck-action:cipherduck?url=${encodeURIComponent(document.baseURI)}`;
+    window.location.href = `x-katta-action:katta?url=${encodeURIComponent(document.baseURI)}`;
   } catch (error) {
     console.error('Opening bookmark from browser failed.', error);
     onOpenBookmarkError.value = error instanceof Error ? error : new Error('Unknown Error');
@@ -1394,6 +1394,6 @@ async function uploadVaultTemplate() {
     onUploadTemplateError.value = error instanceof Error ? error : new Error('Unknown reason');
   }
 }
-// \ end cipherduck extension
+// \ end katta extension
 
 </script>
