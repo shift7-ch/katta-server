@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
-@Schema(title = "StorageProfileS3Dto")
+@Schema(title = "StorageProfileS3StaticDto")
 public sealed class StorageProfileS3StaticDto extends StorageProfileDto permits StorageProfileS3STSDto {
 
 	public enum S3_STORAGE_CLASSES {
@@ -51,7 +51,7 @@ public sealed class StorageProfileS3StaticDto extends StorageProfileDto permits 
 	// (2) STS only: bucket creation  (only relevant for Desktop client)
 	//======================================================================
 	@JsonProperty(value = "region", required = true, defaultValue = "us-east-1")
-	@Schema(description = "Default region selected in the frontend/client to create bucket in.", example = "443", defaultValue = "us-east-1")
+	@Schema(description = "Default region selected in the frontend/client to create bucket in.", example = "us-east-1", defaultValue = "us-east-1")
 	String region = "us-east-1";
 
 	@JsonProperty(value = "regions", required = true)
@@ -59,7 +59,7 @@ public sealed class StorageProfileS3StaticDto extends StorageProfileDto permits 
 	List<String> regions = Region.regions().stream().map(Region::id).toList();
 
 	@JsonProperty(value = "bucketPrefix", required = true)
-	@Schema(description = "Buckets are create with name <bucket prefix><vault UUID>.", example = "cipherduck")
+	@Schema(description = "Buckets are created with name <bucket prefix><vault UUID>.", example = "cipherduck")
 	String bucketPrefix;
 
 	@JsonProperty(value = "stsRoleCreateBucketClient", required = true)
