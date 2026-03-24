@@ -909,31 +909,37 @@ async function validateVaultDetails() {
         }
         const endpoint = (selectedBackend.value.scheme && selectedBackend.value.hostname && selectedBackend.value.port) ? `${selectedBackend.value.scheme}://${selectedBackend.value.hostname}:${selectedBackend.value.port}` : undefined;
 
-        try{
-            const headBucketClient = new S3Client({
-               region: "us-east-1", // must not be empty, despite documentation saying optional (SDK rejects before even sending out request) TODO review
-               endpoint: endpoint,
-               forcePathStyle: selectedBackend.value.withPathStyleAccessEnabled,
-               credentials:{
-                   accessKeyId: vaultAccessKeyId.value,
-                   secretAccessKey: vaultSecretKey.value
-               }
-            });
-            const headBucketCommand = new HeadBucketCommand({
-                 Bucket: vaultBucketName.value
-            });
-            const headBucketResponse = await headBucketClient.send(headBucketCommand);
-            console.log(headBucketResponse);
+    try {
+      const headBucketClient = new S3Client({
+        // https://github.com/aws/aws-sdk-js/issues/462 us-east-1 seems to have special behaviour
+        region: "us-west-2", // must not be empty, despite documentation saying optional (SDK rejects before even sending out request)
+        endpoint: `https://s3.amazonaws.com`,
+        credentials: {
+          accessKeyId: vaultAccessKeyId.value,
+          secretAccessKey: vaultSecretKey.value
+        }
+      });
 
-            const command = new GetBucketLocationCommand({
-               Bucket: vaultBucketName.value
-             });
-            const response = await headBucketClient.send(command);
-            selectedRegion.value = response.LocationConstraint
-            if(selectedRegion.value === undefined){ // MinIO returns undefined
-                selectedRegion.value = "us-east-1"; // must not be empty, despite documentation saying optional (SDK rejects before even sending out request)
-            }
-            console.log(`GetBucketLocation returned region ${selectedRegion.value}`);
+      const command = new GetBucketLocationCommand({
+        Bucket: vaultBucketName.value
+      });
+      try {
+        const response = await headBucketClient.send(command);
+        console.log(response)
+      }
+      catch (error) {
+        console.log(error)
+        // https://stackoverflow.com/questions/47668509/the-authorization-header-is-malformed-the-region-us-east-1-is-wrong-expectin
+        if ((error as any)?.Code == "AuthorizationHeaderMalformed" && (error as any)?.Region != undefined) {
+          selectedRegion.value = (error as any).Region
+        }
+        else {
+          if (selectedRegion.value === undefined) { // MinIO returns undefined
+            selectedRegion.value = "us-east-1"; // must not be empty, despite documentation saying optional (SDK rejects before even sending out request)
+          }
+        }
+      }
+      console.log(`GetBucketLocation returned region ${selectedRegion.value}`);
 
             const client = new S3Client({
                region: selectedRegion.value,
