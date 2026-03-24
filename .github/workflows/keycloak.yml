@@ -9,6 +9,9 @@ on:
 
 env:
   NODE_VERSION: 22
+  # / cipherduck start addition
+  JAVA_VERSION: 22
+  # \ cipherduck end addition
 
 defaults:
   run:
@@ -30,12 +33,18 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
-          cache-dependency-path: keycloak/themes/cryptomator/common/resources/package-lock.json
+          # / cipherduck start modification
+          cache-dependency-path: keycloak/themes/katta/common/resources/package-lock.json
+          # \ cipherduck end modification
       - name: Install Dependencies
-        working-directory: keycloak/themes/cryptomator/common/resources
+        # / cipherduck start modification
+        working-directory: keycloak/themes/katta/common/resources
+        # \ cipherduck end modification
         run: npm install
       - name: Build Theme
-        working-directory: keycloak/themes/cryptomator/common/resources
+        # / cipherduck start modification
+        working-directory: keycloak/themes/katta/common/resources
+        # \ cipherduck end modification
         run: npm run build
       # / cipherduck start addition
       - uses: actions/setup-java@v5
