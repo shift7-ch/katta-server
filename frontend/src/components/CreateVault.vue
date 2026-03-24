@@ -888,22 +888,22 @@ async function validateVaultDetails() {
     if(isPermanent.value){
         console.log("validateS3");
         if(!selectedBackend.value){
-            // TODO https://github.com/shift7-ch/katta-hub/issues/31 localization
+            // TODO https://github.com/shift7-ch/katta-server/issues/31 localization
             onCreateError.value = new Error('Select a vault storage location.');
             return
         }
         if(!vaultAccessKeyId.value){
-            // TODO https://github.com/shift7-ch/katta-hub/issues/31 localization
+            // TODO https://github.com/shift7-ch/katta-server/issues/31 localization
             onCreateError.value = new Error('Enter the username and re-try.');
             return;
         }
         if(!vaultSecretKey.value){
-            // TODO https://github.com/shift7-ch/katta-hub/issues/31 localization
+            // TODO https://github.com/shift7-ch/katta-server/issues/31 localization
             onCreateError.value = new Error('Enter the password and re-try.');
             return;
         }
         if(!vaultBucketName.value){
-            // TODO https://github.com/shift7-ch/katta-hub/issues/31 localization
+            // TODO https://github.com/shift7-ch/katta-server/issues/31 localization
             onCreateError.value = new Error('Enter the bucket name and re-try.');
             return;
         }
@@ -958,7 +958,7 @@ async function validateVaultDetails() {
             const responseListObjects = await client.send(commandListObjects);
             console.log(responseListObjects);
             if(responseListObjects.KeyCount != 0){
-                // TODO https://github.com/shift7-ch/katta-hub/issues/31 localization
+                // TODO https://github.com/shift7-ch/katta-server/issues/31 localization
                 onCreateError.value = new Error('Bucket not empty, cannot upload template. Empty the bucket manually and re-try.');
                 return;
             }
@@ -966,7 +966,7 @@ async function validateVaultDetails() {
             console.log(error);
             // TODO review can we improve whether this is a CORS problem? FF message is "NetworkError when attempting to fetch resource", Safari "Load failed".
             if(error instanceof TypeError){
-                // TODO https://github.com/shift7-ch/katta-hub/issues/31 localization
+                // TODO https://github.com/shift7-ch/katta-server/issues/31 localization
                 onCreateError.value = new ErrorWithCodeHint(error.message + ". Check your bucket CORS settings.", `
                 aws s3api put-bucket-cors --endpoint-url ${endpoint} --bucket ${vaultBucketName.value} --cors-configuration file://cors.json
 
