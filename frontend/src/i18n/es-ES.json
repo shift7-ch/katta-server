@@ -157,7 +157,7 @@
   "groupList.vaults.count": "Bóvedas",
   "initialSetup.accountKey": "Account Key",
   "legacyDeviceList.title": "Dispositivos antiguos",
-  "legacyDeviceList.description": "Estos dispositivos fueron creados con una versión anterior de Hub y necesitan ser actualizados para desbloquear las bóvedas en versiones futuras. Si ya no las necesita, por favor remuévelas. De lo contrario, actualice el Cryptomator en ese dispositivo. Su próximo desbloqueo activará la actualización automáticamente.",
+  "legacyDeviceList.description": "Estos dispositivos fueron creados con una versión anterior de Katta y necesitan ser actualizados para desbloquear las bóvedas en versiones futuras. Si ya no las necesita, por favor remuévelas. De lo contrario, actualice el Katta en ese dispositivo. Su próximo desbloqueo activará la actualización automáticamente.",
   "legacyDeviceList.description.information": "Más información.",
   "legacyDeviceList.deviceName": "Nombre del dispositivo",
   "legacyDeviceList.type": "Tipo",

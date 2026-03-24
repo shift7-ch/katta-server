@@ -14,7 +14,7 @@
 
     <div v-else class="bg-white px-4 py-5 shadow-sm sm:rounded-lg sm:p-6 text-center sm:w-full sm:max-w-lg">
       <div class="flex justify-center mb-3 sm:mb-5">
-        <img src="/logo.svg" class="h-12" alt="Logo" aria-hidden="true" />
+        <img src="/logo.png" class="h-16" alt="Katta Logo" aria-hidden="true" />
       </div>
 
       <!-- ACCOUNT SETUP -->

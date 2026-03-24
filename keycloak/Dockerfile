@@ -16,6 +16,6 @@ LABEL maintainer="info@shift7.ch"
 # \ cipherduck start addition
 COPY --from=builder /opt/keycloak/ /opt/keycloak/
 COPY --from=ubi-micro-build /mnt/rootfs /
-COPY /themes/cryptomator /opt/keycloak/themes/cryptomator
+COPY /themes/katta /opt/keycloak/themes/katta
 WORKDIR /opt/keycloak
 ENTRYPOINT ["/opt/keycloak/bin/kc.sh"]
