@@ -273,9 +273,10 @@ async function licenseUpdated(license: LicenseUserInfoDto) {
 
 // / start katta extension
 import { showVaultIDs } from '../common/settings';
+import { baseURL } from '../common/config';
 async function openBookmark() {
   try {
-    window.location.href = `x-katta-action:katta?url=${encodeURIComponent(document.baseURI)}`;
+    window.location.href = `katta://${new URL(location.origin).host}${baseURL}`;
   } catch (error) {
     console.error('Opening bookmark from browser failed.', error);
   }
