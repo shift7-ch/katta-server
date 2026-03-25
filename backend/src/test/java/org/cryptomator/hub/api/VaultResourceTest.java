@@ -2,14 +2,14 @@ package org.cryptomator.hub.api;
 
 import io.quarkus.security.identity.SecurityIdentity;
 import jakarta.ws.rs.NotFoundException;
-import org.cryptomator.hub.api.cipherduck.CipherduckConfig;
-import org.cryptomator.hub.cipherduck.KeycloakCryptomatorVaultsHelper;
+import org.cryptomator.hub.api.katta.KattaConfig;
 import org.cryptomator.hub.entities.EffectiveVaultAccess;
 import org.cryptomator.hub.entities.Group;
 import org.cryptomator.hub.entities.User;
 import org.cryptomator.hub.entities.Vault;
 import org.cryptomator.hub.entities.VaultAccess;
 import org.cryptomator.hub.entities.events.EventLogger;
+import org.cryptomator.hub.katta.KeycloakCryptomatorVaultsHelper;
 import org.cryptomator.hub.license.HubLicenseEntitlements;
 import org.cryptomator.hub.license.LicenseHolder;
 import org.eclipse.microprofile.jwt.JsonWebToken;
@@ -42,7 +42,7 @@ class VaultResourceTest {
 	private final SecurityIdentity identity = Mockito.mock(SecurityIdentity.class);
 	private final LicenseHolder license = Mockito.mock(LicenseHolder.class);
 	private final KeycloakCryptomatorVaultsHelper keycloakCryptomatorVaultsHelper = Mockito.mock(KeycloakCryptomatorVaultsHelper.class);
-	private final CipherduckConfig cipherduckConfig = Mockito.mock(CipherduckConfig.class);
+	private final KattaConfig kattaConfig = Mockito.mock(KattaConfig.class);
 
 
 	@BeforeEach
@@ -77,12 +77,12 @@ class VaultResourceTest {
 		vaultResource.identity = identity;
 		vaultResource.license = license;
 		vaultResource.keycloakCryptomatorVaultsHelper = keycloakCryptomatorVaultsHelper;
-		vaultResource.cipherduckConfig = cipherduckConfig;
+		vaultResource.kattaConfig = kattaConfig;
 
 		final User user = Mockito.mock(User.class);
 		Mockito.when(userRepo.findById("alice")).thenReturn(user);
 		Mockito.when(userRepo.findByIdOptional("alice")).thenReturn(Optional.of(user));
-		Mockito.when(cipherduckConfig.keycloakClientIdCryptomatorVaults()).thenReturn("pesto");
+		Mockito.when(kattaConfig.keycloakClientIdCryptomatorVaults()).thenReturn("pesto");
 		Mockito.when(license.getEntitlements()).thenReturn(HubLicenseEntitlements.create().withSeats(1L));
 		Mockito.when(vaultRepo.findById(vaultId)).thenReturn(new Vault());
 		Mockito.when(groupRepo.findByIdOptional("good cops")).thenReturn(Optional.of(new Group()));

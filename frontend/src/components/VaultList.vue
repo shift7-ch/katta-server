@@ -70,12 +70,12 @@
       </transition>
     </Menu>
 
-    <!-- / start cipherduck extension -->
+    <!-- / start katta extension -->
     <button type="button" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-d1 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary" @click="openBookmark()">
       <ArrowTopRightOnSquareIcon class="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
-      {{ t('vaultList.openInCipherduck') }}
+      {{ t('vaultList.openInKatta') }}
     </button>
-    <!-- \ end cipherduck extension -->
+    <!-- \ end katta extension -->
   </div>
 
   <div v-if="filteredVaults && filteredVaults.length > 0" class="mt-5 bg-white shadow-sm rounded-md">
@@ -90,9 +90,9 @@
                 <div v-if="vault.archived" class="inline-flex items-center rounded-md bg-yellow-400/10 px-2 py-1 text-xs font-medium text-yellow-500 ring-1 ring-inset ring-yellow-400/20">{{ t('vaultList.badge.archived') }}</div>
               </div>
               <p v-if="vault.description && vault.description.length > 0" class="truncate text-sm text-gray-500 mt-2">{{ vault.description }}</p>
-              <!-- / start cipherduck extension -->
+              <!-- / start katta extension -->
               <p v-if="showVaultIDs && (vault.id.length > 0)" class="truncate text-sm text-gray-500 mt-2">{{ vault.id }}</p>
-              <!-- \ end cipherduck extension -->
+              <!-- \ end katta extension -->
             </div>
             <div v-if="ownedVaults?.some(ownedVault => ownedVault.id == vault.id) && !isCommunityLicense && settings?.enableEmergencyAccess">
               <EmergencyBadge
@@ -271,7 +271,7 @@ async function licenseUpdated(license: LicenseUserInfoDto) {
   licenseStatus.value = license;
 }
 
-// / start cipherduck extension
+// / start katta extension
 import { showVaultIDs } from '../common/settings';
 async function openBookmark() {
   try {
@@ -280,5 +280,5 @@ async function openBookmark() {
     console.error('Opening bookmark from browser failed.', error);
   }
 }
-// \ end cipherduck extension
+// \ end katta extension
 </script>

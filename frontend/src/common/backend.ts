@@ -243,7 +243,7 @@ export class LicenseUserInfoDto {
     return this.licensedSeats == 0 || this.usedSeats > this.licensedSeats;
   }
 }
-// / start cipherduck extension
+// / start katta extension
 export type StorageDto = {
     vaultId: string;
     storageConfigId: string;
@@ -304,7 +304,7 @@ export type VaultMetadataJWEBackendDto = {
     username?: string;
     password?: string;
 }
-// \ end cipherduck extension
+// \ end katta extension
 
 /* Services */
 
@@ -422,14 +422,14 @@ class VaultService {
   }
 
   public async createOrUpdateVault(vault: VaultDto
-    // / start cipherduck extension
+    // / start katta extension
     , aws: boolean | null = null
     , minio: boolean | null = null
-    // \ end cipherduck extension
+    // \ end katta extension
     ): Promise<VaultDto> {
-    // / start cipherduck modification
+    // / start katta modification
     return axiosAuth.put(`/vaults/${vault.id}?aws=${aws}&minio=${minio}` , vault)
-    // \ end cipherduck modification
+    // \ end katta modification
       .then(response => response.data)
       .catch((error) => rethrowAndConvertIfExpected(error, 402, 404));
   }
@@ -703,7 +703,7 @@ class EmergencyAccessService {
   }
 }
 
-// / start cipherduck extension
+// / start katta extension
 class StorageService {
   public async put(vaultId: string, dto: StorageDto): Promise<void> {
     return axiosAuth.put(`/storage/${vaultId}/`, dto);
@@ -731,7 +731,7 @@ class ConfigService {
         .then(response => response.data);
     }
 }
-// \ end cipherduck extension
+// \ end katta extension
 
 /**
  * Note: Each service can thrown an {@link UnauthorizedError} when the access token is expired!
@@ -749,11 +749,11 @@ const services = {
   groups: new GroupService(),
   emergencyAccess: new EmergencyAccessService(),
 
-  // / start cipherduck extension
+  // / start katta extension
   storage: new StorageService(),
   storageprofiles: new StorageProfileService(),
   config: new ConfigService(),
-  // \ end cipherduck extension
+  // \ end katta extension
 };
 
 export default services;

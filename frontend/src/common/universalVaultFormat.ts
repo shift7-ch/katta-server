@@ -4,9 +4,9 @@ import { VaultDto } from './backend';
 import { AccessTokenPayload, AccessTokenProducing, JsonWebKeySet, OtherVaultMember, RecoveryKeyProducing, UserKeys, VaultTemplateProducing, getJwkThumbprintStr } from './crypto';
 import { JWE, JWEHeader, JsonJWE, Recipient } from './jwe';
 import { CRC32, UTF8, wordEncoder } from './util';
-// / start cipherduck extension
+// / start katta extension
 import { VaultMetadataJWEBackendDto } from './backend';
-// \ end cipherduck extension
+// \ end katta extension
 
 type MetadataPayload = {
   fileFormat: 'AES-256-GCM-32k';
@@ -17,9 +17,9 @@ type MetadataPayload = {
   kdf: 'HKDF-SHA512';
   kdfSalt: string;
   'org.cryptomator.automaticAccessGrant': VaultMetadataJWEAutomaticAccessGrantDto;
-  // / start cipherduck extension
+  // / start katta extension
   'cloud.katta.storage': VaultMetadataJWEBackendDto;
-  // \ end cipherduck extension
+  // \ end katta extension
 }
 
 type VaultMetadataJWEAutomaticAccessGrantDto = {
@@ -230,9 +230,9 @@ export class DecodeUvfRecoveryKeyError extends Error {
 export class VaultMetadata {
   private constructor(
     readonly automaticAccessGrant: VaultMetadataJWEAutomaticAccessGrantDto,
-    // / start cipherduck extension
+    // / start katta extension
     readonly backend: VaultMetadataJWEBackendDto,
-    // \ end cipherduck extension
+    // \ end katta extension
     readonly seeds: Map<number, Uint8Array<ArrayBuffer>>,
     readonly initialSeedId: number,
     readonly latestSeedId: number,
@@ -251,9 +251,9 @@ export class VaultMetadata {
    * @returns new vault
    */
   public static async create(automaticAccessGrant: VaultMetadataJWEAutomaticAccessGrantDto
-    // / start cipherduck extension
+    // / start katta extension
     , backend: VaultMetadataJWEBackendDto
-    // \ end cipherduck extension
+    // \ end katta extension
     ): Promise<VaultMetadata> {
     const initialSeedId = new Uint8Array(4);
     const initialSeedValue = new Uint8Array(32);
@@ -265,9 +265,9 @@ export class VaultMetadata {
     const seeds: Map<number, Uint8Array<ArrayBuffer>> = new Map<number, Uint8Array<ArrayBuffer>>();
     seeds.set(initialSeedNo, initialSeedValue);
     return new VaultMetadata(automaticAccessGrant,
-      // / start cipherduck extension
+      // / start katta extension
       backend,
-      // \ end cipherduck extension
+      // \ end katta extension
       seeds, initialSeedNo, initialSeedNo, kdfSalt);
   }
 
@@ -325,9 +325,9 @@ export class VaultMetadata {
     const kdfSalt = base64urlnopad.decode(payload['kdfSalt']) as Uint8Array<ArrayBuffer>;
     return new VaultMetadata(
       payload['org.cryptomator.automaticAccessGrant'],
-      // / start cipherduck extension
+      // / start katta extension
       payload['cloud.katta.storage'],
-      // \ start cipherduck extension
+      // \ start katta extension
       seeds,
       initialSeedId,
       latestSeedId,
@@ -374,9 +374,9 @@ export class VaultMetadata {
       kdf: 'HKDF-SHA512',
       kdfSalt: base64urlnopad.encode(this.kdfSalt),
       'org.cryptomator.automaticAccessGrant': this.automaticAccessGrant
-      // / start cipherduck extension
+      // / start katta extension
       ,'cloud.katta.storage': this.backend
-      // \ end cipherduck extension
+      // \ end katta extension
     };
   }
 }
@@ -390,14 +390,14 @@ export class UniversalVaultFormat implements AccessTokenProducing, VaultTemplate
   private constructor(readonly metadata: VaultMetadata, readonly memberKey: MemberKey, readonly recoveryKey: RecoveryKey) { }
 
   public static async create(automaticAccessGrant: VaultMetadataJWEAutomaticAccessGrantDto
-    // / start cipherduck extension
+    // / start katta extension
     , backend: VaultMetadataJWEBackendDto
-    // \ end cipherduck extension
+    // \ end katta extension
     ): Promise<UniversalVaultFormat> {
     const metadata = await VaultMetadata.create(automaticAccessGrant
-      // / start cipherduck extension
+      // / start katta extension
       ,backend
-      // \ end cipherduck extension
+      // \ end katta extension
       );
     const memberKey = await MemberKey.create();
     const recoveryKey = await RecoveryKey.create();

@@ -483,17 +483,17 @@
           "bucketPrefix": {
             "type": "string",
             "description": "Buckets are create with name <bucket prefix><vault UUID>.",
-            "example": "cipherduck"
+            "example": "katta"
           },
           "stsRoleCreateBucketClient": {
             "type": "string",
             "description": "STS role for clients to assume to create buckets. Will be the same as stsRoleCreateBucketHub for AWS, different for MinIO.",
-            "example": "arn:aws:iam::<ACCOUNT ID>:role/cipherduck-createbucket"
+            "example": "arn:aws:iam::<ACCOUNT ID>:role/katta-createbucket"
           },
           "stsRoleCreateBucketHub": {
             "type": "string",
             "description": "STS role for frontend to assume to create buckets (used with inline policy and passed to hub storage). Will be the same as stsRoleCreateBucketClient for AWS, different for MinIO.",
-            "example": "arn:aws:iam::<ACCOUNT ID>:role/cipherduck-createbucket"
+            "example": "arn:aws:iam::<ACCOUNT ID>:role/katta-createbucket"
           },
           "stsEndpoint": {
             "type": [
@@ -522,7 +522,7 @@
           "stsRoleAccessBucketAssumeRoleWithWebIdentity": {
             "type": "string",
             "description": "roleArn to for STS AssumeRoleWithWebIdentity (AWS and MinIO)",
-            "example": "arn:aws:iam::930717317329:role/cipherduck_chain_01"
+            "example": "arn:aws:iam::930717317329:role/katta_chain_01"
           },
           "stsRoleAccessBucketAssumeRoleTaggedSession": {
             "type": [
@@ -530,7 +530,7 @@
               "null"
             ],
             "description": "roleArn to assume for STS AssumeRole in role chaining (AWS only, not MinIO)",
-            "example": "arn:aws:iam::930717317329:role/cipherduck_chain_02"
+            "example": "arn:aws:iam::930717317329:role/katta_chain_02"
           },
           "stsDurationSeconds": {
             "type": [
@@ -636,17 +636,17 @@
           "bucketPrefix": {
             "type": "string",
             "description": "Buckets are create with name <bucket prefix><vault UUID>.",
-            "example": "cipherduck"
+            "example": "katta"
           },
           "stsRoleCreateBucketClient": {
             "type": "string",
             "description": "STS role for clients to assume to create buckets. Will be the same as stsRoleCreateBucketHub for AWS, different for MinIO.",
-            "example": "arn:aws:iam::<ACCOUNT ID>:role/cipherduck-createbucket"
+            "example": "arn:aws:iam::<ACCOUNT ID>:role/katta-createbucket"
           },
           "stsRoleCreateBucketHub": {
             "type": "string",
             "description": "STS role for frontend to assume to create buckets (used with inline policy and passed to hub storage). Will be the same as stsRoleCreateBucketClient for AWS, different for MinIO.",
-            "example": "arn:aws:iam::<ACCOUNT ID>:role/cipherduck-createbucket"
+            "example": "arn:aws:iam::<ACCOUNT ID>:role/katta-createbucket"
           },
           "stsEndpoint": {
             "type": [

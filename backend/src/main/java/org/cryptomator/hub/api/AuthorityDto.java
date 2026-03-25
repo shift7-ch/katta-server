@@ -8,7 +8,7 @@ import org.cryptomator.hub.entities.User;
 import org.eclipse.microprofile.openapi.annotations.media.DiscriminatorMapping;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
-// / start cipherduck extension
+// / start katta extension
 // TODO review: backport @Schema upstream?
 @Schema(
 		title = "Authority",
@@ -20,7 +20,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 		},
 		discriminatorProperty = "type"
 )
-// \ end cipherduck extension
+// \ end katta extension
 @JsonInclude(JsonInclude.Include.NON_NULL)
 abstract sealed class AuthorityDto permits UserDto, GroupDto, MemberDto {
 

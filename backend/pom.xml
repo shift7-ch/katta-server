@@ -28,7 +28,7 @@
         <type>pom</type>
         <scope>import</scope>
       </dependency>
-      <!-- / start cipherduck extension -->
+      <!-- / start katta extension -->
       <!-- https://docs.quarkiverse.io/quarkus-amazon-services/dev/amazon-s3.html#_prerequisites -->
       <dependency>
         <groupId>io.quarkus.platform</groupId>
@@ -44,7 +44,7 @@
         <type>pom</type>
         <scope>import</scope>
       </dependency>
-      <!-- \ end cipherduck extension -->
+      <!-- \ end katta extension -->
     </dependencies>
     </dependencyManagement>
 
@@ -162,7 +162,7 @@
             <artifactId>quarkus-undertow</artifactId>
         </dependency>
 
-    <!-- / start cipherduck extension -->
+    <!-- / start katta extension -->
     <dependency>
       <groupId>io.quarkiverse.amazonservices</groupId>
       <artifactId>quarkus-amazon-s3</artifactId>
@@ -185,7 +185,7 @@
         <version>4.1.0</version>
       <scope>test</scope>
     </dependency>
-    <!-- \ end cipherduck extension -->
+    <!-- \ end katta extension -->
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-micrometer</artifactId>
@@ -341,13 +341,13 @@
                 <quarkus.package.jar.type>uber-jar</quarkus.package.jar.type>
             </properties>
         </profile>
-    <!-- / start cipherduck modification -->
+    <!-- / start katta modification -->
     <profile>
       <id>generate-openapi-json</id>
       <properties>
           <quarkus.smallrye-openapi.store-schema-directory>../frontend/src/openapi</quarkus.smallrye-openapi.store-schema-directory>
       </properties>
     </profile>
-    <!-- \ end cipherduck modification -->
+    <!-- \ end katta modification -->
   </profiles>
 </project>
