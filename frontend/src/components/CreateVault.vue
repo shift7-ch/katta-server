@@ -88,8 +88,9 @@
       </div>
     </form>
   </div>
-
-  <div v-else-if="state == State.EnterVaultDetails">
+  <!-- // / start katta modification -->
+  <div v-else-if="state == State.EnterVaultDetails && (backends?.values?.length ?? 0) > 0  && (regions?.values?.length ?? 0) > 0">
+  <!-- // \ end katta modification -->
     <BreadcrumbNav :crumbs="[ { label: t('vaultList.title'), to: '/app/vaults' }, { label: t('createVault.enterVaultDetails.title') } ]"/>
     <VaultCreationProgress :state="State.EnterVaultDetails" :steps="getCurrentStates" class="flex justify-center mb-4" />
     <form ref="form" class="space-y-6" novalidate @submit.prevent="validateVaultDetails()">
@@ -539,6 +540,16 @@
       </div>
     </div>
   </div>
+  <!-- // / start katta modification -->
+  <div v-else-if="state == State.EnterVaultDetails && ((backends?.values?.length ?? 0) == 0  || (regions?.values?.length ?? 0) == 0)">
+    <BreadcrumbNav :crumbs="[ { label: t('vaultList.title'), to: '/app/vaults' }, { label: t('createVault.enterVaultDetails.title') } ]"/>
+    <div class="flex justify-center text-center">
+        <p class="text-sm text-red-900 mr-4">
+          {{ t('CreateVaultS3.error.noStorageProfileAvailable') }}
+        </p>
+    </div>
+  </div>
+  <!-- // \ end katta modification -->
 </template>
 
 <script setup lang="ts">

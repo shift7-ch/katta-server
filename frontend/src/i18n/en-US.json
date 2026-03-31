@@ -606,6 +606,7 @@
   "CreateVaultS3.success.open": "Open vaults in Katta",
   "CreateVaultS3.error.uploadTemplateFailed": "Upload Vault Template to S3 Bucket failed",
   "CreateVaultS3.error.invalidStorageProfileConfiguration": "Vault configuration invalid",
+  "CreateVaultS3.error.noStorageProfileAvailable": "No storage profile available. Please contact your Katta Servier Admin.",
 
   "vaultList.openInKatta": "Open in Katta",
 
