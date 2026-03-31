@@ -905,31 +905,26 @@ async function validateVaultDetails() {
   // / start katta extension
     console.log("validateS3");
     if(!selectedBackend.value){
-        // TODO https://github.com/shift7-ch/katta-server/issues/31 localization
-        onCreateError.value = new StorageProfileError('Select a vault storage location.');
+        onCreateError.value = new StorageProfileError(t('CreateVaultS3.error.noStorageProfileSelected'));
         return;
     }
     if(!isPermanent.value){
         if(!selectedRegion.value){
-            // TODO https://github.com/shift7-ch/katta-server/issues/31 localization
-            onCreateError.value = new StorageProfileError('Select a region.');
+            onCreateError.value = new StorageProfileError(t('CreateVaultS3.error.noRegionSelected'));
             return
         }
     }
     else if(isPermanent.value){
         if(!vaultAccessKeyId.value){
-            // TODO https://github.com/shift7-ch/katta-server/issues/31 localization
-            onCreateError.value = new StorageProfileError('Enter the username and re-try.');
+            onCreateError.value = new StorageProfileError(t('CreateVaultS3.error.missingAccessKey'));
             return;
         }
         if(!vaultSecretKey.value){
-            // TODO https://github.com/shift7-ch/katta-server/issues/31 localization
-            onCreateError.value = new StorageProfileError('Enter the password and re-try.');
+            onCreateError.value = new StorageProfileError(t('CreateVaultS3.error.missingSecretKey'));
             return;
         }
         if(!vaultBucketName.value){
-            // TODO https://github.com/shift7-ch/katta-server/issues/31 localization
-            onCreateError.value = new StorageProfileError('Enter the bucket name and re-try.');
+            onCreateError.value = new StorageProfileError(t('CreateVaultS3.error.missingBucket'));
             return;
         }
         const endpoint = (selectedBackend.value.scheme && selectedBackend.value.hostname && selectedBackend.value.port) ? `${selectedBackend.value.scheme}://${selectedBackend.value.hostname}:${selectedBackend.value.port}` : undefined;
@@ -983,16 +978,14 @@ async function validateVaultDetails() {
             const responseListObjects = await client.send(commandListObjects);
             console.log(responseListObjects);
             if(responseListObjects.KeyCount != 0){
-                // TODO https://github.com/shift7-ch/katta-server/issues/31 localization
-                onCreateError.value = new Error('Bucket not empty, cannot upload template. Empty the bucket manually and re-try.');
+                onCreateError.value = new Error(t('CreateVaultS3.error.bucketNotEmpty'));
                 return;
             }
         } catch (error) {
             console.log(error);
             // TODO review can we improve whether this is a CORS problem? FF message is "NetworkError when attempting to fetch resource", Safari "Load failed".
             if(error instanceof TypeError){
-                // TODO https://github.com/shift7-ch/katta-server/issues/31 localization
-                onCreateError.value = new ErrorWithCodeHint(error.message + ". Check your bucket CORS settings.", `
+                onCreateError.value = new ErrorWithCodeHint(error.message + ". " + t('CreateVaultS3.error.invalidCORS'), `
                 aws s3api put-bucket-cors --endpoint-url ${endpoint} --bucket ${vaultBucketName.value} --cors-configuration file://cors.json
 
                 cors.json:
