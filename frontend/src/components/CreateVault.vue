@@ -896,9 +896,16 @@ async function validateVaultDetails() {
     if(!selectedBackend.value){
         // TODO https://github.com/shift7-ch/katta-server/issues/31 localization
         onCreateError.value = new StorageProfileError('Select a vault storage location.');
-        return
+        return;
     }
-    if(isPermanent.value){
+    if(!isPermanent.value){
+        if(!selectedRegion.value){
+            // TODO https://github.com/shift7-ch/katta-server/issues/31 localization
+            onCreateError.value = new StorageProfileError('Select a region.');
+            return
+        }
+    }
+    else if(isPermanent.value){
         if(!vaultAccessKeyId.value){
             // TODO https://github.com/shift7-ch/katta-server/issues/31 localization
             onCreateError.value = new StorageProfileError('Enter the username and re-try.');
