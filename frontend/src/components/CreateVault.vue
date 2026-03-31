@@ -273,7 +273,14 @@
                   <p v-if="(onCreateError instanceof FormValidationFailedError)">
                     {{ t('createVault.error.formValidationFailed','') }}
                   </p>
-                  <p v-if="(onRecoverError instanceof DecodeUvfRecoveryKeyError || onRecoverError instanceof DecodeVf8RecoveryKeyError)">
+                  <!-- // / start katta extension -->
+                  <p v-else-if="(onCreateError instanceof StorageProfileError )">
+                    {{ t('CreateVaultS3.error.invalidStorageProfileConfiguration', '') }}: {{ onCreateError.message }}
+                  </p>
+                  <!-- // \ end katta extension -->
+                  <!-- // / start katta modification -->
+                  <p v-else-if="(onRecoverError instanceof DecodeUvfRecoveryKeyError || onRecoverError instanceof DecodeVf8RecoveryKeyError)">
+                  <!-- // \  end katta modification -->
                     {{ t('createVault.error.invalidRecoveryKey','') }}
                   </p>
                   <p v-else>
@@ -885,26 +892,26 @@ async function validateVaultDetails() {
     return;
   }
   // / start katta extension
+    console.log("validateS3");
+    if(!selectedBackend.value){
+        // TODO https://github.com/shift7-ch/katta-server/issues/31 localization
+        onCreateError.value = new StorageProfileError('Select a vault storage location.');
+        return
+    }
     if(isPermanent.value){
-        console.log("validateS3");
-        if(!selectedBackend.value){
-            // TODO https://github.com/shift7-ch/katta-server/issues/31 localization
-            onCreateError.value = new Error('Select a vault storage location.');
-            return
-        }
         if(!vaultAccessKeyId.value){
             // TODO https://github.com/shift7-ch/katta-server/issues/31 localization
-            onCreateError.value = new Error('Enter the username and re-try.');
+            onCreateError.value = new StorageProfileError('Enter the username and re-try.');
             return;
         }
         if(!vaultSecretKey.value){
             // TODO https://github.com/shift7-ch/katta-server/issues/31 localization
-            onCreateError.value = new Error('Enter the password and re-try.');
+            onCreateError.value = new StorageProfileError('Enter the password and re-try.');
             return;
         }
         if(!vaultBucketName.value){
             // TODO https://github.com/shift7-ch/katta-server/issues/31 localization
-            onCreateError.value = new Error('Enter the bucket name and re-try.');
+            onCreateError.value = new StorageProfileError('Enter the bucket name and re-try.');
             return;
         }
         const endpoint = (selectedBackend.value.scheme && selectedBackend.value.hostname && selectedBackend.value.port) ? `${selectedBackend.value.scheme}://${selectedBackend.value.hostname}:${selectedBackend.value.port}` : undefined;
@@ -1393,6 +1400,11 @@ async function uploadVaultTemplate() {
   } catch (error) {
     console.error('Uploading vault template failed.', error);
     onUploadTemplateError.value = error instanceof Error ? error : new Error('Unknown reason');
+  }
+}
+class StorageProfileError extends Error {
+  constructor(s: string) {
+    super(s);
   }
 }
 // \ end katta extension
