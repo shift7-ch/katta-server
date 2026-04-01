@@ -280,7 +280,7 @@
                   </p>
                   <!-- // \ end katta extension -->
                   <!-- // / start katta modification -->
-                  <p v-else-if="(onRecoverError instanceof DecodeUvfRecoveryKeyError || onRecoverError instanceof DecodeVf8RecoveryKeyError)">
+                  <p v-else-if="(onCreateError instanceof DecodeUvfRecoveryKeyError || onCreateError instanceof DecodeVf8RecoveryKeyError)">
                   <!-- // \  end katta modification -->
                     {{ t('createVault.error.invalidRecoveryKey','') }}
                   </p>
@@ -543,10 +543,9 @@
   <!-- // / start katta modification -->
   <div v-else-if="state == State.EnterVaultDetails && ((backends?.values?.length ?? 0) == 0  || (regions?.values?.length ?? 0) == 0)">
     <BreadcrumbNav :crumbs="[ { label: t('vaultList.title'), to: '/app/vaults' }, { label: t('createVault.enterVaultDetails.title') } ]"/>
-    <div class="flex justify-center text-center">
-        <p class="text-sm text-red-900 mr-4">
-          {{ t('CreateVaultS3.error.noStorageProfileAvailable') }}
-        </p>
+    <div class="mt-3 text-center">
+      <ExclamationTriangleIcon class="mx-auto h-12 w-12 text-gray-400" aria-hidden="true" />
+      <h3 class="mt-2 text-sm font-medium text-gray-900">{{ t('CreateVaultS3.error.noStorageProfileAvailable') }}</h3>
     </div>
   </div>
   <!-- // \ end katta modification -->
@@ -903,7 +902,6 @@ async function validateVaultDetails() {
     return;
   }
   // / start katta extension
-    console.log("validateS3");
     if(!selectedBackend.value){
         onCreateError.value = new StorageProfileError(t('CreateVaultS3.error.noStorageProfileSelected'));
         return;
@@ -911,7 +909,7 @@ async function validateVaultDetails() {
     if(!isPermanent.value){
         if(!selectedRegion.value){
             onCreateError.value = new StorageProfileError(t('CreateVaultS3.error.noRegionSelected'));
-            return
+            return;
         }
     }
     else if(isPermanent.value){

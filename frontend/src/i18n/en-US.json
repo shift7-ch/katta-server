@@ -606,7 +606,7 @@
   "CreateVaultS3.success.open": "Open vaults in Katta",
   "CreateVaultS3.error.uploadTemplateFailed": "Upload Vault Template to S3 Bucket failed",
   "CreateVaultS3.error.invalidStorageProfileConfiguration": "Vault configuration invalid",
-  "CreateVaultS3.error.noStorageProfileAvailable": "No storage profile available. Please contact your Katta Servier Admin.",
+  "CreateVaultS3.error.noStorageProfileAvailable": "No storage profile available. Please contact your Katta Server Admin.",
   "CreateVaultS3.error.noStorageProfileSelected": "Select a vault storage location.",
   "CreateVaultS3.error.noRegionSelected": "Select a region.",
   "CreateVaultS3.error.missingAccessKey": "Enter the username and re-try.",
