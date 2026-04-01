@@ -88,8 +88,9 @@
       </div>
     </form>
   </div>
-
-  <div v-else-if="state == State.EnterVaultDetails">
+  <!-- // / start katta modification -->
+  <div v-else-if="state == State.EnterVaultDetails && (backends?.values?.length ?? 0) > 0  && (regions?.values?.length ?? 0) > 0">
+  <!-- // \ end katta modification -->
     <BreadcrumbNav :crumbs="[ { label: t('vaultList.title'), to: '/app/vaults' }, { label: t('createVault.enterVaultDetails.title') } ]"/>
     <VaultCreationProgress :state="State.EnterVaultDetails" :steps="getCurrentStates" class="flex justify-center mb-4" />
     <form ref="form" class="space-y-6" novalidate @submit.prevent="validateVaultDetails()">
@@ -273,7 +274,14 @@
                   <p v-if="(onCreateError instanceof FormValidationFailedError)">
                     {{ t('createVault.error.formValidationFailed','') }}
                   </p>
-                  <p v-if="(onRecoverError instanceof DecodeUvfRecoveryKeyError || onRecoverError instanceof DecodeVf8RecoveryKeyError)">
+                  <!-- // / start katta extension -->
+                  <p v-else-if="(onCreateError instanceof StorageProfileError )">
+                    {{ t('CreateVaultS3.error.invalidStorageProfileConfiguration', '') }}: {{ onCreateError.message }}
+                  </p>
+                  <!-- // \ end katta extension -->
+                  <!-- // / start katta modification -->
+                  <p v-else-if="(onCreateError instanceof DecodeUvfRecoveryKeyError || onCreateError instanceof DecodeVf8RecoveryKeyError)">
+                  <!-- // \  end katta modification -->
                     {{ t('createVault.error.invalidRecoveryKey','') }}
                   </p>
                   <p v-else>
@@ -532,6 +540,15 @@
       </div>
     </div>
   </div>
+  <!-- // / start katta modification -->
+  <div v-else-if="state == State.EnterVaultDetails && ((backends?.values?.length ?? 0) == 0  || (regions?.values?.length ?? 0) == 0)">
+    <BreadcrumbNav :crumbs="[ { label: t('vaultList.title'), to: '/app/vaults' }, { label: t('createVault.enterVaultDetails.title') } ]"/>
+    <div class="mt-3 text-center">
+      <ExclamationTriangleIcon class="mx-auto h-12 w-12 text-gray-400" aria-hidden="true" />
+      <h3 class="mt-2 text-sm font-medium text-gray-900">{{ t('CreateVaultS3.error.noStorageProfileAvailable') }}</h3>
+    </div>
+  </div>
+  <!-- // \ end katta modification -->
 </template>
 
 <script setup lang="ts">
@@ -885,26 +902,27 @@ async function validateVaultDetails() {
     return;
   }
   // / start katta extension
-    if(isPermanent.value){
-        console.log("validateS3");
-        if(!selectedBackend.value){
-            // TODO https://github.com/shift7-ch/katta-server/issues/31 localization
-            onCreateError.value = new Error('Select a vault storage location.');
-            return
+    if(!selectedBackend.value){
+        onCreateError.value = new StorageProfileError(t('CreateVaultS3.error.noStorageProfileSelected'));
+        return;
+    }
+    if(!isPermanent.value){
+        if(!selectedRegion.value){
+            onCreateError.value = new StorageProfileError(t('CreateVaultS3.error.noRegionSelected'));
+            return;
         }
+    }
+    else if(isPermanent.value){
         if(!vaultAccessKeyId.value){
-            // TODO https://github.com/shift7-ch/katta-server/issues/31 localization
-            onCreateError.value = new Error('Enter the username and re-try.');
+            onCreateError.value = new StorageProfileError(t('CreateVaultS3.error.missingAccessKey'));
             return;
         }
         if(!vaultSecretKey.value){
-            // TODO https://github.com/shift7-ch/katta-server/issues/31 localization
-            onCreateError.value = new Error('Enter the password and re-try.');
+            onCreateError.value = new StorageProfileError(t('CreateVaultS3.error.missingSecretKey'));
             return;
         }
         if(!vaultBucketName.value){
-            // TODO https://github.com/shift7-ch/katta-server/issues/31 localization
-            onCreateError.value = new Error('Enter the bucket name and re-try.');
+            onCreateError.value = new StorageProfileError(t('CreateVaultS3.error.missingBucket'));
             return;
         }
         const endpoint = (selectedBackend.value.scheme && selectedBackend.value.hostname && selectedBackend.value.port) ? `${selectedBackend.value.scheme}://${selectedBackend.value.hostname}:${selectedBackend.value.port}` : undefined;
@@ -958,16 +976,14 @@ async function validateVaultDetails() {
             const responseListObjects = await client.send(commandListObjects);
             console.log(responseListObjects);
             if(responseListObjects.KeyCount != 0){
-                // TODO https://github.com/shift7-ch/katta-server/issues/31 localization
-                onCreateError.value = new Error('Bucket not empty, cannot upload template. Empty the bucket manually and re-try.');
+                onCreateError.value = new Error(t('CreateVaultS3.error.bucketNotEmpty'));
                 return;
             }
         } catch (error) {
             console.log(error);
             // TODO review can we improve whether this is a CORS problem? FF message is "NetworkError when attempting to fetch resource", Safari "Load failed".
             if(error instanceof TypeError){
-                // TODO https://github.com/shift7-ch/katta-server/issues/31 localization
-                onCreateError.value = new ErrorWithCodeHint(error.message + ". Check your bucket CORS settings.", `
+                onCreateError.value = new ErrorWithCodeHint(error.message + ". " + t('CreateVaultS3.error.invalidCORS'), `
                 aws s3api put-bucket-cors --endpoint-url ${endpoint} --bucket ${vaultBucketName.value} --cors-configuration file://cors.json
 
                 cors.json:
@@ -1393,6 +1409,11 @@ async function uploadVaultTemplate() {
   } catch (error) {
     console.error('Uploading vault template failed.', error);
     onUploadTemplateError.value = error instanceof Error ? error : new Error('Unknown reason');
+  }
+}
+class StorageProfileError extends Error {
+  constructor(s: string) {
+    super(s);
   }
 }
 // \ end katta extension

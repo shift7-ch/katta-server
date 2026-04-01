@@ -605,6 +605,15 @@
   "CreateVaultS3.success.description": "Use the Katta client on your computer to open the vault.",
   "CreateVaultS3.success.open": "Open vaults in Katta",
   "CreateVaultS3.error.uploadTemplateFailed": "Upload Vault Template to S3 Bucket failed",
+  "CreateVaultS3.error.invalidStorageProfileConfiguration": "Vault configuration invalid",
+  "CreateVaultS3.error.noStorageProfileAvailable": "No storage profile available. Please contact your Katta Server Admin.",
+  "CreateVaultS3.error.noStorageProfileSelected": "Select a vault storage location.",
+  "CreateVaultS3.error.noRegionSelected": "Select a region.",
+  "CreateVaultS3.error.missingAccessKey": "Enter the username and re-try.",
+  "CreateVaultS3.error.missingSecretKey": "Enter the password and re-try.",
+  "CreateVaultS3.error.missingBucket": "Enter the bucket name and re-try.",
+  "CreateVaultS3.error.bucketNotEmpty": "Bucket not empty, cannot upload template. Empty the bucket manually and re-try.",
+  "CreateVaultS3.error.invalidCORS": "Check your bucket CORS settings.",
 
   "vaultList.openInKatta": "Open in Katta",
 
