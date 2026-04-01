@@ -501,12 +501,12 @@ export class UniversalVaultFormat implements AccessTokenProducing, VaultTemplate
     // general header:
     const generalHeader = new ArrayBuffer(8);
     const view = new DataView(generalHeader);
-    view.setUint32(0, 0x75766601); // magic bytes "uvf1"
+    view.setUint32(0, 0x75766600); // magic bytes "uvf\0" (must match cryptolib Constants.UVF_MAGIC_BYTES)
     view.setUint32(4, seedId);
 
     // format-specific header:
-    const initialSeed = await crypto.subtle.importKey('raw', this.metadata.initialSeed, { name: 'HKDF' }, false, ['deriveKey']);
-    const headerKey = await crypto.subtle.deriveKey({ name: 'HKDF', hash: 'SHA-512', salt: this.metadata.kdfSalt, info: UTF8.encode('fileHeader') }, initialSeed, { name: 'AES-GCM', length: 256 }, false, ['wrapKey']);
+    const seedKey = await crypto.subtle.importKey('raw', seed, { name: 'HKDF' }, false, ['deriveKey']);
+    const headerKey = await crypto.subtle.deriveKey({ name: 'HKDF', hash: 'SHA-512', salt: this.metadata.kdfSalt, info: UTF8.encode('fileHeader') }, seedKey, { name: 'AES-GCM', length: 256 }, false, ['wrapKey']);
     const headerNonce = new Uint8Array(12);
     crypto.getRandomValues(headerNonce);
     const encryptedFileKeyAndTag = await crypto.subtle.wrapKey('raw', fileKey, headerKey, { name: 'AES-GCM', iv: headerNonce, additionalData: generalHeader });
@@ -517,7 +517,7 @@ export class UniversalVaultFormat implements AccessTokenProducing, VaultTemplate
     // encrypt chunk 0:
     const blockNonce = new Uint8Array(12);
     crypto.getRandomValues(blockNonce);
-    const blockAd = new Uint8Array([0x00, 0x00, 0x00, 0x00, ...headerNonce]);
+    const blockAd = new Uint8Array([0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, ...headerNonce]);
     const blockCiphertext = await crypto.subtle.encrypt({ name: 'AES-GCM', iv: blockNonce, additionalData: blockAd }, fileKey, content);
 
     // result:

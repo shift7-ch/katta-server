@@ -1,0 +1,9 @@
+FROM eclipse-temurin:21
+COPY target/quarkus-app/ /work/
+WORKDIR /work/
+
+EXPOSE 8080
+USER 1001
+ENV QUARKUS_HTTP_HOST=0.0.0.0
+
+CMD ["java", "-jar", "/work/quarkus-run.jar"]
