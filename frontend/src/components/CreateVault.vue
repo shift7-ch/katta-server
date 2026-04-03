@@ -89,7 +89,7 @@
     </form>
   </div>
   <!-- // / start katta modification -->
-  <div v-else-if="state == State.EnterVaultDetails && backends.length  && regions.length">
+  <div v-else-if="state == State.EnterVaultDetails && backends.length > 0 && regions.length > 0">
   <!-- // \ end katta modification -->
     <BreadcrumbNav :crumbs="[ { label: t('vaultList.title'), to: '/app/vaults' }, { label: t('createVault.enterVaultDetails.title') } ]"/>
     <VaultCreationProgress :state="State.EnterVaultDetails" :steps="getCurrentStates" class="flex justify-center mb-4" />
