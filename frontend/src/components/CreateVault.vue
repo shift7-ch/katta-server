@@ -89,7 +89,7 @@
     </form>
   </div>
   <!-- // / start katta modification -->
-  <div v-else-if="state == State.EnterVaultDetails && (backends?.values?.length ?? 0) > 0  && (regions?.values?.length ?? 0) > 0">
+  <div v-else-if="state == State.EnterVaultDetails && backends.length  && regions.length">
   <!-- // \ end katta modification -->
     <BreadcrumbNav :crumbs="[ { label: t('vaultList.title'), to: '/app/vaults' }, { label: t('createVault.enterVaultDetails.title') } ]"/>
     <VaultCreationProgress :state="State.EnterVaultDetails" :steps="getCurrentStates" class="flex justify-center mb-4" />
@@ -507,7 +507,7 @@
     </div>
   </div>
   <!-- // / start katta modification -->
-  <div v-else-if="state == State.EnterVaultDetails && ((backends?.values?.length ?? 0) == 0  || (regions?.values?.length ?? 0) == 0)">
+  <div v-else-if="state == State.EnterVaultDetails && (backends.length == 0  || regions.length == 0)">
     <BreadcrumbNav :crumbs="[ { label: t('vaultList.title'), to: '/app/vaults' }, { label: t('createVault.enterVaultDetails.title') } ]"/>
     <div class="mt-3 text-center">
       <ExclamationTriangleIcon class="mx-auto h-12 w-12 text-gray-400" aria-hidden="true" />
@@ -642,8 +642,8 @@ const props = defineProps<{
 const selectedBackend = ref<StorageProfileDto | null >(null);
 const selectedRegion = ref<string | undefined>();
 const isPermanent = ref(false);
-const regions = ref<string[] | undefined>();
-const backends = ref<StorageProfileDto[] | null>(null);
+const regions = ref<string[]>([]);
+const backends = ref<StorageProfileDto[]>([]);
 const vaultAccessKeyId = ref('');
 const vaultSecretKey = ref('');
 const vaultBucketName = ref('');
