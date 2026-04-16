@@ -4,7 +4,7 @@
       <div class="relative flex justify-between h-16">
         <div class="flex-1 flex items-center justify-center sm:items-stretch sm:justify-start">
           <div class="shrink-0 flex items-center">
-            <img src="/logo.png" class="h-9" alt="Katta Logo"/>
+            <img src="/logo.png" class="h-9" alt="Katta Logo" />
             <span class="font-headline font-bold text-white ml-2 pb-px">KATTA</span>
           </div>
         </div>

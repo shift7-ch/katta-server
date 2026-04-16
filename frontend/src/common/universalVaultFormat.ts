@@ -20,19 +20,19 @@ type MetadataPayload = {
   // / start katta extension
   'cloud.katta.storage': VaultMetadataJWEBackendDto;
   // \ end katta extension
-}
+};
 
 type VaultMetadataJWEAutomaticAccessGrantDto = {
   enabled: boolean,
   maxWotDepth: number
-}
+};
 
 type UvfAccessTokenPayload = AccessTokenPayload & {
   /**
    * optional private key of the recovery key pair (PKCS8-encoded; only shared with vault owners)
    */
   recoveryKey?: string;
-}
+};
 
 // #region Member Key
 /**
@@ -40,6 +40,7 @@ type UvfAccessTokenPayload = AccessTokenPayload & {
  * This key is encrypted for each vault member individually, using the user's public key.
  */
 export class MemberKey {
+
   public static readonly KEY_DESIGNATION: AesKeyGenParams | AesKeyAlgorithm = { name: 'AES-KW', length: 256 };
 
   public static readonly KEY_USAGE: KeyUsage[] = ['wrapKey', 'unwrapKey'];
@@ -79,6 +80,7 @@ export class MemberKey {
     const bytes = await crypto.subtle.exportKey('raw', this.key);
     return base64.encode(new Uint8Array(bytes));
   }
+
 }
 // #endregion
 
@@ -87,6 +89,7 @@ export class MemberKey {
  * The Recovery Key Pair used to encapsulate the UVF Vault Metadata CEK for recovery purposes.
  */
 export class RecoveryKey {
+
   public static readonly KEY_DESIGNATION: EcKeyGenParams = { name: 'ECDH', namedCurve: 'P-384' };
 
   public static readonly KEY_USAGES: KeyUsage[] = ['deriveKey', 'deriveBits'];
@@ -213,12 +216,15 @@ export class RecoveryKey {
       y: jwk.y
     });
   }
+
 }
 
 export class DecodeUvfRecoveryKeyError extends Error {
+
   constructor(message: string) {
     super(message);
   }
+
 }
 
 // #endregion
@@ -228,6 +234,7 @@ export class DecodeUvfRecoveryKeyError extends Error {
  * The UVF Metadata file
  */
 export class VaultMetadata {
+
   private constructor(
     readonly automaticAccessGrant: VaultMetadataJWEAutomaticAccessGrantDto,
     // / start katta extension
@@ -379,6 +386,7 @@ export class VaultMetadata {
       // \ end katta extension
     };
   }
+
 }
 // #endregion
 // #region UVF
@@ -387,6 +395,7 @@ export class VaultMetadata {
  * A UVF-formatted Vault
  */
 export class UniversalVaultFormat implements AccessTokenProducing, VaultTemplateProducing, RecoveryKeyProducing {
+
   private constructor(readonly metadata: VaultMetadata, readonly memberKey: MemberKey, readonly recoveryKey: RecoveryKey) { }
 
   public static async create(automaticAccessGrant: VaultMetadataJWEAutomaticAccessGrantDto
@@ -544,6 +553,7 @@ export class UniversalVaultFormat implements AccessTokenProducing, VaultTemplate
     };
     return OtherVaultMember.withPublicKey(userPublicKey).createAccessToken(payload);
   }
+
 }
 
 /**
