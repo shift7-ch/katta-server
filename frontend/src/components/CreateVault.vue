@@ -507,6 +507,13 @@
     </div>
   </div>
   <!-- // / start katta modification -->
+  <div v-else-if="state == State.EnterVaultDetails && !storageProfilesLoaded">
+    {{ t('common.loading') }}
+  </div>
+  <div v-else-if="state == State.EnterVaultDetails && onFetchError != null">
+    <BreadcrumbNav :crumbs="[ { label: t('vaultList.title'), to: '/app/vaults' }, { label: t('createVault.enterVaultDetails.title') } ]"/>
+    <FetchError :error="onFetchError" :retry="fetchStorageProfiles"/>
+  </div>
   <div v-else-if="state == State.EnterVaultDetails && (backends.length == 0  || regions.length == 0)">
     <BreadcrumbNav :crumbs="[ { label: t('vaultList.title'), to: '/app/vaults' }, { label: t('createVault.enterVaultDetails.title') } ]"/>
     <div class="mt-3 text-center">
@@ -534,6 +541,7 @@ import EmergencyAccessSetup from './emergencyaccess/EmergencyAccessSetup.vue';
 import VaultCreationProgress from './VaultCreationProgress.vue';
 import { DecodeVf8RecoveryKeyError, VaultFormat8 } from '../common/vaultFormat8';
 // / start katta extension
+import FetchError from './FetchError.vue';
 import { StorageProfileDto, VaultMetadataJWEBackendDto } from '../common/backend';
 import {
      Listbox,
@@ -644,6 +652,8 @@ const selectedRegion = ref<string | undefined>();
 const isPermanent = ref(false);
 const regions = ref<string[]>([]);
 const backends = ref<StorageProfileDto[]>([]);
+const storageProfilesLoaded = ref(false);
+const onFetchError = ref<Error | null>(null);
 const vaultAccessKeyId = ref('');
 const vaultSecretKey = ref('');
 const vaultBucketName = ref('');
@@ -684,11 +694,7 @@ async function initialize() {
   }
   licenseStatus.value = await backend.license.getUserInfo();
   // / start katta extension
-  // get only non-archived storage profiles for new vaults
-  backends.value = await backend.storageprofiles.get(false);
-  selectedBackend.value = backends.value[0];
-  setRegionsOnSelectStorage(selectedBackend.value);
-  selectedRegion.value = selectedBackend.value.region;
+  await fetchStorageProfiles();
   // \ end katta extension
 
 }
@@ -1208,6 +1214,24 @@ async function openBookmark() {
   } catch (error) {
     console.error('Opening bookmark from browser failed.', error);
     onOpenBookmarkError.value = error instanceof Error ? error : new Error('Unknown Error');
+  }
+}
+
+async function fetchStorageProfiles() {
+  onFetchError.value = null;
+  storageProfilesLoaded.value = false;
+  try {
+    backends.value = await backend.storageprofiles.get(false);
+    if (backends.value.length > 0) {
+      selectedBackend.value = backends.value[0];
+      setRegionsOnSelectStorage(selectedBackend.value);
+      selectedRegion.value = selectedBackend.value.region;
+    }
+  } catch (error) {
+    console.error('Retrieving storage profiles failed.', error);
+    onFetchError.value = error instanceof Error ? error : new Error('Unknown Error');
+  } finally {
+    storageProfilesLoaded.value = true;
   }
 }
 
