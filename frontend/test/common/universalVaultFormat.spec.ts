@@ -292,7 +292,7 @@ describe('UVF', () => {
         const rootDirId = base64.decode('5WEGzwKkAHPwVSjT2Brr3P3zLz7oMiNpMn/qBvht7eM=') as Uint8Array<ArrayBuffer>;
         const fileContent = await uvf.encryptFile(rootDirId, uvf.metadata.initialSeedId);
         expect(fileContent).to.have.a.lengthOf(128);
-        expect(fileContent.slice(0, 4)).to.eql(new Uint8Array([0x75, 0x76, 0x66, 0x01])); // magic bytes
+        expect(fileContent.slice(0, 4)).to.eql(new Uint8Array([0x75, 0x76, 0x66, 0x00])); // magic bytes (must match cryptolib UVF_MAGIC_BYTES)
       });
     });
   });
