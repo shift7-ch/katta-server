@@ -442,11 +442,11 @@
         "type" : "string",
         "enum" : [ "MEMBER", "OWNER" ]
       },
-      "S3_SERVERSIDE_ENCRYPTION" : {
+      "S3ServersideEncryption" : {
         "type" : "string",
         "enum" : [ "NONE", "SSE_AES256", "SSE_KMS_DEFAULT" ]
       },
-      "S3_STORAGE_CLASSES" : {
+      "S3StorageClass" : {
         "type" : "string",
         "enum" : [ "STANDARD", "INTELLIGENT_TIERING", "STANDARD_IA", "ONEZONE_IA", "REDUCED_REDUNDANCY", "GLACIER", "GLACIER_IR", "DEEP_ARCHIVE" ]
       },
@@ -568,7 +568,7 @@
             "description" : "Storage class for upload. Defaults to STANDARD",
             "type" : "string",
             "examples" : [ "STANDARD" ],
-            "$ref" : "#/components/schemas/S3_STORAGE_CLASSES"
+            "$ref" : "#/components/schemas/S3StorageClass"
           },
           "region" : {
             "type" : "string",
@@ -614,7 +614,7 @@
           "bucketEncryption" : {
             "description" : "Enable bucket versioning upon bucket creation",
             "type" : "string",
-            "$ref" : "#/components/schemas/S3_SERVERSIDE_ENCRYPTION"
+            "$ref" : "#/components/schemas/S3ServersideEncryption"
           },
           "stsRoleAccessBucketAssumeRoleWithWebIdentity" : {
             "type" : "string",
@@ -676,7 +676,7 @@
             "description" : "Storage class for upload. Defaults to STANDARD",
             "type" : "string",
             "examples" : [ "STANDARD" ],
-            "$ref" : "#/components/schemas/S3_STORAGE_CLASSES"
+            "$ref" : "#/components/schemas/S3StorageClass"
           }
         }
       },
@@ -2354,6 +2354,41 @@
       }
     },
     "/api/storageprofile" : {
+      "post" : {
+        "summary" : "create a storage profile",
+        "description" : "Polymorphic by `protocol` discriminator: S3STATIC or S3STS.",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/StorageProfileDto"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "description" : "uploaded storage configuration"
+          },
+          "400" : {
+            "description" : "Constraint violation"
+          },
+          "403" : {
+            "description" : "not an admin"
+          },
+          "409" : {
+            "description" : "Storage profile with ID already exists"
+          },
+          "401" : {
+            "description" : "Not Authorized"
+          }
+        },
+        "tags" : [ "Storage Profile Resource" ],
+        "security" : [ {
+          "SecurityScheme" : [ "admin" ]
+        } ]
+      },
       "get" : {
         "summary" : "get configs for storage backends",
         "description" : "get list of configs for storage backends",
@@ -2388,78 +2423,6 @@
         "tags" : [ "Storage Profile Resource" ],
         "security" : [ {
           "SecurityScheme" : [ "user", "admin" ]
-        } ]
-      }
-    },
-    "/api/storageprofile/s3static" : {
-      "post" : {
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/StorageProfileS3StaticDto"
-              }
-            }
-          },
-          "required" : true
-        },
-        "responses" : {
-          "201" : {
-            "description" : "uploaded storage configuration"
-          },
-          "400" : {
-            "description" : "Constraint violation"
-          },
-          "403" : {
-            "description" : "not an admin"
-          },
-          "409" : {
-            "description" : "Storage profile with ID already exists"
-          },
-          "401" : {
-            "description" : "Not Authorized"
-          }
-        },
-        "summary" : "Upload Storage Profile",
-        "tags" : [ "Storage Profile Resource" ],
-        "security" : [ {
-          "SecurityScheme" : [ "admin" ]
-        } ]
-      }
-    },
-    "/api/storageprofile/s3sts" : {
-      "post" : {
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/StorageProfileS3STSDto"
-              }
-            }
-          },
-          "required" : true
-        },
-        "responses" : {
-          "201" : {
-            "description" : "uploaded storage configuration"
-          },
-          "400" : {
-            "description" : "Constraint violation"
-          },
-          "403" : {
-            "description" : "not an admin"
-          },
-          "409" : {
-            "description" : "Storage profile with ID already exists"
-          },
-          "401" : {
-            "description" : "Not Authorized"
-          }
-        },
-        "summary" : "Upload Storage Profile",
-        "tags" : [ "Storage Profile Resource" ],
-        "security" : [ {
-          "SecurityScheme" : [ "admin" ]
         } ]
       }
     },
