@@ -35,6 +35,8 @@ export default defineConfig(
         '@typescript-eslint/no-explicit-any': 'warn',
         '@typescript-eslint/no-unsafe-function-type': 'warn',
         '@typescript-eslint/no-unused-vars': 'off', // is checked by noUnusedLocals in tsconfig.json // or use ['error', { 'ignoreRestSiblings': true }]
+        '@typescript-eslint/no-redeclare': ['error'],
+        'no-redeclare': 'off',
         'no-unused-vars': 'off', // is checked by noUnusedLocals in tsconfig.json
         'no-undef': 'off', // types checked by typescript already
         'keyword-spacing': ['error', { before: true, after: true}],
@@ -82,6 +84,8 @@ export default defineConfig(
         '@typescript-eslint/no-explicit-any': 'warn',
         '@typescript-eslint/no-unsafe-function-type': 'warn',
         '@typescript-eslint/no-unused-vars': 'off', // is checked by noUnusedLocals in tsconfig.json // or use ['error', { 'ignoreRestSiblings': true }]
+        '@typescript-eslint/no-redeclare': ['error'],
+        'no-redeclare': 'off',
         'no-unused-vars': 'off', // is checked by noUnusedLocals in tsconfig.json
         'no-undef': 'off', // types checked by typescript already
         'keyword-spacing': ['error', { before: true, after: true}],

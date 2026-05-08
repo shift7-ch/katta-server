@@ -269,28 +269,46 @@ export type ConfigDto = {
     uuid: string;
 }
 
-export type StorageProfileDto = {
+export type StorageProtocol = 'S3STATIC' | 'S3STS';
+
+export type S3StorageClass = 'STANDARD' | 'INTELLIGENT_TIERING' | 'STANDARD_IA' | 'ONEZONE_IA' | 'REDUCED_REDUNDANCY' | 'GLACIER' | 'GLACIER_IR' | 'DEEP_ARCHIVE';
+
+export type S3ServerSideEncryption = 'NONE' | 'SSE_AES256' | 'SSE_KMS_DEFAULT';
+
+export type StorageProfileS3StaticDto = {
+    protocol: 'S3STATIC';
     id: string;
     name: string;
-    protocol: string;
+    archived: boolean;
+    endpoint?: string;
+    withPathStyleAccessEnabled?: boolean;
+    storageClass: S3StorageClass;
+}
+
+export type StorageProfileS3STSDto = {
+    protocol: 'S3STS';
+    id: string;
+    name: string;
+    archived: boolean;
+    endpoint?: string;
+    withPathStyleAccessEnabled?: boolean;
+    storageClass: S3StorageClass;
+    region: string;
+    regions: string[];
     bucketPrefix: string;
     stsRoleCreateBucketClient: string;
     stsRoleCreateBucketHub: string;
-    stsEndpoint: string;
-    bucketVersioning: string;
-    bucketAcceleration: string;
-    bucketEncryption: string;
-    region: string;
-    regions: string[];
-    withPathStyleAccessEnabled: boolean;
-    storageClass: string;
-    endpoint?: string;
+    stsEndpoint?: string;
+    bucketVersioning: boolean;
+    bucketAcceleration?: boolean;
+    bucketEncryption: S3ServerSideEncryption;
     stsRoleAccessBucketAssumeRoleWithWebIdentity: string;
-    stsRoleAccessBucketAssumeRoleTaggedSession: string;
-    stsDurationSeconds: number;
+    stsRoleAccessBucketAssumeRoleTaggedSession?: string;
+    stsDurationSeconds?: number;
     stsSessionTag: string;
-    archived: boolean;
 }
+
+export type StorageProfileDto = StorageProfileS3StaticDto | StorageProfileS3STSDto;
 
 export type VaultMetadataJWEBackendDto = {
     provider: string;

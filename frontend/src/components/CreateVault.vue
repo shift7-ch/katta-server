@@ -128,11 +128,11 @@
             <!-- / start katta extension -->
             <div class="col-span-6 sm:col-span-3">
                 <label for="vaultName" class="block text-sm font-medium text-gray-700">{{ t('CreateVaultS3.enterVaultDetails.storage') }}</label>
-                <Listbox as="div" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200" v-model="selectedBackend"
+                <Listbox as="div" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200" v-model="selectedStorageProfile"
                    @update:modelValue="value => { setRegionsOnSelectStorage(value);}"
                 >
                   <ListboxButton class="relative w-full cursor-default rounded-lg bg-white py-2 pl-3 pr-10 text-left shadow-md focus:outline-none focus-visible:border-indigo-500 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 focus-visible:ring-offset-2 focus-visible:ring-offset-orange-300 sm:text-sm">
-                    <span class="block truncate text-sm font-medium text-gray-700">{{ selectedBackend ? selectedBackend.name : '' }}</span>
+                    <span class="block truncate text-sm font-medium text-gray-700">{{ selectedStorageProfile ? selectedStorageProfile.name : '' }}</span>
                     <span
                       class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2"
                     >
@@ -184,7 +184,7 @@
                 </Listbox>
             </div>
             <br/>
-            <div v-if="!isPermanent" class="col-span-6 sm:col-span-3">
+            <div v-if="selectedStorageProfile?.protocol === 'S3STS'" class="col-span-6 sm:col-span-3">
                 <label for="vaultName" class="block text-sm font-medium text-gray-700">{{ t('CreateVaultS3.enterVaultDetails.region') }}</label>
                 <Listbox as="div" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200" v-model="selectedRegion">
                   <ListboxButton class="relative w-full cursor-default rounded-lg bg-white py-2 pl-3 pr-10 text-left shadow-md focus:outline-none focus-visible:border-indigo-500 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 focus-visible:ring-offset-2 focus-visible:ring-offset-orange-300 sm:text-sm">
@@ -239,19 +239,19 @@
                   </transition>
                 </Listbox>
             </div>
-            <div v-if="isPermanent" class="col-span-6 sm:col-span-4">
+            <div v-if="selectedStorageProfile?.protocol === 'S3STATIC'" class="col-span-6 sm:col-span-4">
                 <label for="vaultAccessKeyId" class="block text-sm font-medium text-gray-700">
                   {{ t('CreateVaultS3.enterVaultDetails.vaultPermanentAccessKeyId') }}
                 </label>
                 <input id="vaultAccessKeyId" v-model="vaultAccessKeyId" :disabled="processing" type="text" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200" :class="{ 'invalid:border-red-300 invalid:text-red-900 focus:invalid:ring-red-500 focus:invalid:border-red-500': onCreateError instanceof FormValidationFailedError }" required/>
             </div>
-            <div v-if="isPermanent" class="col-span-6 sm:col-span-4">
+            <div v-if="selectedStorageProfile?.protocol === 'S3STATIC'" class="col-span-6 sm:col-span-4">
                 <label for="vaultSecretKey" class="block text-sm font-medium text-gray-700">
                   {{ t('CreateVaultS3.enterVaultDetails.vaultPermanentSecretKey') }}
                 </label>
                 <input id="vaultSecretKey" v-model="vaultSecretKey" :disabled="processing" type="text" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200" :class="{ 'invalid:border-red-300 invalid:text-red-900 focus:invalid:ring-red-500 focus:invalid:border-red-500': onCreateError instanceof FormValidationFailedError }" required/>
             </div>
-            <div v-if="isPermanent" class="col-span-6 sm:col-span-4">
+            <div v-if="selectedStorageProfile?.protocol === 'S3STATIC'" class="col-span-6 sm:col-span-4">
                 <label for="vaultBucketName" class="block text-sm font-medium text-gray-700">
                   {{ t('CreateVaultS3.enterVaultDetails.vaultPermanentBucketName') }}
                 </label>
@@ -542,19 +542,19 @@ import VaultCreationProgress from './VaultCreationProgress.vue';
 import { DecodeVf8RecoveryKeyError, VaultFormat8 } from '../common/vaultFormat8';
 // / start katta extension
 import FetchError from './FetchError.vue';
-import { StorageProfileDto, VaultMetadataJWEBackendDto } from '../common/backend';
+import { StorageProfileDto } from '../common/backend';
 import {
-     Listbox,
-     ListboxButton,
-     ListboxOptions,
-     ListboxOption,
-   } from '@headlessui/vue';
+  Listbox,
+  ListboxButton,
+  ListboxOptions,
+  ListboxOption,
+} from '@headlessui/vue';
 import { ChevronUpDownIcon } from '@heroicons/vue/24/outline';
 import { ArrowTopRightOnSquareIcon } from '@heroicons/vue/24/solid';
-import { STSClient,AssumeRoleWithWebIdentityCommand } from "@aws-sdk/client-sts";
-import { S3Client, PutObjectCommand, ListObjectsV2Command, GetBucketLocationCommand, HeadBucketCommand } from "@aws-sdk/client-s3";
+import { STSClient,AssumeRoleWithWebIdentityCommand } from '@aws-sdk/client-sts';
+import { S3Client, PutObjectCommand, ListObjectsV2Command, GetBucketLocationCommand } from '@aws-sdk/client-s3';
 import authPromise from '../common/auth';
-import {AxiosError} from 'axios';
+import { AxiosError } from 'axios';
 import { base64urlnopad } from '@scure/base';
 import { isAwsHostname } from '../../src/common/katta';
 // \ end katta extension
@@ -586,7 +586,6 @@ class EmptyVaultTemplateError extends Error {
     super('Vault template is empty.');
   }
 }
-
 
 class NoFileError extends Error {
   constructor() {
@@ -647,9 +646,10 @@ const props = defineProps<{
 }>();
 
 // / start katta extension
-const selectedBackend = ref<StorageProfileDto | null >(null);
-const selectedRegion = ref<string | undefined>();
-const isPermanent = ref(false);
+// Vault creation only works for STS profiles today (it needs region/regions/bucket-creation roles).
+// Static profiles are filtered out at fetch time, so the typed dropdown only carries S3STS.
+const selectedStorageProfile = ref<StorageProfileDto>();
+const selectedRegion = ref<string>();
 const regions = ref<string[]>([]);
 const backends = ref<StorageProfileDto[]>([]);
 const storageProfilesLoaded = ref(false);
@@ -696,7 +696,6 @@ async function initialize() {
   // / start katta extension
   await fetchStorageProfiles();
   // \ end katta extension
-
 }
 
 async function handleDragEnterAndOver (event: DragEvent){
@@ -800,124 +799,112 @@ async function validateVaultDetails() {
     return;
   }
   // / start katta extension
-    if(!selectedBackend.value){
-        onCreateError.value = new StorageProfileError(t('CreateVaultS3.error.noStorageProfileSelected'));
-        return;
+  const storageProfile = selectedStorageProfile.value;
+  if (storageProfile === undefined) {
+    onCreateError.value = new StorageProfileError(t('CreateVaultS3.error.noStorageProfileSelected'));
+    return;
+  } else if (storageProfile.protocol === 'S3STS') {
+    if (!selectedRegion.value){
+      onCreateError.value = new StorageProfileError(t('CreateVaultS3.error.noRegionSelected'));
+      return;
     }
-    if(!isPermanent.value){
-        if(!selectedRegion.value){
-            onCreateError.value = new StorageProfileError(t('CreateVaultS3.error.noRegionSelected'));
-            return;
-        }
+  } else if (storageProfile.protocol === 'S3STATIC') {
+    if (!vaultAccessKeyId.value){
+      onCreateError.value = new StorageProfileError(t('CreateVaultS3.error.missingAccessKey'));
+      return;
     }
-    else if(isPermanent.value){
-        if(!vaultAccessKeyId.value){
-            onCreateError.value = new StorageProfileError(t('CreateVaultS3.error.missingAccessKey'));
-            return;
-        }
-        if(!vaultSecretKey.value){
-            onCreateError.value = new StorageProfileError(t('CreateVaultS3.error.missingSecretKey'));
-            return;
-        }
-        if(!vaultBucketName.value){
-            onCreateError.value = new StorageProfileError(t('CreateVaultS3.error.missingBucket'));
-            return;
-        }
-        const endpoint = selectedBackend.value.endpoint;
-
-    try {
-      const headBucketClient = new S3Client({
-        // https://github.com/aws/aws-sdk-js/issues/462 us-east-1 seems to have special behaviour
-        region: "us-west-2", // must not be empty, despite documentation saying optional (SDK rejects before even sending out request)
-        endpoint: `https://s3.amazonaws.com`,
-        credentials: {
-          accessKeyId: vaultAccessKeyId.value,
-          secretAccessKey: vaultSecretKey.value
-        }
-      });
-
-      const command = new GetBucketLocationCommand({
-        Bucket: vaultBucketName.value
-      });
+    if (!vaultSecretKey.value){
+      onCreateError.value = new StorageProfileError(t('CreateVaultS3.error.missingSecretKey'));
+      return;
+    }
+    if (!vaultBucketName.value){
+      onCreateError.value = new StorageProfileError(t('CreateVaultS3.error.missingBucket'));
+      return;
+    }
+    const endpoint = storageProfile.endpoint ?? 'https://s3.amazonaws.com';
+    if (isAwsHostname(endpointHostname(endpoint))) {
       try {
-        const response = await headBucketClient.send(command);
-        console.log(response)
-      }
-      catch (error) {
-        console.log(error)
-        // https://stackoverflow.com/questions/47668509/the-authorization-header-is-malformed-the-region-us-east-1-is-wrong-expectin
-        if ((error as any)?.Code == "AuthorizationHeaderMalformed" && (error as any)?.Region != undefined) {
-          selectedRegion.value = (error as any).Region
+        const headBucketClient = new S3Client({
+          // https://github.com/aws/aws-sdk-js/issues/462 us-east-1 seems to have special behaviour
+          region: 'us-west-2', // must not be empty, despite documentation saying optional (SDK rejects before even sending out request)
+          endpoint: 'https://s3.amazonaws.com',
+          credentials: {
+            accessKeyId: vaultAccessKeyId.value,
+            secretAccessKey: vaultSecretKey.value
+          }
+        });
+
+        const command = new GetBucketLocationCommand({
+          Bucket: vaultBucketName.value
+        });
+        try {
+          const response = await headBucketClient.send(command);
+          console.log(response);
         }
-        else {
-          if (selectedRegion.value === undefined) { // MinIO returns undefined
-            selectedRegion.value = "us-east-1"; // must not be empty, despite documentation saying optional (SDK rejects before even sending out request)
+        catch (error) {
+          console.log(error);
+          // https://stackoverflow.com/questions/47668509/the-authorization-header-is-malformed-the-region-us-east-1-is-wrong-expectin
+          if (isS3ErrorWithRegion(error) && error.Code == 'AuthorizationHeaderMalformed' && error.Region != undefined) {
+            selectedRegion.value = error.Region;
+          }
+          else {
+            if (selectedRegion.value === undefined) { // MinIO returns undefined
+              selectedRegion.value = 'us-east-1'; // must not be empty, despite documentation saying optional (SDK rejects before even sending out request)
+            }
           }
         }
-      }
-      console.log(`GetBucketLocation returned region ${selectedRegion.value}`);
+        console.log(`GetBucketLocation returned region ${selectedRegion.value}`);
 
-            const client = new S3Client({
-               region: selectedRegion.value,
-               endpoint: endpoint,
-               forcePathStyle: selectedBackend.value.withPathStyleAccessEnabled,
-               credentials:{
-                   accessKeyId: vaultAccessKeyId.value,
-                   secretAccessKey: vaultSecretKey.value
-               }
-            });
-            // N.B. there seems to be no API to check write permissions without actually writing.
-            const commandListObjects = new ListObjectsV2Command({
-               Bucket: vaultBucketName.value,
-               MaxKeys: 1,
-            });
-            const responseListObjects = await client.send(commandListObjects);
-            console.log(responseListObjects);
-            if(responseListObjects.KeyCount != 0){
-                onCreateError.value = new Error(t('CreateVaultS3.error.bucketNotEmpty'));
-                return;
-            }
-        } catch (error) {
-            console.log(error);
-            // TODO review can we improve whether this is a CORS problem? FF message is "NetworkError when attempting to fetch resource", Safari "Load failed".
-            if(error instanceof TypeError){
-                onCreateError.value = new ErrorWithCodeHint(error.message + ". " + t('CreateVaultS3.error.invalidCORS'), `
-                aws s3api put-bucket-cors --endpoint-url ${endpoint} --bucket ${vaultBucketName.value} --cors-configuration file://cors.json
-
-                cors.json:
-                {
-                  "CORSRules": [
-                           {
-                               "AllowedHeaders": [
-                                   "*"
-                               ],
-                               "AllowedMethods": [
-                                   "GET",
-                                   "PUT"
-                               ],
-                               "AllowedOrigins": [
-                                   "${document.baseURI}"
-                               ],
-                               "ExposeHeaders": [
-                                   "ETag"
-                               ],
-                               "MaxAgeSeconds": 3600
-                           }
-                       ]
-                }
-                `);
-            }
-            else{
-              console.error('Uploading template failed.', error);
-              error instanceof Error ? error : new Error('Unknown Error');
-            }
-            return;
+        const client = new S3Client({
+          region: selectedRegion.value,
+          endpoint: endpoint,
+          forcePathStyle: storageProfile.withPathStyleAccessEnabled,
+          credentials:{
+            accessKeyId: vaultAccessKeyId.value,
+            secretAccessKey: vaultSecretKey.value
+          }
+        });
+        // N.B. there seems to be no API to check write permissions without actually writing.
+        const commandListObjects = new ListObjectsV2Command({
+          Bucket: vaultBucketName.value,
+          MaxKeys: 1,
+        });
+        const responseListObjects = await client.send(commandListObjects);
+        console.log(responseListObjects);
+        if (responseListObjects.KeyCount != 0){
+          onCreateError.value = new Error(t('CreateVaultS3.error.bucketNotEmpty'));
+          return;
         }
+      } catch (error) {
+        console.log(error);
+        // TODO review can we improve whether this is a CORS problem? FF message is "NetworkError when attempting to fetch resource", Safari "Load failed".
+        if (error instanceof TypeError){
+          onCreateError.value = new ErrorWithCodeHint(error.message + '. ' + t('CreateVaultS3.error.invalidCORS'), `
+          aws s3api put-bucket-cors --endpoint-url ${endpoint} --bucket ${vaultBucketName.value} --cors-configuration file://cors.json
+
+          cors.json:
+          {
+            "CORSRules": [
+              {
+                "AllowedHeaders": ["*"],
+                "AllowedMethods": ["GET", "PUT"],
+                "AllowedOrigins": ["${document.baseURI}"],
+                "ExposeHeaders": ["ETag"],
+                "MaxAgeSeconds": 3600
+              }
+            ]
+          }
+          `);
+        } else {
+          console.error('Uploading template failed.', error);
+        }
+        return;
+      }
     }
-    else{
-        // we assume CORS settings are set correctly by admins
-    }
-    // \ end katta extension
+  } else {
+    // we assume CORS settings are set correctly by admins
+  }
+  // \ end katta extension
   if (props.recover) {
     await createVault();
   } else {
@@ -926,6 +913,15 @@ async function validateVaultDetails() {
     else
       state.value = State.ShowRecoveryKey;
   }
+}
+
+function isS3ErrorWithRegion(error: unknown): error is { Code: string; Region: string } {
+  return (
+    error != null &&
+    typeof error === 'object' &&
+    'Code' in error &&
+    'Region' in error
+  );
 }
 
 async function validateVaultEmergencyAccess() {
@@ -1006,23 +1002,26 @@ async function createVault() {
         if (!uvfVault.value) {
           throw new Error('Invalid state');
         }
-        if (!selectedBackend.value) {
+        const storageProfile = selectedStorageProfile.value;
+        if (storageProfile === undefined) {
           throw new Error('Invalid state');
         }
         if (!selectedRegion.value) {
           throw new Error('Invalid state');
         }
 
-        uvfVault.value.metadata.backend.provider = selectedBackend.value.id;
-        uvfVault.value.metadata.backend.defaultPath = selectedBackend.value.bucketPrefix + vault.value.id;
+        uvfVault.value.metadata.backend.provider = storageProfile.id;
         uvfVault.value.metadata.backend.nickname = vault.value.name;
         uvfVault.value.metadata.backend.region = selectedRegion.value;
         uvfVault.value.metadata.automaticAccessGrant.enabled = automaticAccessGrant.value;
-
-        if(isPermanent.value){
-            uvfVault.value.metadata.backend.username = vaultAccessKeyId.value;
-            uvfVault.value.metadata.backend.password = vaultSecretKey.value;
-            uvfVault.value.metadata.backend.defaultPath = vaultBucketName.value;
+        if (storageProfile.protocol === 'S3STS') {
+          uvfVault.value.metadata.backend.defaultPath = storageProfile.bucketPrefix + vault.value.id;
+        } else if (storageProfile.protocol === 'S3STATIC') {
+          uvfVault.value.metadata.backend.username = vaultAccessKeyId.value;
+          uvfVault.value.metadata.backend.password = vaultSecretKey.value;
+          uvfVault.value.metadata.backend.defaultPath = vaultBucketName.value;
+        } else {
+          throw new Error('Unsupported backend protocol');
         }
         // \ end katta extension
 
@@ -1037,111 +1036,109 @@ async function createVault() {
     if (!uvfVault.value) {
       throw new Error('Invalid state');
     }
-    if (!selectedBackend.value) {
+    const storageProfile = selectedStorageProfile.value;
+    if (storageProfile === undefined) {
       throw new Error('Invalid state');
     }
     if (!selectedRegion.value) {
       throw new Error('Invalid state');
     }
     // Decision 2024-02-01 upload vault template/create bucket before creating vault in hub and uploading JWE. This is the most delicate operation. No further rollback for now.
-    if(isPermanent.value){
-       await uploadVaultTemplate();
-    }
-    else {
-        // N.B. the access tokens for cryptomator and cryptomator hub clients do only have realm roles added to them, but not client roles.
-        //      We use client roles for vaults shared with a user. So this setup prevents access tokens from growing with new vaults.
-        const token = await authPromise.then(auth => auth.bearerToken());
+    if (storageProfile.protocol === 'S3STATIC'){
+      await uploadVaultTemplate();
+    } else if (storageProfile.protocol === 'S3STS') {
+      // N.B. the access tokens for cryptomator and cryptomator hub clients do only have realm roles added to them, but not client roles.
+      //      We use client roles for vaults shared with a user. So this setup prevents access tokens from growing with new vaults.
+      const token = await authPromise.then(auth => auth.bearerToken());
 
-        // https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/clients/client-sts/classes/stsclient.html
+      // https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/clients/client-sts/classes/stsclient.html
 
-        const stsClient = new STSClient({
-            region: selectedRegion.value,
-            endpoint: selectedBackend.value.stsEndpoint
-        });
+      const stsClient = new STSClient({
+        region: selectedRegion.value,
+        endpoint: storageProfile.stsEndpoint
+      });
 
-        // https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/clients/client-sts/classes/assumerolewithwebidentitycommand.html
-        // https://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRoleWithWebIdentity.html
-        // N.B. almost zero trust: add inline policy to pass only credentials allowing for creating the specified bucket in the backend
-        const assumeRoleWithWebIdentityArgs = {
-          // Required. The OAuth 2.0 access token or OpenID Connect ID token that is provided by the
-          // identity provider.
-          WebIdentityToken: token,
-          RoleSessionName: vault.value.id,
-          // Valid Range: Minimum value of 900. Maximum value of 43200.
-          DurationSeconds: 900,
-          Policy: `{
-            "Version": "2012-10-17",
-            "Statement": [
-              {
-                "Effect": "Allow",
-                "Action": [
-                  "s3:CreateBucket",
-                  "s3:GetBucketPolicy",
-                  "s3:PutBucketVersioning",
-                  "s3:GetBucketVersioning"
-                ],
-                "Resource": "arn:aws:s3:::{}"
-              },
-              {
-                "Effect": "Allow",
-                "Action": [
-                  "s3:PutObject"
-                ],
-                "Resource": [
-                  "arn:aws:s3:::{}/*.uvf",
-                  "arn:aws:s3:::{}/*/"
-                ]
-              }
-            ]
-          }`.replaceAll("{}", uvfVault.value.metadata.backend.defaultPath),
-          // Required. ARN of the role that the caller is assuming.
-          RoleArn: selectedBackend.value.stsRoleCreateBucketHub
-        }
+      // https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/clients/client-sts/classes/assumerolewithwebidentitycommand.html
+      // https://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRoleWithWebIdentity.html
+      // N.B. almost zero trust: add inline policy to pass only credentials allowing for creating the specified bucket in the backend
+      const assumeRoleWithWebIdentityArgs = {
+        // Required. The OAuth 2.0 access token or OpenID Connect ID token that is provided by the
+        // identity provider.
+        WebIdentityToken: token,
+        RoleSessionName: vault.value.id,
+        // Valid Range: Minimum value of 900. Maximum value of 43200.
+        DurationSeconds: 900,
+        Policy: `{
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Action": [
+                "s3:CreateBucket",
+                "s3:GetBucketPolicy",
+                "s3:PutBucketVersioning",
+                "s3:GetBucketVersioning"
+              ],
+              "Resource": "arn:aws:s3:::{}"
+            },
+            {
+              "Effect": "Allow",
+              "Action": [
+                "s3:PutObject"
+              ],
+              "Resource": [
+                "arn:aws:s3:::{}/*.uvf",
+                "arn:aws:s3:::{}/*/"
+              ]
+            }
+          ]
+        }`.replaceAll('{}', uvfVault.value.metadata.backend.defaultPath),
+        // Required. ARN of the role that the caller is assuming.
+        RoleArn: storageProfile.stsRoleCreateBucketHub
+      };
 
+      const { Credentials } = await stsClient.send(new AssumeRoleWithWebIdentityCommand(assumeRoleWithWebIdentityArgs));
 
-        const { Credentials } = await stsClient
-            .send(new AssumeRoleWithWebIdentityCommand(assumeRoleWithWebIdentityArgs));
+      if (!Credentials) {
+        throw new Error('Invalid state: Could not assume role with web identity.');
+      }
+      if (!Credentials.AccessKeyId) {
+        throw new Error('Invalid state: Missing AccessKeyId.');
+      }
+      if (!Credentials.SecretAccessKey) {
+        throw new Error('Invalid state: Missing SecretAccessKey.');
+      }
+      if (!Credentials.SessionToken) {
+        throw new Error('Invalid state: Missing SessionToken.');
+      }
 
-        if (!Credentials) {
-            throw new Error('Invalid state: Could not assume role with web identity.');
-        }
-        if (!Credentials.AccessKeyId) {
-            throw new Error('Invalid state: Missing AccessKeyId.');
-        }
-        if (!Credentials.SecretAccessKey) {
-            throw new Error('Invalid state: Missing SecretAccessKey.');
-        }
-        if (!Credentials.SessionToken) {
-            throw new Error('Invalid state: Missing SessionToken.');
-        }
+      const rootDirId = await uvfVault.value.computeRootDirId();
+      const rootDirHash = await uvfVault.value.computeRootDirIdHash(rootDirId);
+      if (!rootDirHash) {
+        throw new Error('Invalid state: rootDirHash missing.');
+      }
+      if (!vault.value?.uvfMetadataFile) {
+        throw new Error('Invalid state: uvfMetadataFile missing.');
+      }
+      const dirFile = await uvfVault.value.encryptFile(rootDirId, uvfVault.value.metadata.initialSeedId);
+      await backend.storage.put(vault.value.id, {
+        vaultId: vault.value.id,
+        storageConfigId: storageProfile.id,
+        vaultUvf: vault.value.uvfMetadataFile,
+        dirUvf: base64urlnopad.encode(dirFile),
+        rootDirHash: rootDirHash,
+        // https://github.com/awslabs/smithy-typescript/blob/697310da9aec949034f92598f5cefc2cc162ef4d/packages/types/src/identity/awsCredentialIdentity.ts#L24
+        awsAccessKey: Credentials.AccessKeyId,
+        awsSecretKey: Credentials.SecretAccessKey,
+        sessionToken: Credentials.SessionToken,
+        region: selectedRegion.value
 
-        const rootDirId = await uvfVault.value.computeRootDirId();
-        const rootDirHash = await uvfVault.value.computeRootDirIdHash(rootDirId);
-        if (!rootDirHash) {
-            throw new Error('Invalid state: rootDirHash missing.');
-        }
-        if (!vault.value?.uvfMetadataFile) {
-            throw new Error('Invalid state: uvfMetadataFile missing.');
-        }
-        const dirFile = await uvfVault.value.encryptFile(rootDirId, uvfVault.value.metadata.initialSeedId);
-        await backend.storage.put(vault.value.id, {
-            vaultId: vault.value.id,
-            storageConfigId: selectedBackend.value.id,
-            vaultUvf: vault.value.uvfMetadataFile,
-            dirUvf: base64urlnopad.encode(dirFile),
-            rootDirHash: rootDirHash,
-            // https://github.com/awslabs/smithy-typescript/blob/697310da9aec949034f92598f5cefc2cc162ef4d/packages/types/src/identity/awsCredentialIdentity.ts#L24
-            awsAccessKey: Credentials.AccessKeyId,
-            awsSecretKey: Credentials.SecretAccessKey,
-            sessionToken: Credentials.SessionToken,
-            region: selectedRegion.value
-
-        });
+      });
     }
     // \ end katta extension
-    var hostname = endpointHostname(selectedBackend.value);
-    var minio = (!isPermanent.value) && (hostname != null);
-    var aws = (!isPermanent.value) && ((hostname == null) || isAwsHostname(hostname));
+    const hostname = endpointHostname(storageProfile.endpoint);
+    const minio = (storageProfile.protocol === 'S3STS') && hostname !== undefined && !isAwsHostname(hostname);
+    const aws = (storageProfile.protocol === 'S3STS') && (hostname === undefined || isAwsHostname(hostname));
 
     await backend.vaults.createOrUpdateVault(vault.value, aws, minio);
     await backend.vaults.grantAccess(vault.value.id, ownerGrant);
@@ -1150,30 +1147,26 @@ async function createVault() {
     console.error('Creating vault failed.', error);
 
     // / start katta extension
-    if(typeof(error) === 'string'){
-        onCreateError.value = new Error(error);
-    }
-    else if((error instanceof AxiosError)){
+    if (typeof(error) === 'string'){
+      onCreateError.value = new Error(error);
+    } else if ((error instanceof AxiosError)){
       var msg = error.message;
-      if(error.response?.statusText){
+      if (error.response?.statusText){
         msg += ` (${error.response?.statusText}).`;
+      } else {
+        msg += '.';
       }
-      else{
-        msg += `.`;
-      }
-      if(error.response?.status === 409){
+      if (error.response?.status === 409){
         msg += ` Details: Bucket ${uvfVault.value?.metadata.backend.defaultPath} already exists or no permission to list.`;
-      }
-      else if(error.response?.data.details){
+      } else if (error.response?.data.details){
         msg += ` Details: ${error.response.data.details}.`;
       }
       onCreateError.value = new Error(msg);
     }
-    else if(error instanceof Error){
-        onCreateError.value = error;
-    }
-    else {
-        onCreateError.value = new Error('Unknown reason');
+    else if (error instanceof Error){
+      onCreateError.value = error;
+    } else {
+      onCreateError.value = new Error('Unknown reason');
     }
     // \ end katta extension
   } finally {
@@ -1224,9 +1217,8 @@ async function fetchStorageProfiles() {
   try {
     backends.value = await backend.storageprofiles.get(false);
     if (backends.value.length > 0) {
-      selectedBackend.value = backends.value[0];
-      setRegionsOnSelectStorage(selectedBackend.value);
-      selectedRegion.value = selectedBackend.value.region;
+      selectedStorageProfile.value = backends.value[0];
+      setRegionsOnSelectStorage(selectedStorageProfile.value);
     }
   } catch (error) {
     console.error('Retrieving storage profiles failed.', error);
@@ -1236,84 +1228,80 @@ async function fetchStorageProfiles() {
   }
 }
 
-function setRegionsOnSelectStorage(storage: StorageProfileDto){
+function setRegionsOnSelectStorage(storage: StorageProfileDto) {
+  if (storage.protocol === 'S3STS') {
     console.log('selected storage ' + storage.name);
     regions.value = storage.regions;
     console.log('   available regions: ' + storage.regions);
     selectedRegion.value = storage.region;
     console.log('   default region: ' + storage.region);
-    if (!selectedBackend.value) {
-      throw new Error('Invalid state.');
-    }
-    isPermanent.value = selectedBackend.value['protocol'] === 'S3STATIC';
-    console.log('   isPermanent: ' + isPermanent.value);
+  }
 }
 
-function endpointHostname(profile: StorageProfileDto): string | undefined {
-  if (!profile.endpoint) {
+function endpointHostname(endpoint: undefined): undefined;
+function endpointHostname(endpoint: string): string;
+function endpointHostname(endpoint: string | undefined): string | undefined;
+function endpointHostname(endpoint: string | undefined): string | undefined {
+  if (endpoint === undefined) {
     return undefined;
-  }
-  try {
-    return new URL(profile.endpoint).hostname;
-  } catch {
-    return undefined;
+  } else {
+    return new URL(endpoint).hostname;
   }
 }
 
 async function uploadVaultTemplate() {
   onUploadTemplateError.value = null;
   try {
-    if (!selectedBackend.value) {
-        throw new Error('Invalid state.');
+    const storageProfile = selectedStorageProfile.value;
+    if (storageProfile === undefined) {
+      throw new Error('Invalid state.');
     }
-    const endpoint = selectedBackend.value.endpoint;
     const client = new S3Client({
-        region: selectedRegion.value,
-        endpoint: endpoint,
-        forcePathStyle: selectedBackend.value.withPathStyleAccessEnabled,
-        credentials:{
-            accessKeyId: vaultAccessKeyId.value,
-            secretAccessKey: vaultSecretKey.value
-        }
+      region: selectedRegion.value,
+      endpoint: storageProfile.endpoint,
+      forcePathStyle: storageProfile.withPathStyleAccessEnabled,
+      credentials:{
+        accessKeyId: vaultAccessKeyId.value,
+        secretAccessKey: vaultSecretKey.value
+      }
     });
     const commandListObjects = new ListObjectsV2Command({
-        Bucket: vaultBucketName.value,
-        MaxKeys: 1,
-      });
+      Bucket: vaultBucketName.value,
+      MaxKeys: 1,
+    });
     const responseListObjects = await client.send(commandListObjects);
     console.log(responseListObjects);
-    if(responseListObjects.KeyCount != 0){
-        throw new Error('Bucket not empty, cannot upload template. Empty the bucket manually and re-try.');
+    if (responseListObjects.KeyCount != 0){
+      throw new Error('Bucket not empty, cannot upload template. Empty the bucket manually and re-try.');
     }
-    if(!uvfVault.value){
-       throw new Error('Invalid state');
+    if (!uvfVault.value){
+      throw new Error('Invalid state');
     }
 
     const rootDirHash = await uvfVault.value.computeRootDirIdHash(await uvfVault.value.computeRootDirId());
     console.log(rootDirHash);
 
     if (!rootDirHash) {
-        throw new Error('Invalid state: rootDirHash missing.');
+      throw new Error('Invalid state: rootDirHash missing.');
     }
 
     const commandPutVaultCryptomator = new PutObjectCommand({
-        Bucket: vaultBucketName.value,
-        Key: 'vault.uvf',
-        Body: vault.value.uvfMetadataFile
+      Bucket: vaultBucketName.value,
+      Key: 'vault.uvf',
+      Body: vault.value.uvfMetadataFile
     });
     console.log(commandPutVaultCryptomator);
     const responsePutVaultCryptomator = await client.send(commandPutVaultCryptomator);
     console.log(responsePutVaultCryptomator);
 
     const commandPutDFolder = new PutObjectCommand({
-        Bucket: vaultBucketName.value,
-        Key: `d/${rootDirHash.substring(0, 2)}/${rootDirHash.substring(2)}/`,
-        Body: '',
+      Bucket: vaultBucketName.value,
+      Key: `d/${rootDirHash.substring(0, 2)}/${rootDirHash.substring(2)}/`,
+      Body: '',
     });
     console.log(commandPutDFolder);
     const responsePutDFolder = await client.send(commandPutDFolder);
     console.log(responsePutDFolder);
-
   } catch (error) {
     console.error('Uploading vault template failed.', error);
     onUploadTemplateError.value = error instanceof Error ? error : new Error('Unknown reason');
