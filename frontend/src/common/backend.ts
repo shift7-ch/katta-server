@@ -286,6 +286,9 @@ export type StorageProfileS3StaticDto = {
     withPathStyleAccessEnabled?: boolean;
     storageClass: S3StorageClass;
     region: string;
+    // TODO: the fields below are STS-only (bucket creation + STS endpoint). With static credentials
+    // the bucket already exists and is targeted per-vault, so none of these have any effect.
+    // Pending team decision — drop from S3STATIC entirely vs. keep for backend wire-compat.
     regions: string[];
     bucketPrefix: string;
     stsRoleCreateBucketClient: string;
