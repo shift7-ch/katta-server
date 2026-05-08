@@ -823,39 +823,44 @@ async function validateVaultDetails() {
             onCreateError.value = new StorageProfileError(t('CreateVaultS3.error.missingBucket'));
             return;
         }
-        const endpoint = (selectedBackend.value.scheme && selectedBackend.value.hostname && selectedBackend.value.port) ? `${selectedBackend.value.scheme}://${selectedBackend.value.hostname}:${selectedBackend.value.port}` : undefined;
+        const endpoint = buildEndpoint(selectedBackend.value);
 
     try {
-      const headBucketClient = new S3Client({
-        // https://github.com/aws/aws-sdk-js/issues/462 us-east-1 seems to have special behaviour
-        region: "us-west-2", // must not be empty, despite documentation saying optional (SDK rejects before even sending out request)
-        endpoint: `https://s3.amazonaws.com`,
-        credentials: {
-          accessKeyId: vaultAccessKeyId.value,
-          secretAccessKey: vaultSecretKey.value
-        }
-      });
+      // GetBucketLocation against AWS is only meaningful for AWS-hosted buckets. For profiles with
+      // a custom endpoint (Scaleway, MinIO, etc.) the bucket isn't on AWS, so we trust the profile's
+      // region and skip the probe.
+      if (endpoint === undefined) {
+        const headBucketClient = new S3Client({
+          // https://github.com/aws/aws-sdk-js/issues/462 us-east-1 seems to have special behaviour
+          region: "us-west-2", // must not be empty, despite documentation saying optional (SDK rejects before even sending out request)
+          endpoint: `https://s3.amazonaws.com`,
+          credentials: {
+            accessKeyId: vaultAccessKeyId.value,
+            secretAccessKey: vaultSecretKey.value
+          }
+        });
 
-      const command = new GetBucketLocationCommand({
-        Bucket: vaultBucketName.value
-      });
-      try {
-        const response = await headBucketClient.send(command);
-        console.log(response)
-      }
-      catch (error) {
-        console.log(error)
-        // https://stackoverflow.com/questions/47668509/the-authorization-header-is-malformed-the-region-us-east-1-is-wrong-expectin
-        if ((error as any)?.Code == "AuthorizationHeaderMalformed" && (error as any)?.Region != undefined) {
-          selectedRegion.value = (error as any).Region
+        const command = new GetBucketLocationCommand({
+          Bucket: vaultBucketName.value
+        });
+        try {
+          const response = await headBucketClient.send(command);
+          console.log(response)
         }
-        else {
-          if (selectedRegion.value === undefined) { // MinIO returns undefined
-            selectedRegion.value = "us-east-1"; // must not be empty, despite documentation saying optional (SDK rejects before even sending out request)
+        catch (error) {
+          console.log(error)
+          // https://stackoverflow.com/questions/47668509/the-authorization-header-is-malformed-the-region-us-east-1-is-wrong-expectin
+          if ((error as any)?.Code == "AuthorizationHeaderMalformed" && (error as any)?.Region != undefined) {
+            selectedRegion.value = (error as any).Region
+          }
+          else {
+            if (selectedRegion.value === undefined) { // MinIO returns undefined
+              selectedRegion.value = "us-east-1"; // must not be empty, despite documentation saying optional (SDK rejects before even sending out request)
+            }
           }
         }
+        console.log(`GetBucketLocation returned region ${selectedRegion.value}`);
       }
-      console.log(`GetBucketLocation returned region ${selectedRegion.value}`);
 
             const client = new S3Client({
                region: selectedRegion.value,
@@ -1056,7 +1061,7 @@ async function createVault() {
 
         const stsClient = new STSClient({
             region: selectedRegion.value,
-            endpoint: selectedBackend.value.stsEndpoint
+            endpoint: selectedBackend.value.stsEndpoint ?? undefined
         });
 
         // https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/clients/client-sts/classes/assumerolewithwebidentitycommand.html
@@ -1248,13 +1253,22 @@ function setRegionsOnSelectStorage(storage: StorageProfileDto){
     console.log('   isPermanent: ' + isPermanent.value);
 }
 
+function buildEndpoint(profile: StorageProfileDto): string | undefined {
+  if (!profile.hostname) {
+    return undefined;
+  }
+  const scheme = (profile.scheme ?? 'https').replace(/:$/, '');
+  const port = profile.port ? `:${profile.port}` : '';
+  return `${scheme}://${profile.hostname}${port}`;
+}
+
 async function uploadVaultTemplate() {
   onUploadTemplateError.value = null;
   try {
     if (!selectedBackend.value) {
         throw new Error('Invalid state.');
     }
-    const endpoint = (selectedBackend.value.scheme && selectedBackend.value.hostname && selectedBackend.value.port) ? `${selectedBackend.value.scheme}://${selectedBackend.value.hostname}:${selectedBackend.value.port}` : undefined;
+    const endpoint = buildEndpoint(selectedBackend.value);
     const client = new S3Client({
         region: selectedRegion.value,
         endpoint: endpoint,
