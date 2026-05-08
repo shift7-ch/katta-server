@@ -74,7 +74,7 @@ public class VaultResourceKeycloakIT {
 
     @Nested
     @DisplayName("As vault admin user1")
-    @TestSecurity(user = "alice", roles = {"user", "create-vaults"})
+    @TestSecurity(user = "User Name 1", roles = {"user", "create-vaults"})
     @OidcSecurity(claims = {
             // needs to be user ID and not the user name
             @Claim(key = "sub", value = "alice")
@@ -108,6 +108,22 @@ public class VaultResourceKeycloakIT {
             given().contentType(ContentType.JSON)
                     .body(vaultDto)
                     .when().put("/vaults/{vaultId}", "7E57C0DE-0000-4000-8000-000100007777")
+                    .then().statusCode(200)
+                    .body("id", equalToIgnoringCase("7E57C0DE-0000-4000-8000-000100007777"))
+                    .body("name", equalTo("VaultUpdated"))
+                    .body("description", equalTo("Vault updated."))
+                    .body("archived", equalTo(false))
+                    .body("creationTime", not("2222-11-11T11:11:11Z"));
+        }
+
+        // N.B. free seat to match expectations of BillingResourceManagedInstanceIT.
+        @Test
+        @Order(3)
+        @DisplayName("PUT /vaults/7E57C0DE-0000-4000-8000-000100007777/archive returns 200")
+        public void testArchiveVault() {
+            given().contentType(ContentType.TEXT)
+                    .body("true")
+                    .when().put("/vaults/{vaultId}/archived", "7E57C0DE-0000-4000-8000-000100007777")
                     .then().statusCode(200)
                     .body("id", equalToIgnoringCase("7E57C0DE-0000-4000-8000-000100007777"))
                     .body("name", equalTo("VaultUpdated"))
