@@ -31,7 +31,7 @@
                       <input id="profileName" v-model="state.name" :disabled="processing" type="text" required class="mt-1 block w-full rounded-md border-gray-300 shadow-xs focus:ring-primary focus:border-primary sm:text-sm disabled:bg-gray-200">
                     </div>
 
-                    <!-- (1) Common: S3 endpoint URL — split into scheme/hostname/port at submit time -->
+                    <!-- (1) Common: S3 endpoint URL, used directly as `endpoint` on the DTO -->
                     <div class="col-span-6">
                       <label for="endpoint" class="block text-sm font-medium text-gray-700">{{ t('createStorageProfileDialog.endpoint.label') }}</label>
                       <input id="endpoint" v-model="state.endpoint" :disabled="processing" type="url" placeholder="https://s3.example.com" class="mt-1 block w-full rounded-md border-gray-300 shadow-xs focus:ring-primary focus:border-primary sm:text-sm disabled:bg-gray-200">
@@ -52,22 +52,21 @@
                       </select>
                     </div>
 
-                    <!-- region/regions are needed by the create-vault flow (AWS SDK region setting), so shown for both protocols -->
-                    <div class="col-span-6 sm:col-span-3">
-                      <label for="region" class="block text-sm font-medium text-gray-700">{{ t('storageprofile.region') }} <span class="text-red-600">*</span></label>
-                      <input id="region" v-model="state.region" :disabled="processing" type="text" required placeholder="us-east-1" class="mt-1 block w-full rounded-md border-gray-300 shadow-xs focus:ring-primary focus:border-primary sm:text-sm disabled:bg-gray-200">
-                    </div>
-                    <div class="col-span-6 sm:col-span-3">
-                      <label for="regions" class="block text-sm font-medium text-gray-700">{{ t('storageprofile.regions') }}</label>
-                      <input id="regions" v-model="regionsCsv" :disabled="processing" type="text" placeholder="us-east-1,eu-west-1" class="mt-1 block w-full rounded-md border-gray-300 shadow-xs focus:ring-primary focus:border-primary sm:text-sm disabled:bg-gray-200">
-                      <p class="mt-1 text-xs text-gray-500">{{ t('createStorageProfileDialog.hint.regions') }}</p>
-                    </div>
-
                     <!-- (2) STS-only: bucket-creation config (Desktop client) -->
                     <template v-if="protocol === 'S3STS'">
                       <div class="col-span-6">
                         <hr class="border-gray-200 my-2">
                         <h4 class="text-sm font-semibold text-gray-700">{{ t('createStorageProfileDialog.section.bucketCreation') }}</h4>
+                      </div>
+
+                      <div class="col-span-6 sm:col-span-3">
+                        <label for="region" class="block text-sm font-medium text-gray-700">{{ t('storageprofile.region') }} <span class="text-red-600">*</span></label>
+                        <input id="region" v-model="state.region" :disabled="processing" type="text" required placeholder="us-east-1" class="mt-1 block w-full rounded-md border-gray-300 shadow-xs focus:ring-primary focus:border-primary sm:text-sm disabled:bg-gray-200">
+                      </div>
+                      <div class="col-span-6 sm:col-span-3">
+                        <label for="regions" class="block text-sm font-medium text-gray-700">{{ t('storageprofile.regions') }}</label>
+                        <input id="regions" v-model="regionsCsv" :disabled="processing" type="text" placeholder="us-east-1,eu-west-1" class="mt-1 block w-full rounded-md border-gray-300 shadow-xs focus:ring-primary focus:border-primary sm:text-sm disabled:bg-gray-200">
+                        <p class="mt-1 text-xs text-gray-500">{{ t('createStorageProfileDialog.hint.regions') }}</p>
                       </div>
 
                       <div class="col-span-6">
@@ -193,12 +192,6 @@ type FormState = {
   stsSessionTag: string;
 };
 
-type EndpointParts = {
-  scheme?: string;
-  hostname?: string;
-  port?: number;
-};
-
 const protocol = ref<StorageProtocol>('S3STATIC');
 const state = ref<FormState>(emptyState());
 const regionsCsv = ref('');
@@ -240,9 +233,9 @@ function show() {
   open.value = true;
 }
 
-function nullIfBlank(s: string): string | null {
+function undefinedIfBlank(s: string): string | undefined {
   const trimmed = s.trim();
-  return trimmed === '' ? null : trimmed;
+  return trimmed === '' ? undefined : trimmed;
 }
 
 function newId(): string {
@@ -258,62 +251,40 @@ function parsedRegions(): string[] {
 
 class InvalidEndpointError extends Error {}
 
-// Parses the user-entered endpoint URL into scheme/hostname/port. Default scheme `https` and
-// default port `443` are normalized to null so the backend stores them as "use the default".
-function parseEndpoint(input: string): EndpointParts {
+// Validates the user-entered endpoint URL and returns it as a single string (the DTO stores it
+// as one field). Empty input → undefined.
+function validatedEndpoint(input: string): string | undefined {
   const trimmed = input.trim();
   if (trimmed === '') {
-    return {};
+    return undefined;
   }
-  let url: URL;
   try {
-    url = new URL(trimmed);
+    new URL(trimmed);
   } catch {
     throw new InvalidEndpointError(t('createStorageProfileDialog.error.invalidEndpoint'));
   }
-  const scheme = url.protocol.replace(/:$/, '');
-  const port = url.port === '' ? undefined : Number(url.port);
-  return {
-    scheme: scheme === 'https' ? undefined : scheme,
-    hostname: url.hostname,
-    port: port === 443 ? undefined : port
-  };
+  return trimmed;
 }
 
-function buildS3StaticDto(endpoint: EndpointParts): StorageProfileS3StaticDto {
-  // bucketPrefix and stsRoleCreateBucket* are required by the JSON schema but unused for S3STATIC
-  // per the backend's own DTO comments — submit empty values.
+function buildS3StaticDto(endpoint: string | undefined): StorageProfileS3StaticDto {
   return {
     id: newId(),
     name: state.value.name,
     protocol: 'S3STATIC',
     archived: false,
-    scheme: endpoint.scheme,
-    hostname: endpoint.hostname,
-    port: endpoint.port,
+    endpoint,
     withPathStyleAccessEnabled: state.value.withPathStyleAccessEnabled,
-    storageClass: state.value.storageClass,
-    region: state.value.region,
-    regions: parsedRegions(),
-    bucketPrefix: '',
-    stsRoleCreateBucketClient: '',
-    stsRoleCreateBucketHub: '',
-    stsEndpoint: null,
-    bucketVersioning: true,
-    bucketAcceleration: null,
-    bucketEncryption: 'NONE'
+    storageClass: state.value.storageClass
   };
 }
 
-function buildS3STSDto(endpoint: EndpointParts): StorageProfileS3STSDto {
+function buildS3STSDto(endpoint: string | undefined): StorageProfileS3STSDto {
   return {
     id: newId(),
     name: state.value.name,
     protocol: 'S3STS',
     archived: false,
-    scheme: endpoint.scheme,
-    hostname: endpoint.hostname,
-    port: endpoint.port,
+    endpoint,
     withPathStyleAccessEnabled: state.value.withPathStyleAccessEnabled,
     storageClass: state.value.storageClass,
     region: state.value.region,
@@ -321,13 +292,13 @@ function buildS3STSDto(endpoint: EndpointParts): StorageProfileS3STSDto {
     bucketPrefix: state.value.bucketPrefix,
     stsRoleCreateBucketClient: state.value.stsRoleCreateBucketClient,
     stsRoleCreateBucketHub: state.value.stsRoleCreateBucketHub,
-    stsEndpoint: nullIfBlank(state.value.stsEndpoint),
+    stsEndpoint: undefinedIfBlank(state.value.stsEndpoint),
     bucketVersioning: state.value.bucketVersioning,
     bucketAcceleration: state.value.bucketAcceleration,
     bucketEncryption: state.value.bucketEncryption,
     stsRoleAccessBucketAssumeRoleWithWebIdentity: state.value.stsRoleAccessBucketAssumeRoleWithWebIdentity,
-    stsRoleAccessBucketAssumeRoleTaggedSession: nullIfBlank(state.value.stsRoleAccessBucketAssumeRoleTaggedSession),
-    stsDurationSeconds: state.value.stsDurationSeconds ?? null,
+    stsRoleAccessBucketAssumeRoleTaggedSession: undefinedIfBlank(state.value.stsRoleAccessBucketAssumeRoleTaggedSession),
+    stsDurationSeconds: state.value.stsDurationSeconds ?? undefined,
     stsSessionTag: state.value.stsSessionTag
   };
 }
@@ -336,10 +307,11 @@ async function submit() {
   onSubmitError.value = null;
   processing.value = true;
   try {
-    const endpoint = parseEndpoint(state.value.endpoint);
-    const created = protocol.value === 'S3STATIC'
-      ? await backend.storageprofiles.createS3Static(buildS3StaticDto(endpoint))
-      : await backend.storageprofiles.createS3STS(buildS3STSDto(endpoint));
+    const endpoint = validatedEndpoint(state.value.endpoint);
+    const dto: StorageProfileDto = protocol.value === 'S3STATIC'
+      ? buildS3StaticDto(endpoint)
+      : buildS3STSDto(endpoint);
+    const created = await backend.storageprofiles.create(dto);
     emit('created', created);
     open.value = false;
   } catch (error) {

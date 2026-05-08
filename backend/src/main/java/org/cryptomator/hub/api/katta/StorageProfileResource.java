@@ -4,6 +4,8 @@ import jakarta.annotation.Nullable;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import jakarta.ws.rs.ClientErrorException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.FormParam;
@@ -18,8 +20,6 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.cryptomator.hub.entities.katta.StorageProfile;
-import org.cryptomator.hub.entities.katta.StorageProfileS3STS;
-import org.cryptomator.hub.entities.katta.StorageProfileS3Static;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.hibernate.exception.ConstraintViolationException;
@@ -35,47 +35,28 @@ public class StorageProfileResource {
 	@Inject
 	KattaConfig kattaConfig;
 
+	@Inject
+	StorageProfile.Repository storageProfileRepo;
+
 
 	@POST
-	@Path("/s3static")
+	@Path("/")
 	@RolesAllowed("admin")
 	@Transactional
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
+	@Operation(summary = "create a storage profile", description = "Polymorphic by `protocol` discriminator: S3STATIC or S3STS.")
 	@APIResponse(responseCode = "201", description = "uploaded storage configuration")
 	@APIResponse(responseCode = "400", description = "Constraint violation")
 	@APIResponse(responseCode = "403", description = "not an admin")
 	@APIResponse(responseCode = "409", description = "Storage profile with ID already exists")
-	public Response uploadStorageProfile(final StorageProfileS3StaticDto c) {
+	public Response uploadStorageProfile(@Valid @NotNull final StorageProfileDto dto) {
 		try {
-			final StorageProfileS3Static entity = c.toEntity();
-			if (StorageProfileS3Static.findByIdOptional(entity.id).isPresent()) {
+			final StorageProfile entity = dto.toEntity();
+			if (storageProfileRepo.findByIdOptional(entity.id).isPresent()) {
 				throw new ClientErrorException(Response.Status.CONFLICT);
 			}
-			entity.persistAndFlush();
-			return Response.created(URI.create(".")).contentLocation(URI.create(".")).entity(entity).type(MediaType.APPLICATION_JSON).build();
-		} catch (ConstraintViolationException e) {
-			return Response.status(Response.Status.BAD_REQUEST).entity(e).build();
-		}
-	}
-
-	@POST
-	@Path("/s3sts")
-	@RolesAllowed("admin")
-	@Transactional
-	@Consumes(MediaType.APPLICATION_JSON)
-	@Produces(MediaType.APPLICATION_JSON)
-	@APIResponse(responseCode = "201", description = "uploaded storage configuration")
-	@APIResponse(responseCode = "400", description = "Constraint violation")
-	@APIResponse(responseCode = "403", description = "not an admin")
-	@APIResponse(responseCode = "409", description = "Storage profile with ID already exists")
-	public Response uploadStorageProfile(final StorageProfileS3STSDto c) {
-		try {
-			final StorageProfileS3STS entity = c.toEntity();
-			if (StorageProfileS3STS.findByIdOptional(entity.id).isPresent()) {
-				throw new ClientErrorException(Response.Status.CONFLICT);
-			}
-			entity.persistAndFlush();
+			storageProfileRepo.persistAndFlush(entity);
 			return Response.created(URI.create(".")).contentLocation(URI.create(".")).entity(entity).type(MediaType.APPLICATION_JSON).build();
 		} catch (ConstraintViolationException e) {
 			return Response.status(Response.Status.BAD_REQUEST).entity(e).build();
@@ -91,7 +72,7 @@ public class StorageProfileResource {
 	@APIResponse(responseCode = "200", description = "list of storage configuration")
 	@APIResponse(responseCode = "403", description = "not a user")
 	public List<StorageProfileDto> getStorageProfiles(@Nullable @QueryParam("archived") Boolean archived) {
-		return StorageProfileS3Static.findAll().<StorageProfile>stream().map(StorageProfileDto::fromEntity).filter(dto -> (archived == null) || archived.equals(dto.archived)).collect(Collectors.toList());
+		return storageProfileRepo.findAll().stream().map(StorageProfileDto::fromEntity).filter(dto -> (archived == null) || archived.equals(dto.isArchived())).collect(Collectors.toList());
 	}
 
 	@GET
@@ -103,7 +84,7 @@ public class StorageProfileResource {
 	@APIResponse(responseCode = "200")
 	@APIResponse(responseCode = "403", description = "not a user")
 	public StorageProfileDto get(@PathParam("profileId") UUID profileId) {
-		return StorageProfileS3StaticDto.fromEntity(StorageProfileS3Static.<StorageProfile>findByIdOptional(profileId).orElseThrow(NotFoundException::new));
+		return StorageProfileDto.fromEntity(storageProfileRepo.findByIdOptional(profileId).orElseThrow(NotFoundException::new));
 	}
 
 	@PUT
@@ -119,8 +100,8 @@ public class StorageProfileResource {
 		if (archived == null) {
 			return Response.status(Response.Status.BAD_REQUEST).build();
 		}
-		final StorageProfile entity = StorageProfileS3Static.<StorageProfile>findByIdOptional(profileId).orElseThrow(NotFoundException::new);
-		entity.setArchived(archived).persistAndFlush();
+		final StorageProfile entity = storageProfileRepo.findByIdOptional(profileId).orElseThrow(NotFoundException::new);
+		storageProfileRepo.persistAndFlush(entity.setArchived(archived));
 		return Response.status(Response.Status.NO_CONTENT).build();
 	}
 }

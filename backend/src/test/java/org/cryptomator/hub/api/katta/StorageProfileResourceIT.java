@@ -8,12 +8,16 @@ import io.quarkus.test.security.oidc.OidcSecurity;
 import io.restassured.common.mapper.TypeRef;
 import io.restassured.http.ContentType;
 import org.cryptomator.hub.api.katta.storage.S3StorageHelper;
+import org.cryptomator.hub.entities.katta.S3ServersideEncryption;
+import org.cryptomator.hub.entities.katta.S3StorageClass;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mockito;
 
 import java.util.Arrays;
@@ -24,7 +28,7 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.text.IsEqualIgnoringCase.equalToIgnoringCase;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
 @QuarkusTest
@@ -43,31 +47,19 @@ public class StorageProfileResourceIT {
 	public class CreateStorageProfile {
 		@Test
 		@Order(1)
-		@DisplayName("POST /storageprofile/s3static returns 201")
+		@DisplayName("POST /storageprofile/ returns 201 for S3STATIC body")
 		public void testPostS3StorageProfile() {
 			var vaultDto = new StorageProfileS3StaticDto(
 					UUID.fromString("72736c19-283c-49d3-80a5-ab74b5202543"),
 					"AWS S3 static",
-					StorageProfileDto.Protocol.s3static,
+					StorageProfileDto.Protocol.S3_STATIC,
 					false,
-					"https",
 					null,
-					443,
 					false,
-					StorageProfileS3StaticDto.S3_STORAGE_CLASSES.STANDARD,
-					"eu-central-1",
-					Arrays.
-							asList("eu-central-1"),
-					"katta-test-",
-					"arn:aws:iam::430118840017:role/testing.katta.cloud-kc-realms-chipotle-createbucket",
-					"arn:aws:iam::430118840017:role/testing.katta.cloud-kc-realms-chipotle-createbucket",
-					null,
-					true,
-					null,
-					StorageProfileS3StaticDto.S3_SERVERSIDE_ENCRYPTION.NONE
+					S3StorageClass.STANDARD
 			);
 			given().contentType(ContentType.JSON).body(vaultDto)
-					.when().post("/storageprofile/s3static")
+					.when().post("/storageprofile/")
 					.then().statusCode(201)
 					.body("id", equalToIgnoringCase("72736c19-283c-49d3-80a5-ab74b5202543"))
 					.body("name", equalToIgnoringCase("AWS S3 static"));
@@ -75,18 +67,16 @@ public class StorageProfileResourceIT {
 
 		@Test
 		@Order(1)
-		@DisplayName("POST /storageprofile/s3sts returns 201")
+		@DisplayName("POST /storageprofile/ returns 201 for S3STS body")
 		public void testPostS3STSStorageProfile() {
 			var vaultDto = new StorageProfileS3STSDto(
 					UUID.fromString("844bd517-96d4-4787-bcfa-238e103149f6"),
 					"AWS S3 STS",
-					StorageProfileDto.Protocol.valueOf("s3static"),
+					StorageProfileDto.Protocol.S3_STS,
 					false,
 					null,
-					null,
-					null,
 					false,
-					StorageProfileS3StaticDto.S3_STORAGE_CLASSES.STANDARD,
+					S3StorageClass.STANDARD,
 					"eu-west-1",
 					Arrays.asList("eu-west-1", "eu-west-2", "eu-west-3"),
 					"katta-test-",
@@ -95,7 +85,7 @@ public class StorageProfileResourceIT {
 					null,
 					true,
 					null,
-					StorageProfileS3StaticDto.S3_SERVERSIDE_ENCRYPTION.NONE,
+					S3ServersideEncryption.NONE,
 					"arn:aws:iam::430118840017:role/testing.katta.cloud-kc-realms-chipotle-sts-chain-01",
 					"JsonNullable[arn:aws:iam::430118840017:role/testing.katta.cloud-kc-realms-chipotle-sts-chain-02]",
 					null,
@@ -103,103 +93,117 @@ public class StorageProfileResourceIT {
 			);
 
 			given().contentType(ContentType.JSON).body(vaultDto)
-					.when().post("/storageprofile/s3sts")
+					.when().post("/storageprofile/")
 					.then().statusCode(201)
 					.body("id", equalToIgnoringCase("844bd517-96d4-4787-bcfa-238e103149f6"))
 					.body("name", equalToIgnoringCase("AWS S3 STS"));
 		}
 
+		@ParameterizedTest
+		@Order(1)
+		@DisplayName("POST /storageprofile/ returns 400 for an invalid endpoint URL")
+		@ValueSource(strings = {
+				"not a url",
+				"://no-scheme.example",
+				"http:// space-in-host",
+				"htp:bad"
+		})
+		public void testPostS3StorageProfileWithInvalidEndpoint(String invalidEndpoint) {
+			var vaultDto = new StorageProfileS3StaticDto(
+					UUID.randomUUID(),
+					"Invalid endpoint test",
+					StorageProfileDto.Protocol.S3_STATIC,
+					false,
+					invalidEndpoint,
+					false,
+					S3StorageClass.STANDARD
+			);
+			given().contentType(ContentType.JSON).body(vaultDto)
+					.when().post("/storageprofile/")
+					.then().statusCode(400);
+		}
+
 		@Test
 		@Order(2)
-		@DisplayName("GET /storageprofile returns 200")
+		@DisplayName("GET /storageprofile returns 200 with both subtypes deserialized polymorphically")
 		public void testGetStorageProfiles() {
-			final List<StorageProfileS3STSDto> dtos = given()
+			final List<StorageProfileDto> dtos = given()
 					.when().get("/storageprofile/")
 					.then().statusCode(200)
 					.extract()
-					.as(new TypeRef<List<StorageProfileS3STSDto>>() {
+					.as(new TypeRef<List<StorageProfileDto>>() {
 					});
 			assertEquals(2, dtos.size());
-			assertEquals(1, dtos.stream().filter(dto -> dto.protocol.equals(StorageProfileS3StaticDto.Protocol.s3static)).count());
-			assertEquals(1, dtos.stream().filter(dto -> dto.protocol.equals(StorageProfileS3StaticDto.Protocol.s3sts)).count());
-			final StorageProfileS3STSDto s3STSDto = dtos.stream().filter(dto -> dto.protocol.equals(StorageProfileS3StaticDto.Protocol.s3sts)).map(StorageProfileS3STSDto.class::cast).findFirst().get();
-			assertEquals("arn:aws:iam::430118840017:role/testing.katta.cloud-kc-realms-chipotle-sts-chain-01", s3STSDto.stsRoleAccessBucketAssumeRoleWithWebIdentity);
-			assertFalse(s3STSDto.archived);
+			assertEquals(1, dtos.stream().filter(dto -> dto.getProtocol().equals(StorageProfileDto.Protocol.S3_STATIC)).count());
+			assertEquals(1, dtos.stream().filter(dto -> dto.getProtocol().equals(StorageProfileDto.Protocol.S3_STS)).count());
+			final StorageProfileS3STSDto s3STSDto = dtos.stream().filter(StorageProfileS3STSDto.class::isInstance).map(StorageProfileS3STSDto.class::cast).findFirst().orElseThrow();
+			assertEquals("arn:aws:iam::430118840017:role/testing.katta.cloud-kc-realms-chipotle-sts-chain-01", s3STSDto.getStsRoleAccessBucketAssumeRoleWithWebIdentity());
+			assertFalse(s3STSDto.isArchived());
 		}
 
 		@Test
 		@Order(2)
-		@DisplayName("GET /storageprofile/{profileId} returns 200")
+		@DisplayName("GET /storageprofile/{profileId} returns 200 for S3STATIC")
 		public void testGetS3StorageProfile() {
-			final StorageProfileS3STSDto dto = given()
+			final StorageProfileDto dto = given()
 					.when().get("/storageprofile/{profileId}", "72736c19-283c-49d3-80a5-ab74b5202543")
 					.then().statusCode(200)
 					.extract()
-					.as(StorageProfileS3STSDto.class);
+					.as(StorageProfileDto.class);
 
-			assertEquals(UUID.fromString("72736c19-283c-49d3-80a5-ab74b5202543"), dto.id);
-			assertNull(dto.stsRoleAccessBucketAssumeRoleWithWebIdentity);
-			assertFalse(dto.archived);
+			assertEquals(UUID.fromString("72736c19-283c-49d3-80a5-ab74b5202543"), dto.getId());
+			assertEquals(StorageProfileDto.Protocol.S3_STATIC, dto.getProtocol());
+			assertInstanceOf(StorageProfileS3StaticDto.class, dto);
+			assertFalse(dto.isArchived());
 		}
 
 		@Test
 		@Order(2)
-		@DisplayName("GET /storageprofile/{profileId} returns 200")
+		@DisplayName("GET /storageprofile/{profileId} returns 200 for S3STS")
 		public void testGetS3STSStorageProfile() {
-			final StorageProfileS3STSDto dto = given()
+			final StorageProfileDto dto = given()
 					.when().get("/storageprofile/{profileId}", "844bd517-96d4-4787-bcfa-238e103149f6")
 					.then().statusCode(200)
 					.extract()
-					.as(StorageProfileS3STSDto.class);
+					.as(StorageProfileDto.class);
 
-			assertEquals(UUID.fromString("844bd517-96d4-4787-bcfa-238e103149f6"), dto.id);
-			assertEquals("arn:aws:iam::430118840017:role/testing.katta.cloud-kc-realms-chipotle-sts-chain-01", dto.stsRoleAccessBucketAssumeRoleWithWebIdentity);
-			assertFalse(dto.archived);
+			assertEquals(UUID.fromString("844bd517-96d4-4787-bcfa-238e103149f6"), dto.getId());
+			assertEquals(StorageProfileDto.Protocol.S3_STS, dto.getProtocol());
+			final StorageProfileS3STSDto stsDto = assertInstanceOf(StorageProfileS3STSDto.class, dto);
+			assertEquals("arn:aws:iam::430118840017:role/testing.katta.cloud-kc-realms-chipotle-sts-chain-01", stsDto.getStsRoleAccessBucketAssumeRoleWithWebIdentity());
+			assertFalse(stsDto.isArchived());
 		}
 
 		@Test
 		@Order(3)
-		@DisplayName("POST /storageprofile/s3static again returns 409")
+		@DisplayName("POST /storageprofile/ S3STATIC again returns 409")
 		public void testPostS3StorageProfileAgain() {
 			var vaultDto = new StorageProfileS3StaticDto(
 					UUID.fromString("72736c19-283c-49d3-80a5-ab74b5202543"),
 					"AWS S3 static",
-					StorageProfileDto.Protocol.s3static,
+					StorageProfileDto.Protocol.S3_STATIC,
 					false,
-					"https",
 					null,
-					443,
 					false,
-					StorageProfileS3StaticDto.S3_STORAGE_CLASSES.STANDARD,
-					"eu-central-1",
-					Arrays.asList("eu-central-1"),
-					"katta-test-",
-					"arn:aws:iam::430118840017:role/testing.katta.cloud-kc-realms-chipotle-createbucket",
-					"arn:aws:iam::430118840017:role/testing.katta.cloud-kc-realms-chipotle-createbucket",
-					null,
-					true,
-					null,
-					StorageProfileS3StaticDto.S3_SERVERSIDE_ENCRYPTION.NONE
+					S3StorageClass.STANDARD
 			);
 			given().contentType(ContentType.JSON).body(vaultDto)
-					.when().post("/storageprofile/s3static")
+					.when().post("/storageprofile/")
 					.then().statusCode(409);
 		}
 
 		@Test
 		@Order(3)
-		@DisplayName("POST /storageprofile/s3sts again returns 409")
+		@DisplayName("POST /storageprofile/ S3STS again returns 409")
 		public void testPostS3STSStorageProfileAgain() {
 			var vaultDto = new StorageProfileS3STSDto(
 					UUID.fromString("844bd517-96d4-4787-bcfa-238e103149f6"),
 					"AWS S3 STS",
-					StorageProfileDto.Protocol.valueOf("s3static"),
+					StorageProfileDto.Protocol.S3_STS,
 					false,
 					null,
-					null,
-					null,
 					false,
-					StorageProfileS3StaticDto.S3_STORAGE_CLASSES.STANDARD,
+					S3StorageClass.STANDARD,
 					"eu-west-1",
 					Arrays.asList("eu-west-1", "eu-west-2", "eu-west-3"),
 					"katta-test-",
@@ -208,7 +212,7 @@ public class StorageProfileResourceIT {
 					null,
 					true,
 					null,
-					StorageProfileS3StaticDto.S3_SERVERSIDE_ENCRYPTION.NONE,
+					S3ServersideEncryption.NONE,
 					"arn:aws:iam::430118840017:role/testing.katta.cloud-kc-realms-chipotle-sts-chain-01",
 					"JsonNullable[arn:aws:iam::430118840017:role/testing.katta.cloud-kc-realms-chipotle-sts-chain-02]",
 					null,
@@ -216,7 +220,7 @@ public class StorageProfileResourceIT {
 			);
 
 			given().contentType(ContentType.JSON).body(vaultDto)
-					.when().post("/storageprofile/s3sts")
+					.when().post("/storageprofile/")
 					.then().statusCode(409);
 		}
 
@@ -239,13 +243,11 @@ public class StorageProfileResourceIT {
 			var vaultDto = new StorageProfileS3STSDto(
 					UUID.fromString("844bd517-96d4-4787-bcfa-238e103149f6"),
 					"AWS S3 STS",
-					StorageProfileDto.Protocol.valueOf("s3static"),
+					StorageProfileDto.Protocol.S3_STS,
 					false,
 					null,
-					null,
-					null,
 					false,
-					StorageProfileS3StaticDto.S3_STORAGE_CLASSES.STANDARD,
+					S3StorageClass.STANDARD,
 					"eu-west-1",
 					Arrays.asList("eu-west-1", "eu-west-2", "eu-west-3"),
 					"katta-test-",
@@ -254,7 +256,7 @@ public class StorageProfileResourceIT {
 					null,
 					true,
 					null,
-					StorageProfileS3StaticDto.S3_SERVERSIDE_ENCRYPTION.NONE,
+					S3ServersideEncryption.NONE,
 					"arn:aws:iam::430118840017:role/testing.katta.cloud-kc-realms-chipotle-sts-chain-01",
 					"JsonNullable[arn:aws:iam::430118840017:role/testing.katta.cloud-kc-realms-chipotle-sts-chain-02]",
 					null,
@@ -287,26 +289,28 @@ public class StorageProfileResourceIT {
 
 		@Test
 		@Order(5)
-		@DisplayName("GET /storageprofile/{profileId} returns 200 with vault archived")
+		@DisplayName("GET /storageprofile/{profileId} returns 200 for archived S3STATIC")
 		public void testGetArchivedS3StorageProfile() {
-			final StorageProfileS3STSDto dto = given()
+			final StorageProfileDto dto = given()
 					.when().get("/storageprofile/{profileId}", "72736c19-283c-49d3-80a5-ab74b5202543")
 					.then().statusCode(200)
 					.extract()
-					.as(StorageProfileS3STSDto.class);
-			assertTrue(dto.archived);
+					.as(StorageProfileDto.class);
+			assertInstanceOf(StorageProfileS3StaticDto.class, dto);
+			assertTrue(dto.isArchived());
 		}
 
 		@Test
 		@Order(5)
-		@DisplayName("GET /storageprofile/{profileId} returns 200 with vault archived")
+		@DisplayName("GET /storageprofile/{profileId} returns 200 for archived S3STS")
 		public void testGetArchivedS3STSStorageProfile() {
-			final StorageProfileS3STSDto dto = given()
+			final StorageProfileDto dto = given()
 					.when().get("/storageprofile/{profileId}", "844bd517-96d4-4787-bcfa-238e103149f6")
 					.then().statusCode(200)
 					.extract()
-					.as(StorageProfileS3STSDto.class);
-			assertTrue(dto.archived);
+					.as(StorageProfileDto.class);
+			assertInstanceOf(StorageProfileS3STSDto.class, dto);
+			assertTrue(dto.isArchived());
 		}
 
 		@Test
@@ -334,12 +338,12 @@ public class StorageProfileResourceIT {
 		@Order(6)
 		@DisplayName("GET /storageprofile returns 200")
 		public void testGetArchivedStorageProfiles() {
-			final List<StorageProfileS3STSDto> dtos = given()
+			final List<StorageProfileDto> dtos = given()
 					.queryParam("archived", true)
 					.when().get("/storageprofile/")
 					.then().statusCode(200)
 					.extract()
-					.as(new TypeRef<List<StorageProfileS3STSDto>>() {
+					.as(new TypeRef<List<StorageProfileDto>>() {
 					});
 			assertEquals(2, dtos.size());
 		}
@@ -348,12 +352,12 @@ public class StorageProfileResourceIT {
 		@Order(6)
 		@DisplayName("GET /storageprofile returns 200")
 		public void testGetNonArchivedStorageProfiles() {
-			final List<StorageProfileS3STSDto> dtos = given()
+			final List<StorageProfileDto> dtos = given()
 					.queryParam("archived", false)
 					.when().get("/storageprofile/")
 					.then().statusCode(200)
 					.extract()
-					.as(new TypeRef<List<StorageProfileS3STSDto>>() {
+					.as(new TypeRef<List<StorageProfileDto>>() {
 					});
 			assertEquals(0, dtos.size());
 		}

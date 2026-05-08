@@ -4,7 +4,7 @@
       {{ t('common.loading') }}
     </div>
     <div v-else>
-      <FetchError :error="onFetchError" :retry="fetchData"/>
+      <FetchError :error="onFetchError" :retry="fetchData" />
     </div>
   </div>
 
@@ -80,7 +80,7 @@
   </div>
 
   <SlideOver v-if="selectedStorageprofile != null" ref="StorageProfileDetailsSlideOver" :title="selectedStorageprofile.name" @close="selectedStorageprofile = null">
-    <StorageProfileDetails :storageprofile-id="selectedStorageprofile.id" @storageprofile-updated="v => onSelectedStorageprofileUpdate(v)"></StorageProfileDetails>
+    <StorageProfileDetails :storageprofile-id="selectedStorageprofile.id" @storageprofile-updated="v => onSelectedStorageprofileUpdate(v)" />
   </SlideOver>
 
   <CreateStorageProfileDialog v-if="creatingProfile" ref="createDialog" @close="creatingProfile = false" @created="onCreated"/>

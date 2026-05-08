@@ -1,14 +1,18 @@
 package org.cryptomator.hub.entities.katta;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
-
-import java.util.List;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "storage_profile_s3_static")
-public class StorageProfileS3Static extends StorageProfile {// TODO make sealed?
+@DiscriminatorValue("S3STATIC")
+public class StorageProfileS3Static extends StorageProfile {
 
 	//======================================================================
 	// (1) STS and permanent:
@@ -16,48 +20,14 @@ public class StorageProfileS3Static extends StorageProfile {// TODO make sealed?
 	// - template upload (STS and permanent)
 	// - client profile (STS and permanent)
 	//======================================================================
-	@Column
-	public String scheme;
+	@Column(name = "endpoint")
+	public String endpoint;
 
-	@Column
-	public String hostname;
-
-	@Column
-	public Integer port;
-
-	@Column
+	@Column(name = "withPathStyleAccessEnabled", nullable = false)
 	public Boolean withPathStyleAccessEnabled = false;
 
-	@Column
-	public String storageClass = "STANDARD";
-
-	//======================================================================
-	// (2) STS only: bucket creation (only relevant for Desktop client)
-	//======================================================================
-	@Column
-	public String region;
-
-	@Column
-	public List<String> regions;
-
-	@Column
-	public String bucketPrefix;
-
-	@Column
-	public String stsRoleCreateBucketClient;
-
-	@Column
-	public String stsRoleCreateBucketHub;
-
-	@Column
-	public String stsEndpoint = null;
-
-	@Column
-	public Boolean bucketVersioning = true;
-
-	@Column
-	public Boolean bucketAcceleration = true;
-
-	@Column
-	public String bucketEncryption;
+	@Column(name = "storageClass", columnDefinition = "storage_class", nullable = false)
+	@Enumerated(EnumType.STRING)
+	@JdbcTypeCode(SqlTypes.NAMED_ENUM)
+	public S3StorageClass storageClass = S3StorageClass.STANDARD;
 }
