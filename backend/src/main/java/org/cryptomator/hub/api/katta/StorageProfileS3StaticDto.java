@@ -22,17 +22,9 @@ public sealed class StorageProfileS3StaticDto extends StorageProfileDto permits 
 	// - client profile (STS and permanent)
 	//======================================================================
 
-	@JsonProperty(value = "scheme", defaultValue = "https")
-	@Schema(description = "Scheme of S3 endpoint for template upload/bucket creation. Defaults to default for protocol, i.e. https in most cases.", examples = "https", nullable = true)
-	String scheme;
-
-	@JsonProperty("hostname")
-	@Schema(description = "Hostname S3 endpoint for template upload/bucket creation. Defaults to AWS SDK default.", examples = "s3-us-gov-west-1.amazonaws.com", nullable = true)
-	String hostname;
-
-	@JsonProperty("port")
-	@Schema(description = "Port S3 endpoint for template upload/bucket creation. Defaults to default port for scheme.", examples = "443", nullable = true)
-	Integer port;
+	@JsonProperty("endpoint")
+	@Schema(description = "Full S3 endpoint URL for template upload/bucket creation. If unset, defaults to AWS SDK defaults.", examples = "https://s3-us-gov-west-1.amazonaws.com", nullable = true)
+	String endpoint;
 
 	@JsonProperty(value = "withPathStyleAccessEnabled")
 	@Schema(description = "Whether to use path style for S3 endpoint for template upload/bucket creation.", examples = "false", defaultValue = "false")
@@ -46,17 +38,15 @@ public sealed class StorageProfileS3StaticDto extends StorageProfileDto permits 
 		// jackson
 	}
 
-	public StorageProfileS3StaticDto(final UUID id, final String name, final Protocol protocol, final boolean archived, final String scheme, final String hostname, final Integer port, final boolean withPathStyleAccessEnabled, final S3_STORAGE_CLASSES storageClass) {
+	public StorageProfileS3StaticDto(final UUID id, final String name, final Protocol protocol, final boolean archived, final String endpoint, final boolean withPathStyleAccessEnabled, final S3_STORAGE_CLASSES storageClass) {
 		super(id, name, protocol, archived);
-		this.scheme = scheme;
-		this.hostname = hostname;
-		this.port = port;
+		this.endpoint = endpoint;
 		this.withPathStyleAccessEnabled = withPathStyleAccessEnabled;
 		this.storageClass = storageClass;
 	}
 
 	static StorageProfileS3StaticDto fromEntity(final StorageProfileS3Static storageProfile) {
-		return new StorageProfileS3StaticDto(storageProfile.id, storageProfile.name, Protocol.s3static, storageProfile.archived, storageProfile.scheme, storageProfile.hostname, storageProfile.port, storageProfile.withPathStyleAccessEnabled, S3_STORAGE_CLASSES.valueOf(storageProfile.storageClass.name()));
+		return new StorageProfileS3StaticDto(storageProfile.id, storageProfile.name, Protocol.s3static, storageProfile.archived, storageProfile.endpoint, storageProfile.withPathStyleAccessEnabled, S3_STORAGE_CLASSES.valueOf(storageProfile.storageClass.name()));
 	}
 
 	public StorageProfileS3Static toEntity() {
@@ -64,24 +54,14 @@ public sealed class StorageProfileS3StaticDto extends StorageProfileDto permits 
 		storageProfile.id = this.id;
 		storageProfile.name = this.name;
 		storageProfile.archived = this.archived;
-		storageProfile.scheme = this.scheme;
-		storageProfile.hostname = this.hostname;
-		storageProfile.port = this.port;
+		storageProfile.endpoint = this.endpoint;
 		storageProfile.withPathStyleAccessEnabled = this.withPathStyleAccessEnabled;
 		storageProfile.storageClass = StorageClass.valueOf(this.storageClass.name());
 		return storageProfile;
 	}
 
-	public String scheme() {
-		return scheme;
-	}
-
-	public String hostname() {
-		return hostname;
-	}
-
-	public Integer port() {
-		return port;
+	public String endpoint() {
+		return endpoint;
 	}
 
 	public Boolean withPathStyleAccessEnabled() {
@@ -98,11 +78,11 @@ public sealed class StorageProfileS3StaticDto extends StorageProfileDto permits 
 		if (o == null || getClass() != o.getClass()) return false;
 
 		StorageProfileS3StaticDto that = (StorageProfileS3StaticDto) o;
-		return Objects.equals(scheme, that.scheme) && Objects.equals(hostname, that.hostname) && Objects.equals(port, that.port) && Objects.equals(withPathStyleAccessEnabled, that.withPathStyleAccessEnabled) && storageClass == that.storageClass;
+		return Objects.equals(endpoint, that.endpoint) && Objects.equals(withPathStyleAccessEnabled, that.withPathStyleAccessEnabled) && storageClass == that.storageClass;
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(scheme, hostname, port, withPathStyleAccessEnabled, storageClass);
+		return Objects.hash(endpoint, withPathStyleAccessEnabled, storageClass);
 	}
 }

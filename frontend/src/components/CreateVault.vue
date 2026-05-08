@@ -823,7 +823,7 @@ async function validateVaultDetails() {
             onCreateError.value = new StorageProfileError(t('CreateVaultS3.error.missingBucket'));
             return;
         }
-        const endpoint = (selectedBackend.value.scheme && selectedBackend.value.hostname && selectedBackend.value.port) ? `${selectedBackend.value.scheme}://${selectedBackend.value.hostname}:${selectedBackend.value.port}` : undefined;
+        const endpoint = selectedBackend.value.endpoint;
 
     try {
       const headBucketClient = new S3Client({
@@ -1139,8 +1139,9 @@ async function createVault() {
         });
     }
     // \ end katta extension
-    var minio = (!isPermanent.value) && (selectedBackend.value.hostname != null);
-    var aws = (!isPermanent.value) && ((selectedBackend.value.hostname == null) || isAwsHostname(selectedBackend.value.hostname ));
+    var hostname = endpointHostname(selectedBackend.value);
+    var minio = (!isPermanent.value) && (hostname != null);
+    var aws = (!isPermanent.value) && ((hostname == null) || isAwsHostname(hostname));
 
     await backend.vaults.createOrUpdateVault(vault.value, aws, minio);
     await backend.vaults.grantAccess(vault.value.id, ownerGrant);
@@ -1248,13 +1249,24 @@ function setRegionsOnSelectStorage(storage: StorageProfileDto){
     console.log('   isPermanent: ' + isPermanent.value);
 }
 
+function endpointHostname(profile: StorageProfileDto): string | undefined {
+  if (!profile.endpoint) {
+    return undefined;
+  }
+  try {
+    return new URL(profile.endpoint).hostname;
+  } catch {
+    return undefined;
+  }
+}
+
 async function uploadVaultTemplate() {
   onUploadTemplateError.value = null;
   try {
     if (!selectedBackend.value) {
         throw new Error('Invalid state.');
     }
-    const endpoint = (selectedBackend.value.scheme && selectedBackend.value.hostname && selectedBackend.value.port) ? `${selectedBackend.value.scheme}://${selectedBackend.value.hostname}:${selectedBackend.value.port}` : undefined;
+    const endpoint = selectedBackend.value.endpoint;
     const client = new S3Client({
         region: selectedRegion.value,
         endpoint: endpoint,

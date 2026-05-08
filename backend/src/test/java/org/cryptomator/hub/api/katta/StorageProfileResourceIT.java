@@ -50,9 +50,7 @@ public class StorageProfileResourceIT {
 					"AWS S3 static",
 					StorageProfileDto.Protocol.s3static,
 					false,
-					"https",
 					null,
-					443,
 					false,
 					StorageProfileS3StaticDto.S3_STORAGE_CLASSES.STANDARD
 			);
@@ -72,8 +70,6 @@ public class StorageProfileResourceIT {
 					"AWS S3 STS",
 					StorageProfileDto.Protocol.valueOf("s3static"),
 					false,
-					null,
-					null,
 					null,
 					false,
 					StorageProfileS3StaticDto.S3_STORAGE_CLASSES.STANDARD,
@@ -156,9 +152,7 @@ public class StorageProfileResourceIT {
 					"AWS S3 static",
 					StorageProfileDto.Protocol.s3static,
 					false,
-					"https",
 					null,
-					443,
 					false,
 					StorageProfileS3StaticDto.S3_STORAGE_CLASSES.STANDARD
 			);
@@ -176,8 +170,6 @@ public class StorageProfileResourceIT {
 					"AWS S3 STS",
 					StorageProfileDto.Protocol.valueOf("s3static"),
 					false,
-					null,
-					null,
 					null,
 					false,
 					StorageProfileS3StaticDto.S3_STORAGE_CLASSES.STANDARD,
@@ -222,8 +214,6 @@ public class StorageProfileResourceIT {
 					"AWS S3 STS",
 					StorageProfileDto.Protocol.valueOf("s3static"),
 					false,
-					null,
-					null,
 					null,
 					false,
 					StorageProfileS3StaticDto.S3_STORAGE_CLASSES.STANDARD,

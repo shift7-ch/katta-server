@@ -19,9 +19,7 @@ CREATE TABLE "storage_profile_s3_static"
     "id"        UUID NOT NULL,
 
     -- (1) bucket creation, template upload and client profile
-    "scheme"    VARCHAR,
-    "hostname"  VARCHAR,
-    "port"      INT4,
+    "endpoint"  VARCHAR,
     "withPathStyleAccessEnabled"
                 bool NOT NULL,
     "storageClass" storage_class NOT NULL,

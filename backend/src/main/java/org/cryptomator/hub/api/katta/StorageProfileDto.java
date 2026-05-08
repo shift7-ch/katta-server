@@ -1,5 +1,6 @@
 package org.cryptomator.hub.api.katta;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
 import jakarta.persistence.Id;
@@ -27,6 +28,7 @@ import java.util.UUID;
 		discriminatorProperty = "protocol"
 )
 // although we have a dto hierarchy (StorageProfileDto <- StorageProfileS3Dto <- StorageProfileS3STSDto), the DB schema keeps the the tables separate (without foreign keys). There is one common GET service for listing and specific endpoints for POSTing profiles. Future profiles should inherit from StorageProfileDto. Serialized dtos are kept apart by a discriminator property, the openapi generators can de-serialized using it.
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public abstract sealed class StorageProfileDto permits StorageProfileS3StaticDto {
 	public enum Protocol {
 		s3static("S3STATIC"),

@@ -1,0 +1,2941 @@
+---
+openapi: 3.1.0
+components:
+  schemas:
+    AccessTokenResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+        issued_token_type:
+          type: string
+        token_type:
+          type: string
+        expires_in:
+          type: integer
+          format: int64
+        scope:
+          type: string
+        refresh_token:
+          type: string
+    AuditEventDto:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        timestamp:
+          $ref: "#/components/schemas/Instant"
+    AuthorityDto:
+      oneOf:
+      - $ref: "#/components/schemas/UserDto"
+      - $ref: "#/components/schemas/GroupDto"
+      - $ref: "#/components/schemas/MemberDto"
+      title: Authority
+      discriminator:
+        propertyName: type
+        mapping:
+          USER: "#/components/schemas/UserDto"
+          GROUP: "#/components/schemas/GroupDto"
+          MEMBER: "#/components/schemas/MemberDto"
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          $ref: "#/components/schemas/Type"
+        name:
+          type: string
+        pictureUrl:
+          type: string
+    BillingDto:
+      type: object
+      properties:
+        hubId:
+          type: string
+        email:
+          type: string
+        licensedSeats:
+          type: integer
+          format: int32
+        usedSeats:
+          type: integer
+          format: int32
+        issuedAt:
+          $ref: "#/components/schemas/Instant"
+        expiresAt:
+          $ref: "#/components/schemas/Instant"
+        managedInstance:
+          type: boolean
+        licenseKey:
+          type: string
+    ConfigDto:
+      type: object
+      properties:
+        keycloakUrl:
+          type: string
+        keycloakRealm:
+          type: string
+        keycloakClientIdHub:
+          type: string
+        keycloakClientIdCryptomator:
+          type: string
+        keycloakAuthEndpoint:
+          type: string
+        keycloakTokenEndpoint:
+          type: string
+        serverTime:
+          $ref: "#/components/schemas/Instant"
+        apiLevel:
+          type: integer
+          format: int32
+        entitlements:
+          $ref: "#/components/schemas/HubLicenseEntitlements"
+        billingUrl:
+          type: string
+        keycloakClientIdCryptomatorVaults:
+          type: string
+        uuid:
+          type: string
+    CreateGroupDto:
+      type: object
+      required:
+      - name
+      properties:
+        name:
+          type: string
+        pictureUrl:
+          type: string
+          maxLength: 255
+    CreateS3STSBucketDto:
+      type: object
+      properties:
+        vaultId:
+          type: string
+        storageConfigId:
+          $ref: "#/components/schemas/UUID"
+        vaultUvf:
+          type: string
+        dirUvf:
+          type: string
+        rootDirHash:
+          type: string
+        awsAccessKey:
+          type: string
+        awsSecretKey:
+          type: string
+        sessionToken:
+          type: string
+        region:
+          type: string
+    CreateUserDto:
+      type: object
+      required:
+      - name
+      - email
+      - firstName
+      - lastName
+      - password
+      - realmRoles
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        password:
+          type: string
+        pictureUrl:
+          type: string
+          maxLength: 255
+        groupIds:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+        realmRoles:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/RealmRole"
+    DeviceDto:
+      type: object
+      properties:
+        id:
+          type: string
+          pattern: "[-_.a-zA-Z0-9]*"
+        name:
+          type: string
+          pattern: "[^*<>\"]*"
+        type:
+          $ref: "#/components/schemas/Type1"
+        publicKey:
+          type: string
+          pattern: "[+/A-Za-z0-9]+=*"
+        userPrivateKey:
+          type: string
+          pattern: "[-_A-Za-z0-9]+=*\\.[-_A-Za-z0-9]*=*\\.[-_A-Za-z0-9]*=*\\.[-_A-Za-z0-9]+=*\\\
+            .[-_A-Za-z0-9]*=*"
+        owner:
+          type: string
+          pattern: "[-_.a-zA-Z0-9]*"
+        creationTime:
+          $ref: "#/components/schemas/Instant"
+        lastIpAddress:
+          type: string
+        lastAccessTime:
+          $ref: "#/components/schemas/Instant"
+        legacyDevice:
+          type: boolean
+      required:
+      - name
+      - publicKey
+      - userPrivateKey
+    GroupDto:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          $ref: "#/components/schemas/Type"
+        name:
+          type: string
+        pictureUrl:
+          type: string
+        memberSize:
+          type: integer
+          format: int32
+        vaultCount:
+          type: integer
+          format: int32
+    HubLicenseEntitlements:
+      type: object
+      properties:
+        seats:
+          type: integer
+          format: int64
+        showTrialHint:
+          type: boolean
+        auditLogRetentionDays:
+          type: integer
+          format: int64
+        emergencyAccessEnabled:
+          type: boolean
+        keycloakAccessEnabled:
+          type: boolean
+        iosLicense:
+          type: string
+        androidLicense:
+          type: string
+        desktopLicense:
+          type: string
+    Instant:
+      type: string
+      format: date-time
+      examples:
+      - 2022-03-10T16:15:50Z
+    LicenseUserInfoDto:
+      type: object
+      properties:
+        licensedSeats:
+          type: integer
+          format: int32
+        usedSeats:
+          type: integer
+          format: int32
+        expiresAt:
+          $ref: "#/components/schemas/Instant"
+    MemberDto:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          $ref: "#/components/schemas/Type"
+        name:
+          type: string
+        pictureUrl:
+          type: string
+        ecdhPublicKey:
+          type: string
+        ecdsaPublicKey:
+          type: string
+        vaultRole:
+          $ref: "#/components/schemas/Role"
+        memberSize:
+          type: integer
+          format: int32
+    Protocol:
+      type: string
+      enum:
+      - S3STATIC
+      - S3STS
+    RealmRole:
+      type: string
+      enum:
+      - user
+      - admin
+      - create-vaults
+    RecoveredKeyShareDto:
+      type: object
+      properties:
+        processPrivateKey:
+          type: string
+          pattern: "[-_A-Za-z0-9]+=*\\.[-_A-Za-z0-9]*=*\\.[-_A-Za-z0-9]*=*\\.[-_A-Za-z0-9]+=*\\\
+            .[-_A-Za-z0-9]*=*"
+        unrecoveredKeyShare:
+          type: string
+          pattern: "[-_A-Za-z0-9]+=*\\.[-_A-Za-z0-9]*=*\\.[-_A-Za-z0-9]*=*\\.[-_A-Za-z0-9]+=*\\\
+            .[-_A-Za-z0-9]*=*"
+        recoveredKeyShare:
+          type: string
+          pattern: "[-_A-Za-z0-9]+=*\\.[-_A-Za-z0-9]*=*\\.[-_A-Za-z0-9]*=*\\.[-_A-Za-z0-9]+=*\\\
+            .[-_A-Za-z0-9]*=*"
+        signedProcessInfo:
+          type: string
+          pattern: "[-_A-Za-z0-9]+=*\\.[-_A-Za-z0-9]*=*\\.[-_A-Za-z0-9]*=*"
+    RecoveryProcessDto:
+      type: object
+      required:
+      - id
+      - vaultId
+      - type
+      - processPublicKey
+      - recoveredKeyShares
+      properties:
+        id:
+          $ref: "#/components/schemas/UUID"
+        vaultId:
+          $ref: "#/components/schemas/UUID"
+        type:
+          $ref: "#/components/schemas/Type2"
+        details:
+          type: string
+        requiredKeyShares:
+          type: integer
+          format: int32
+          minimum: 2
+        processPublicKey:
+          type: string
+        recoveredKeyShares:
+          type: object
+          additionalProperties:
+            $ref: "#/components/schemas/RecoveredKeyShareDto"
+          minProperties: 1
+    Role:
+      type: string
+      enum:
+      - MEMBER
+      - OWNER
+    S3_SERVERSIDE_ENCRYPTION:
+      type: string
+      enum:
+      - NONE
+      - SSE_AES256
+      - SSE_KMS_DEFAULT
+    S3_STORAGE_CLASSES:
+      type: string
+      enum:
+      - STANDARD
+      - INTELLIGENT_TIERING
+      - STANDARD_IA
+      - ONEZONE_IA
+      - REDUCED_REDUNDANCY
+      - GLACIER
+      - GLACIER_IR
+      - DEEP_ARCHIVE
+    SettingsDto:
+      type: object
+      properties:
+        hubId:
+          type: string
+        wotMaxDepth:
+          type: integer
+          format: int32
+          maximum: 9
+          minimum: 0
+        wotIdVerifyLen:
+          type: integer
+          format: int32
+          minimum: 0
+        enableEmergencyAccess:
+          type: boolean
+        defaultRequiredEmergencyKeyShares:
+          type: integer
+          format: int32
+          minimum: 0
+        defaultMinMembers:
+          type: integer
+          format: int32
+          minimum: 0
+        allowChoosingEmergencyCouncil:
+          type: boolean
+        emergencyCouncilMemberIds:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+      required:
+      - emergencyCouncilMemberIds
+    StorageProfileDto:
+      oneOf:
+      - $ref: "#/components/schemas/StorageProfileS3StaticDto"
+      - $ref: "#/components/schemas/StorageProfileS3STSDto"
+      title: StorageProfile
+      discriminator:
+        propertyName: protocol
+        mapping:
+          S3STATIC: "#/components/schemas/StorageProfileS3StaticDto"
+          S3STS: "#/components/schemas/StorageProfileS3STSDto"
+      type: object
+      required:
+      - id
+      - name
+      - protocol
+      - archived
+      properties:
+        id:
+          description: Technical identifier for a storage profile. Must be unique
+            UUID. Clients will use this as vendor in profile and provider in vault
+            bookmark
+          type: string
+          $ref: "#/components/schemas/UUID"
+        name:
+          type: string
+          description: Displayed when choosing type of a new vault in dropdown.
+        protocol:
+          description: "Storage protocol: S3 (permanent credentials) or S3STS (STS)."
+          type: string
+          $ref: "#/components/schemas/Protocol"
+        archived:
+          type: boolean
+          description: "For archived storage profiles, no vaults can be created any\
+            \ more."
+    StorageProfileS3STSDto:
+      title: StorageProfileS3STSDto
+      type: object
+      required:
+      - id
+      - name
+      - protocol
+      - archived
+      - storageClass
+      - region
+      - regions
+      - bucketPrefix
+      - stsRoleCreateBucketClient
+      - stsRoleCreateBucketHub
+      - bucketVersioning
+      - bucketEncryption
+      - stsRoleAccessBucketAssumeRoleWithWebIdentity
+      - stsSessionTag
+      properties:
+        id:
+          description: Technical identifier for a storage profile. Must be unique
+            UUID. Clients will use this as vendor in profile and provider in vault
+            bookmark
+          type: string
+          $ref: "#/components/schemas/UUID"
+        name:
+          type: string
+          description: Displayed when choosing type of a new vault in dropdown.
+        protocol:
+          description: "Storage protocol: S3 (permanent credentials) or S3STS (STS)."
+          type: string
+          $ref: "#/components/schemas/Protocol"
+        archived:
+          type: boolean
+          description: "For archived storage profiles, no vaults can be created any\
+            \ more."
+        endpoint:
+          type:
+          - string
+          - "null"
+          description: "Full S3 endpoint URL for template upload/bucket creation.\
+            \ If unset, defaults to AWS SDK defaults."
+          examples:
+          - https://s3-us-gov-west-1.amazonaws.com
+        withPathStyleAccessEnabled:
+          type: boolean
+          description: Whether to use path style for S3 endpoint for template upload/bucket
+            creation.
+          examples:
+          - false
+          default: false
+        storageClass:
+          description: Storage class for upload. Defaults to STANDARD
+          type: string
+          examples:
+          - STANDARD
+          $ref: "#/components/schemas/S3_STORAGE_CLASSES"
+        region:
+          type: string
+          description: Default region selected in the frontend/client to create bucket
+            in.
+          examples:
+          - us-east-1
+          default: us-east-1
+        regions:
+          type: array
+          items:
+            type: string
+          description: List of selectable regions in the frontend/client to create
+            bucket in. Defaults to full list from AWS SDK.
+        bucketPrefix:
+          type: string
+          description: Buckets are created with name <bucket prefix><vault UUID>.
+          examples:
+          - katta
+        stsRoleCreateBucketClient:
+          type: string
+          description: "STS role for clients to assume to create buckets. Will be\
+            \ the same as stsRoleCreateBucketHub for AWS, different for MinIO."
+          examples:
+          - arn:aws:iam::<ACCOUNT ID>:role/katta-createbucket
+        stsRoleCreateBucketHub:
+          type: string
+          description: "STS role for frontend to assume to create buckets (used with\
+            \ inline policy and passed to hub storage). Will be the same as stsRoleCreateBucketClient\
+            \ for AWS, different for MinIO."
+          examples:
+          - arn:aws:iam::<ACCOUNT ID>:role/katta-createbucket
+        stsEndpoint:
+          type:
+          - string
+          - "null"
+          description: STS endpoint to use for AssumeRoleWithWebIdentity and AssumeRole
+            for getting a temporary access token passed to the storage. Defaults to
+            AWS SDK default.
+        bucketVersioning:
+          type: boolean
+          description: Enable bucket versioning upon bucket creation
+          default: true
+        bucketAcceleration:
+          type:
+          - boolean
+          - "null"
+          description: Enable bucket versioning upon bucket creation (null for MinIO)
+        bucketEncryption:
+          description: Enable bucket versioning upon bucket creation
+          type: string
+          $ref: "#/components/schemas/S3_SERVERSIDE_ENCRYPTION"
+        stsRoleAccessBucketAssumeRoleWithWebIdentity:
+          type: string
+          description: roleArn to for STS AssumeRoleWithWebIdentity (AWS and MinIO)
+          examples:
+          - arn:aws:iam::930717317329:role/katta_chain_01
+        stsRoleAccessBucketAssumeRoleTaggedSession:
+          type:
+          - string
+          - "null"
+          description: "roleArn to assume for STS AssumeRole in role chaining (AWS\
+            \ only, not MinIO)"
+          examples:
+          - arn:aws:iam::930717317329:role/katta_chain_02
+        stsDurationSeconds:
+          type:
+          - integer
+          - "null"
+          format: int32
+          description: Token lifetime for STS tokens assumed. Defaults to AWS/MinIO
+            defaults
+        stsSessionTag:
+          type: string
+          description: "Session tag to use for role chaining (AWS only, not MinIO).\
+            \ Defaults to \"Vault\""
+          default: Vault
+    StorageProfileS3StaticDto:
+      title: StorageProfileS3StaticDto
+      type: object
+      required:
+      - id
+      - name
+      - protocol
+      - archived
+      - storageClass
+      properties:
+        id:
+          description: Technical identifier for a storage profile. Must be unique
+            UUID. Clients will use this as vendor in profile and provider in vault
+            bookmark
+          type: string
+          $ref: "#/components/schemas/UUID"
+        name:
+          type: string
+          description: Displayed when choosing type of a new vault in dropdown.
+        protocol:
+          description: "Storage protocol: S3 (permanent credentials) or S3STS (STS)."
+          type: string
+          $ref: "#/components/schemas/Protocol"
+        archived:
+          type: boolean
+          description: "For archived storage profiles, no vaults can be created any\
+            \ more."
+        endpoint:
+          type:
+          - string
+          - "null"
+          description: "Full S3 endpoint URL for template upload/bucket creation.\
+            \ If unset, defaults to AWS SDK defaults."
+          examples:
+          - https://s3-us-gov-west-1.amazonaws.com
+        withPathStyleAccessEnabled:
+          type: boolean
+          description: Whether to use path style for S3 endpoint for template upload/bucket
+            creation.
+          examples:
+          - false
+          default: false
+        storageClass:
+          description: Storage class for upload. Defaults to STANDARD
+          type: string
+          examples:
+          - STANDARD
+          $ref: "#/components/schemas/S3_STORAGE_CLASSES"
+    TrustedUserDto:
+      type: object
+      properties:
+        trustedUserId:
+          type: string
+        signatureChain:
+          type: array
+          items:
+            type: string
+    Type:
+      type: string
+      enum:
+      - USER
+      - GROUP
+    Type1:
+      type: string
+      enum:
+      - BROWSER
+      - DESKTOP
+      - MOBILE
+    Type2:
+      type: string
+      enum:
+      - CHANGE_PERMISSIONS
+      - COUNCIL_CHANGE
+    UUID:
+      type: string
+      format: uuid
+      pattern: "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}"
+    UpdateGroupDto:
+      type: object
+      required:
+      - name
+      properties:
+        name:
+          type: string
+        pictureUrl:
+          type: string
+          maxLength: 255
+    UpdateUserDto:
+      type: object
+      properties:
+        email:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        password:
+          type: string
+        pictureUrl:
+          type: string
+          maxLength: 255
+        realmRoles:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/RealmRole"
+      required:
+      - realmRoles
+    UserDto:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          $ref: "#/components/schemas/Type"
+        name:
+          type: string
+        pictureUrl:
+          type: string
+        email:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        language:
+          type: string
+        realmRoles:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+        enabled:
+          type: boolean
+        devices:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/DeviceDto"
+        ecdhPublicKey:
+          type: string
+        ecdsaPublicKey:
+          type: string
+        privateKeys:
+          type: string
+        setupCode:
+          type: string
+        publicKey:
+          type: string
+          deprecated: true
+        privateKey:
+          type: string
+          deprecated: true
+    VaultDto:
+      type: object
+      required:
+      - id
+      - name
+      properties:
+        id:
+          $ref: "#/components/schemas/UUID"
+        name:
+          type: string
+          pattern: "[^*<>\"]*"
+        creationTime:
+          $ref: "#/components/schemas/Instant"
+        description:
+          type: string
+          pattern: "[^*<>\"]*"
+        archived:
+          type: boolean
+        requiredEmergencyKeyShares:
+          type: integer
+          format: int32
+          minimum: 0
+        emergencyKeyShares:
+          type: object
+          additionalProperties:
+            type: string
+        uvfMetadataFile:
+          type: string
+        uvfKeySet:
+          type: string
+        masterkey:
+          type: string
+          pattern: "[+/A-Za-z0-9]+=*"
+        iterations:
+          type: integer
+          format: int32
+        salt:
+          type: string
+          pattern: "[+/A-Za-z0-9]+=*"
+        authPublicKey:
+          type: string
+          pattern: "[+/A-Za-z0-9]+=*"
+        authPrivateKey:
+          type: string
+          pattern: "[+/A-Za-z0-9]+=*"
+    VaultDtoWithRole:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/UUID"
+        name:
+          type: string
+        description:
+          type: string
+        archived:
+          type: boolean
+        creationTime:
+          $ref: "#/components/schemas/Instant"
+        role:
+          $ref: "#/components/schemas/Role"
+    VersionDto:
+      type: object
+      properties:
+        hubVersion:
+          type: string
+        keycloakVersion:
+          type: string
+    WithCounts:
+      type: object
+      properties:
+        lastName:
+          type: string
+        devices:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/DeviceDto"
+        pictureUrl:
+          type: string
+        language:
+          type: string
+        publicKey:
+          type: string
+          deprecated: true
+        type:
+          $ref: "#/components/schemas/Type"
+        enabled:
+          type: boolean
+        firstName:
+          type: string
+        realmRoles:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+        privateKey:
+          type: string
+          deprecated: true
+        ecdsaPublicKey:
+          type: string
+        setupCode:
+          type: string
+        ecdhPublicKey:
+          type: string
+        privateKeys:
+          type: string
+        name:
+          type: string
+        id:
+          type: string
+        email:
+          type: string
+        devicesCount:
+          type: integer
+          format: int64
+        groupsCount:
+          type: integer
+          format: int64
+        accessibleVaultCount:
+          type: integer
+          format: int64
+    WithDetails:
+      type: object
+      properties:
+        memberSize:
+          type: integer
+          format: int32
+        vaultCount:
+          type: integer
+          format: int32
+        pictureUrl:
+          type: string
+        name:
+          type: string
+        id:
+          type: string
+        type:
+          $ref: "#/components/schemas/Type"
+        members:
+          type: array
+          items:
+            $ref: "#/components/schemas/AuthorityDto"
+        vaults:
+          type: array
+          items:
+            $ref: "#/components/schemas/VaultDtoWithRole"
+    WithDetails1:
+      type: object
+      properties:
+        lastName:
+          type: string
+        devices:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/DeviceDto"
+        pictureUrl:
+          type: string
+        language:
+          type: string
+        publicKey:
+          type: string
+          deprecated: true
+        type:
+          $ref: "#/components/schemas/Type"
+        enabled:
+          type: boolean
+        firstName:
+          type: string
+        realmRoles:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+        privateKey:
+          type: string
+          deprecated: true
+        ecdsaPublicKey:
+          type: string
+        setupCode:
+          type: string
+        ecdhPublicKey:
+          type: string
+        privateKeys:
+          type: string
+        name:
+          type: string
+        id:
+          type: string
+        email:
+          type: string
+        groups:
+          type: array
+          items:
+            $ref: "#/components/schemas/GroupDto"
+        accessibleVaults:
+          type: array
+          items:
+            $ref: "#/components/schemas/VaultDtoWithRole"
+        legacyDevices:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/DeviceDto"
+  securitySchemes:
+    SecurityScheme:
+      type: openIdConnect
+      description: Authentication
+paths:
+  /api/auditlog:
+    get:
+      summary: list all auditlog entries within a period
+      description: list all auditlog entries from a period specified by a start and
+        end date
+      parameters:
+      - description: "the start date of the period as ISO 8601 datetime string, inclusive"
+        in: query
+        name: startDate
+        schema:
+          $ref: "#/components/schemas/Instant"
+      - description: "the end date of the period as ISO 8601 datetime string, exclusive"
+        in: query
+        name: endDate
+        schema:
+          $ref: "#/components/schemas/Instant"
+      - description: "The smallest (asc ordering) or highest (desc ordering) audit\
+          \ entry id, not included in results. Used for pagination. "
+        in: query
+        name: paginationId
+        schema:
+          type: integer
+          format: int64
+      - description: The order of the queried table. Determines if most recent (desc)
+          or oldest entries (asc) are considered first. Allowed Values are 'desc'
+          (default) or 'asc'. Used for pagination.
+        in: query
+        name: order
+        schema:
+          type: string
+          default: desc
+      - description: the maximum number of entries to return. Must be between 1 and
+          100.
+        in: query
+        name: pageSize
+        schema:
+          type: integer
+          format: int32
+          default: 20
+      - description: the list of type of events to return. Empty list is all events.
+        in: query
+        name: type
+        schema:
+          type: array
+          items:
+            type: string
+      responses:
+        "200":
+          description: Body contains list of events in the specified time interval
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AuditEventDto"
+        "400":
+          description: "startDate or endDate not specified, startDate > endDate, order\
+            \ specified and not in ['asc','desc'], pageSize not in [1 .. 100] or type\
+            \ is not valid"
+        "402":
+          description: Community license used or license expired
+        "403":
+          description: requesting user does not have admin role
+        "401":
+          description: Not Authorized
+      tags:
+      - Audit Log Resource
+      security:
+      - SecurityScheme:
+        - admin
+  /api/authorities:
+    get:
+      summary: lists all authorities matching the given ids
+      description: lists for each id in the list its corresponding authority. Ignores
+        all id's where an authority cannot be found
+      parameters:
+      - name: ids
+        in: query
+        schema:
+          type: array
+          items:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AuthorityDto"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      tags:
+      - Authority Resource
+      security:
+      - SecurityScheme:
+        - user
+  /api/authorities/search:
+    get:
+      summary: search authority by name
+      parameters:
+      - name: query
+        in: query
+        schema:
+          type: string
+          pattern: \S
+        required: true
+      - name: withMemberSize
+        in: query
+        schema:
+          type: boolean
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AuthorityDto"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      tags:
+      - Authority Resource
+      security:
+      - SecurityScheme:
+        - user
+  /api/billing:
+    get:
+      summary: get the billing information
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BillingDto"
+        "403":
+          description: only admins are allowed to get the billing information
+        "401":
+          description: Not Authorized
+      tags:
+      - Billing Resource
+      security:
+      - SecurityScheme:
+        - admin
+  /api/billing/token:
+    put:
+      summary: set the token
+      requestBody:
+        content:
+          text/plain:
+            schema:
+              type: string
+              pattern: "[-_A-Za-z0-9]+=*\\.[-_A-Za-z0-9]*=*\\.[-_A-Za-z0-9]*=*"
+        required: true
+      responses:
+        "204":
+          description: token set
+        "400":
+          description: "token is invalid (e.g., expired or invalid signature)"
+        "403":
+          description: only admins are allowed to set the token
+        "401":
+          description: Not Authorized
+      tags:
+      - Billing Resource
+      security:
+      - SecurityScheme:
+        - admin
+  /api/config:
+    get:
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConfigDto"
+      summary: Get Config
+      tags:
+      - Config Resource
+  /api/devices:
+    get:
+      summary: lists all devices matching the given ids
+      description: lists for each id in the list its corresponding device. Ignores
+        all id's where a device cannot be found
+      parameters:
+      - name: ids
+        in: query
+        schema:
+          type: array
+          items:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DeviceDto"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      tags:
+      - Device Resource
+      security:
+      - SecurityScheme:
+        - admin
+  /api/devices/has-legacy-devices:
+    get:
+      summary: checks if any user has legacy devices
+      deprecated: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: boolean
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      tags:
+      - Device Resource
+      security:
+      - SecurityScheme:
+        - admin
+  /api/devices/legacy-devices:
+    get:
+      summary: lists all legacy devices matching the given ids
+      description: lists for each id in the list its corresponding legacy device.
+        Ignores all id's where a device cannot be found
+      deprecated: true
+      parameters:
+      - name: ids
+        in: query
+        schema:
+          type: array
+          items:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DeviceDto"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      tags:
+      - Device Resource
+      security:
+      - SecurityScheme:
+        - admin
+  /api/devices/{deviceId}:
+    delete:
+      summary: removes a device
+      description: the device will be only be removed if the current user is the owner
+      parameters:
+      - name: deviceId
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: "[-_.a-zA-Z0-9]*"
+      responses:
+        "204":
+          description: device removed
+        "404":
+          description: device not found with current user
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      tags:
+      - Device Resource
+      security:
+      - SecurityScheme:
+        - user
+    get:
+      summary: get the device
+      description: the device must be owned by the currently logged-in user
+      parameters:
+      - name: deviceId
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: "[-_.a-zA-Z0-9]*"
+      responses:
+        "200":
+          description: Device found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeviceDto"
+        "404":
+          description: Device not found or owned by a different user
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      tags:
+      - Device Resource
+      security:
+      - SecurityScheme:
+        - user
+    put:
+      summary: creates or updates a device
+      description: the device will be owned by the currently logged-in user
+      parameters:
+      - name: deviceId
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: "[-_.a-zA-Z0-9]*"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeviceDto"
+        required: true
+      responses:
+        "201":
+          description: Device created or updated
+        "409":
+          description: Device with this key already exists
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+        "400":
+          description: Bad Request
+      tags:
+      - Device Resource
+      security:
+      - SecurityScheme:
+        - user
+  /api/devices/{deviceId}/legacy-access-tokens:
+    get:
+      summary: list legacy access tokens
+      description: "get all legacy access tokens for this device ({vault1: token1,\
+        \ vault1: token2, ...}). The device must be owned by the currently logged-in\
+        \ user"
+      deprecated: true
+      parameters:
+      - name: deviceId
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: "[-_.a-zA-Z0-9]*"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: string
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      tags:
+      - Device Resource
+      security:
+      - SecurityScheme:
+        - user
+  /api/devices/{deviceId}/legacy-device:
+    delete:
+      summary: removes a legacy device
+      description: the legacy device will be only be removed if the current user is
+        the owner
+      deprecated: true
+      parameters:
+      - name: deviceId
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: "[-_.a-zA-Z0-9]*"
+      responses:
+        "204":
+          description: legacy device removed
+        "404":
+          description: legacy device not found with current user
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      tags:
+      - Device Resource
+      security:
+      - SecurityScheme:
+        - user
+  /api/emergency-access/{processId}:
+    put:
+      summary: starts a new recovery process
+      parameters:
+      - name: processId
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/UUID"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecoveryProcessDto"
+        required: true
+      responses:
+        "204":
+          description: process created
+        "400":
+          description: "invalid request, e.g. missing required fields"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      tags:
+      - Emergency Access Resource
+      security:
+      - SecurityScheme:
+        - user
+  /api/emergency-access/{processId}/abort:
+    delete:
+      summary: aborts an existing recovery process
+      parameters:
+      - name: processId
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/UUID"
+      responses:
+        "204":
+          description: existing recovery process aborted
+        "404":
+          description: existing recovery process not found
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      tags:
+      - Emergency Access Resource
+      security:
+      - SecurityScheme:
+        - user
+  /api/emergency-access/{processId}/complete:
+    delete:
+      summary: completes an existing recovery process
+      parameters:
+      - name: processId
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/UUID"
+      responses:
+        "204":
+          description: existing recovery process completed
+        "404":
+          description: existing recovery process not found
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      tags:
+      - Emergency Access Resource
+      security:
+      - SecurityScheme:
+        - user
+  /api/emergency-access/{processId}/recovered-key-shares:
+    post:
+      summary: adds recovered key share
+      parameters:
+      - name: processId
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/UUID"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecoveredKeyShareDto"
+        required: true
+      responses:
+        "204":
+          description: key share added
+        "400":
+          description: "invalid request, e.g. missing required fields"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      tags:
+      - Emergency Access Resource
+      security:
+      - SecurityScheme:
+        - user
+  /api/emergency-access/{vaultId}:
+    get:
+      summary: finds an existing recovery process
+      parameters:
+      - name: vaultId
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/UUID"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RecoveryProcessDto"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      tags:
+      - Emergency Access Resource
+      security:
+      - SecurityScheme:
+        - user
+  /api/groups:
+    get:
+      summary: list all groups
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/GroupDto"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      tags:
+      - Groups Resource
+      security:
+      - SecurityScheme:
+        - admin
+    post:
+      summary: create a new group in Keycloak
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateGroupDto"
+        required: true
+      responses:
+        "201":
+          description: group created
+        "400":
+          description: invalid input
+        "409":
+          description: group name already exists
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      tags:
+      - Groups Resource
+      security:
+      - SecurityScheme:
+        - admin
+  /api/groups/{groupId}:
+    put:
+      summary: update a group in Keycloak
+      parameters:
+      - name: groupId
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: "[-_.a-zA-Z0-9]*"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateGroupDto"
+        required: true
+      responses:
+        "200":
+          description: group updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GroupDto"
+        "404":
+          description: group not found
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+        "400":
+          description: Bad Request
+      tags:
+      - Groups Resource
+      security:
+      - SecurityScheme:
+        - admin
+    get:
+      summary: get a specific group
+      parameters:
+      - name: groupId
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: "[-_.a-zA-Z0-9]*"
+      responses:
+        "200":
+          description: group found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WithDetails"
+        "404":
+          description: group not found
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      tags:
+      - Groups Resource
+      security:
+      - SecurityScheme:
+        - admin
+    delete:
+      summary: delete a group from Keycloak
+      parameters:
+      - name: groupId
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: "[-_.a-zA-Z0-9]*"
+      responses:
+        "204":
+          description: group deleted
+        "404":
+          description: group not found
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      tags:
+      - Groups Resource
+      security:
+      - SecurityScheme:
+        - admin
+  /api/groups/{groupId}/effective-members:
+    get:
+      summary: list all effective group members
+      parameters:
+      - name: groupId
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: "[-_.a-zA-Z0-9]*"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/UserDto"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      tags:
+      - Groups Resource
+      security:
+      - SecurityScheme:
+        - admin
+  /api/groups/{groupId}/members/{userId}:
+    delete:
+      summary: remove a user from a group
+      parameters:
+      - name: groupId
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: "[-_.a-zA-Z0-9]*"
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: "[-_.a-zA-Z0-9]*"
+      responses:
+        "204":
+          description: user removed from group
+        "404":
+          description: group or user not found
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      tags:
+      - Groups Resource
+      security:
+      - SecurityScheme:
+        - admin
+    post:
+      summary: add a user to a group
+      parameters:
+      - name: groupId
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: "[-_.a-zA-Z0-9]*"
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: "[-_.a-zA-Z0-9]*"
+      responses:
+        "204":
+          description: user added to group
+        "404":
+          description: group or user not found
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      tags:
+      - Groups Resource
+      security:
+      - SecurityScheme:
+        - admin
+  /api/license/refresh:
+    post:
+      summary: Refresh license information
+      description: Refreshes the license information from the license server.
+      responses:
+        "204":
+          description: License information refreshed
+        "500":
+          description: License refresh failed
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      tags:
+      - License Resource
+      security:
+      - SecurityScheme:
+        - admin
+  /api/license/user-info:
+    get:
+      summary: Get license information for regular users
+      description: "Information includes the licensed seats, the already used seats\
+        \ and if defined, the license expiration date."
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LicenseUserInfoDto"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      tags:
+      - License Resource
+      security:
+      - SecurityScheme:
+        - user
+  /api/settings:
+    put:
+      summary: update settings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SettingsDto"
+        required: true
+      responses:
+        "204":
+          description: token set
+        "400":
+          description: invalid settings
+        "403":
+          description: only admins are allowed to update settings
+        "401":
+          description: Not Authorized
+      tags:
+      - Settings Resource
+      security:
+      - SecurityScheme:
+        - admin
+    get:
+      summary: get the billing information
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SettingsDto"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      tags:
+      - Settings Resource
+      security:
+      - SecurityScheme:
+        - user
+  /api/storage/s3-token:
+    post:
+      summary: token exchange
+      description: retrieves a downscoped access token for S3.
+      parameters:
+      - name: vault
+        in: query
+        schema:
+          type: string
+      responses:
+        "200":
+          description: success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccessTokenResponse"
+        "400":
+          description: bad request
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      tags:
+      - Storage Resource
+      security:
+      - SecurityScheme:
+        - user
+  /api/storage/{vaultId}:
+    put:
+      summary: creates bucket and policy
+      description: creates an S3 bucket and uploads policy for it for call from Web
+        Client (CORS).
+      parameters:
+      - name: vaultId
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/UUID"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateS3STSBucketDto"
+        required: true
+      responses:
+        "200":
+          description: Bucket and Keycloak config created
+        "400":
+          description: Could not create bucket
+        "409":
+          description: Bucket with this name already exists
+        "410":
+          description: Storage profile is archived
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      tags:
+      - Storage Resource
+      security:
+      - SecurityScheme:
+        - user
+  /api/storageprofile:
+    get:
+      summary: get configs for storage backends
+      description: get list of configs for storage backends
+      parameters:
+      - name: archived
+        in: query
+        schema:
+          type: boolean
+      responses:
+        "200":
+          description: list of storage configuration
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StorageProfileDto"
+        "403":
+          description: not a user
+        "401":
+          description: Not Authorized
+      tags:
+      - Storage Profile Resource
+      security:
+      - SecurityScheme:
+        - user
+        - admin
+  /api/storageprofile/s3static:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StorageProfileS3StaticDto"
+        required: true
+      responses:
+        "201":
+          description: uploaded storage configuration
+        "400":
+          description: Constraint violation
+        "403":
+          description: not an admin
+        "409":
+          description: Storage profile with ID already exists
+        "401":
+          description: Not Authorized
+      summary: Upload Storage Profile
+      tags:
+      - Storage Profile Resource
+      security:
+      - SecurityScheme:
+        - admin
+  /api/storageprofile/s3sts:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StorageProfileS3STSDto"
+        required: true
+      responses:
+        "201":
+          description: uploaded storage configuration
+        "400":
+          description: Constraint violation
+        "403":
+          description: not an admin
+        "409":
+          description: Storage profile with ID already exists
+        "401":
+          description: Not Authorized
+      summary: Upload Storage Profile
+      tags:
+      - Storage Profile Resource
+      security:
+      - SecurityScheme:
+        - admin
+  /api/storageprofile/{profileId}:
+    get:
+      summary: gets a storage profile
+      parameters:
+      - name: profileId
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/UUID"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StorageProfileDto"
+        "403":
+          description: not a user
+        "401":
+          description: Not Authorized
+      tags:
+      - Storage Profile Resource
+      security:
+      - SecurityScheme:
+        - user
+        - admin
+    put:
+      summary: archive a storage profile
+      parameters:
+      - name: profileId
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/UUID"
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                archived:
+                  type: boolean
+        required: true
+      responses:
+        "204":
+          description: storage profile archived
+        "403":
+          description: not an admin
+        "401":
+          description: Not Authorized
+        "400":
+          description: Bad Request
+      tags:
+      - Storage Profile Resource
+      security:
+      - SecurityScheme:
+        - admin
+  /api/users:
+    get:
+      summary: list all users with counts
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WithCounts"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      tags:
+      - Users Resource
+      security:
+      - SecurityScheme:
+        - admin
+    post:
+      summary: create a new user in Keycloak
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateUserDto"
+        required: true
+      responses:
+        "201":
+          description: user created
+        "400":
+          description: invalid input
+        "409":
+          description: user already exists
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      tags:
+      - Users Resource
+      security:
+      - SecurityScheme:
+        - admin
+  /api/users/me:
+    put:
+      summary: update the logged-in user
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserDto"
+        required: true
+      responses:
+        "201":
+          description: user created or updated
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+        "400":
+          description: Bad Request
+      tags:
+      - Users Resource
+      security:
+      - SecurityScheme:
+        - user
+    get:
+      summary: get the logged-in user
+      parameters:
+      - name: withDevices
+        in: query
+        schema:
+          type: boolean
+      - description: adds last access values to the devices (if present)
+        in: query
+        name: withLastAccess
+        schema:
+          type: boolean
+      responses:
+        "200":
+          description: returns the current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserDto"
+        "404":
+          description: no user matching the subject of the JWT passed as Bearer Token
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      tags:
+      - Users Resource
+      security:
+      - SecurityScheme:
+        - user
+  /api/users/me-with-legacy-devices-and-access:
+    get:
+      summary: get the logged-in user
+      deprecated: true
+      responses:
+        "200":
+          description: returns the current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserDto"
+        "404":
+          description: no user matching the subject of the JWT passed as Bearer Token
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      tags:
+      - Users Resource
+      security:
+      - SecurityScheme:
+        - user
+  /api/users/me/access-tokens:
+    post:
+      summary: adds/updates user-specific vault keys
+      description: "Stores one or more vaultid-vaultkey-tuples for the currently logged-in\
+        \ user, as defined in the request body ({vault1: token1, vault2: token2, ...})."
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties:
+                type: string
+        required: true
+      responses:
+        "200":
+          description: all keys stored
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+        "400":
+          description: Bad Request
+      tags:
+      - Users Resource
+      security:
+      - SecurityScheme:
+        - user
+  /api/users/me/reset:
+    post:
+      summary: resets the user account
+      responses:
+        "204":
+          description: "deleted keys, devices and access permissions"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      tags:
+      - Users Resource
+      security:
+      - SecurityScheme:
+        - user
+  /api/users/trusted:
+    get:
+      summary: get trusted users
+      description: returns a list of users trusted by the currently logged-in user
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TrustedUserDto"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      tags:
+      - Users Resource
+      security:
+      - SecurityScheme:
+        - user
+  /api/users/trusted/{userId}:
+    put:
+      summary: adds/updates trust
+      description: Stores a signature for the given user.
+      parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          text/plain:
+            schema:
+              type: string
+        required: true
+      responses:
+        "204":
+          description: signature stored
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      tags:
+      - Users Resource
+      security:
+      - SecurityScheme:
+        - user
+    get:
+      summary: get trust detail for given user
+      description: returns the shortest found signature chain for the given user
+      parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrustedUserDto"
+        "404":
+          description: if no sufficiently short trust chain between the invoking user
+            and the user with the given id has been found
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      tags:
+      - Users Resource
+      security:
+      - SecurityScheme:
+        - user
+  /api/users/{id}:
+    put:
+      summary: update a user in Keycloak
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserDto"
+        required: true
+      responses:
+        "200":
+          description: user updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserDto"
+        "403":
+          description: user has federated identity and cannot be modified
+        "404":
+          description: user not found
+        "401":
+          description: Not Authorized
+        "400":
+          description: Bad Request
+      tags:
+      - Users Resource
+      security:
+      - SecurityScheme:
+        - admin
+    get:
+      summary: get a specific user
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: user found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WithDetails1"
+        "404":
+          description: user not found
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      tags:
+      - Users Resource
+      security:
+      - SecurityScheme:
+        - admin
+    delete:
+      summary: delete a user from Keycloak
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "204":
+          description: user deleted
+        "403":
+          description: user has federated identity and cannot be deleted
+        "404":
+          description: user not found
+        "401":
+          description: Not Authorized
+      tags:
+      - Users Resource
+      security:
+      - SecurityScheme:
+        - admin
+  /api/users/{id}/enabled:
+    put:
+      summary: enable or disable a user
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          text/plain:
+            schema:
+              type: boolean
+        required: true
+      responses:
+        "204":
+          description: user updated
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      tags:
+      - Users Resource
+      security:
+      - SecurityScheme:
+        - admin
+  /api/vaults/accessible:
+    get:
+      summary: list all accessible vaults
+      description: list all vaults that have been shared with the currently logged
+        in user or a group in wich this user is
+      parameters:
+      - name: role
+        in: query
+        schema:
+          $ref: "#/components/schemas/Role"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/VaultDto"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      tags:
+      - Vault Resource
+      security:
+      - SecurityScheme:
+        - user
+  /api/vaults/all:
+    get:
+      summary: list all vaults
+      description: list all vaults in the system
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/VaultDto"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      tags:
+      - Vault Resource
+      security:
+      - SecurityScheme:
+        - admin
+  /api/vaults/recoverable:
+    get:
+      summary: list all recoverable vaults
+      description: list all vaults that can be recovered by the currently logged in
+        user
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/VaultDto"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      tags:
+      - Vault Resource
+      security:
+      - SecurityScheme:
+        - user
+  /api/vaults/some:
+    get:
+      summary: list all vaults corresponding to the given ids
+      description: "list for each id in the list its corresponding vault. Ignores\
+        \ all id's where a vault does not exist, "
+      parameters:
+      - name: ids
+        in: query
+        schema:
+          type: array
+          items:
+            type: string
+            format: uuid
+            pattern: "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/VaultDto"
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      tags:
+      - Vault Resource
+      security:
+      - SecurityScheme:
+        - admin
+  /api/vaults/{vaultId}:
+    get:
+      summary: gets a vault
+      parameters:
+      - name: vaultId
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/UUID"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VaultDto"
+        "403":
+          description: requesting user is neither a vault member nor has the admin
+            role
+        "401":
+          description: Not Authorized
+      tags:
+      - Vault Resource
+      security:
+      - SecurityScheme:
+        - user
+    put:
+      summary: creates or updates a vault
+      description: "Creates or updates a vault with the given vault id. The creationTime\
+        \ in the vaultDto is always ignored. On creation, the current server time\
+        \ is used and the archived field is ignored. On update, only the name, description,\
+        \ and archived fields are considered."
+      parameters:
+      - description: whether configuration for STS MinIO needs to be synched to Keycloak
+          (defaults to false)
+        in: query
+        name: minio
+        schema:
+          type: boolean
+      - description: whether configuration for STS MinIO needs to be synched to AWS
+          (defaults to false)
+        in: query
+        name: aws
+        schema:
+          type: boolean
+      - name: vaultId
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/UUID"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VaultDto"
+        required: true
+      responses:
+        "200":
+          description: existing vault updated
+        "201":
+          description: new vault created
+        "402":
+          description: number of licensed seats is exceeded
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+        "400":
+          description: Bad Request
+      tags:
+      - Vault Resource
+      security:
+      - SecurityScheme:
+        - user
+  /api/vaults/{vaultId}/access-token:
+    get:
+      summary: get the user-specific vault key
+      description: "retrieves a jwe containing the vault key, encrypted for the current\
+        \ user"
+      parameters:
+      - name: vaultId
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/UUID"
+      - name: evenIfArchived
+        in: query
+        schema:
+          type: boolean
+          default: false
+      responses:
+        "200":
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: string
+        "402":
+          description: license expired or number of effective vault users that have
+            a token exceeds available license seats
+        "403":
+          description: not a vault member
+        "404":
+          description: unknown vault
+        "410":
+          description: "Vault is archived. Only returned if evenIfArchived query param\
+            \ is false or not set, otherwise the archived flag is ignored"
+        "449":
+          description: User account not yet initialized. Retry after setting up user
+        "401":
+          description: Not Authorized
+      tags:
+      - Vault Resource
+      security:
+      - SecurityScheme:
+        - user
+  /api/vaults/{vaultId}/access-tokens:
+    post:
+      summary: adds user-specific vault keys
+      description: "Stores one or more user-vaultkey-tuples, as defined in the request\
+        \ body ({user1: token1, user2: token2, ...})."
+      parameters:
+      - name: vaultId
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/UUID"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties:
+                type: string
+              minProperties: 1
+        required: true
+      responses:
+        "200":
+          description: all keys stored
+        "402":
+          description: number of users granted access exceeds available license seats
+        "403":
+          description: not a vault owner or emergency access council member
+        "404":
+          description: at least one user has not been found
+        "401":
+          description: Not Authorized
+        "400":
+          description: Bad Request
+      tags:
+      - Vault Resource
+      security:
+      - SecurityScheme:
+        - user
+  /api/vaults/{vaultId}/archived:
+    put:
+      summary: sets the archived flag of a vault
+      parameters:
+      - name: vaultId
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/UUID"
+      requestBody:
+        content:
+          text/plain:
+            schema:
+              type: boolean
+        required: true
+      responses:
+        "200":
+          description: archived flag updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VaultDto"
+        "403":
+          description: requesting user is neither a vault owner nor has the admin
+            role
+        "404":
+          description: vault not found
+        "401":
+          description: Not Authorized
+      tags:
+      - Vault Resource
+      security:
+      - SecurityScheme:
+        - user
+  /api/vaults/{vaultId}/authority/{authorityId}:
+    delete:
+      summary: remove a user or group from this vault
+      description: "revokes the given authority's access rights from this vault. If\
+        \ the given authority is no member, the request is a no-op."
+      parameters:
+      - name: authorityId
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: "[-_.a-zA-Z0-9]*"
+      - name: vaultId
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/UUID"
+      responses:
+        "204":
+          description: authority removed
+        "403":
+          description: not a vault owner
+        "401":
+          description: Not Authorized
+      tags:
+      - Vault Resource
+      security:
+      - SecurityScheme:
+        - user
+  /api/vaults/{vaultId}/claim-ownership:
+    post:
+      summary: claims ownership of a vault
+      description: "Assigns the OWNER role to the currently logged in user, who proofs\
+        \ this claim by sending a JWT signed with a private key held by users knowing\
+        \ the Vault Admin Password"
+      parameters:
+      - name: vaultId
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/UUID"
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                proof:
+                  type: string
+                  pattern: "[-_A-Za-z0-9]+=*\\.[-_A-Za-z0-9]*=*\\.[-_A-Za-z0-9]*=*"
+        required: true
+      responses:
+        "200":
+          description: ownership claimed successfully
+        "400":
+          description: incorrect proof
+        "404":
+          description: no such vault
+        "409":
+          description: owned by another user
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      tags:
+      - Vault Resource
+      security:
+      - SecurityScheme:
+        - user
+  /api/vaults/{vaultId}/groups/{groupId}:
+    put:
+      summary: adds a group to this vault or updates its role
+      parameters:
+      - name: groupId
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: "[-_.a-zA-Z0-9]*"
+      - name: vaultId
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/UUID"
+      - description: the role to grant to this group (defaults to MEMBER)
+        in: query
+        name: role
+        schema:
+          allOf:
+          - $ref: "#/components/schemas/Role"
+          - default: MEMBER
+      responses:
+        "200":
+          description: group's role updated
+        "201":
+          description: group added
+        "402":
+          description: license is expired or licensed seats would be exceeded after
+            the operation
+        "403":
+          description: not a vault owner
+        "404":
+          description: group not found
+        "401":
+          description: Not Authorized
+      tags:
+      - Vault Resource
+      security:
+      - SecurityScheme:
+        - user
+  /api/vaults/{vaultId}/keys/{deviceId}:
+    get:
+      summary: get the device-specific masterkey of a non-archived vault
+      deprecated: true
+      parameters:
+      - name: deviceId
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: "[-_.a-zA-Z0-9]*"
+      - name: vaultId
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/UUID"
+      responses:
+        "200":
+          description: OK
+        "402":
+          description: number of effective vault users exceeds available license seats
+        "403":
+          description: not authorized to access this vault
+        "410":
+          description: Vault is archived
+        "401":
+          description: Not Authorized
+      tags:
+      - Vault Resource
+      security:
+      - SecurityScheme:
+        - user
+  /api/vaults/{vaultId}/members:
+    put:
+      summary: set vault members
+      description: replaces all direct vault members with the given ones
+      parameters:
+      - name: vaultId
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/UUID"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties:
+                $ref: "#/components/schemas/Role"
+              minProperties: 1
+        required: true
+      responses:
+        "204":
+          description: members updated
+        "400":
+          description: invalid members in request body
+        "403":
+          description: not a vault owner
+        "404":
+          description: vault not found
+        "401":
+          description: Not Authorized
+      tags:
+      - Vault Resource
+      security:
+      - SecurityScheme:
+        - user
+    get:
+      summary: list vault members
+      description: list all users or groups that this vault has been shared with directly
+        (not inherited via group membership)
+      parameters:
+      - name: vaultId
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/UUID"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MemberDto"
+        "403":
+          description: not a vault owner
+        "401":
+          description: Not Authorized
+      tags:
+      - Vault Resource
+      security:
+      - SecurityScheme:
+        - user
+  /api/vaults/{vaultId}/users-requiring-access-grant:
+    get:
+      summary: list members requiring access tokens
+      description: "lists all members, that have permissions but lack an access token"
+      parameters:
+      - name: vaultId
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/UUID"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MemberDto"
+        "403":
+          description: not a vault owner
+        "401":
+          description: Not Authorized
+      tags:
+      - Vault Resource
+      security:
+      - SecurityScheme:
+        - user
+  /api/vaults/{vaultId}/users/{userId}:
+    put:
+      summary: adds a user to this vault or updates her role
+      parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: "[-_.a-zA-Z0-9]*"
+      - name: vaultId
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/UUID"
+      - description: the role to grant to this user (defaults to MEMBER)
+        in: query
+        name: role
+        schema:
+          allOf:
+          - $ref: "#/components/schemas/Role"
+          - default: MEMBER
+      responses:
+        "200":
+          description: user's role updated
+        "201":
+          description: user added
+        "402":
+          description: license is expired or licensed seats would be exceeded after
+            the operation
+        "403":
+          description: not a vault owner
+        "404":
+          description: user not found
+        "401":
+          description: Not Authorized
+      tags:
+      - Vault Resource
+      security:
+      - SecurityScheme:
+        - user
+  /api/vaults/{vaultId}/uvf/jwks.json:
+    get:
+      summary: get public vault keys
+      description: retrieves a JWK Set containing public keys related to this vault
+      parameters:
+      - name: vaultId
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/UUID"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: string
+        "404":
+          description: unknown vault
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      tags:
+      - Vault Resource
+      security:
+      - SecurityScheme:
+        - user
+  /api/vaults/{vaultId}/uvf/vault.uvf:
+    get:
+      summary: get the vault.uvf file
+      parameters:
+      - name: vaultId
+        in: path
+        required: true
+        schema:
+          $ref: "#/components/schemas/UUID"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: string
+        "404":
+          description: unknown vault
+        "401":
+          description: Not Authorized
+        "403":
+          description: Not Allowed
+      tags:
+      - Vault Resource
+      security:
+      - SecurityScheme:
+        - user
+  /api/version:
+    get:
+      summary: get version of hub and keycloak
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VersionDto"
+      tags:
+      - Version Resource
+info:
+  title: hub-backend API
+  version: 1.5.0-SNAPSHOT
+servers:
+- url: http://localhost:8080
+  description: Auto generated value
+- url: http://0.0.0.0:8080
+  description: Auto generated value

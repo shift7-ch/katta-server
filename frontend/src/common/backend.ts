@@ -284,9 +284,7 @@ export type StorageProfileDto = {
     regions: string[];
     withPathStyleAccessEnabled: boolean;
     storageClass: string;
-    scheme: string;
-    hostname: string;
-    port: number;
+    endpoint?: string;
     stsRoleAccessBucketAssumeRoleWithWebIdentity: string;
     stsRoleAccessBucketAssumeRoleTaggedSession: string;
     stsDurationSeconds: number;

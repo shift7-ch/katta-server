@@ -21,13 +21,7 @@ public class StorageProfileS3Static extends StorageProfile {
 	// - client profile (STS and permanent)
 	//======================================================================
 	@Column
-	public String scheme;
-
-	@Column
-	public String hostname;
-
-	@Column
-	public Integer port;
+	public String endpoint;
 
 	@Column
 	public Boolean withPathStyleAccessEnabled = false;

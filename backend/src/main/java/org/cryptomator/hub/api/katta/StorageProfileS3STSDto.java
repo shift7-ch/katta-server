@@ -80,8 +80,8 @@ public final class StorageProfileS3STSDto extends StorageProfileS3StaticDto {
 		// jackson
 	}
 
-	public StorageProfileS3STSDto(final UUID id, final String name, final Protocol protocol, final boolean archived, final String scheme, final String hostname, final Integer port, final boolean withPathStyleAccessEnabled, final S3_STORAGE_CLASSES storageClass, final String region, final List<String> regions, final String bucketPrefix, final String stsRoleCreateBucketClient, final String stsRoleCreateBucketHub, final String stsEndpoint, final boolean bucketVersioning, final Boolean bucketAcceleration, final S3_SERVERSIDE_ENCRYPTION bucketEncryption, final String stsRoleAccessBucketAssumeRoleWithWebIdentity, final String stsRoleAccessBucketAssumeRoleTaggedSession, final Integer stsDurationSeconds, final String stsSessionTag) {
-		super(id, name, protocol, archived, scheme, hostname, port, withPathStyleAccessEnabled, storageClass);
+	public StorageProfileS3STSDto(final UUID id, final String name, final Protocol protocol, final boolean archived, final String endpoint, final boolean withPathStyleAccessEnabled, final S3_STORAGE_CLASSES storageClass, final String region, final List<String> regions, final String bucketPrefix, final String stsRoleCreateBucketClient, final String stsRoleCreateBucketHub, final String stsEndpoint, final boolean bucketVersioning, final Boolean bucketAcceleration, final S3_SERVERSIDE_ENCRYPTION bucketEncryption, final String stsRoleAccessBucketAssumeRoleWithWebIdentity, final String stsRoleAccessBucketAssumeRoleTaggedSession, final Integer stsDurationSeconds, final String stsSessionTag) {
+		super(id, name, protocol, archived, endpoint, withPathStyleAccessEnabled, storageClass);
 		this.region = region;
 		this.regions = regions;
 		this.bucketPrefix = bucketPrefix;
@@ -103,9 +103,7 @@ public final class StorageProfileS3STSDto extends StorageProfileS3StaticDto {
 				storageProfile.name,
 				Protocol.s3sts,
 				storageProfile.archived,
-				storageProfile.scheme,
-				storageProfile.hostname,
-				storageProfile.port,
+				storageProfile.endpoint,
 				storageProfile.withPathStyleAccessEnabled,
 				S3_STORAGE_CLASSES.valueOf(storageProfile.storageClass.name()),
 				storageProfile.region,
@@ -129,9 +127,7 @@ public final class StorageProfileS3STSDto extends StorageProfileS3StaticDto {
 		storageProfile.id = this.id;
 		storageProfile.name = this.name;
 		storageProfile.archived = this.archived;
-		storageProfile.scheme = this.scheme;
-		storageProfile.hostname = this.hostname;
-		storageProfile.port = this.port;
+		storageProfile.endpoint = this.endpoint;
 		storageProfile.withPathStyleAccessEnabled = this.withPathStyleAccessEnabled;
 		storageProfile.storageClass = StorageClass.valueOf(this.storageClass.name());
 		storageProfile.region = this.region;
