@@ -14,7 +14,7 @@
         <div class="flex-shrink-0">
           <ExclamationTriangleIcon class="h-5 w-5 text-yellow-400" aria-hidden="true" />
         </div>
-        <p class="ml-3 text-sm text-yellow-700">{{ t('vaultDetails.warning.archived') }}</p>
+        <p class="ml-3 text-sm text-yellow-700">{{ t('storageProfileDetails.warning.archived') }}</p>
       </div>
     </div>
     <div v-if="storageprofile['protocol'] == 'S3STATIC'">
@@ -69,17 +69,31 @@
         <br/>
       </div>
     </div>
+
+    <div v-if="isAdmin" class="pt-4 border-t border-gray-200 space-y-3">
+      <button v-if="!storageprofile.archived" type="button" class="w-full inline-flex justify-center bg-red-600 py-2 px-4 border border-transparent rounded-md shadow-xs text-sm font-medium text-white hover:bg-red-700 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-red-500" @click="openArchiveDialog">
+        {{ t('storageProfileDetails.button.archive') }}
+      </button>
+      <button v-else type="button" class="w-full inline-flex justify-center bg-primary py-2 px-4 border border-transparent rounded-md shadow-xs text-sm font-medium text-white hover:bg-primary-d1 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-primary" @click="openReactivateDialog">
+        {{ t('storageProfileDetails.button.reactivate') }}
+      </button>
+    </div>
+
+    <ArchiveStorageProfileDialog v-if="archivingProfile && storageprofile" ref="archiveDialog" :profile="storageprofile" @close="archivingProfile = false" @archived="onArchivedOrReactivated"/>
+    <ReactivateStorageProfileDialog v-if="reactivatingProfile && storageprofile" ref="reactivateDialog" :profile="storageprofile" @close="reactivatingProfile = false" @reactivated="onArchivedOrReactivated"/>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ExclamationTriangleIcon } from '@heroicons/vue/20/solid';
-import { computed, onMounted, ref } from 'vue';
+import { computed, nextTick, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
+import auth from '../../common/auth';
 import backend, { NotFoundError, StorageProfileDto } from '../../common/backend';
+import { openapi, OpenapiSchema, OpenapiSchemas, OpenapiType } from '../../openapi/index';
 import FetchError from '../FetchError.vue';
-import { openapi, OpenapiType, OpenapiSchema, OpenapiSchemas } from '../../openapi/index';
-
+import ArchiveStorageProfileDialog from './ArchiveStorageProfileDialog.vue';
+import ReactivateStorageProfileDialog from './ReactivateStorageProfileDialog.vue';
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -91,13 +105,21 @@ const emit = defineEmits<{
   storageprofileUpdated: [updateStorageprofile: StorageProfileDto]
 }>();
 
-
 const onFetchError = ref<Error>();
-const allowRetryFetch = computed(() => onFetchError.value && !(onFetchError.value instanceof NotFoundError));  //fetch requests either list something, or query from th vault. In the latter, a 404 indicates the vault does not exists anymore.
+const allowRetryFetch = computed(() => onFetchError.value && !(onFetchError.value instanceof NotFoundError));
 
 const storageprofile = ref<StorageProfileDto>();
+const isAdmin = ref(false);
 
-onMounted(fetchData);
+const archivingProfile = ref(false);
+const reactivatingProfile = ref(false);
+const archiveDialog = ref<typeof ArchiveStorageProfileDialog>();
+const reactivateDialog = ref<typeof ReactivateStorageProfileDialog>();
+
+onMounted(async () => {
+  isAdmin.value = (await auth).hasRole('admin');
+  await fetchData();
+});
 
 async function fetchData() {
   onFetchError.value = undefined;
@@ -107,5 +129,22 @@ async function fetchData() {
     console.error('Fetching data failed.', error);
     onFetchError.value = error instanceof Error ? error : new Error('Unknown Error');
   }
+}
+
+function openArchiveDialog() {
+  archivingProfile.value = true;
+  nextTick(() => archiveDialog.value?.show());
+}
+
+function openReactivateDialog() {
+  reactivatingProfile.value = true;
+  nextTick(() => reactivateDialog.value?.show());
+}
+
+function onArchivedOrReactivated(updated: StorageProfileDto) {
+  storageprofile.value = updated;
+  archivingProfile.value = false;
+  reactivatingProfile.value = false;
+  emit('storageprofileUpdated', updated);
 }
 </script>

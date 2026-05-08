@@ -269,30 +269,59 @@ export type ConfigDto = {
     uuid: string;
 }
 
-export type StorageProfileDto = {
+export type StorageProtocol = 'S3STATIC' | 'S3STS';
+
+export type S3StorageClass = 'STANDARD' | 'INTELLIGENT_TIERING' | 'STANDARD_IA' | 'ONEZONE_IA' | 'REDUCED_REDUNDANCY' | 'GLACIER' | 'GLACIER_IR' | 'DEEP_ARCHIVE';
+
+export type S3ServerSideEncryption = 'NONE' | 'SSE_AES256' | 'SSE_KMS_DEFAULT';
+
+export type StorageProfileS3StaticDto = {
+    protocol: 'S3STATIC';
     id: string;
     name: string;
-    protocol: string;
+    archived: boolean;
+    scheme?: string | null;
+    hostname?: string | null;
+    port?: number | null;
+    withPathStyleAccessEnabled?: boolean;
+    storageClass: S3StorageClass;
+    region: string;
+    regions: string[];
     bucketPrefix: string;
     stsRoleCreateBucketClient: string;
     stsRoleCreateBucketHub: string;
-    stsEndpoint: string;
-    bucketVersioning: string;
-    bucketAcceleration: string;
-    bucketEncryption: string;
+    stsEndpoint?: string | null;
+    bucketVersioning: boolean;
+    bucketAcceleration?: boolean | null;
+    bucketEncryption: S3ServerSideEncryption;
+}
+
+export type StorageProfileS3STSDto = {
+    protocol: 'S3STS';
+    id: string;
+    name: string;
+    archived: boolean;
+    scheme?: string | null;
+    hostname?: string | null;
+    port?: number | null;
+    withPathStyleAccessEnabled?: boolean;
+    storageClass: S3StorageClass;
     region: string;
     regions: string[];
-    withPathStyleAccessEnabled: boolean;
-    storageClass: string;
-    scheme: string;
-    hostname: string;
-    port: number;
+    bucketPrefix: string;
+    stsRoleCreateBucketClient: string;
+    stsRoleCreateBucketHub: string;
+    stsEndpoint?: string | null;
+    bucketVersioning: boolean;
+    bucketAcceleration?: boolean | null;
+    bucketEncryption: S3ServerSideEncryption;
     stsRoleAccessBucketAssumeRoleWithWebIdentity: string;
-    stsRoleAccessBucketAssumeRoleTaggedSession: string;
-    stsDurationSeconds: number;
+    stsRoleAccessBucketAssumeRoleTaggedSession?: string | null;
+    stsDurationSeconds?: number | null;
     stsSessionTag: string;
-    archived: boolean;
 }
+
+export type StorageProfileDto = StorageProfileS3StaticDto | StorageProfileS3STSDto;
 
 export type VaultMetadataJWEBackendDto = {
     provider: string;
@@ -444,7 +473,7 @@ class VaultService {
     , aws: boolean | null = null
     , minio: boolean | null = null
     // \ end katta extension
-    ): Promise<VaultDto> {
+  ): Promise<VaultDto> {
     // / start katta modification
     return axiosAuth.put(`/vaults/${vault.id}?aws=${aws}&minio=${minio}` , vault)
     // \ end katta modification
@@ -761,24 +790,42 @@ class StorageService {
 class StorageProfileService {
   public async get(archived?: boolean): Promise<StorageProfileDto[]> {
     let query = '';
-    if(archived !== undefined){
+    if (archived !== undefined){
       query = `?archived=${archived}`;
     }
     return axiosAuth.get<StorageProfileDto[]>(`/storageprofile${query}`)
-    .then(response => response.data);
+      .then(response => response.data);
   }
 
   public async getSingle(storageprofileId: string): Promise<StorageProfileDto> {
-      return axiosAuth.get<StorageProfileDto>(`/storageprofile/${storageprofileId}`)
+    return axiosAuth.get<StorageProfileDto>(`/storageprofile/${storageprofileId}`)
       .then(response => response.data);
-    }
+  }
+
+  public async createS3Static(dto: StorageProfileS3StaticDto): Promise<StorageProfileDto> {
+    return axiosAuth.post<StorageProfileDto>('/storageprofile/s3static', dto)
+      .then(response => response.data)
+      .catch(error => rethrowAndConvertIfExpected(error, 400, 403, 409));
+  }
+
+  public async createS3STS(dto: StorageProfileS3STSDto): Promise<StorageProfileDto> {
+    return axiosAuth.post<StorageProfileDto>('/storageprofile/s3sts', dto)
+      .then(response => response.data)
+      .catch(error => rethrowAndConvertIfExpected(error, 400, 403, 409));
+  }
+
+  public async setArchived(storageprofileId: string, archived: boolean): Promise<void> {
+    const params = new URLSearchParams({ archived: String(archived) });
+    await axiosAuth.put(`/storageprofile/${storageprofileId}`, params, { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } })
+      .catch(error => rethrowAndConvertIfExpected(error, 403, 404));
+  }
 }
-export const axiosUnAuth = AxiosStatic.create(axiosBaseCfg)
+export const axiosUnAuth = AxiosStatic.create(axiosBaseCfg);
 class ConfigService {
   public async config(): Promise<ConfigDto> {
-      return axiosUnAuth.get('/config')
-        .then(response => response.data);
-    }
+    return axiosUnAuth.get('/config')
+      .then(response => response.data);
+  }
 }
 // \ end katta extension
 
