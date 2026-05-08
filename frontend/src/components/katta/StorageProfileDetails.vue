@@ -18,7 +18,7 @@
       </div>
     </div>
     <div v-if="storageprofile['protocol'] == 'S3STATIC'">
-      <div v-for="(item,key) in openapi.components.schemas.StorageProfileS3StaticDto.properties">
+      <div v-for="(item,key) in openapi.components.schemas.StorageProfileS3StaticDto.properties" :key="key">
         <h3 class="font-medium text-gray-900"><span v-if="!(item as OpenapiType).nullable" style="color: red;">* </span>{{ key }}</h3>
         <div class="mt-2 flex items-center justify-between">
           <p class="text-sm text-gray-600">{{ storageprofile[key] }}</p>
@@ -44,7 +44,7 @@
       </div>
     </div>
     <div v-if="storageprofile['protocol'] == 'S3STS'">
-      <div v-for="(item,key) in openapi.components.schemas.StorageProfileS3STSDto.properties">
+      <div v-for="(item,key) in openapi.components.schemas.StorageProfileS3STSDto.properties" :key="key">
         <h3 class="font-medium text-gray-900"><span v-if="!(item as OpenapiType).nullable" style="color: red;">* </span>{{ key }}</h3>
         <div class="mt-2 flex items-center justify-between">
           <p class="text-sm text-gray-600">{{ storageprofile[key] }}</p>
