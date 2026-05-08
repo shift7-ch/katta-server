@@ -67,7 +67,8 @@ public class S3StorageHelper {
 					.serviceConfiguration(S3Configuration.builder()
 							.pathStyleAccessEnabled(storageConfig.withPathStyleAccessEnabled() != null ? storageConfig.withPathStyleAccessEnabled() : false)
 							.build());
-		} else if (region != null) {
+		}
+		if (region != null) {
 			s3Builder = s3Builder.region(Region.of(region));
 		}
 		try (final S3Client s3 = s3Builder.build()) {
