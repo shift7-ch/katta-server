@@ -261,7 +261,7 @@ export class VaultMetadata {
     // / start katta extension
     , backend: VaultMetadataJWEBackendDto
     // \ end katta extension
-    ): Promise<VaultMetadata> {
+  ): Promise<VaultMetadata> {
     const initialSeedId = new Uint8Array(4);
     const initialSeedValue = new Uint8Array(32);
     const kdfSalt = new Uint8Array(32);
@@ -402,12 +402,12 @@ export class UniversalVaultFormat implements AccessTokenProducing, VaultTemplate
     // / start katta extension
     , backend: VaultMetadataJWEBackendDto
     // \ end katta extension
-    ): Promise<UniversalVaultFormat> {
+  ): Promise<UniversalVaultFormat> {
     const metadata = await VaultMetadata.create(automaticAccessGrant
       // / start katta extension
       ,backend
       // \ end katta extension
-      );
+    );
     const memberKey = await MemberKey.create();
     const recoveryKey = await RecoveryKey.create();
     return new UniversalVaultFormat(metadata, memberKey, recoveryKey);

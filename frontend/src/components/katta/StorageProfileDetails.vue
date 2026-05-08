@@ -4,7 +4,7 @@
       {{ t('common.loading') }}
     </div>
     <div v-else>
-      <FetchError :error="onFetchError" :retry="allowRetryFetch ? fetchData : undefined"/>
+      <FetchError :error="onFetchError" :retry="allowRetryFetch ? fetchData : undefined" />
     </div>
   </div>
 
@@ -38,9 +38,9 @@
           </div>
         </div>
         <div class="mt-2 flex items-center justify-between">
-          <p class="text-sm text-gray-400" v-if="(openapi.components.schemas.StorageProfileS3STSDto.properties[key] as OpenapiType)?.example">example: {{ (openapi.components.schemas.StorageProfileS3STSDto.properties[key] as OpenapiType)?.example }}</p>
+          <p v-if="(openapi.components.schemas.StorageProfileS3STSDto.properties[key] as OpenapiType)?.example" class="text-sm text-gray-400">example: {{ (openapi.components.schemas.StorageProfileS3STSDto.properties[key] as OpenapiType)?.example }}</p>
         </div>
-        <br/>
+        <br />
       </div>
     </div>
     <div v-if="storageprofile['protocol'] == 'S3STS'">
@@ -64,9 +64,9 @@
           </div>
         </div>
         <div class="mt-2 flex items-center justify-between">
-          <p class="text-sm text-gray-400" v-if="(openapi.components.schemas.StorageProfileS3STSDto.properties[key] as OpenapiType)?.example">example: {{ (openapi.components.schemas.StorageProfileS3STSDto.properties[key] as OpenapiType)?.example }}</p>
+          <p v-if="(openapi.components.schemas.StorageProfileS3STSDto.properties[key] as OpenapiType)?.example" class="text-sm text-gray-400">example: {{ (openapi.components.schemas.StorageProfileS3STSDto.properties[key] as OpenapiType)?.example }}</p>
         </div>
-        <br/>
+        <br />
       </div>
     </div>
   </div>
@@ -80,7 +80,6 @@ import backend, { NotFoundError, StorageProfileDto } from '../../common/backend'
 import FetchError from '../FetchError.vue';
 import { openapi, OpenapiType, OpenapiSchema, OpenapiSchemas } from '../../openapi/index';
 
-
 const { t } = useI18n({ useScope: 'global' });
 
 const props = defineProps<{
@@ -90,7 +89,6 @@ const props = defineProps<{
 const emit = defineEmits<{
   storageprofileUpdated: [updateStorageprofile: StorageProfileDto]
 }>();
-
 
 const onFetchError = ref<Error>();
 const allowRetryFetch = computed(() => onFetchError.value && !(onFetchError.value instanceof NotFoundError));  //fetch requests either list something, or query from th vault. In the latter, a 404 indicates the vault does not exists anymore.

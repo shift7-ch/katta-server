@@ -248,65 +248,65 @@ export class LicenseUserInfoDto {
 }
 // / start katta extension
 export type StorageDto = {
-    vaultId: string;
-    storageConfigId: string;
-    vaultUvf: string;
-    dirUvf: string;
-    rootDirHash: string;
-    awsAccessKey: string;
-    awsSecretKey: string;
-    sessionToken: string;
-    region: string;
-}
+  vaultId: string;
+  storageConfigId: string;
+  vaultUvf: string;
+  dirUvf: string;
+  rootDirHash: string;
+  awsAccessKey: string;
+  awsSecretKey: string;
+  sessionToken: string;
+  region: string;
+};
 
 export type ConfigDto = {
-    keycloakUrl: string;
-    keycloakRealm: string;
-    keycloakClientIdHub: string;
-    keycloakClientIdCryptomator: string;
-    keycloakAuthEndpoint: string;
-    keycloakTokenEndpoint: string;
-    serverTime: string;
-    apiLevel: number;
-    uuid: string;
-}
+  keycloakUrl: string;
+  keycloakRealm: string;
+  keycloakClientIdHub: string;
+  keycloakClientIdCryptomator: string;
+  keycloakAuthEndpoint: string;
+  keycloakTokenEndpoint: string;
+  serverTime: string;
+  apiLevel: number;
+  uuid: string;
+};
 
 export type StorageProfileDto = {
-    id: string;
-    name: string;
-    protocol: string;
-    bucketPrefix: string;
-    stsRoleCreateBucketClient: string;
-    stsRoleCreateBucketHub: string;
-    stsEndpoint: string;
-    bucketVersioning: string;
-    bucketAcceleration: string;
-    bucketEncryption: string;
-    region: string;
-    regions: string[];
-    withPathStyleAccessEnabled: boolean;
-    storageClass: string;
-    scheme: string;
-    hostname: string;
-    port: number;
-    stsRoleAccessBucketAssumeRoleWithWebIdentity: string;
-    stsRoleAccessBucketAssumeRoleTaggedSession: string;
-    stsDurationSeconds: number;
-    stsSessionTag: string;
-    archived: boolean;
-}
+  id: string;
+  name: string;
+  protocol: string;
+  bucketPrefix: string;
+  stsRoleCreateBucketClient: string;
+  stsRoleCreateBucketHub: string;
+  stsEndpoint: string;
+  bucketVersioning: string;
+  bucketAcceleration: string;
+  bucketEncryption: string;
+  region: string;
+  regions: string[];
+  withPathStyleAccessEnabled: boolean;
+  storageClass: string;
+  scheme: string;
+  hostname: string;
+  port: number;
+  stsRoleAccessBucketAssumeRoleWithWebIdentity: string;
+  stsRoleAccessBucketAssumeRoleTaggedSession: string;
+  stsDurationSeconds: number;
+  stsSessionTag: string;
+  archived: boolean;
+};
 
 export type VaultMetadataJWEBackendDto = {
-    provider: string;
+  provider: string;
 
-    defaultPath: string;
-    nickname: string;
+  defaultPath: string;
+  nickname: string;
 
-    region: string;
+  region: string;
 
-    username?: string;
-    password?: string;
-}
+  username?: string;
+  password?: string;
+};
 // \ end katta extension
 
 /* Services */
@@ -447,7 +447,7 @@ class VaultService {
     , aws: boolean | null = null
     , minio: boolean | null = null
     // \ end katta extension
-    ): Promise<VaultDto> {
+  ): Promise<VaultDto> {
     // / start katta modification
     return axiosAuth.put(`/vaults/${vault.id}?aws=${aws}&minio=${minio}` , vault)
     // \ end katta modification
@@ -778,31 +778,37 @@ class EmergencyAccessService {
 
 // / start katta extension
 class StorageService {
+
   public async put(vaultId: string, dto: StorageDto): Promise<void> {
     return axiosAuth.put(`/storage/${vaultId}/`, dto);
   }
+
 }
 class StorageProfileService {
+
   public async get(archived?: boolean): Promise<StorageProfileDto[]> {
     let query = '';
-    if(archived !== undefined){
+    if (archived !== undefined){
       query = `?archived=${archived}`;
     }
     return axiosAuth.get<StorageProfileDto[]>(`/storageprofile${query}`)
-    .then(response => response.data);
+      .then(response => response.data);
   }
 
   public async getSingle(storageprofileId: string): Promise<StorageProfileDto> {
-      return axiosAuth.get<StorageProfileDto>(`/storageprofile/${storageprofileId}`)
+    return axiosAuth.get<StorageProfileDto>(`/storageprofile/${storageprofileId}`)
       .then(response => response.data);
-    }
+  }
+
 }
-export const axiosUnAuth = AxiosStatic.create(axiosBaseCfg)
+export const axiosUnAuth = AxiosStatic.create(axiosBaseCfg);
 class ConfigService {
+
   public async config(): Promise<ConfigDto> {
-      return axiosUnAuth.get('/config')
-        .then(response => response.data);
-    }
+    return axiosUnAuth.get('/config')
+      .then(response => response.data);
+  }
+
 }
 // \ end katta extension
 
