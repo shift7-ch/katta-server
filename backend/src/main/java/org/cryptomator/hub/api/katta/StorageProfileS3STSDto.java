@@ -1,7 +1,8 @@
 package org.cryptomator.hub.api.katta;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.cryptomator.hub.entities.katta.StorageClass;
+import org.cryptomator.hub.entities.katta.S3ServersideEncryption;
+import org.cryptomator.hub.entities.katta.S3StorageClass;
 import org.cryptomator.hub.entities.katta.StorageProfileS3STS;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import software.amazon.awssdk.regions.Region;
@@ -12,10 +13,6 @@ import java.util.UUID;
 
 @Schema(title = "StorageProfileS3STSDto")
 public final class StorageProfileS3STSDto extends StorageProfileS3StaticDto {
-
-	public enum S3_SERVERSIDE_ENCRYPTION {
-		NONE, SSE_AES256, SSE_KMS_DEFAULT
-	}
 
 	//======================================================================
 	// (2) STS only: bucket creation (only relevant for Desktop client)
@@ -54,7 +51,7 @@ public final class StorageProfileS3STSDto extends StorageProfileS3StaticDto {
 
 	@JsonProperty(value = "bucketEncryption", required = true)
 	@Schema(description = "Enable bucket versioning upon bucket creation", required = true)
-	S3_SERVERSIDE_ENCRYPTION bucketEncryption = S3_SERVERSIDE_ENCRYPTION.NONE;
+	S3ServersideEncryption bucketEncryption = S3ServersideEncryption.NONE;
 
 	//----------------------------------------------------------------------
 	// (3b) STS client profile custom properties
@@ -80,7 +77,7 @@ public final class StorageProfileS3STSDto extends StorageProfileS3StaticDto {
 		// jackson
 	}
 
-	public StorageProfileS3STSDto(final UUID id, final String name, final Protocol protocol, final boolean archived, final String endpoint, final boolean withPathStyleAccessEnabled, final S3_STORAGE_CLASSES storageClass, final String region, final List<String> regions, final String bucketPrefix, final String stsRoleCreateBucketClient, final String stsRoleCreateBucketHub, final String stsEndpoint, final boolean bucketVersioning, final Boolean bucketAcceleration, final S3_SERVERSIDE_ENCRYPTION bucketEncryption, final String stsRoleAccessBucketAssumeRoleWithWebIdentity, final String stsRoleAccessBucketAssumeRoleTaggedSession, final Integer stsDurationSeconds, final String stsSessionTag) {
+	public StorageProfileS3STSDto(final UUID id, final String name, final Protocol protocol, final boolean archived, final String endpoint, final boolean withPathStyleAccessEnabled, final S3StorageClass storageClass, final String region, final List<String> regions, final String bucketPrefix, final String stsRoleCreateBucketClient, final String stsRoleCreateBucketHub, final String stsEndpoint, final boolean bucketVersioning, final Boolean bucketAcceleration, final S3ServersideEncryption bucketEncryption, final String stsRoleAccessBucketAssumeRoleWithWebIdentity, final String stsRoleAccessBucketAssumeRoleTaggedSession, final Integer stsDurationSeconds, final String stsSessionTag) {
 		super(id, name, protocol, archived, endpoint, withPathStyleAccessEnabled, storageClass);
 		this.region = region;
 		this.regions = regions;
@@ -101,11 +98,11 @@ public final class StorageProfileS3STSDto extends StorageProfileS3StaticDto {
 		return new StorageProfileS3STSDto(
 				storageProfile.id,
 				storageProfile.name,
-				Protocol.s3sts,
+				Protocol.S3_STS,
 				storageProfile.archived,
 				storageProfile.endpoint,
 				storageProfile.withPathStyleAccessEnabled,
-				S3_STORAGE_CLASSES.valueOf(storageProfile.storageClass.name()),
+				S3StorageClass.valueOf(storageProfile.storageClass.name()),
 				storageProfile.region,
 				storageProfile.regions,
 				storageProfile.bucketPrefix,
@@ -114,7 +111,7 @@ public final class StorageProfileS3STSDto extends StorageProfileS3StaticDto {
 				storageProfile.stsEndpoint,
 				storageProfile.bucketVersioning,
 				storageProfile.bucketAcceleration,
-				S3_SERVERSIDE_ENCRYPTION.valueOf(storageProfile.bucketEncryption),
+				storageProfile.bucketEncryption,
 				storageProfile.stsRoleAccessBucketAssumeRoleWithWebIdentity,
 				storageProfile.stsRoleAccessBucketAssumeRoleTaggedSession,
 				storageProfile.stsDurationSeconds,
@@ -129,7 +126,7 @@ public final class StorageProfileS3STSDto extends StorageProfileS3StaticDto {
 		storageProfile.archived = this.archived;
 		storageProfile.endpoint = this.endpoint;
 		storageProfile.withPathStyleAccessEnabled = this.withPathStyleAccessEnabled;
-		storageProfile.storageClass = StorageClass.valueOf(this.storageClass.name());
+		storageProfile.storageClass = S3StorageClass.valueOf(this.storageClass.name());
 		storageProfile.region = this.region;
 		storageProfile.regions = this.regions;
 		storageProfile.bucketPrefix = this.bucketPrefix;
@@ -138,7 +135,7 @@ public final class StorageProfileS3STSDto extends StorageProfileS3StaticDto {
 		storageProfile.stsEndpoint = this.stsEndpoint;
 		storageProfile.bucketVersioning = this.bucketVersioning;
 		storageProfile.bucketAcceleration = this.bucketAcceleration;
-		storageProfile.bucketEncryption = this.bucketEncryption.name();
+		storageProfile.bucketEncryption = this.bucketEncryption;
 		storageProfile.stsRoleAccessBucketAssumeRoleWithWebIdentity = this.stsRoleAccessBucketAssumeRoleWithWebIdentity;
 		storageProfile.stsRoleAccessBucketAssumeRoleTaggedSession = this.stsRoleAccessBucketAssumeRoleTaggedSession;
 		storageProfile.stsDurationSeconds = this.stsDurationSeconds;
@@ -178,7 +175,7 @@ public final class StorageProfileS3STSDto extends StorageProfileS3StaticDto {
 		return bucketAcceleration;
 	}
 
-	public S3_SERVERSIDE_ENCRYPTION bucketEncryption() {
+	public S3ServersideEncryption bucketEncryption() {
 		return bucketEncryption;
 	}
 

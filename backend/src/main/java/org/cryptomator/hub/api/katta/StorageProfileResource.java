@@ -18,8 +18,6 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.cryptomator.hub.entities.katta.StorageProfile;
-import org.cryptomator.hub.entities.katta.StorageProfileS3STS;
-import org.cryptomator.hub.entities.katta.StorageProfileS3Static;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.hibernate.exception.ConstraintViolationException;
@@ -40,41 +38,19 @@ public class StorageProfileResource {
 
 
 	@POST
-	@Path("/s3static")
+	@Path("/")
 	@RolesAllowed("admin")
 	@Transactional
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
+	@Operation(summary = "create a storage profile", description = "Polymorphic by `protocol` discriminator: S3STATIC or S3STS.")
 	@APIResponse(responseCode = "201", description = "uploaded storage configuration")
 	@APIResponse(responseCode = "400", description = "Constraint violation")
 	@APIResponse(responseCode = "403", description = "not an admin")
 	@APIResponse(responseCode = "409", description = "Storage profile with ID already exists")
-	public Response uploadStorageProfile(final StorageProfileS3StaticDto c) {
+	public Response uploadStorageProfile(final StorageProfileDto c) {
 		try {
-			final StorageProfileS3Static entity = c.toEntity();
-			if (storageProfileRepo.findByIdOptional(entity.id).isPresent()) {
-				throw new ClientErrorException(Response.Status.CONFLICT);
-			}
-			storageProfileRepo.persistAndFlush(entity);
-			return Response.created(URI.create(".")).contentLocation(URI.create(".")).entity(entity).type(MediaType.APPLICATION_JSON).build();
-		} catch (ConstraintViolationException e) {
-			return Response.status(Response.Status.BAD_REQUEST).entity(e).build();
-		}
-	}
-
-	@POST
-	@Path("/s3sts")
-	@RolesAllowed("admin")
-	@Transactional
-	@Consumes(MediaType.APPLICATION_JSON)
-	@Produces(MediaType.APPLICATION_JSON)
-	@APIResponse(responseCode = "201", description = "uploaded storage configuration")
-	@APIResponse(responseCode = "400", description = "Constraint violation")
-	@APIResponse(responseCode = "403", description = "not an admin")
-	@APIResponse(responseCode = "409", description = "Storage profile with ID already exists")
-	public Response uploadStorageProfile(final StorageProfileS3STSDto c) {
-		try {
-			final StorageProfileS3STS entity = c.toEntity();
+			final StorageProfile entity = c.toEntity();
 			if (storageProfileRepo.findByIdOptional(entity.id).isPresent()) {
 				throw new ClientErrorException(Response.Status.CONFLICT);
 			}

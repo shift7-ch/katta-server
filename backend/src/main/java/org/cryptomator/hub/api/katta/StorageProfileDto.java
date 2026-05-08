@@ -2,6 +2,8 @@ package org.cryptomator.hub.api.katta;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonValue;
 import jakarta.persistence.Id;
 import org.cryptomator.hub.entities.katta.StorageProfile;
@@ -27,22 +29,18 @@ import java.util.UUID;
 		},
 		discriminatorProperty = "protocol"
 )
-// although we have a dto hierarchy (StorageProfileDto <- StorageProfileS3Dto <- StorageProfileS3STSDto), the DB schema keeps the the tables separate (without foreign keys). There is one common GET service for listing and specific endpoints for POSTing profiles. Future profiles should inherit from StorageProfileDto. Serialized dtos are kept apart by a discriminator property, the openapi generators can de-serialized using it.
+// although we have a dto hierarchy (StorageProfileDto <- StorageProfileS3Dto <- StorageProfileS3STSDto), the DB schema keeps the the tables separate (without foreign keys). There is one common GET service for listing and a single polymorphic endpoint for POSTing profiles, dispatching on the `protocol` discriminator. Future profiles should inherit from StorageProfileDto.
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.EXISTING_PROPERTY, property = "protocol", visible = true)
+@JsonSubTypes({
+		@JsonSubTypes.Type(value = StorageProfileS3StaticDto.class, name = "S3STATIC"),
+		@JsonSubTypes.Type(value = StorageProfileS3STSDto.class, name = "S3STS")
+})
 public abstract sealed class StorageProfileDto permits StorageProfileS3StaticDto {
+
 	public enum Protocol {
-		s3static("S3STATIC"),
-		s3sts("S3STS");
-		private final String protocol;
-
-		private Protocol(final String protocol) {
-			this.protocol = protocol;
-		}
-
-		@JsonValue
-		public String getProtocol() {
-			return protocol;
-		}
+		@JsonProperty("S3STATIC") S3_STATIC,
+		@JsonProperty("S3STS") S3_STS;
 	}
 
 	@Id
@@ -87,6 +85,8 @@ public abstract sealed class StorageProfileDto permits StorageProfileS3StaticDto
 			default -> throw new IllegalStateException("Unexpected value: " + storageProfile);
 		};
 	}
+
+	public abstract StorageProfile toEntity();
 
 	public UUID id() {
 		return id;

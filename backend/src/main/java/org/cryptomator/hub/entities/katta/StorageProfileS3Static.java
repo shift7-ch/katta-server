@@ -26,8 +26,8 @@ public class StorageProfileS3Static extends StorageProfile {
 	@Column
 	public Boolean withPathStyleAccessEnabled = false;
 
-	@Column(columnDefinition = "storage_class")
+	@Column(columnDefinition = "storage_class", nullable = false)
 	@Enumerated(EnumType.STRING)
 	@JdbcTypeCode(SqlTypes.NAMED_ENUM)
-	public StorageClass storageClass = StorageClass.STANDARD;
+	public S3StorageClass storageClass = S3StorageClass.STANDARD;
 }
