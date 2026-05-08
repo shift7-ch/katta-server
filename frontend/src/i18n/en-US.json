@@ -676,9 +676,12 @@
   "createStorageProfileDialog.confirm": "Create",
   "createStorageProfileDialog.section.bucketCreation": "Bucket creation (STS)",
   "createStorageProfileDialog.section.bucketAccess": "Bucket access (STS)",
+  "createStorageProfileDialog.endpoint.label": "S3 endpoint",
+  "createStorageProfileDialog.endpoint.hint": "Full endpoint URL including scheme.",
   "createStorageProfileDialog.hint.regions": "Comma-separated list of selectable regions. If empty, the default region above is used.",
   "createStorageProfileDialog.error.conflict": "A storage location with this ID already exists.",
   "createStorageProfileDialog.error.forbidden": "Only admins can create storage locations.",
+  "createStorageProfileDialog.error.invalidEndpoint": "Endpoint must be a full URL like https://s3.example.com.",
 
   "archiveStorageProfileDialog.title": "Archive storage location",
   "archiveStorageProfileDialog.description": "Archiving \"{0}\" prevents new vaults from being created with it. Existing vaults remain functional. You can reactivate it later.",
