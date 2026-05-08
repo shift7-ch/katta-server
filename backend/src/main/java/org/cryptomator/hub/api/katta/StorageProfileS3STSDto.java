@@ -21,7 +21,7 @@ public final class StorageProfileS3STSDto extends StorageProfileS3StaticDto {
 	// (2) STS only: bucket creation (only relevant for Desktop client)
 	//======================================================================
 	@JsonProperty(value = "region", required = true, defaultValue = "us-east-1")
-	@Schema(description = "Default region selected in the frontend/client to create bucket in.", example = "us-east-1", defaultValue = "us-east-1")
+	@Schema(description = "Default region selected in the frontend/client to create bucket in.", examples = "us-east-1", defaultValue = "us-east-1")
 	String region = "us-east-1";
 
 	@JsonProperty(value = "regions", required = true)
@@ -29,15 +29,15 @@ public final class StorageProfileS3STSDto extends StorageProfileS3StaticDto {
 	List<String> regions = Region.regions().stream().map(Region::id).toList();
 
 	@JsonProperty(value = "bucketPrefix", required = true)
-	@Schema(description = "Buckets are created with name <bucket prefix><vault UUID>.", example = "katta")
+	@Schema(description = "Buckets are created with name <bucket prefix><vault UUID>.", examples = "katta")
 	String bucketPrefix;
 
 	@JsonProperty(value = "stsRoleCreateBucketClient", required = true)
-	@Schema(description = "STS role for clients to assume to create buckets. Will be the same as stsRoleCreateBucketHub for AWS, different for MinIO.", example = "arn:aws:iam::<ACCOUNT ID>:role/katta-createbucket")
+	@Schema(description = "STS role for clients to assume to create buckets. Will be the same as stsRoleCreateBucketHub for AWS, different for MinIO.", examples = "arn:aws:iam::<ACCOUNT ID>:role/katta-createbucket")
 	String stsRoleCreateBucketClient;
 
 	@JsonProperty(value = "stsRoleCreateBucketHub", required = true)
-	@Schema(description = "STS role for frontend to assume to create buckets (used with inline policy and passed to hub storage). Will be the same as stsRoleCreateBucketClient for AWS, different for MinIO.", example = "arn:aws:iam::<ACCOUNT ID>:role/katta-createbucket")
+	@Schema(description = "STS role for frontend to assume to create buckets (used with inline policy and passed to hub storage). Will be the same as stsRoleCreateBucketClient for AWS, different for MinIO.", examples = "arn:aws:iam::<ACCOUNT ID>:role/katta-createbucket")
 	String stsRoleCreateBucketHub;
 
 	@JsonProperty("stsEndpoint")
@@ -60,11 +60,11 @@ public final class StorageProfileS3STSDto extends StorageProfileS3StaticDto {
 	// (3b) STS client profile custom properties
 	//----------------------------------------------------------------------
 	@JsonProperty(value = "stsRoleAccessBucketAssumeRoleWithWebIdentity", required = true)
-	@Schema(description = "roleArn to for STS AssumeRoleWithWebIdentity (AWS and MinIO)", example = "arn:aws:iam::930717317329:role/katta_chain_01")
+	@Schema(description = "roleArn to for STS AssumeRoleWithWebIdentity (AWS and MinIO)", examples = "arn:aws:iam::930717317329:role/katta_chain_01")
 	String stsRoleAccessBucketAssumeRoleWithWebIdentity;
 
 	@JsonProperty(value = "stsRoleAccessBucketAssumeRoleTaggedSession")
-	@Schema(description = "roleArn to assume for STS AssumeRole in role chaining (AWS only, not MinIO)", example = "arn:aws:iam::930717317329:role/katta_chain_02", nullable = true)
+	@Schema(description = "roleArn to assume for STS AssumeRole in role chaining (AWS only, not MinIO)", examples = "arn:aws:iam::930717317329:role/katta_chain_02", nullable = true)
 	String stsRoleAccessBucketAssumeRoleTaggedSession;
 
 

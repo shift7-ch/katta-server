@@ -23,23 +23,23 @@ public sealed class StorageProfileS3StaticDto extends StorageProfileDto permits 
 	//======================================================================
 
 	@JsonProperty(value = "scheme", defaultValue = "https")
-	@Schema(description = "Scheme of S3 endpoint for template upload/bucket creation. Defaults to default for protocol, i.e. https in most cases.", example = "https", nullable = true)
+	@Schema(description = "Scheme of S3 endpoint for template upload/bucket creation. Defaults to default for protocol, i.e. https in most cases.", examples = "https", nullable = true)
 	String scheme;
 
 	@JsonProperty("hostname")
-	@Schema(description = "Hostname S3 endpoint for template upload/bucket creation. Defaults to AWS SDK default.", example = "s3-us-gov-west-1.amazonaws.com", nullable = true)
+	@Schema(description = "Hostname S3 endpoint for template upload/bucket creation. Defaults to AWS SDK default.", examples = "s3-us-gov-west-1.amazonaws.com", nullable = true)
 	String hostname;
 
 	@JsonProperty("port")
-	@Schema(description = "Port S3 endpoint for template upload/bucket creation. Defaults to default port for scheme.", example = "443", nullable = true)
+	@Schema(description = "Port S3 endpoint for template upload/bucket creation. Defaults to default port for scheme.", examples = "443", nullable = true)
 	Integer port;
 
 	@JsonProperty(value = "withPathStyleAccessEnabled")
-	@Schema(description = "Whether to use path style for S3 endpoint for template upload/bucket creation.", example = "false", defaultValue = "false")
+	@Schema(description = "Whether to use path style for S3 endpoint for template upload/bucket creation.", examples = "false", defaultValue = "false")
 	Boolean withPathStyleAccessEnabled = false;
 
 	@JsonProperty(value = "storageClass", defaultValue = "STANDARD")
-	@Schema(description = "Storage class for upload. Defaults to STANDARD", example = "STANDARD", required = true)
+	@Schema(description = "Storage class for upload. Defaults to STANDARD", examples = "STANDARD", required = true)
 	S3_STORAGE_CLASSES storageClass = S3_STORAGE_CLASSES.STANDARD;
 
 	public StorageProfileS3StaticDto() {
