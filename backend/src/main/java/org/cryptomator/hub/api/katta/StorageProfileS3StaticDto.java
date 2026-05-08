@@ -1,6 +1,7 @@
 package org.cryptomator.hub.api.katta;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.cryptomator.hub.entities.katta.StorageClass;
 import org.cryptomator.hub.entities.katta.StorageProfileS3Static;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
@@ -55,20 +56,19 @@ public sealed class StorageProfileS3StaticDto extends StorageProfileDto permits 
 	}
 
 	static StorageProfileS3StaticDto fromEntity(final StorageProfileS3Static storageProfile) {
-		return new StorageProfileS3StaticDto(storageProfile.id, storageProfile.name, Protocol.s3static, storageProfile.archived, storageProfile.scheme, storageProfile.hostname, storageProfile.port, storageProfile.withPathStyleAccessEnabled, S3_STORAGE_CLASSES.valueOf(storageProfile.storageClass));
+		return new StorageProfileS3StaticDto(storageProfile.id, storageProfile.name, Protocol.s3static, storageProfile.archived, storageProfile.scheme, storageProfile.hostname, storageProfile.port, storageProfile.withPathStyleAccessEnabled, S3_STORAGE_CLASSES.valueOf(storageProfile.storageClass.name()));
 	}
 
 	public StorageProfileS3Static toEntity() {
 		final StorageProfileS3Static storageProfile = new StorageProfileS3Static();
 		storageProfile.id = this.id;
 		storageProfile.name = this.name;
-		storageProfile.protocol = this.protocol;
 		storageProfile.archived = this.archived;
 		storageProfile.scheme = this.scheme;
 		storageProfile.hostname = this.hostname;
 		storageProfile.port = this.port;
 		storageProfile.withPathStyleAccessEnabled = this.withPathStyleAccessEnabled;
-		storageProfile.storageClass = this.storageClass.name();
+		storageProfile.storageClass = StorageClass.valueOf(this.storageClass.name());
 		return storageProfile;
 	}
 

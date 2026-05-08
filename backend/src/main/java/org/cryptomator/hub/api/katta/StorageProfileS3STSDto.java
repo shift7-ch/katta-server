@@ -1,6 +1,7 @@
 package org.cryptomator.hub.api.katta;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.cryptomator.hub.entities.katta.StorageClass;
 import org.cryptomator.hub.entities.katta.StorageProfileS3STS;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import software.amazon.awssdk.regions.Region;
@@ -106,7 +107,7 @@ public final class StorageProfileS3STSDto extends StorageProfileS3StaticDto {
 				storageProfile.hostname,
 				storageProfile.port,
 				storageProfile.withPathStyleAccessEnabled,
-				S3_STORAGE_CLASSES.valueOf(storageProfile.storageClass),
+				S3_STORAGE_CLASSES.valueOf(storageProfile.storageClass.name()),
 				storageProfile.region,
 				storageProfile.regions,
 				storageProfile.bucketPrefix,
@@ -127,13 +128,12 @@ public final class StorageProfileS3STSDto extends StorageProfileS3StaticDto {
 		final StorageProfileS3STS storageProfile = new StorageProfileS3STS();
 		storageProfile.id = this.id;
 		storageProfile.name = this.name;
-		storageProfile.protocol = this.protocol;
 		storageProfile.archived = this.archived;
 		storageProfile.scheme = this.scheme;
 		storageProfile.hostname = this.hostname;
 		storageProfile.port = this.port;
 		storageProfile.withPathStyleAccessEnabled = this.withPathStyleAccessEnabled;
-		storageProfile.storageClass = this.storageClass.toString();
+		storageProfile.storageClass = StorageClass.valueOf(this.storageClass.name());
 		storageProfile.region = this.region;
 		storageProfile.regions = this.regions;
 		storageProfile.bucketPrefix = this.bucketPrefix;

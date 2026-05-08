@@ -1,12 +1,18 @@
 package org.cryptomator.hub.entities.katta;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "storage_profile_s3_static")
-public class StorageProfileS3Static extends StorageProfile {// TODO make sealed?
+@DiscriminatorValue("S3STATIC")
+public class StorageProfileS3Static extends StorageProfile {
 
 	//======================================================================
 	// (1) STS and permanent:
@@ -26,6 +32,8 @@ public class StorageProfileS3Static extends StorageProfile {// TODO make sealed?
 	@Column
 	public Boolean withPathStyleAccessEnabled = false;
 
-	@Column
-	public String storageClass = "STANDARD";
+	@Column(columnDefinition = "storage_class")
+	@Enumerated(EnumType.STRING)
+	@JdbcTypeCode(SqlTypes.NAMED_ENUM)
+	public StorageClass storageClass = StorageClass.STANDARD;
 }

@@ -35,6 +35,9 @@ public class StorageProfileResource {
 	@Inject
 	KattaConfig kattaConfig;
 
+	@Inject
+	StorageProfile.Repository storageProfileRepo;
+
 
 	@POST
 	@Path("/s3static")
@@ -49,10 +52,10 @@ public class StorageProfileResource {
 	public Response uploadStorageProfile(final StorageProfileS3StaticDto c) {
 		try {
 			final StorageProfileS3Static entity = c.toEntity();
-			if (StorageProfileS3Static.findByIdOptional(entity.id).isPresent()) {
+			if (storageProfileRepo.findByIdOptional(entity.id).isPresent()) {
 				throw new ClientErrorException(Response.Status.CONFLICT);
 			}
-			entity.persistAndFlush();
+			storageProfileRepo.persistAndFlush(entity);
 			return Response.created(URI.create(".")).contentLocation(URI.create(".")).entity(entity).type(MediaType.APPLICATION_JSON).build();
 		} catch (ConstraintViolationException e) {
 			return Response.status(Response.Status.BAD_REQUEST).entity(e).build();
@@ -72,10 +75,10 @@ public class StorageProfileResource {
 	public Response uploadStorageProfile(final StorageProfileS3STSDto c) {
 		try {
 			final StorageProfileS3STS entity = c.toEntity();
-			if (StorageProfileS3STS.findByIdOptional(entity.id).isPresent()) {
+			if (storageProfileRepo.findByIdOptional(entity.id).isPresent()) {
 				throw new ClientErrorException(Response.Status.CONFLICT);
 			}
-			entity.persistAndFlush();
+			storageProfileRepo.persistAndFlush(entity);
 			return Response.created(URI.create(".")).contentLocation(URI.create(".")).entity(entity).type(MediaType.APPLICATION_JSON).build();
 		} catch (ConstraintViolationException e) {
 			return Response.status(Response.Status.BAD_REQUEST).entity(e).build();
@@ -91,7 +94,7 @@ public class StorageProfileResource {
 	@APIResponse(responseCode = "200", description = "list of storage configuration")
 	@APIResponse(responseCode = "403", description = "not a user")
 	public List<StorageProfileDto> getStorageProfiles(@Nullable @QueryParam("archived") Boolean archived) {
-		return StorageProfileS3Static.findAll().<StorageProfile>stream().map(StorageProfileDto::fromEntity).filter(dto -> (archived == null) || archived.equals(dto.archived)).collect(Collectors.toList());
+		return storageProfileRepo.findAll().stream().map(StorageProfileDto::fromEntity).filter(dto -> (archived == null) || archived.equals(dto.archived)).collect(Collectors.toList());
 	}
 
 	@GET
@@ -103,7 +106,7 @@ public class StorageProfileResource {
 	@APIResponse(responseCode = "200")
 	@APIResponse(responseCode = "403", description = "not a user")
 	public StorageProfileDto get(@PathParam("profileId") UUID profileId) {
-		return StorageProfileS3StaticDto.fromEntity(StorageProfileS3Static.<StorageProfile>findByIdOptional(profileId).orElseThrow(NotFoundException::new));
+		return StorageProfileDto.fromEntity(storageProfileRepo.findByIdOptional(profileId).orElseThrow(NotFoundException::new));
 	}
 
 	@PUT
@@ -119,8 +122,8 @@ public class StorageProfileResource {
 		if (archived == null) {
 			return Response.status(Response.Status.BAD_REQUEST).build();
 		}
-		final StorageProfile entity = StorageProfileS3Static.<StorageProfile>findByIdOptional(profileId).orElseThrow(NotFoundException::new);
-		entity.setArchived(archived).persistAndFlush();
+		final StorageProfile entity = storageProfileRepo.findByIdOptional(profileId).orElseThrow(NotFoundException::new);
+		storageProfileRepo.persistAndFlush(entity.setArchived(archived));
 		return Response.status(Response.Status.NO_CONTENT).build();
 	}
 }

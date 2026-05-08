@@ -19,7 +19,6 @@ import org.cryptomator.hub.entities.User;
 import org.cryptomator.hub.entities.Vault;
 import org.cryptomator.hub.entities.katta.AccessTokenResponse;
 import org.cryptomator.hub.entities.katta.StorageProfile;
-import org.cryptomator.hub.entities.katta.StorageProfileS3Static;
 import org.cryptomator.hub.katta.KeycloakCryptomatorVaultsHelper;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 import org.eclipse.microprofile.openapi.annotations.Operation;
@@ -63,6 +62,9 @@ public class StorageResource {
 	@Inject
 	S3StorageHelper s3StorageHelper;
 
+	@Inject
+	StorageProfile.Repository storageProfileRepo;
+
 	@PUT
 	@Path("/{vaultId}")
 	@RolesAllowed("user")
@@ -74,7 +76,7 @@ public class StorageResource {
 	@APIResponse(responseCode = "409", description = "Bucket with this name already exists")
 	@APIResponse(responseCode = "410", description = "Storage profile is archived")
 	public Response createBucket(@PathParam("vaultId") UUID vaultId, final CreateS3STSBucketDto storage) {
-		final Map<UUID, StorageProfileDto> storageConfigs = StorageProfileS3Static.findAll().<StorageProfile>stream().map(StorageProfileDto::fromEntity).collect(Collectors.toMap(StorageProfileDto::id, Function.identity()));
+		final Map<UUID, StorageProfileDto> storageConfigs = storageProfileRepo.findAll().stream().map(StorageProfileDto::fromEntity).collect(Collectors.toMap(StorageProfileDto::id, Function.identity()));
 		if (!storageConfigs.containsKey(storage.storageConfigId())) {
 			return Response.status(Response.Status.BAD_REQUEST).entity(String.format("Storage profile %s not found on this server", storage.storageConfigId())).build();
 		}

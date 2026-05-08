@@ -1,6 +1,7 @@
 package org.cryptomator.hub.entities.katta;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 
@@ -8,7 +9,8 @@ import java.util.List;
 
 @Entity
 @Table(name = "storage_profile_s3_sts")
-public class StorageProfileS3STS extends StorageProfileS3Static { // TODO make sealed/final?
+@DiscriminatorValue("S3STS")
+public final class StorageProfileS3STS extends StorageProfileS3Static {
 
 	//======================================================================
 	// (2) STS only: bucket creation (only relevant for Desktop client)
