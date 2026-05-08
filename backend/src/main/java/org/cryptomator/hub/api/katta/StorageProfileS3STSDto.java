@@ -3,6 +3,7 @@ package org.cryptomator.hub.api.katta;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.cryptomator.hub.entities.katta.StorageProfileS3STS;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import software.amazon.awssdk.regions.Region;
 
 import java.util.List;
 import java.util.Objects;
@@ -10,6 +11,49 @@ import java.util.UUID;
 
 @Schema(title = "StorageProfileS3STSDto")
 public final class StorageProfileS3STSDto extends StorageProfileS3StaticDto {
+
+	public enum S3_SERVERSIDE_ENCRYPTION {
+		NONE, SSE_AES256, SSE_KMS_DEFAULT
+	}
+
+	//======================================================================
+	// (2) STS only: bucket creation (only relevant for Desktop client)
+	//======================================================================
+	@JsonProperty(value = "region", required = true, defaultValue = "us-east-1")
+	@Schema(description = "Default region selected in the frontend/client to create bucket in.", example = "us-east-1", defaultValue = "us-east-1")
+	String region = "us-east-1";
+
+	@JsonProperty(value = "regions", required = true)
+	@Schema(description = "List of selectable regions in the frontend/client to create bucket in. Defaults to full list from AWS SDK.")
+	List<String> regions = Region.regions().stream().map(Region::id).toList();
+
+	@JsonProperty(value = "bucketPrefix", required = true)
+	@Schema(description = "Buckets are created with name <bucket prefix><vault UUID>.", example = "katta")
+	String bucketPrefix;
+
+	@JsonProperty(value = "stsRoleCreateBucketClient", required = true)
+	@Schema(description = "STS role for clients to assume to create buckets. Will be the same as stsRoleCreateBucketHub for AWS, different for MinIO.", example = "arn:aws:iam::<ACCOUNT ID>:role/katta-createbucket")
+	String stsRoleCreateBucketClient;
+
+	@JsonProperty(value = "stsRoleCreateBucketHub", required = true)
+	@Schema(description = "STS role for frontend to assume to create buckets (used with inline policy and passed to hub storage). Will be the same as stsRoleCreateBucketClient for AWS, different for MinIO.", example = "arn:aws:iam::<ACCOUNT ID>:role/katta-createbucket")
+	String stsRoleCreateBucketHub;
+
+	@JsonProperty("stsEndpoint")
+	@Schema(description = "STS endpoint to use for AssumeRoleWithWebIdentity and AssumeRole for getting a temporary access token passed to the storage. Defaults to AWS SDK default.", nullable = true)
+	String stsEndpoint;
+
+	@JsonProperty(value = "bucketVersioning", defaultValue = "true", required = true)
+	@Schema(description = "Enable bucket versioning upon bucket creation", defaultValue = "true", required = true)
+	Boolean bucketVersioning = true;
+
+	@JsonProperty(value = "bucketAcceleration")
+	@Schema(description = "Enable bucket versioning upon bucket creation (null for MinIO)", nullable = true)
+	Boolean bucketAcceleration = null;
+
+	@JsonProperty(value = "bucketEncryption", required = true)
+	@Schema(description = "Enable bucket versioning upon bucket creation", required = true)
+	S3_SERVERSIDE_ENCRYPTION bucketEncryption = S3_SERVERSIDE_ENCRYPTION.NONE;
 
 	//----------------------------------------------------------------------
 	// (3b) STS client profile custom properties
@@ -36,7 +80,16 @@ public final class StorageProfileS3STSDto extends StorageProfileS3StaticDto {
 	}
 
 	public StorageProfileS3STSDto(final UUID id, final String name, final Protocol protocol, final boolean archived, final String scheme, final String hostname, final Integer port, final boolean withPathStyleAccessEnabled, final S3_STORAGE_CLASSES storageClass, final String region, final List<String> regions, final String bucketPrefix, final String stsRoleCreateBucketClient, final String stsRoleCreateBucketHub, final String stsEndpoint, final boolean bucketVersioning, final Boolean bucketAcceleration, final S3_SERVERSIDE_ENCRYPTION bucketEncryption, final String stsRoleAccessBucketAssumeRoleWithWebIdentity, final String stsRoleAccessBucketAssumeRoleTaggedSession, final Integer stsDurationSeconds, final String stsSessionTag) {
-		super(id, name, protocol, archived, scheme, hostname, port, withPathStyleAccessEnabled, storageClass, region, regions, bucketPrefix, stsRoleCreateBucketClient, stsRoleCreateBucketHub, stsEndpoint, bucketVersioning, bucketAcceleration, bucketEncryption);
+		super(id, name, protocol, archived, scheme, hostname, port, withPathStyleAccessEnabled, storageClass);
+		this.region = region;
+		this.regions = regions;
+		this.bucketPrefix = bucketPrefix;
+		this.stsRoleCreateBucketClient = stsRoleCreateBucketClient;
+		this.stsRoleCreateBucketHub = stsRoleCreateBucketHub;
+		this.stsEndpoint = stsEndpoint;
+		this.bucketVersioning = bucketVersioning;
+		this.bucketAcceleration = bucketAcceleration;
+		this.bucketEncryption = bucketEncryption;
 		this.stsRoleAccessBucketAssumeRoleWithWebIdentity = stsRoleAccessBucketAssumeRoleWithWebIdentity;
 		this.stsRoleAccessBucketAssumeRoleTaggedSession = stsRoleAccessBucketAssumeRoleTaggedSession;
 		this.stsDurationSeconds = stsDurationSeconds;
@@ -97,6 +150,42 @@ public final class StorageProfileS3STSDto extends StorageProfileS3StaticDto {
 		return storageProfile;
 	}
 
+	public String region() {
+		return region;
+	}
+
+	public List<String> regions() {
+		return regions;
+	}
+
+	public String bucketPrefix() {
+		return bucketPrefix;
+	}
+
+	public String stsRoleCreateBucketClient() {
+		return stsRoleCreateBucketClient;
+	}
+
+	public String stsRoleCreateBucketHub() {
+		return stsRoleCreateBucketHub;
+	}
+
+	public String stsEndpoint() {
+		return stsEndpoint;
+	}
+
+	public Boolean bucketVersioning() {
+		return bucketVersioning;
+	}
+
+	public Boolean bucketAcceleration() {
+		return bucketAcceleration;
+	}
+
+	public S3_SERVERSIDE_ENCRYPTION bucketEncryption() {
+		return bucketEncryption;
+	}
+
 	public String stsRoleAccessBucketAssumeRoleWithWebIdentity() {
 		return stsRoleAccessBucketAssumeRoleWithWebIdentity;
 	}
@@ -120,12 +209,21 @@ public final class StorageProfileS3STSDto extends StorageProfileS3StaticDto {
 		if (!super.equals(o)) return false;
 
 		StorageProfileS3STSDto s3STSDto = (StorageProfileS3STSDto) o;
-		return Objects.equals(stsRoleAccessBucketAssumeRoleWithWebIdentity, s3STSDto.stsRoleAccessBucketAssumeRoleWithWebIdentity) && Objects.equals(stsRoleAccessBucketAssumeRoleTaggedSession, s3STSDto.stsRoleAccessBucketAssumeRoleTaggedSession) && Objects.equals(stsDurationSeconds, s3STSDto.stsDurationSeconds) && Objects.equals(stsSessionTag, s3STSDto.stsSessionTag);
+		return Objects.equals(region, s3STSDto.region) && Objects.equals(regions, s3STSDto.regions) && Objects.equals(bucketPrefix, s3STSDto.bucketPrefix) && Objects.equals(stsRoleCreateBucketClient, s3STSDto.stsRoleCreateBucketClient) && Objects.equals(stsRoleCreateBucketHub, s3STSDto.stsRoleCreateBucketHub) && Objects.equals(stsEndpoint, s3STSDto.stsEndpoint) && Objects.equals(bucketVersioning, s3STSDto.bucketVersioning) && Objects.equals(bucketAcceleration, s3STSDto.bucketAcceleration) && bucketEncryption == s3STSDto.bucketEncryption && Objects.equals(stsRoleAccessBucketAssumeRoleWithWebIdentity, s3STSDto.stsRoleAccessBucketAssumeRoleWithWebIdentity) && Objects.equals(stsRoleAccessBucketAssumeRoleTaggedSession, s3STSDto.stsRoleAccessBucketAssumeRoleTaggedSession) && Objects.equals(stsDurationSeconds, s3STSDto.stsDurationSeconds) && Objects.equals(stsSessionTag, s3STSDto.stsSessionTag);
 	}
 
 	@Override
 	public int hashCode() {
 		int result = super.hashCode();
+		result = 31 * result + Objects.hashCode(region);
+		result = 31 * result + Objects.hashCode(regions);
+		result = 31 * result + Objects.hashCode(bucketPrefix);
+		result = 31 * result + Objects.hashCode(stsRoleCreateBucketClient);
+		result = 31 * result + Objects.hashCode(stsRoleCreateBucketHub);
+		result = 31 * result + Objects.hashCode(stsEndpoint);
+		result = 31 * result + Objects.hashCode(bucketVersioning);
+		result = 31 * result + Objects.hashCode(bucketAcceleration);
+		result = 31 * result + Objects.hashCode(bucketEncryption);
 		result = 31 * result + Objects.hashCode(stsRoleAccessBucketAssumeRoleWithWebIdentity);
 		result = 31 * result + Objects.hashCode(stsRoleAccessBucketAssumeRoleTaggedSession);
 		result = 31 * result + Objects.hashCode(stsDurationSeconds);

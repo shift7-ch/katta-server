@@ -54,17 +54,7 @@ public class StorageProfileResourceIT {
 					null,
 					443,
 					false,
-					StorageProfileS3StaticDto.S3_STORAGE_CLASSES.STANDARD,
-					"eu-central-1",
-					Arrays.
-							asList("eu-central-1"),
-					"katta-test-",
-					"arn:aws:iam::430118840017:role/testing.katta.cloud-kc-realms-chipotle-createbucket",
-					"arn:aws:iam::430118840017:role/testing.katta.cloud-kc-realms-chipotle-createbucket",
-					null,
-					true,
-					null,
-					StorageProfileS3StaticDto.S3_SERVERSIDE_ENCRYPTION.NONE
+					StorageProfileS3StaticDto.S3_STORAGE_CLASSES.STANDARD
 			);
 			given().contentType(ContentType.JSON).body(vaultDto)
 					.when().post("/storageprofile/s3static")
@@ -95,7 +85,7 @@ public class StorageProfileResourceIT {
 					null,
 					true,
 					null,
-					StorageProfileS3StaticDto.S3_SERVERSIDE_ENCRYPTION.NONE,
+					StorageProfileS3STSDto.S3_SERVERSIDE_ENCRYPTION.NONE,
 					"arn:aws:iam::430118840017:role/testing.katta.cloud-kc-realms-chipotle-sts-chain-01",
 					"JsonNullable[arn:aws:iam::430118840017:role/testing.katta.cloud-kc-realms-chipotle-sts-chain-02]",
 					null,
@@ -170,16 +160,7 @@ public class StorageProfileResourceIT {
 					null,
 					443,
 					false,
-					StorageProfileS3StaticDto.S3_STORAGE_CLASSES.STANDARD,
-					"eu-central-1",
-					Arrays.asList("eu-central-1"),
-					"katta-test-",
-					"arn:aws:iam::430118840017:role/testing.katta.cloud-kc-realms-chipotle-createbucket",
-					"arn:aws:iam::430118840017:role/testing.katta.cloud-kc-realms-chipotle-createbucket",
-					null,
-					true,
-					null,
-					StorageProfileS3StaticDto.S3_SERVERSIDE_ENCRYPTION.NONE
+					StorageProfileS3StaticDto.S3_STORAGE_CLASSES.STANDARD
 			);
 			given().contentType(ContentType.JSON).body(vaultDto)
 					.when().post("/storageprofile/s3static")
@@ -208,7 +189,7 @@ public class StorageProfileResourceIT {
 					null,
 					true,
 					null,
-					StorageProfileS3StaticDto.S3_SERVERSIDE_ENCRYPTION.NONE,
+					StorageProfileS3STSDto.S3_SERVERSIDE_ENCRYPTION.NONE,
 					"arn:aws:iam::430118840017:role/testing.katta.cloud-kc-realms-chipotle-sts-chain-01",
 					"JsonNullable[arn:aws:iam::430118840017:role/testing.katta.cloud-kc-realms-chipotle-sts-chain-02]",
 					null,
@@ -254,7 +235,7 @@ public class StorageProfileResourceIT {
 					null,
 					true,
 					null,
-					StorageProfileS3StaticDto.S3_SERVERSIDE_ENCRYPTION.NONE,
+					StorageProfileS3STSDto.S3_SERVERSIDE_ENCRYPTION.NONE,
 					"arn:aws:iam::430118840017:role/testing.katta.cloud-kc-realms-chipotle-sts-chain-01",
 					"JsonNullable[arn:aws:iam::430118840017:role/testing.katta.cloud-kc-realms-chipotle-sts-chain-02]",
 					null,

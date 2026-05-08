@@ -4,8 +4,6 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 
-import java.util.List;
-
 @Entity
 @Table(name = "storage_profile_s3_static")
 public class StorageProfileS3Static extends StorageProfile {// TODO make sealed?
@@ -30,34 +28,4 @@ public class StorageProfileS3Static extends StorageProfile {// TODO make sealed?
 
 	@Column
 	public String storageClass = "STANDARD";
-
-	//======================================================================
-	// (2) STS only: bucket creation (only relevant for Desktop client)
-	//======================================================================
-	@Column
-	public String region;
-
-	@Column
-	public List<String> regions;
-
-	@Column
-	public String bucketPrefix;
-
-	@Column
-	public String stsRoleCreateBucketClient;
-
-	@Column
-	public String stsRoleCreateBucketHub;
-
-	@Column
-	public String stsEndpoint = null;
-
-	@Column
-	public Boolean bucketVersioning = true;
-
-	@Column
-	public Boolean bucketAcceleration = true;
-
-	@Column
-	public String bucketEncryption;
 }
