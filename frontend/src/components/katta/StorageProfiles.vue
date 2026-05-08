@@ -4,10 +4,9 @@
       {{ t('common.loading') }}
     </div>
     <div v-else>
-      <FetchError :error="onFetchError" :retry="fetchData"/>
+      <FetchError :error="onFetchError" :retry="fetchData" />
     </div>
   </div>
-
 
   <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
     {{ t('storageProfileList.title') }}
@@ -32,7 +31,7 @@
   </div>
 
   <div class="pb-5 mt-3 border-b border-gray-200 flex flex-wrap sm:flex-nowrap gap-3 items-center whitespace-nowrap">
-    <input id="storageprofileSearch" v-model="query" :placeholder="t('storageProfileList.search.placeholder')" type="text" class="focus:ring-primary focus:border-primary block w-full shadow-sm text-sm border-gray-300 rounded-md disabled:bg-gray-200"/>
+    <input id="storageprofileSearch" v-model="query" :placeholder="t('storageProfileList.search.placeholder')" type="text" class="focus:ring-primary focus:border-primary block w-full shadow-sm text-sm border-gray-300 rounded-md disabled:bg-gray-200" />
   </div>
 
   <div v-if="filteredStorageprofiles != null && filteredStorageprofiles.length > 0" class="mt-5 bg-white shadow overflow-hidden rounded-md">
@@ -72,7 +71,7 @@
   </div>
 
   <SlideOver v-if="selectedStorageprofile != null" ref="StorageProfileDetailsSlideOver" :title="selectedStorageprofile.name" @close="selectedStorageprofile = null">
-    <StorageProfileDetails :storageprofile-id="selectedStorageprofile.id" @storageprofile-updated="v => onSelectedStorageprofileUpdate(v)"></StorageProfileDetails>
+    <StorageProfileDetails :storageprofile-id="selectedStorageprofile.id" @storageprofile-updated="v => onSelectedStorageprofileUpdate(v)" />
   </SlideOver>
 </template>
 
@@ -94,7 +93,6 @@ const onFetchError = ref<Error | null>();
 const storageprofiles = ref<StorageProfileDto[]>();
 const selectedStorageprofile = ref<StorageProfileDto | null>(null);
 
-
 const isAdmin = ref<boolean>();
 
 const query = ref('');
@@ -111,7 +109,7 @@ onMounted(fetchData);
 async function fetchData() {
   onFetchError.value = null;
   try {
-    isAdmin.value = (await auth).hasRole("admin");
+    isAdmin.value = (await auth).hasRole('admin');
     storageprofiles.value = (await backend.storageprofiles.get(undefined));
   } catch (error) {
     console.error('Retrieving storageprofile list failed.', error);

@@ -7,14 +7,14 @@ export type OpenapiType = {
   example?: string;
   nullable?: boolean;
   allOf?: OpenapiRef[];
-}
+};
 
 export type OpenapiRef = {
-  "$ref": string;
-}
+  '$ref': string;
+};
 
 export type OpenapiSchema = {
   pattern?: string;
   enum?: any;
-}
+};
 export type OpenapiSchemas = Record<string,any>;

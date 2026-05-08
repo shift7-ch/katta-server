@@ -4,7 +4,8 @@
   </div>
 
   <div v-else-if="state == State.EnterRecoveryKey" @drop.prevent="" @dragover.prevent="">
-    <form ref="form" novalidate @submit.prevent="validateRecoveryKey()" >
+    <BreadcrumbNav :crumbs="[ { label: t('vaultList.title'), to: '/app/vaults' }, { label: t('createVault.enterRecoveryKey.title') } ]" />
+    <form ref="form" novalidate @submit.prevent="validateRecoveryKey()">
       <div class="flex justify-center">
         <div class="bg-white px-4 py-5 shadow-sm sm:rounded-lg sm:p-6 text-center sm:w-full sm:max-w-lg">
           <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-emerald-100">
@@ -25,7 +26,10 @@
             <label for="recoveryKey" class="sr-only">{{ t('createVault.enterRecoveryKey.recoveryKey') }}</label>
             <label for="metadata-file" class="block text-sm font-medium leading-6 text-gray-900">{{ t('createVault.enterRecoveryKey.recoveryKey') }}</label>
             <textarea
-              id="recoveryKey" v-model="recoveryKeyStr" rows="6" name="recoveryKey"
+              id="recoveryKey"
+              v-model="recoveryKeyStr"
+              rows="6"
+              name="recoveryKey"
               class="block w-full rounded-md border-gray-300 shadow-xs focus:border-primary focus:ring-primary sm:text-sm"
               :class="{ 'invalid:border-red-300 invalid:text-red-900 focus:invalid:ring-red-500 focus:invalid:border-red-500': onRecoverError instanceof FormValidationFailedError }"
               required
@@ -42,7 +46,7 @@
               @dragleave="handleDragLeave()"
               @drop.prevent="event => handleDrop(event)"
             >
-              <input id="file-upload" ref="fileUpload" name="file-upload" type="file" class="cursor-pointer absolute inset-0 opacity-0" accept=".cryptomator, .uvf" @change="event => handleUpload(event)" >
+              <input id="file-upload" ref="fileUpload" name="file-upload" type="file" class="cursor-pointer absolute inset-0 opacity-0" accept=".cryptomator, .uvf" @change="event => handleUpload(event)" />
               <div v-if="(vaultMetadata?.length ?? 0) == 0" class="text-center">
                 <ArrowUpOnSquareIcon class="mx-auto h-12 w-12 text-gray-300" aria-hidden="true" />
                 <p class="mt-2 block text-sm font-semibold text-gray-900">
@@ -74,7 +78,9 @@
           <!-- Button -->
           <div class="mt-5 sm:mt-6">
             <button
-              type="submit" :disabled="processing" class="inline-flex w-full justify-center rounded-md border border-transparent bg-primary px-4 py-2 text-base font-medium text-white shadow-xs hover:bg-primary-d1 focus:outline-hidden focus:ring-2 focus:bg-primary focus:ring-offset-2 sm:text-sm disabled:opacity-50 disabled:hover:bg-primary disabled:cursor-not-allowed"
+              type="submit"
+              :disabled="processing"
+              class="inline-flex w-full justify-center rounded-md border border-transparent bg-primary px-4 py-2 text-base font-medium text-white shadow-xs hover:bg-primary-d1 focus:outline-hidden focus:ring-2 focus:bg-primary focus:ring-offset-2 sm:text-sm disabled:opacity-50 disabled:hover:bg-primary disabled:cursor-not-allowed"
             >
               {{ t('createVault.enterRecoveryKey.submit') }}
             </button>
@@ -90,8 +96,8 @@
   </div>
   <!-- // / start katta modification -->
   <div v-else-if="state == State.EnterVaultDetails && backends.length > 0 && regions.length > 0">
-  <!-- // \ end katta modification -->
-    <BreadcrumbNav :crumbs="[ { label: t('vaultList.title'), to: '/app/vaults' }, { label: t('createVault.enterVaultDetails.title') } ]"/>
+    <!-- // \ end katta modification -->
+    <BreadcrumbNav :crumbs="[ { label: t('vaultList.title'), to: '/app/vaults' }, { label: t('createVault.enterVaultDetails.title') } ]" />
     <VaultCreationProgress :state="State.EnterVaultDetails" :steps="getCurrentStates" class="flex justify-center mb-4" />
     <form ref="form" class="space-y-6" novalidate @submit.prevent="validateVaultDetails()">
       <div class="flex justify-center text-center">
@@ -122,149 +128,140 @@
                 {{ t('createVault.enterVaultDetails.vaultDescription') }}
                 <span class="text-xs text-gray-500">({{ t('common.optional') }})</span>
               </label>
-              <input id="vaultDescription" v-model="vault.description" :disabled="processing" type="text" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-xs sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200"/>
+              <input id="vaultDescription" v-model="vault.description" :disabled="processing" type="text" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-xs sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200" />
             </div>
 
             <!-- / start katta extension -->
             <div class="col-span-6 sm:col-span-3">
-                <label for="vaultName" class="block text-sm font-medium text-gray-700">{{ t('CreateVaultS3.enterVaultDetails.storage') }}</label>
-                <Listbox as="div" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200" v-model="selectedStorageProfile"
-                   @update:modelValue="value => { setRegionsOnSelectStorage(value);}"
-                >
-                  <ListboxButton class="relative w-full cursor-default rounded-lg bg-white py-2 pl-3 pr-10 text-left shadow-md focus:outline-none focus-visible:border-indigo-500 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 focus-visible:ring-offset-2 focus-visible:ring-offset-orange-300 sm:text-sm">
-                    <span class="block truncate text-sm font-medium text-gray-700">{{ selectedStorageProfile ? selectedStorageProfile.name : '' }}</span>
-                    <span
-                      class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2"
-                    >
-                      <ChevronUpDownIcon
-                        class="h-5 w-5 text-gray-400"
-                        aria-hidden="true"
-                      />
-                    </span>
-                  </ListboxButton>
-
-                  <transition
-                    leave-active-class="transition duration-100 ease-in"
-                    leave-from-class="opacity-100"
-                    leave-to-class="opacity-0"
+              <label for="vaultName" class="block text-sm font-medium text-gray-700">{{ t('CreateVaultS3.enterVaultDetails.storage') }}</label>
+              <Listbox
+                v-model="selectedStorageProfile"
+                as="div"
+                class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200"
+                @update:model-value="value => { setRegionsOnSelectStorage(value);}"
+              >
+                <ListboxButton class="relative w-full cursor-default rounded-lg bg-white py-2 pl-3 pr-10 text-left shadow-md focus:outline-none focus-visible:border-indigo-500 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 focus-visible:ring-offset-2 focus-visible:ring-offset-orange-300 sm:text-sm">
+                  <span class="block truncate text-sm font-medium text-gray-700">{{ selectedStorageProfile ? selectedStorageProfile.name : '' }}</span>
+                  <span
+                    class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2"
                   >
-                    <div class="col-span-6 sm:col-span-4">
-                    <ListboxOptions
-                      class="relative mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm"
+                    <ChevronUpDownIcon
+                      class="h-5 w-5 text-gray-400"
+                      aria-hidden="true"
+                    />
+                  </span>
+                </ListboxButton>
+
+                <div class="col-span-6 sm:col-span-4">
+                  <ListboxOptions
+                    class="relative mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm"
+                  >
+                    <ListboxOption
+                      v-for="storageProfile in backends"
+                      v-slot="{ active, selected }"
+                      :key="storageProfile.name"
+                      :value="storageProfile"
+                      as="template"
                     >
-                      <ListboxOption
-                        v-slot="{ active, selected }"
-                        v-for="backend in backends"
-                        :key="backend.name"
-                        :value="backend"
-                        as="template"
+                      <li
+                        :class="[
+                          active ? 'bg-emerald-100 text-emerald-900' : 'text-gray-900',
+                          'relative cursor-default select-none py-2 pl-10 pr-4',
+                        ]"
                       >
-                        <li
+                        <span
                           :class="[
-                            active ? 'bg-emerald-100 text-emerald-900' : 'text-gray-900',
-                            'relative cursor-default select-none py-2 pl-10 pr-4',
+                            selected ? 'font-medium' : 'font-normal',
+                            'block truncate col-span-6 sm:col-span-4',
                           ]"
+                        >{{ storageProfile.name }}</span>
+                        <span
+                          v-if="selected"
+                          class="absolute inset-y-0 left-0 flex items-center pl-3 text-amber-600"
                         >
-                          <span
-                            :class="[
-                              selected ? 'font-medium' : 'font-normal',
-                              'block truncate col-span-6 sm:col-span-4',
-                            ]">{{ backend.name }}</span>
-                          <span
-                            v-if="selected"
-                            class="absolute inset-y-0 left-0 flex items-center pl-3 text-amber-600"
-                          >
-                            <CheckIcon class="h-5 w-5" aria-hidden="true" />
-                          </span>
-                        </li>
-                      </ListboxOption>
-                    </ListboxOptions>
-                    </div>
-                  </transition>
-                </Listbox>
+                          <CheckIcon class="h-5 w-5" aria-hidden="true" />
+                        </span>
+                      </li>
+                    </ListboxOption>
+                  </ListboxOptions>
+                </div>
+              </Listbox>
             </div>
-            <br/>
+            <br />
             <div v-if="selectedStorageProfile?.protocol === 'S3STS'" class="col-span-6 sm:col-span-3">
-                <label for="vaultName" class="block text-sm font-medium text-gray-700">{{ t('CreateVaultS3.enterVaultDetails.region') }}</label>
-                <Listbox as="div" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200" v-model="selectedRegion">
-                  <ListboxButton class="relative w-full cursor-default rounded-lg bg-white py-2 pl-3 pr-10 text-left shadow-md focus:outline-none focus-visible:border-indigo-500 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 focus-visible:ring-offset-2 focus-visible:ring-offset-orange-300 sm:text-sm">
-                    <span class="block truncate text-sm font-medium text-gray-700">{{ selectedRegion }}</span>
-                    <span
-                      class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2"
-                    >
-                      <ChevronUpDownIcon
-                        class="h-5 w-5 text-gray-400"
-                        aria-hidden="true"
-                      />
-                    </span>
-                  </ListboxButton>
-
-                  <transition
-                    leave-active-class="transition duration-100 ease-in"
-                    leave-from-class="opacity-100"
-                    leave-to-class="opacity-0"
+              <label for="vaultName" class="block text-sm font-medium text-gray-700">{{ t('CreateVaultS3.enterVaultDetails.region') }}</label>
+              <Listbox v-model="selectedRegion" as="div" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200">
+                <ListboxButton class="relative w-full cursor-default rounded-lg bg-white py-2 pl-3 pr-10 text-left shadow-md focus:outline-none focus-visible:border-indigo-500 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 focus-visible:ring-offset-2 focus-visible:ring-offset-orange-300 sm:text-sm">
+                  <span class="block truncate text-sm font-medium text-gray-700">{{ selectedRegion }}</span>
+                  <span
+                    class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2"
                   >
-                    <div class="col-span-6 sm:col-span-4">
-                    <ListboxOptions
-                      class="relative mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm"
+                    <ChevronUpDownIcon
+                      class="h-5 w-5 text-gray-400"
+                      aria-hidden="true"
+                    />
+                  </span>
+                </ListboxButton>
+
+                <div class="col-span-6 sm:col-span-4">
+                  <ListboxOptions
+                    class="relative mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm"
+                  >
+                    <ListboxOption
+                      v-for="region in regions"
+                      v-slot="{ active, selected }"
+                      :key="region"
+                      :value="region"
+                      as="template"
                     >
-                      <ListboxOption
-                        v-slot="{ active, selected }"
-                        v-for="region in regions"
-                        :key="region"
-                        :value="region"
-                        as="template"
+                      <li
+                        :class="[
+                          active ? 'bg-emerald-100 text-emerald-900' : 'text-gray-900',
+                          'relative cursor-default select-none py-2 pl-10 pr-4',
+                        ]"
                       >
-                        <li
+                        <span
                           :class="[
-                            active ? 'bg-emerald-100 text-emerald-900' : 'text-gray-900',
-                            'relative cursor-default select-none py-2 pl-10 pr-4',
+                            selected ? 'font-medium' : 'font-normal',
+                            'block truncate col-span-6 sm:col-span-4',
                           ]"
+                        >{{ region }}</span>
+                        <span
+                          v-if="selected"
+                          class="absolute inset-y-0 left-0 flex items-center pl-3 text-amber-600"
                         >
-                          <span
-                            :class="[
-                              selected ? 'font-medium' : 'font-normal',
-                              'block truncate col-span-6 sm:col-span-4',
-                            ]">{{ region }}</span>
-                          <span
-                            v-if="selected"
-                            class="absolute inset-y-0 left-0 flex items-center pl-3 text-amber-600"
-                          >
-                            <CheckIcon class="h-5 w-5" aria-hidden="true" />
-                          </span>
-                        </li>
-                      </ListboxOption>
-                    </ListboxOptions>
-                    </div>
-                  </transition>
-                </Listbox>
+                          <CheckIcon class="h-5 w-5" aria-hidden="true" />
+                        </span>
+                      </li>
+                    </ListboxOption>
+                  </ListboxOptions>
+                </div>
+              </Listbox>
             </div>
             <div v-if="selectedStorageProfile?.protocol === 'S3STATIC'" class="col-span-6 sm:col-span-4">
-                <label for="vaultAccessKeyId" class="block text-sm font-medium text-gray-700">
-                  {{ t('CreateVaultS3.enterVaultDetails.vaultPermanentAccessKeyId') }}
-                </label>
-                <input id="vaultAccessKeyId" v-model="vaultAccessKeyId" :disabled="processing" type="text" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200" :class="{ 'invalid:border-red-300 invalid:text-red-900 focus:invalid:ring-red-500 focus:invalid:border-red-500': onCreateError instanceof FormValidationFailedError }" required/>
+              <label for="vaultAccessKeyId" class="block text-sm font-medium text-gray-700">
+                {{ t('CreateVaultS3.enterVaultDetails.vaultPermanentAccessKeyId') }}
+              </label>
+              <input id="vaultAccessKeyId" v-model="vaultAccessKeyId" :disabled="processing" type="text" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200" :class="{ 'invalid:border-red-300 invalid:text-red-900 focus:invalid:ring-red-500 focus:invalid:border-red-500': onCreateError instanceof FormValidationFailedError }" required />
             </div>
             <div v-if="selectedStorageProfile?.protocol === 'S3STATIC'" class="col-span-6 sm:col-span-4">
-                <label for="vaultSecretKey" class="block text-sm font-medium text-gray-700">
-                  {{ t('CreateVaultS3.enterVaultDetails.vaultPermanentSecretKey') }}
-                </label>
-                <input id="vaultSecretKey" v-model="vaultSecretKey" :disabled="processing" type="text" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200" :class="{ 'invalid:border-red-300 invalid:text-red-900 focus:invalid:ring-red-500 focus:invalid:border-red-500': onCreateError instanceof FormValidationFailedError }" required/>
+              <label for="vaultSecretKey" class="block text-sm font-medium text-gray-700">
+                {{ t('CreateVaultS3.enterVaultDetails.vaultPermanentSecretKey') }}
+              </label>
+              <input id="vaultSecretKey" v-model="vaultSecretKey" :disabled="processing" type="text" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200" :class="{ 'invalid:border-red-300 invalid:text-red-900 focus:invalid:ring-red-500 focus:invalid:border-red-500': onCreateError instanceof FormValidationFailedError }" required />
             </div>
             <div v-if="selectedStorageProfile?.protocol === 'S3STATIC'" class="col-span-6 sm:col-span-4">
-                <label for="vaultBucketName" class="block text-sm font-medium text-gray-700">
-                  {{ t('CreateVaultS3.enterVaultDetails.vaultPermanentBucketName') }}
-                </label>
-                <input id="vaultBucketName" v-model="vaultBucketName" :disabled="processing" type="text" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200" :class="{ 'invalid:border-red-300 invalid:text-red-900 focus:invalid:ring-red-500 focus:invalid:border-red-500': onCreateError instanceof FormValidationFailedError }" required/>
+              <label for="vaultBucketName" class="block text-sm font-medium text-gray-700">
+                {{ t('CreateVaultS3.enterVaultDetails.vaultPermanentBucketName') }}
+              </label>
+              <input id="vaultBucketName" v-model="vaultBucketName" :disabled="processing" type="text" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200" :class="{ 'invalid:border-red-300 invalid:text-red-900 focus:invalid:ring-red-500 focus:invalid:border-red-500': onCreateError instanceof FormValidationFailedError }" required />
             </div>
-            <br/>
+            <br />
             <div class="col-span-6 sm:col-span-3">
-                <label for="vaultName" class="block text-sm font-medium text-gray-700">{{ t('CreateVaultS3.enterVaultDetails.automaticAccessGrant') }}</label>
-                <input id="automaticAccessGrant" v-model="automaticAccessGrant" name="automaticAccessGrant" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" required>
+              <label for="vaultName" class="block text-sm font-medium text-gray-700">{{ t('CreateVaultS3.enterVaultDetails.automaticAccessGrant') }}</label>
+              <input id="automaticAccessGrant" v-model="automaticAccessGrant" name="automaticAccessGrant" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" required />
             </div>
             <!-- \ end katta extension -->
-
-
           </div>
 
           <div class="bg-gray-50 mt-4 px-4 py-3 sm:px-6">
@@ -281,7 +278,7 @@
                   <!-- // \ end katta extension -->
                   <!-- // / start katta modification -->
                   <p v-else-if="(onCreateError instanceof DecodeUvfRecoveryKeyError || onCreateError instanceof DecodeVf8RecoveryKeyError)">
-                  <!-- // \  end katta modification -->
+                    <!-- // \  end katta modification -->
                     {{ t('createVault.error.invalidRecoveryKey','') }}
                   </p>
                   <p v-else>
@@ -306,7 +303,7 @@
   </div>
 
   <div v-else-if="state == State.DefineEmergencyAccess">
-    <BreadcrumbNav :crumbs="[ { label: t('vaultList.title'), to: '/app/vaults' }, { label: t('createVault.enterVaultDetails.title') } ]"/>
+    <BreadcrumbNav :crumbs="[ { label: t('vaultList.title'), to: '/app/vaults' }, { label: t('createVault.enterVaultDetails.title') } ]" />
     <VaultCreationProgress :state="state" :steps="getCurrentStates" class="flex justify-center mb-4" />
     <form @submit.prevent="validateVaultEmergencyAccess()">
       <div class="flex justify-center">
@@ -325,7 +322,7 @@
                   : t('createVault.emergencyAccessDetails.description.adminDefined') }}
               </p>
             </div>
-            <EmergencyAccessSetup v-if="settings" ref="emergencyAccessSetup" :settings="settings" :required-key-shares="settings.defaultRequiredEmergencyKeyShares" :allow-choosing-council="settings.allowChoosingEmergencyCouncil"/>
+            <EmergencyAccessSetup v-if="settings" ref="emergencyAccessSetup" :settings="settings" :required-key-shares="settings.defaultRequiredEmergencyKeyShares" :allow-choosing-council="settings.allowChoosingEmergencyCouncil" />
           </div>
           <div class="bg-gray-50 mt-4 px-4 py-3 sm:px-6 rounded-b-lg">
             <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center sm:space-x-4">
@@ -360,7 +357,7 @@
   </div>
 
   <div v-else-if="state == State.ShowRecoveryKey">
-    <BreadcrumbNav :crumbs="[ { label: t('vaultList.title'), to: '/app/vaults' }, { label: t('createVault.enterVaultDetails.title') } ]"/>
+    <BreadcrumbNav :crumbs="[ { label: t('vaultList.title'), to: '/app/vaults' }, { label: t('createVault.enterVaultDetails.title') } ]" />
     <VaultCreationProgress :state="state" :steps="getCurrentStates" class="flex justify-center mb-4" />
     <form @submit.prevent="createVault()">
       <div class="flex justify-center text-center">
@@ -381,8 +378,12 @@
               <div class="overflow-hidden rounded-lg border border-gray-300 shadow-xs focus-within:border-primary focus-within:ring-1 focus-within:ring-primary">
                 <label for="recoveryKey" class="sr-only">{{ t('createVault.showRecoveryKey.recoveryKey') }}</label>
                 <textarea
-                  id="recoveryKey" v-model="recoveryKeyStr" rows="6" name="recoveryKey"
-                  class="block w-full resize-none border-0 py-3 focus:ring-0 sm:text-sm" readonly
+                  id="recoveryKey"
+                  v-model="recoveryKeyStr"
+                  rows="6"
+                  name="recoveryKey"
+                  class="block w-full resize-none border-0 py-3 focus:ring-0 sm:text-sm"
+                  readonly
                 />
                 <!-- Spacer element to match the height of the toolbar -->
                 <div class="py-2" aria-hidden="true">
@@ -394,7 +395,8 @@
                 <div class="flex flex-nowrap justify-end space-x-2 py-2 px-2 sm:px-3">
                   <div class="flex-shrink-0">
                     <button
-                      type="button" class="relative inline-flex items-center whitespace-nowrap rounded-full bg-gray-50 py-2 px-2 text-sm font-medium text-gray-500 hover:bg-gray-100 sm:px-3"
+                      type="button"
+                      class="relative inline-flex items-center whitespace-nowrap rounded-full bg-gray-50 py-2 px-2 text-sm font-medium text-gray-500 hover:bg-gray-100 sm:px-3"
                       @click="copyRecoveryKey()"
                     >
                       <ClipboardIcon class="h-5 w-5 shrink-0 text-gray-300 sm:-ml-1" aria-hidden="true" />
@@ -407,10 +409,7 @@
             </div>
             <div class="relative flex items-start text-left mt-5 sm:mt-6">
               <div class="flex h-5 items-center">
-                <input
-                  id="confirmRecoveryKey" v-model="confirmRecoveryKey" name="confirmRecoveryKey" type="checkbox"
-                  class="h-4 w-4 rounded-sm border-gray-300 text-primary focus:ring-primary" required
-                >
+                <input id="confirmRecoveryKey" v-model="confirmRecoveryKey" name="confirmRecoveryKey" type="checkbox" class="h-4 w-4 rounded-sm border-gray-300 text-primary focus:ring-primary" required />
               </div>
               <div class="ml-3 text-sm">
                 <label for="confirmRecoveryKey" class="font-medium text-gray-700">{{ t('createVault.showRecoveryKey.confirmRecoveryKey') }}</label>
@@ -453,7 +452,7 @@
   </div>
 
   <div v-else-if="state == State.Finished">
-    <BreadcrumbNav :crumbs="[ { label: t('vaultList.title'), to: '/app/vaults' }, { label: t('createVault.enterVaultDetails.title') } ]"/>
+    <BreadcrumbNav :crumbs="[ { label: t('vaultList.title'), to: '/app/vaults' }, { label: t('createVault.enterVaultDetails.title') } ]" />
     <VaultCreationProgress :state="state" :steps="getCurrentStates" class="flex justify-center mb-4" />
     <div class="flex justify-center">
       <div class="bg-white px-4 py-5 shadow-sm sm:rounded-lg sm:p-6 text-center sm:w-full sm:max-w-lg">
@@ -511,11 +510,11 @@
     {{ t('common.loading') }}
   </div>
   <div v-else-if="state == State.EnterVaultDetails && onFetchError != null">
-    <BreadcrumbNav :crumbs="[ { label: t('vaultList.title'), to: '/app/vaults' }, { label: t('createVault.enterVaultDetails.title') } ]"/>
-    <FetchError :error="onFetchError" :retry="fetchStorageProfiles"/>
+    <BreadcrumbNav :crumbs="[ { label: t('vaultList.title'), to: '/app/vaults' }, { label: t('createVault.enterVaultDetails.title') } ]" />
+    <FetchError :error="onFetchError" :retry="fetchStorageProfiles" />
   </div>
-  <div v-else-if="state == State.EnterVaultDetails && (backends.length == 0  || regions.length == 0)">
-    <BreadcrumbNav :crumbs="[ { label: t('vaultList.title'), to: '/app/vaults' }, { label: t('createVault.enterVaultDetails.title') } ]"/>
+  <div v-else-if="state == State.EnterVaultDetails && (backends.length == 0 || regions.length == 0)">
+    <BreadcrumbNav :crumbs="[ { label: t('vaultList.title'), to: '/app/vaults' }, { label: t('createVault.enterVaultDetails.title') } ]" />
     <div class="mt-3 text-center">
       <ExclamationTriangleIcon class="mx-auto h-12 w-12 text-gray-400" aria-hidden="true" />
       <h3 class="mt-2 text-sm font-medium text-gray-900">{{ t('CreateVaultS3.error.noStorageProfileAvailable') }}</h3>
@@ -576,33 +575,43 @@ enum VaultType {
 const vaultType = ref(VaultType.UniversalVaultFormat);
 
 class FormValidationFailedError extends Error {
+
   constructor() {
     super('The form is invalid.');
   }
+
 }
 
 class EmptyVaultTemplateError extends Error {
+
   constructor() {
     super('Vault template is empty.');
   }
+
 }
 
 class NoFileError extends Error {
+
   constructor() {
     super('Drag and drop operation has no file.');
   }
+
 }
 
 class WrongFileNameError extends Error {
+
   constructor() {
     super('Dropped file is not named "vault.cryptomator" or "vault.uvf"');
   }
+
 }
 
 class FileTooBigError extends Error {
+
   constructor() {
     super('Dropped file exceeds size limit of 8KB');
   }
+
 }
 
 const { t } = useI18n({ useScope: 'global' });
@@ -662,10 +671,12 @@ const onOpenBookmarkError = ref<Error | null>(null);
 const onUploadTemplateError = ref<Error | null>(null);
 
 class ErrorWithCodeHint extends Error {
+
   constructor(public message: string, public codehint: string) {
     super(message);
     this.codehint = codehint;
   }
+
 }
 // \ end katta extension
 onMounted(initialize);
@@ -685,7 +696,7 @@ async function initialize() {
         recoveryKeyStr.value = await vaultFormat8.value.createRecoveryKey();
         break;
       case VaultType.UniversalVaultFormat:
-        uvfVault.value = await UniversalVaultFormat.create({ enabled: false, maxWotDepth: 0 }, { provider: '', defaultPath: '', nickname: '', region: ''});
+        uvfVault.value = await UniversalVaultFormat.create({ enabled: false, maxWotDepth: 0 }, { provider: '', defaultPath: '', nickname: '', region: '' });
         recoveryKeyStr.value = await uvfVault.value.recoveryKey.createRecoveryKey();
         break;
     }
@@ -897,9 +908,11 @@ async function validateVaultDetails() {
           `);
         } else {
           console.error('Uploading template failed.', error);
+          onUploadTemplateError.value = error instanceof Error ? error : new Error('Unknown Error');
         }
         return;
       }
+      console.log(`GetBucketLocation returned region ${selectedRegion.value}`);
     }
   } else {
     // we assume CORS settings are set correctly by admins
@@ -917,10 +930,10 @@ async function validateVaultDetails() {
 
 function isS3ErrorWithRegion(error: unknown): error is { Code: string; Region: string } {
   return (
-    error != null &&
-    typeof error === 'object' &&
-    'Code' in error &&
-    'Region' in error
+    error != null
+    && typeof error === 'object'
+    && 'Code' in error
+    && 'Region' in error
   );
 }
 
@@ -1308,9 +1321,11 @@ async function uploadVaultTemplate() {
   }
 }
 class StorageProfileError extends Error {
+
   constructor(s: string) {
     super(s);
   }
+
 }
 // \ end katta extension
 

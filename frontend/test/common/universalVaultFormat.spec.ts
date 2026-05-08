@@ -55,7 +55,7 @@ describe('UVF', () => {
 
   describe('VaultMetadata', () => {
     it('create()', async () => {
-      const orig = await VaultMetadata.create({ enabled: true, maxWotDepth: -1 }, { provider: '', defaultPath: '', nickname: '', region: ''});
+      const orig = await VaultMetadata.create({ enabled: true, maxWotDepth: -1 }, { provider: '', defaultPath: '', nickname: '', region: '' });
       expect(orig).to.be.not.null;
       expect(orig.seeds.get(orig.initialSeedId)).to.not.be.undefined;
       expect(orig.seeds.get(orig.initialSeedId)!.length).to.eq(32);
@@ -68,7 +68,7 @@ describe('UVF', () => {
 
       beforeEach(async () => {
         // prepare some test metadata:
-        original = await VaultMetadata.create({ enabled: true, maxWotDepth: -1 }, { provider: 'provider', defaultPath: 'defaultPath', nickname: 'nickname', region: 'region'});
+        original = await VaultMetadata.create({ enabled: true, maxWotDepth: -1 }, { provider: 'provider', defaultPath: 'defaultPath', nickname: 'nickname', region: 'region' });
       });
 
       it('decrypt(encrypt(orig)) == orig', async () => {
@@ -168,7 +168,7 @@ describe('UVF', () => {
 
   describe('UniversalVaultFormat', () => {
     it('create()', async () => {
-      const uvf = await UniversalVaultFormat.create({ enabled: true, maxWotDepth: -1 }, { provider: '', defaultPath: '', nickname: '', region: ''});
+      const uvf = await UniversalVaultFormat.create({ enabled: true, maxWotDepth: -1 }, { provider: '', defaultPath: '', nickname: '', region: '' });
       expect(uvf).to.be.not.null;
       expect(uvf.metadata).to.be.not.null;
       expect(uvf.memberKey).to.be.not.null;
@@ -301,6 +301,7 @@ describe('UVF', () => {
 // #region Mocks
 
 class TestMemberKey extends MemberKey {
+
   private constructor(key: CryptoKey) {
     super(key);
   }
@@ -311,18 +312,23 @@ class TestMemberKey extends MemberKey {
     const key = await crypto.subtle.importKey('raw', raw, MemberKey.KEY_DESIGNATION, true, MemberKey.KEY_USAGE);
     return new TestMemberKey(key);
   }
+
 }
 
 class TestUserKeys extends UserKeys {
+
   public constructor(ecdhKeyPair: CryptoKeyPair, ecdsaKeyPair: CryptoKeyPair) {
     super(ecdhKeyPair, ecdsaKeyPair);
   }
+
 }
 
 class TestRecoveryKey extends RecoveryKey {
+
   public constructor(readonly publicKey: CryptoKey, readonly privateKey?: CryptoKey) {
     super(publicKey, privateKey);
   }
+
 }
 
 // #endregion
