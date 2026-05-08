@@ -55,17 +55,17 @@ public class S3StorageHelper {
 			log.info(String.format("Make S3 bucket %s for profile %s", dto, storageConfig));
 		}
 
-		final String bucketName = storageConfig.bucketPrefix() + dto.vaultId();
+		final String bucketName = storageConfig.getBucketPrefix() + dto.vaultId();
 		// https://github.com/awsdocs/aws-doc-sdk-examples/blob/main/java/example_code/s3/src/main/java/aws/example/s3/CreateBucket.java
 		final String region = dto.region();
 
 		S3ClientBuilder s3Builder = S3Client.builder()
 				.credentialsProvider(StaticCredentialsProvider.create(AwsSessionCredentials.create(dto.awsAccessKey(), dto.awsSecretKey(), dto.sessionToken())));
-		if (storageConfig.stsEndpoint() != null) {
+		if (storageConfig.getStsEndpoint() != null) {
 			s3Builder = s3Builder
-					.endpointOverride(URI.create(storageConfig.stsEndpoint()))
+					.endpointOverride(URI.create(storageConfig.getStsEndpoint()))
 					.serviceConfiguration(S3Configuration.builder()
-							.pathStyleAccessEnabled(storageConfig.withPathStyleAccessEnabled() != null ? storageConfig.withPathStyleAccessEnabled() : false)
+							.pathStyleAccessEnabled(storageConfig.isWithPathStyleAccessEnabled())
 							.build());
 		}
 		if (region != null) {
@@ -126,7 +126,7 @@ public class S3StorageHelper {
 				}
 				s3.putBucketVersioning(PutBucketVersioningRequest.builder()
 						.bucket(bucketName)
-						.versioningConfiguration(VersioningConfiguration.builder().status(storageConfig.bucketVersioning() ? BucketVersioningStatus.ENABLED : BucketVersioningStatus.SUSPENDED).build())
+						.versioningConfiguration(VersioningConfiguration.builder().status(storageConfig.isBucketVersioning() ? BucketVersioningStatus.ENABLED : BucketVersioningStatus.SUSPENDED).build())
 						.build());
 				final GetBucketVersioningResponse conf = s3.getBucketVersioning(GetBucketVersioningRequest.builder().bucket(bucketName).build());
 				if (log.isInfoEnabled()) {
@@ -135,14 +135,14 @@ public class S3StorageHelper {
 			}
 
 			// enable/disable bucket acceleration on the bucket. Skip if not set (e.g. MinIO which has no bucket acceleration API)
-			if (storageConfig.bucketAcceleration() != null) {
+			if (storageConfig.getBucketAcceleration() != null) {
 				if (log.isInfoEnabled()) {
 					log.info(String.format("Enable/disable bucket acceleration on %s (%s, %s)", bucketName, dto, storageConfig));
 				}
 				s3.putBucketAccelerateConfiguration(PutBucketAccelerateConfigurationRequest.builder()
 						.bucket(bucketName)
 						.accelerateConfiguration(AccelerateConfiguration.builder()
-								.status(storageConfig.bucketAcceleration() ? BucketAccelerateStatus.ENABLED : BucketAccelerateStatus.SUSPENDED)
+								.status(storageConfig.getBucketAcceleration() ? BucketAccelerateStatus.ENABLED : BucketAccelerateStatus.SUSPENDED)
 								.build())
 						.build());
 				final GetBucketAccelerateConfigurationResponse conf = s3.getBucketAccelerateConfiguration(GetBucketAccelerateConfigurationRequest.builder().bucket(bucketName).build());
@@ -156,7 +156,7 @@ public class S3StorageHelper {
 				if (log.isInfoEnabled()) {
 					log.info(String.format("Enable/disable bucket encryption on %s (%s, %s)", bucketName, dto, storageConfig));
 				}
-				switch (storageConfig.bucketEncryption()) {
+				switch (storageConfig.getBucketEncryption()) {
 					case NONE -> {
 					}
 					case SSE_AES256 -> s3.putBucketEncryption(
@@ -184,7 +184,7 @@ public class S3StorageHelper {
 											.build())
 									.build());
 				}
-				switch (storageConfig.bucketEncryption()) {
+				switch (storageConfig.getBucketEncryption()) {
 					case NONE:
 						// MinIO does not support bucket acceleration nor encryption
 						// https://min.io/docs/minio/linux/administration/identity-access-management/policy-based-access-control.html

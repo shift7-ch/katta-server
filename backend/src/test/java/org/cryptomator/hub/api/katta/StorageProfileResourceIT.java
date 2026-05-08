@@ -16,6 +16,8 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mockito;
 
 import java.util.Arrays;
@@ -97,6 +99,30 @@ public class StorageProfileResourceIT {
 					.body("name", equalToIgnoringCase("AWS S3 STS"));
 		}
 
+		@ParameterizedTest
+		@Order(1)
+		@DisplayName("POST /storageprofile/ returns 400 for an invalid endpoint URL")
+		@ValueSource(strings = {
+				"not a url",
+				"://no-scheme.example",
+				"http:// space-in-host",
+				"htp:bad"
+		})
+		public void testPostS3StorageProfileWithInvalidEndpoint(String invalidEndpoint) {
+			var vaultDto = new StorageProfileS3StaticDto(
+					UUID.randomUUID(),
+					"Invalid endpoint test",
+					StorageProfileDto.Protocol.S3_STATIC,
+					false,
+					invalidEndpoint,
+					false,
+					S3StorageClass.STANDARD
+			);
+			given().contentType(ContentType.JSON).body(vaultDto)
+					.when().post("/storageprofile/")
+					.then().statusCode(400);
+		}
+
 		@Test
 		@Order(2)
 		@DisplayName("GET /storageprofile returns 200 with both subtypes deserialized polymorphically")
@@ -108,11 +134,11 @@ public class StorageProfileResourceIT {
 					.as(new TypeRef<List<StorageProfileDto>>() {
 					});
 			assertEquals(2, dtos.size());
-			assertEquals(1, dtos.stream().filter(dto -> dto.protocol.equals(StorageProfileDto.Protocol.S3_STATIC)).count());
-			assertEquals(1, dtos.stream().filter(dto -> dto.protocol.equals(StorageProfileDto.Protocol.S3_STS)).count());
+			assertEquals(1, dtos.stream().filter(dto -> dto.getProtocol().equals(StorageProfileDto.Protocol.S3_STATIC)).count());
+			assertEquals(1, dtos.stream().filter(dto -> dto.getProtocol().equals(StorageProfileDto.Protocol.S3_STS)).count());
 			final StorageProfileS3STSDto s3STSDto = dtos.stream().filter(StorageProfileS3STSDto.class::isInstance).map(StorageProfileS3STSDto.class::cast).findFirst().orElseThrow();
-			assertEquals("arn:aws:iam::430118840017:role/testing.katta.cloud-kc-realms-chipotle-sts-chain-01", s3STSDto.stsRoleAccessBucketAssumeRoleWithWebIdentity);
-			assertFalse(s3STSDto.archived);
+			assertEquals("arn:aws:iam::430118840017:role/testing.katta.cloud-kc-realms-chipotle-sts-chain-01", s3STSDto.getStsRoleAccessBucketAssumeRoleWithWebIdentity());
+			assertFalse(s3STSDto.isArchived());
 		}
 
 		@Test
@@ -125,10 +151,10 @@ public class StorageProfileResourceIT {
 					.extract()
 					.as(StorageProfileDto.class);
 
-			assertEquals(UUID.fromString("72736c19-283c-49d3-80a5-ab74b5202543"), dto.id);
-			assertEquals(StorageProfileDto.Protocol.S3_STATIC, dto.protocol);
+			assertEquals(UUID.fromString("72736c19-283c-49d3-80a5-ab74b5202543"), dto.getId());
+			assertEquals(StorageProfileDto.Protocol.S3_STATIC, dto.getProtocol());
 			assertInstanceOf(StorageProfileS3StaticDto.class, dto);
-			assertFalse(dto.archived);
+			assertFalse(dto.isArchived());
 		}
 
 		@Test
@@ -141,11 +167,11 @@ public class StorageProfileResourceIT {
 					.extract()
 					.as(StorageProfileDto.class);
 
-			assertEquals(UUID.fromString("844bd517-96d4-4787-bcfa-238e103149f6"), dto.id);
-			assertEquals(StorageProfileDto.Protocol.S3_STS, dto.protocol);
+			assertEquals(UUID.fromString("844bd517-96d4-4787-bcfa-238e103149f6"), dto.getId());
+			assertEquals(StorageProfileDto.Protocol.S3_STS, dto.getProtocol());
 			final StorageProfileS3STSDto stsDto = assertInstanceOf(StorageProfileS3STSDto.class, dto);
-			assertEquals("arn:aws:iam::430118840017:role/testing.katta.cloud-kc-realms-chipotle-sts-chain-01", stsDto.stsRoleAccessBucketAssumeRoleWithWebIdentity);
-			assertFalse(stsDto.archived);
+			assertEquals("arn:aws:iam::430118840017:role/testing.katta.cloud-kc-realms-chipotle-sts-chain-01", stsDto.getStsRoleAccessBucketAssumeRoleWithWebIdentity());
+			assertFalse(stsDto.isArchived());
 		}
 
 		@Test
@@ -271,7 +297,7 @@ public class StorageProfileResourceIT {
 					.extract()
 					.as(StorageProfileDto.class);
 			assertInstanceOf(StorageProfileS3StaticDto.class, dto);
-			assertTrue(dto.archived);
+			assertTrue(dto.isArchived());
 		}
 
 		@Test
@@ -284,7 +310,7 @@ public class StorageProfileResourceIT {
 					.extract()
 					.as(StorageProfileDto.class);
 			assertInstanceOf(StorageProfileS3STSDto.class, dto);
-			assertTrue(dto.archived);
+			assertTrue(dto.isArchived());
 		}
 
 		@Test

@@ -20,13 +20,13 @@ public class StorageProfileS3Static extends StorageProfile {
 	// - template upload (STS and permanent)
 	// - client profile (STS and permanent)
 	//======================================================================
-	@Column
+	@Column(name = "endpoint")
 	public String endpoint;
 
-	@Column
+	@Column(name = "withPathStyleAccessEnabled", nullable = false)
 	public Boolean withPathStyleAccessEnabled = false;
 
-	@Column(columnDefinition = "storage_class", nullable = false)
+	@Column(name = "storageClass", columnDefinition = "storage_class", nullable = false)
 	@Enumerated(EnumType.STRING)
 	@JdbcTypeCode(SqlTypes.NAMED_ENUM)
 	public S3StorageClass storageClass = S3StorageClass.STANDARD;

@@ -4,6 +4,8 @@ import jakarta.annotation.Nullable;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import jakarta.ws.rs.ClientErrorException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.FormParam;
@@ -48,9 +50,9 @@ public class StorageProfileResource {
 	@APIResponse(responseCode = "400", description = "Constraint violation")
 	@APIResponse(responseCode = "403", description = "not an admin")
 	@APIResponse(responseCode = "409", description = "Storage profile with ID already exists")
-	public Response uploadStorageProfile(final StorageProfileDto c) {
+	public Response uploadStorageProfile(@Valid @NotNull final StorageProfileDto dto) {
 		try {
-			final StorageProfile entity = c.toEntity();
+			final StorageProfile entity = dto.toEntity();
 			if (storageProfileRepo.findByIdOptional(entity.id).isPresent()) {
 				throw new ClientErrorException(Response.Status.CONFLICT);
 			}
@@ -70,7 +72,7 @@ public class StorageProfileResource {
 	@APIResponse(responseCode = "200", description = "list of storage configuration")
 	@APIResponse(responseCode = "403", description = "not a user")
 	public List<StorageProfileDto> getStorageProfiles(@Nullable @QueryParam("archived") Boolean archived) {
-		return storageProfileRepo.findAll().stream().map(StorageProfileDto::fromEntity).filter(dto -> (archived == null) || archived.equals(dto.archived)).collect(Collectors.toList());
+		return storageProfileRepo.findAll().stream().map(StorageProfileDto::fromEntity).filter(dto -> (archived == null) || archived.equals(dto.isArchived())).collect(Collectors.toList());
 	}
 
 	@GET

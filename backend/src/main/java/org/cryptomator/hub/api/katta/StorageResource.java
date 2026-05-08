@@ -76,12 +76,12 @@ public class StorageResource {
 	@APIResponse(responseCode = "409", description = "Bucket with this name already exists")
 	@APIResponse(responseCode = "410", description = "Storage profile is archived")
 	public Response createBucket(@PathParam("vaultId") UUID vaultId, final CreateS3STSBucketDto storage) {
-		final Map<UUID, StorageProfileDto> storageConfigs = storageProfileRepo.findAll().stream().map(StorageProfileDto::fromEntity).collect(Collectors.toMap(StorageProfileDto::id, Function.identity()));
+		final Map<UUID, StorageProfileDto> storageConfigs = storageProfileRepo.findAll().stream().map(StorageProfileDto::fromEntity).collect(Collectors.toMap(StorageProfileDto::getId, Function.identity()));
 		if (!storageConfigs.containsKey(storage.storageConfigId())) {
 			return Response.status(Response.Status.BAD_REQUEST).entity(String.format("Storage profile %s not found on this server", storage.storageConfigId())).build();
 		}
 		final StorageProfileDto storageProfileDto = storageConfigs.get(storage.storageConfigId());
-		if (storageProfileDto.archived) {
+		if (storageProfileDto.isArchived()) {
 			throw new GoneException("Storage profile is archived.");
 		}
 		if (!(storageProfileDto instanceof StorageProfileS3STSDto)) {

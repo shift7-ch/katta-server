@@ -17,46 +17,46 @@ public final class StorageProfileS3STS extends StorageProfileS3Static {
 	//======================================================================
 	// (2) STS only: bucket creation (only relevant for Desktop client)
 	//======================================================================
-	@Column
+	@Column(name = "region")
 	public String region;
 
-	@Column
+	@Column(name = "regions")
 	public List<String> regions;
 
-	@Column
+	@Column(name = "bucketPrefix", nullable = false)
 	public String bucketPrefix;
 
-	@Column
+	@Column(name = "stsRoleCreateBucketClient", nullable = false)
 	public String stsRoleCreateBucketClient;
 
-	@Column
+	@Column(name = "stsRoleCreateBucketHub", nullable = false)
 	public String stsRoleCreateBucketHub;
 
-	@Column
+	@Column(name = "stsEndpoint")
 	public String stsEndpoint = null;
 
-	@Column
+	@Column(name = "bucketVersioning", nullable = false)
 	public Boolean bucketVersioning = true;
 
-	@Column
+	@Column(name = "bucketAcceleration")
 	public Boolean bucketAcceleration = true;
 
-	@Column(name = "bucketEncryption")
+	@Column(name = "bucketEncryption", nullable = false)
 	@Enumerated(EnumType.STRING)
 	public S3ServersideEncryption bucketEncryption;
 
 	//----------------------------------------------------------------------
 	// (3b) STS client profile custom properties
 	//----------------------------------------------------------------------
-	@Column
+	@Column(name = "stsRoleAccessBucketAssumeRoleWithWebIdentity", nullable = false)
 	public String stsRoleAccessBucketAssumeRoleWithWebIdentity;
 
-	@Column
+	@Column(name = "stsRoleAccessBucketAssumeRoleTaggedSession")
 	public String stsRoleAccessBucketAssumeRoleTaggedSession;
 
-	@Column
+	@Column(name = "stsDurationSeconds")
 	public Integer stsDurationSeconds = null;
 
-	@Column
+	@Column(name = "stsSessionTag")
 	public String stsSessionTag;
 }
