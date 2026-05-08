@@ -79,14 +79,11 @@ public abstract sealed class StorageProfileDto permits StorageProfileS3StaticDto
 	}
 
 	static StorageProfileDto fromEntity(final StorageProfile storageProfile) {
-		// TODO refactor to JEP 441 in JDK 21
-		if (storageProfile instanceof StorageProfileS3STS storageProfileS3STS) {
-			return StorageProfileS3STSDto.fromEntity(storageProfileS3STS);
-		} else if (storageProfile instanceof StorageProfileS3Static storageProfileS3Static) {
-			return StorageProfileS3StaticDto.fromEntity(storageProfileS3Static);
-		} else {
-			throw new IllegalStateException("StorageProfile is not of type StorageProfileS3 or StorageProfileS3STS");
-		}
+		return switch (storageProfile) {
+			case StorageProfileS3STS profile -> StorageProfileS3STSDto.fromEntity(profile);
+			case StorageProfileS3Static profile -> StorageProfileS3StaticDto.fromEntity(profile);
+			default -> throw new IllegalStateException("Unexpected value: " + storageProfile);
+		};
 	}
 
 	public UUID id() {
