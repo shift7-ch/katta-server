@@ -689,13 +689,16 @@ async function initialize() {
   if (props.recover) {
     state.value = State.EnterRecoveryKey;
   } else {
+    // / start katta extension
+    settings.value = await backend.settings.get();
+    // \ end katta extension
     switch (vaultType.value) {
       case VaultType.VaultFormat8:
         vaultFormat8.value = await VaultFormat8.create();
         recoveryKeyStr.value = await vaultFormat8.value.createRecoveryKey();
         break;
       case VaultType.UniversalVaultFormat:
-        uvfVault.value = await UniversalVaultFormat.create({ enabled: false, maxWotDepth: -1 }, { provider: '', defaultPath: '', nickname: '', region: '' });
+        uvfVault.value = await UniversalVaultFormat.create({ enabled: false, maxWotDepth: settings.value.wotMaxDepth }, { provider: '', defaultPath: '', nickname: '', region: '' });
         recoveryKeyStr.value = await uvfVault.value.recoveryKey.createRecoveryKey();
         break;
     }
