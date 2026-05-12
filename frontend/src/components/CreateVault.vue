@@ -695,7 +695,7 @@ async function initialize() {
         recoveryKeyStr.value = await vaultFormat8.value.createRecoveryKey();
         break;
       case VaultType.UniversalVaultFormat:
-        uvfVault.value = await UniversalVaultFormat.create({ enabled: false, maxWotDepth: 0 }, { provider: '', defaultPath: '', nickname: '', region: '' });
+        uvfVault.value = await UniversalVaultFormat.create({ enabled: false, maxWotDepth: -1 }, { provider: '', defaultPath: '', nickname: '', region: '' });
         recoveryKeyStr.value = await uvfVault.value.recoveryKey.createRecoveryKey();
         break;
     }
