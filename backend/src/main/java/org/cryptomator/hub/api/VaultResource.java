@@ -752,7 +752,7 @@ public class VaultResource {
 
 
 		// / start katta extension
-		keycloakCryptomatorVaultsHelper.keycloakPrepareVault(vaultId.toString(), minio, aws);
+		keycloakCryptomatorVaultsHelper.keycloakPrepareVault(kattaConfig.keycloakClientIdCryptomatorVaults(), vaultId.toString(), minio, aws);
 		keycloakCryptomatorVaultsHelper.keycloakGrantAccessToVault(vaultId.toString(), jwt.getSubject(), kattaConfig.keycloakClientIdCryptomatorVaults(), false);
 		// \ end katta extension
 

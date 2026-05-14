@@ -70,24 +70,24 @@ class KeycloakCryptomatorVaultsHelperIT {
 		final ClientScopeResource clientScopeResource = realm.clientScopes().get(vaultId);
 		final ClientWebApplicationException exc = assertThrows(ClientWebApplicationException.class, () -> clientScopeResource.getProtocolMappers().getMappers());
 		assertEquals(404, exc.getResponse().getStatus());
-		keycloakPrepareVault(vaultId, keycloak, keycloakRealm, minio, aws);
+		keycloakPrepareVault("cryptomatorvaults", vaultId, keycloak, keycloakRealm, minio, aws);
 		assertEquals(expected, clientScopeResource.getProtocolMappers().getMappers().size());
 		// must not change:
-		keycloakPrepareVault(vaultId, keycloak, keycloakRealm, null, null);
+		keycloakPrepareVault("cryptomatorvaults", vaultId, keycloak, keycloakRealm, null, null);
 		assertEquals(expected, clientScopeResource.getProtocolMappers().getMappers().size());
 		// must not change:
-		keycloakPrepareVault(vaultId, keycloak, keycloakRealm, minio, null);
+		keycloakPrepareVault("cryptomatorvaults", vaultId, keycloak, keycloakRealm, minio, null);
 		assertEquals(expected, clientScopeResource.getProtocolMappers().getMappers().size());
 		// must not change:
-		keycloakPrepareVault(vaultId, keycloak, keycloakRealm, null, aws);
+		keycloakPrepareVault("cryptomatorvaults", vaultId, keycloak, keycloakRealm, null, aws);
 		assertEquals(expected, clientScopeResource.getProtocolMappers().getMappers().size());
 		// must not change:
-		keycloakPrepareVault(vaultId, keycloak, keycloakRealm, true, true);
+		keycloakPrepareVault("cryptomatorvaults", vaultId, keycloak, keycloakRealm, true, true);
 		assertEquals(2, clientScopeResource.getProtocolMappers().getMappers().size());
 
-		keycloakPrepareVault(vaultId, keycloak, keycloakRealm, false, null);
+		keycloakPrepareVault("cryptomatorvaults", vaultId, keycloak, keycloakRealm, false, null);
 		assertEquals(1, clientScopeResource.getProtocolMappers().getMappers().size());
-		keycloakPrepareVault(vaultId, keycloak, keycloakRealm, null, false);
+		keycloakPrepareVault("cryptomatorvaults", vaultId, keycloak, keycloakRealm, null, false);
 		assertEquals(0, clientScopeResource.getProtocolMappers().getMappers().size());
 	}
 
@@ -101,10 +101,10 @@ class KeycloakCryptomatorVaultsHelperIT {
 
 		final String alice = realm.users().searchByFirstName("alice", true).getFirst().getId();
 
-		keycloakPrepareVault(vaultId, keycloak, keycloakRealm, true, true);
+		keycloakPrepareVault("cryptomatorvaults", vaultId, keycloak, keycloakRealm, true, true);
 
 		assertNull(realm.users().get(alice).roles().getAll().getClientMappings());
-		verifyTokenExchangeFails(tokenExchange(authServerUrl, vaultId, "alice"));
+		verifyNoAccess(tokenExchange(authServerUrl, vaultId, "alice"));
 
 		keycloakGrantAccessToVault(vaultId, alice, keycloakClientIdCryptomatorVaults, keycloak, keycloakRealm, false);
 		assertTrue(realm.users().get(alice).roles().getAll().getClientMappings().get(keycloakClientIdCryptomatorVaults).getMappings().stream().anyMatch(r -> r.getName().equals(vaultId)));
@@ -126,10 +126,10 @@ class KeycloakCryptomatorVaultsHelperIT {
 		final String groupies = realm.groups().query("groupies").getFirst().getId();
 		final String groupiesMember = "erin";
 
-		keycloakPrepareVault(vaultId, keycloak, keycloakRealm, true, true);
+		keycloakPrepareVault("cryptomatorvaults", vaultId, keycloak, keycloakRealm, true, true);
 
 		assertNull(realm.groups().group(groupies).roles().getAll().getClientMappings());
-		verifyTokenExchangeFails(tokenExchange(authServerUrl, vaultId, groupiesMember));
+		verifyNoAccess(tokenExchange(authServerUrl, vaultId, groupiesMember));
 
 		keycloakGrantAccessToVault(vaultId, groupies, keycloakClientIdCryptomatorVaults, keycloak, keycloakRealm, true);
 		assertTrue(realm.groups().group(groupies).roles().getAll().getClientMappings().get(keycloakClientIdCryptomatorVaults).getMappings().stream().anyMatch(r -> r.getName().equals(vaultId)));
@@ -171,10 +171,6 @@ class KeycloakCryptomatorVaultsHelperIT {
 		return tokenExchangeResponse;
 	}
 
-	private static void verifyTokenExchangeFails(final Response tokenExchangeResponse) throws JsonProcessingException {
-		// token exchange does not succeed
-		Assertions.assertEquals(400, tokenExchangeResponse.statusCode());
-	}
 
 	private static void verifyAccess(final Response tokenExchangeResponse) throws JsonProcessingException {
 		// token exchange succeeds with claims added giving access

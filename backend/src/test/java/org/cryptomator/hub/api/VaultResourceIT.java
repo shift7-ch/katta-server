@@ -586,7 +586,7 @@ public class VaultResourceIT {
 					.body("name", equalTo("VaultUpdated"))
 					.body("description", equalTo("Vault updated."))
 					.body("creationTime", not("2222-11-11T11:11:11Z"));
-			Mockito.verify(keycloakCryptomatorVaultsHelper, Mockito.times(1)).keycloakPrepareVault("7e57c0de-0000-4000-8000-000100008888", minio, aws);
+			Mockito.verify(keycloakCryptomatorVaultsHelper, Mockito.times(1)).keycloakPrepareVault("cryptomatorvaults", "7e57c0de-0000-4000-8000-000100008888", minio, aws);
 		}
 	}
 
