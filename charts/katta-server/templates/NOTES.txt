@@ -10,7 +10,7 @@
 {{- $cTitle := ternary "\033[1;36m" "" $useColor }}
 {{- $cSection := ternary "\033[1;34m" "" $useColor }}
 {{- $cReset := ternary "\033[0m" "" $useColor }}
-{{ printf "%s✅ Cryptomator Hub Installed%s\n" $cTitle $cReset }}
+{{ printf "%s✅ Katta Server Installed%s\n" $cTitle $cReset }}
 
 {{ printf "%s📦 Services%s" $cSection $cReset }}
 - Namespace: `{{ $ns }}`
