@@ -3,7 +3,7 @@ name: Helm Chart
 on:
   push:
     paths:
-      - charts/cryptomator-hub/**
+      - charts/katta-server/**
       - .github/workflows/helm-chart.yml
   workflow_dispatch:
     inputs:
@@ -32,7 +32,7 @@ jobs:
         uses: Azure/setup-helm@dda3372f752e03dde6b3237bc9431cdc2f7a02a2 # v5.0.0
 
       - name: Lint chart
-        run: helm lint charts/cryptomator-hub
+        run: helm lint charts/katta-server
 
   publish:
     name: Publish Helm Chart
@@ -65,7 +65,7 @@ jobs:
             exit 0
           fi
 
-          chart_file="charts/cryptomator-hub/Chart.yaml"
+          chart_file="charts/katta-server/Chart.yaml"
           base_version=$(awk -F': ' '/^version:/ {print $2}' "$chart_file")
           base_app_version=$(awk -F': ' '/^appVersion:/ {print $2}' "$chart_file" | tr -d '"')
 
@@ -88,7 +88,7 @@ jobs:
       - name: Package chart
         run: |
           mkdir -p dist
-          helm package charts/cryptomator-hub \
+          helm package charts/katta-server \
             --destination dist \
             --version "${{ steps.version.outputs.publish_version }}" \
             --app-version "${{ steps.version.outputs.publish_app_version }}"
@@ -109,7 +109,7 @@ jobs:
         id: push
         run: |
           set -euo pipefail
-          push_output=$(helm push "dist/cryptomator-hub-${{ steps.version.outputs.publish_version }}.tgz" "oci://ghcr.io/cryptomator/charts" 2>&1)
+          push_output=$(helm push "dist/katta-server-${{ steps.version.outputs.publish_version }}.tgz" "oci://ghcr.io/shift7-ch/charts" 2>&1)
           echo "$push_output"
 
           digest=$(printf '%s\n' "$push_output" | grep -Eo 'sha256:[0-9a-fA-F]{64}' | tail -n1 || true)
@@ -125,11 +125,11 @@ jobs:
       - name: Sign chart with cosign (keyless)
         run: |
           set -euo pipefail
-          cosign sign --yes "ghcr.io/cryptomator/charts/cryptomator-hub@${{ steps.push.outputs.chart_digest }}"
+          cosign sign --yes "ghcr.io/shift7-ch/charts/katta-server@${{ steps.push.outputs.chart_digest }}"
 
       - name: Generate artifact attestation
         uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 # v4.1.0
         with:
-          subject-name: "ghcr.io/cryptomator/charts/cryptomator-hub"
+          subject-name: "ghcr.io/shift7-ch/charts/katta-server"
           subject-digest: ${{ steps.push.outputs.chart_digest }}
           push-to-registry: true
