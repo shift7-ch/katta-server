@@ -1,7 +1,7 @@
 {{- if eq (include "katta-server.proxyEnabled" .) "true" }}
 {{- $name := printf "%s-ingress-proxy" (include "katta-server.fullname" .) -}}
 {{- $port := include "katta-server.localhostPort" . | int -}}
-{{- $ingressIP := include "katta-server.ingressControllerIP" . -}}
+{{- $podIPs := include "katta-server.ingressControllerPodIPs" . | fromJsonArray -}}
 # Port-translation proxy for *.localhost URLs.
 #
 # Pods in this chart reach `<host>.localhost:<port>` (e.g. http://s3.localhost:9090) via
@@ -10,9 +10,10 @@
 # native port 80 — same destination external clients reach via `kubectl port-forward`,
 # so the same URL works from both sides.
 #
-# Selectorless Service + EndpointSlice pattern (Service has no pods of its own; we
-# manually point its endpoint slice at the ingress controller's ClusterIP). kube-proxy
-# DNATs traffic accordingly.
+# Selectorless Service + EndpointSlice pattern: kube-proxy DNATs `:{port}` directly to
+# the ingress controller's POD IPs on port 80. We deliberately do NOT target the
+# controller's Service ClusterIP — kube-proxy in iptables mode can't chain a second
+# DNAT, so a packet that's already been NAT'd once to another Service IP gets stuck.
 apiVersion: v1
 kind: Service
 metadata:
@@ -44,10 +45,12 @@ metadata:
     kubernetes.io/service-name: {{ $name }}
 addressType: IPv4
 endpoints:
+  {{- range $ip := $podIPs }}
   - addresses:
-      - {{ $ingressIP | quote }}
+      - {{ $ip | quote }}
     conditions:
       ready: true
+  {{- end }}
 ports:
   - name: http
     protocol: TCP

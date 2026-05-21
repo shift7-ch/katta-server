@@ -22,15 +22,12 @@ ingress:
   tls:
     enabled: false
     secretName: ""
-  # In-cluster Service of the ingress controller. Used to populate hostAliases on the
-  # Hub and MinIO pods so that *.localhost names (extracted from urls.*.public) resolve
-  # to the ingress controller from inside pods — making pod-to-pod calls go through the
-  # same hostname clients use from outside. Override `clusterIPOverride` when `lookup`
-  # can't find the Service (e.g., `helm template` or non-default controller install).
+  # In-cluster Service of the ingress controller. The chart looks up its `Endpoints`
+  # resource at render time to discover the controller's pod IPs, which are used by
+  # the chart-managed port-translation proxy (see ingress.proxy below).
   controllerService:
     name: ingress-nginx-controller
     namespace: ingress-nginx
-    clusterIPOverride: ""
   # Port-translation proxy. The ingress controller serves on port 80 cluster-internally,
   # but urls.*.public often specify a non-standard port (e.g. 9090) so external clients
   # don't need privileged ports. To make the same URL+port work inside pods, the chart
@@ -170,16 +167,47 @@ minio:
   auth:
     rootUser: minioadmin
     rootPassword: "" # auto-generated if blank
+  # OpenID Connect integration. When enabled, MinIO accepts JWTs from the chart-managed
+  # Keycloak via AssumeRoleWithWebIdentity. The chart's seed Job uses this to register an
+  # S3STS storage profile (see storageProfileSeed.sts).
+  #
+  # Requires the `cryptomatorvaults` client to exist in the Keycloak realm (it does — see
+  # _realm.tpl) and the client secret to be available in the Hub secret.
+  openid:
+    enabled: false
+    clientId: "cryptomatorvaults"
+    # MinIO built-in policy assigned to every OIDC-authenticated user. Custom policies
+    # need to be created out of band (e.g. via `mc admin policy create`); for the demo
+    # the built-in `readwrite` is sufficient because Katta isolates per-vault buckets.
+    rolePolicy: "readwrite"
+    displayName: "Katta SSO"
+    # OIDC discovery URL MinIO uses to validate Keycloak-issued tokens. When blank,
+    # defaults to the IN-CLUSTER Keycloak Service URL — mirrors the same public/local
+    # split the Hub uses (HUB_KEYCLOAK_PUBLIC_URL vs HUB_KEYCLOAK_LOCAL_URL). With
+    # KC_HOSTNAME_BACKCHANNEL_DYNAMIC=true on Keycloak, the discovery doc fetched via
+    # the in-cluster URL still carries the public KC_HOSTNAME as `issuer` (matching
+    # the `iss` claim Keycloak puts in real tokens), while `jwks_uri` adapts to the
+    # request host so MinIO can fetch JWKS in-cluster without going through ingress.
+    configUrl: ""
 
-# Seeds an S3STATIC profile pointing at the bundled MinIO via a post-install/post-upgrade
-# Helm hook Job. Only takes effect when minio.enabled=true.
+# Seeds an S3STATIC profile (and optionally an S3STS profile) pointing at the bundled
+# MinIO via a post-install/post-upgrade Helm hook Job. Only takes effect when
+# minio.enabled=true.
 storageProfileSeed:
-  enabled: true
-  profileId: "" # if blank, generated on first install and remembered via a ConfigMap
-  profileName: "Bundled MinIO"
-  bucketPrefix: "katta-"
-  image:
-    repository: curlimages/curl
-    tag: "8.10.1"
-  imagePullPolicy: IfNotPresent
   hubReadyTimeoutSeconds: 300
+  static:
+    enabled: true
+    profileId: "" # if blank, generated on first install and remembered via a ConfigMap
+    profileName: "Bundled MinIO"
+    bucketPrefix: "katta-"
+  # Additionally seed an S3STS profile that exchanges the user's Keycloak token for
+  # short-lived MinIO STS credentials via AssumeRoleWithWebIdentity. Requires
+  # minio.openid.enabled=true (MinIO has to know how to validate the JWT). The role ARN
+  # is discovered at Job runtime via `mc admin idp openid info` — no hardcoding needed.
+  sts:
+    enabled: false
+    profileId: "" # if blank, generated on first install and remembered via a ConfigMap
+    profileName: "Bundled MinIO (STS)"
+    bucketPrefix: "katta-sts-"
+    sessionTag: "Vault" # AWS-only; MinIO ignores. Default per the DTO.
+    durationSeconds: "" # MinIO's default if blank

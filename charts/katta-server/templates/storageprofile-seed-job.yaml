@@ -1,13 +1,17 @@
-{{- if and .Values.minio.enabled .Values.storageProfileSeed.enabled }}
+{{- $staticEnabled := .Values.storageProfileSeed.static.enabled -}}
+{{- $stsEnabled := .Values.storageProfileSeed.sts.enabled -}}
+{{- if and .Values.minio.enabled (or $staticEnabled $stsEnabled) }}
 {{- $fullname := include "katta-server.fullname" . -}}
 {{- $hubUrl := printf "http://%s-service-hub:%v" $fullname .Values.hub.service.port -}}
 {{- $kcUrl := include "katta-server.keycloakLocalUrl" . | trimSuffix "/" -}}
+{{- $minioInternalUrl := printf "http://%s-service-minio:%v" $fullname (int .Values.minio.service.apiPort) -}}
 {{- $profileId := include "katta-server.resolvedMinioProfileId" . -}}
+{{- $stsProfileId := include "katta-server.resolvedMinioStsProfileId" . -}}
 {{- /* The storage-profile address must be the *single* URL that works from both inside
        and outside the cluster (browser/clients vs Hub pod). Pull it from urls.s3.public;
        if blank, fall back to the cluster-internal MinIO Service which only works in-cluster. */ -}}
 {{- $s3Url := .Values.urls.s3.public -}}
-{{- if not $s3Url -}}{{- $s3Url = printf "http://%s-service-minio:%v" $fullname (int .Values.minio.service.apiPort) -}}{{- end -}}
+{{- if not $s3Url -}}{{- $s3Url = $minioInternalUrl -}}{{- end -}}
 {{- $s3Scheme := regexReplaceAll "^(https?)://.*" $s3Url "${1}" -}}
 {{- $s3Host := regexReplaceAll "^https?://([^:/]+).*" $s3Url "${1}" -}}
 {{- $s3PortMatch := regexReplaceAll "^https?://[^:/]+(?::(\\d+))?.*" $s3Url "${1}" -}}
@@ -34,14 +38,109 @@ spec:
         app.kubernetes.io/component: storageprofile-seed
     spec:
       restartPolicy: OnFailure
+      {{- include "katta-server.hostAliases" . | nindent 6 }}
       securityContext:
         runAsNonRoot: true
         runAsUser: 100
         runAsGroup: 101
+      {{- if $stsEnabled }}
+      # The S3STS profile holds a role ARN that MinIO computes from its OIDC config
+      # (sha1-base32 of configURL + clientID + rolePolicy, but we don't replicate the
+      # algorithm here — we ask MinIO directly via `mc admin idp openid info`). The
+      # init container writes the ARN to /state/role-arn for the main container.
+      initContainers:
+        # Reuse the MinIO server image (which already ships `/usr/bin/mc`) so the node
+        # doesn't have to pull a second image just for this Job — important on clusters
+        # with restricted egress where `quay.io/minio/mc` is unreachable but the MinIO
+        # server image is already cached locally because the StatefulSet is running.
+        - name: discover-role-arn
+          image: "quay.io/minio/minio:latest"
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: MINIO_URL
+              value: {{ $minioInternalUrl | quote }}
+            - name: MINIO_ROOT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $fullname }}-secrets-minio
+                  key: minio_root_user
+            - name: MINIO_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $fullname }}-secrets-minio
+                  key: minio_root_password
+            # mc respects HOME for its config dir (~/.mc). The MinIO image runs as a
+            # non-root user without a writable home, so point HOME at the writable
+            # emptyDir we mount below.
+            - name: HOME
+              value: /state
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false  # mc writes its config under $HOME/.mc
+            privileged: false
+            capabilities:
+              drop:
+                - ALL
+          # Override the MinIO server entrypoint; we want a shell that runs our mc script.
+          command: ["/bin/sh", "-eu", "-c"]
+          args:
+            - |
+              echo "Configuring mc alias for $MINIO_URL..."
+              until /usr/bin/mc alias set local "$MINIO_URL" "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD" >/dev/null 2>&1; do
+                echo "  MinIO not reachable yet, retrying..."
+                sleep 2
+              done
+
+              # Extract the first arn:minio:iam:::role/<id> substring from a command's
+              # output. The MinIO image's ubi-micro base ships coreutils-single only —
+              # no grep/sed/awk — so we use POSIX shell parameter expansion. MinIO names
+              # the env-var-configured provider "_" (literal underscore).
+              extract_arn() {
+                output=$("$@" 2>/dev/null || true)
+                case "$output" in
+                  *"arn:minio:iam:::role/"*)
+                    rest="${output#*arn:minio:iam:::role/}"
+                    arn_id="${rest%%[!A-Za-z0-9]*}"
+                    if [ -n "$arn_id" ]; then
+                      printf '%s' "arn:minio:iam:::role/$arn_id"
+                      return 0
+                    fi
+                    ;;
+                esac
+                return 1
+              }
+
+              echo "Waiting for MinIO's OIDC provider to be ready (role ARN computed)..."
+              # The role ARN only appears once MinIO has successfully fetched the OIDC
+              # discovery doc from Keycloak. If MinIO can't reach Keycloak, `info` will
+              # show the config but not the ARN — the loop keeps spinning until both
+              # sides of the chain (kc-pod → ingress proxy → ingress controller) work.
+              while :; do
+                if role_arn=$(extract_arn /usr/bin/mc idp openid info local _); then
+                  break
+                fi
+                if role_arn=$(extract_arn /usr/bin/mc idp openid list local); then
+                  break
+                fi
+                if role_arn=$(extract_arn /usr/bin/mc admin config get local identity_openid); then
+                  break
+                fi
+                echo "  Role ARN not yet present in MinIO; retrying..."
+                sleep 2
+              done
+
+              echo "Discovered role ARN: $role_arn"
+              printf '%s' "$role_arn" > /state/role-arn
+          volumeMounts:
+            - name: state
+              mountPath: /state
+      {{- end }}
       containers:
+        # Reuse alpine/curl — same image as the Hub's wait-for-oidc init container, so
+        # it's guaranteed to be in the node's image cache by the time this Job runs.
         - name: seed
-          image: "{{ .Values.storageProfileSeed.image.repository }}:{{ .Values.storageProfileSeed.image.tag }}"
-          imagePullPolicy: {{ .Values.storageProfileSeed.imagePullPolicy }}
+          image: "alpine/curl:8.17.0"
+          imagePullPolicy: IfNotPresent
           env:
             - name: HUB_URL
               value: {{ $hubUrl | quote }}
@@ -51,12 +150,6 @@ spec:
               value: {{ .Values.hub.config.keycloakRealm | quote }}
             - name: HUB_READY_TIMEOUT
               value: {{ .Values.storageProfileSeed.hubReadyTimeoutSeconds | quote }}
-            - name: PROFILE_ID
-              value: {{ $profileId | quote }}
-            - name: PROFILE_NAME
-              value: {{ .Values.storageProfileSeed.profileName | quote }}
-            - name: BUCKET_PREFIX
-              value: {{ .Values.storageProfileSeed.bucketPrefix | quote }}
             - name: S3_SCHEME
               value: {{ $s3Scheme | quote }}
             - name: S3_HOST
@@ -70,6 +163,26 @@ spec:
                 secretKeyRef:
                   name: {{ $fullname }}-secrets-hub
                   key: hub_system_client_secret
+            {{- if $staticEnabled }}
+            - name: STATIC_PROFILE_ID
+              value: {{ $profileId | quote }}
+            - name: STATIC_PROFILE_NAME
+              value: {{ .Values.storageProfileSeed.static.profileName | quote }}
+            - name: STATIC_BUCKET_PREFIX
+              value: {{ .Values.storageProfileSeed.static.bucketPrefix | quote }}
+            {{- end }}
+            {{- if $stsEnabled }}
+            - name: STS_PROFILE_ID
+              value: {{ $stsProfileId | quote }}
+            - name: STS_PROFILE_NAME
+              value: {{ .Values.storageProfileSeed.sts.profileName | quote }}
+            - name: STS_BUCKET_PREFIX
+              value: {{ .Values.storageProfileSeed.sts.bucketPrefix | quote }}
+            - name: STS_SESSION_TAG
+              value: {{ .Values.storageProfileSeed.sts.sessionTag | quote }}
+            - name: STS_DURATION_SECONDS
+              value: {{ .Values.storageProfileSeed.sts.durationSeconds | quote }}
+            {{- end }}
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
@@ -81,7 +194,6 @@ spec:
           args:
             - |
               echo "Waiting for Hub at $HUB_URL/q/health/ready (timeout ${HUB_READY_TIMEOUT}s)..."
-
               deadline=$(( $(date +%s) + HUB_READY_TIMEOUT ))
               while :; do
                 code=$(curl -sS -o /dev/null -w "%{http_code}" "$HUB_URL/q/health/ready" || true)
@@ -111,13 +223,38 @@ spec:
               fi
               echo "Got access token."
 
-              # AWS SDK demands a non-empty region; MinIO ignores it.
-              # The sts* fields are required by the DTO contract even for S3STATIC profiles; the
-              # backend never reads them for the static path, so placeholder strings are fine.
-              payload=$(cat <<JSON
+              # Post-helper: POST a JSON payload and treat 201/409 as success.
+              post_profile() {
+                _path="$1"; _payload="$2"; _label="$3"
+                echo "Posting ${_label} to ${HUB_URL}${_path}..."
+                http_code=$(curl -sS -o /tmp/response.json -w "%{http_code}" \
+                  -X POST \
+                  -H "Authorization: Bearer $access_token" \
+                  -H "Content-Type: application/json" \
+                  --data "$_payload" \
+                  "${HUB_URL}${_path}")
+                case "$http_code" in
+                  201) echo "  ${_label} created (201)." ;;
+                  409) echo "  ${_label} already exists (409). Nothing to do." ;;
+                  *)
+                    echo "  Unexpected response ($http_code):" >&2
+                    cat /tmp/response.json >&2 || true
+                    echo >&2
+                    return 1
+                    ;;
+                esac
+              }
+
+              {{- if $staticEnabled }}
+
+              # ----- S3STATIC profile ---------------------------------------------------
+              # The sts* fields are required by the DTO contract even for S3STATIC
+              # profiles; the backend never reads them for the static path, so placeholder
+              # strings are fine.
+              static_payload=$(cat <<JSON
               {
-                "id": "${PROFILE_ID}",
-                "name": "${PROFILE_NAME}",
+                "id": "${STATIC_PROFILE_ID}",
+                "name": "${STATIC_PROFILE_NAME}",
                 "protocol": "S3STATIC",
                 "archived": false,
                 "scheme": "${S3_SCHEME}",
@@ -127,7 +264,7 @@ spec:
                 "storageClass": "STANDARD",
                 "region": "us-east-1",
                 "regions": ["us-east-1"],
-                "bucketPrefix": "${BUCKET_PREFIX}",
+                "bucketPrefix": "${STATIC_BUCKET_PREFIX}",
                 "stsRoleCreateBucketClient": "n/a",
                 "stsRoleCreateBucketHub": "n/a",
                 "stsEndpoint": null,
@@ -137,33 +274,71 @@ spec:
               }
               JSON
               )
+              post_profile "/api/storageprofile/s3static" "$static_payload" "S3STATIC profile ${STATIC_PROFILE_ID}"
+              {{- end }}
 
-              echo "Posting storage profile ${PROFILE_ID} to Hub..."
-              http_code=$(curl -sS -o /tmp/response.json -w "%{http_code}" \
-                -X POST \
-                -H "Authorization: Bearer $access_token" \
-                -H "Content-Type: application/json" \
-                --data "$payload" \
-                "$HUB_URL/api/storageprofile/s3static")
+              {{- if $stsEnabled }}
 
-              case "$http_code" in
-                201)
-                  echo "Storage profile created (201)."
-                  ;;
-                409)
-                  echo "Storage profile already exists (409). Nothing to do."
-                  ;;
-                *)
-                  echo "Unexpected response ($http_code):" >&2
-                  cat /tmp/response.json >&2 || true
-                  echo >&2
-                  exit 1
-                  ;;
-              esac
+              # ----- S3STS profile ------------------------------------------------------
+              # The role ARN was discovered by the `discover-role-arn` init container.
+              # All three role fields point at the same ARN: MinIO's RolePolicy mode binds
+              # one policy to the OIDC provider, so bucket-create and bucket-access flows
+              # share it. stsRoleAccessBucketAssumeRoleTaggedSession is AWS-only role
+              # chaining; MinIO ignores it, so we leave it null.
+              role_arn=$(cat /state/role-arn)
+              if [ -z "$role_arn" ]; then
+                echo "STS profile requested but /state/role-arn is empty." >&2
+                exit 1
+              fi
+              if [ -n "${STS_DURATION_SECONDS}" ]; then
+                duration_field="\"stsDurationSeconds\": ${STS_DURATION_SECONDS},"
+              else
+                duration_field="\"stsDurationSeconds\": null,"
+              fi
+              sts_payload=$(cat <<JSON
+              {
+                "id": "${STS_PROFILE_ID}",
+                "name": "${STS_PROFILE_NAME}",
+                "protocol": "S3STS",
+                "archived": false,
+                "scheme": "${S3_SCHEME}",
+                "hostname": "${S3_HOST}",
+                "port": ${S3_PORT},
+                "withPathStyleAccessEnabled": true,
+                "storageClass": "STANDARD",
+                "region": "us-east-1",
+                "regions": ["us-east-1"],
+                "bucketPrefix": "${STS_BUCKET_PREFIX}",
+                "stsRoleCreateBucketClient": "${role_arn}",
+                "stsRoleCreateBucketHub": "${role_arn}",
+                "stsEndpoint": "${S3_SCHEME}://${S3_HOST}:${S3_PORT}",
+                "bucketVersioning": true,
+                "bucketAcceleration": null,
+                "bucketEncryption": "NONE",
+                "stsRoleAccessBucketAssumeRoleWithWebIdentity": "${role_arn}",
+                "stsRoleAccessBucketAssumeRoleTaggedSession": null,
+                ${duration_field}
+                "stsSessionTag": "${STS_SESSION_TAG}"
+              }
+              JSON
+              )
+              post_profile "/api/storageprofile/s3sts" "$sts_payload" "S3STS profile ${STS_PROFILE_ID}"
+              {{- end }}
+
+              echo "Done."
           volumeMounts:
             - name: tmp
               mountPath: /tmp
+            {{- if $stsEnabled }}
+            - name: state
+              mountPath: /state
+              readOnly: true
+            {{- end }}
       volumes:
         - name: tmp
           emptyDir: {}
+        {{- if $stsEnabled }}
+        - name: state
+          emptyDir: {}
+        {{- end }}
 {{- end }}

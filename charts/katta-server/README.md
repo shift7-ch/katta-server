@@ -100,7 +100,7 @@ The Keycloak realm import is rendered from a dedicated template using:
 
 Set `minio.enabled=true` to deploy a single-replica MinIO StatefulSet with a PVC alongside the Hub.
 
-When `minio.enabled=true` and `storageProfileSeed.enabled=true`, a `post-install,post-upgrade` Helm hook Job:
+When `minio.enabled=true` and either `storageProfileSeed.static.enabled=true` or `storageProfileSeed.sts.enabled=true`, a `post-install,post-upgrade` Helm hook Job:
 
 1. Waits for the Hub `/q/health/ready` endpoint to return 200.
 2. Obtains an admin access token via Keycloak `client_credentials` (using the `cryptomatorhub-system` service account).

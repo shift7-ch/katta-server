@@ -1,4 +1,6 @@
-{{- if and .Values.minio.enabled .Values.storageProfileSeed.enabled }}
+{{- $staticEnabled := .Values.storageProfileSeed.static.enabled -}}
+{{- $stsEnabled := .Values.storageProfileSeed.sts.enabled -}}
+{{- if and .Values.minio.enabled (or $staticEnabled $stsEnabled) }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -10,7 +12,12 @@ metadata:
   annotations:
     # Keep this ConfigMap across helm uninstall so the same profile UUID is reused on reinstall —
     # otherwise the seed Job would generate a new UUID and orphan the old DB row.
-    "helm.sh/resource-policy": keep
+    # "helm.sh/resource-policy": keep
 data:
+  {{- if $staticEnabled }}
   profileId: {{ include "katta-server.resolvedMinioProfileId" . | quote }}
+  {{- end }}
+  {{- if $stsEnabled }}
+  stsProfileId: {{ include "katta-server.resolvedMinioStsProfileId" . | quote }}
+  {{- end }}
 {{- end }}

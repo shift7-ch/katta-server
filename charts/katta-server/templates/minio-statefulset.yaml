@@ -63,6 +63,29 @@ spec:
             - name: MINIO_BROWSER_REDIRECT_URL
               value: {{ trimSuffix "/" .Values.urls.minio.public | quote }}
             {{- end }}
+            {{- if .Values.minio.openid.enabled }}
+            # OIDC integration with Keycloak. MinIO validates JWTs signed by Keycloak's
+            # signing keys (fetched from the discovery URL's JWKS endpoint) and grants
+            # every authenticated user the configured RolePolicy via STS
+            # AssumeRoleWithWebIdentity. The role ARN MinIO generates is exposed through
+            # `mc admin idp openid info` and is what the chart's seed Job hands to the
+            # Hub backend in the S3STS storage profile.
+            - name: MINIO_IDENTITY_OPENID_CONFIG_URL
+              value: {{ include "katta-server.minioOidcConfigUrl" . | quote }}
+            - name: MINIO_IDENTITY_OPENID_CLIENT_ID
+              value: {{ .Values.minio.openid.clientId | quote }}
+            - name: MINIO_IDENTITY_OPENID_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "katta-server.fullname" . }}-secrets-hub
+                  key: hub_cryptomatorvaults_client_secret
+            - name: MINIO_IDENTITY_OPENID_ROLE_POLICY
+              value: {{ .Values.minio.openid.rolePolicy | quote }}
+            - name: MINIO_IDENTITY_OPENID_DISPLAY_NAME
+              value: {{ .Values.minio.openid.displayName | quote }}
+            - name: MINIO_IDENTITY_OPENID_SCOPES
+              value: "openid"
+            {{- end }}
           readinessProbe:
             httpGet:
               path: /minio/health/ready

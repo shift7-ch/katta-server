@@ -61,10 +61,16 @@ ingress controller:
 - MinIO root user: `kubectl get secret -n {{ $ns }} {{ $minioSecret }} -o jsonpath='{.data.minio_root_user}' | base64 -d && echo`
 - MinIO root password: `kubectl get secret -n {{ $ns }} {{ $minioSecret }} -o jsonpath='{.data.minio_root_password}' | base64 -d && echo`
 {{- end }}
-{{- if and .Values.minio.enabled .Values.storageProfileSeed.enabled }}
+{{- if and .Values.minio.enabled (or .Values.storageProfileSeed.static.enabled .Values.storageProfileSeed.sts.enabled) }}
 
 {{ printf "%s📥 Storage Profile Seed%s" $cSection $cReset }}
-- A `S3STATIC` profile named "{{ .Values.storageProfileSeed.profileName }}" is being registered by the `{{ $release }}-storageprofile-seed` Job (post-install/upgrade hook).
+- The following storage profiles are being registered by the `{{ $release }}-storageprofile-seed` Job (post-install/upgrade hook):
+{{- if .Values.storageProfileSeed.static.enabled }}
+  - S3STATIC: "{{ .Values.storageProfileSeed.static.profileName }}"
+{{- end }}
+{{- if .Values.storageProfileSeed.sts.enabled }}
+  - S3STS:    "{{ .Values.storageProfileSeed.sts.profileName }}"
+{{- end }}
 - Check status: `kubectl get job -n {{ $ns }} {{ $release }}-storageprofile-seed`
 - View logs:    `kubectl logs -n {{ $ns }} job/{{ $release }}-storageprofile-seed`
 {{- end }}

@@ -64,6 +64,13 @@ minio:
     rootPassword: minioadmin
   storage:
     size: 1Gi
+  # Wire MinIO up with Keycloak for AssumeRoleWithWebIdentity; the seed Job below
+  # discovers the resulting role ARN and registers an S3STS profile against it.
+  openid:
+    enabled: true
 
 storageProfileSeed:
-  enabled: true
+  static:
+    enabled: true
+  sts:
+    enabled: true

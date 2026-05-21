@@ -20,5 +20,11 @@ data:
   KC_PROXY_HEADERS: {{ .Values.keycloak.config.proxyHeaders | quote }}
   KC_HOSTNAME: {{ trimSuffix "/" (required "urls.kc.public must be set" .Values.urls.kc.public) | quote }}
   QUARKUS_TRANSACTION_MANAGER_ENABLE_RECOVERY: "false"
+  # With DYNAMIC=true Keycloak emits backchannel URLs (jwks_uri, etc.) based on the
+  # REQUEST host, while frontchannel URLs and the `issuer` claim stay pinned to
+  # KC_HOSTNAME. This lets internal clients (Hub via HUB_KEYCLOAK_LOCAL_URL, MinIO via
+  # minio.openid.configUrl pointing at the in-cluster Keycloak Service) fetch JWKS
+  # directly from KC without going through the public ingress, while tokens still
+  # carry the public KC_HOSTNAME as `iss` so external clients validate against it.
   KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
 {{- end }}

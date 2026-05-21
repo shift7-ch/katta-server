@@ -15,7 +15,7 @@
 - Optional bundled MinIO (`minio.enabled`, off by default): single-replica StatefulSet
   with a PVC, plus a `ClusterIP` Service exposing the S3 API (9000) and web console
   (9001).
-- Optional post-install Job (`storageProfileSeed.enabled`, on by default but gated on
+- Optional post-install Job (`storageProfileSeed.static.enabled` / `storageProfileSeed.sts.enabled`, gated on
   `minio.enabled`) that registers a matching `S3STATIC` storage profile in the Hub
   database via the `/api/storageprofile/s3static` endpoint. The Job:
   - waits for `/q/health/ready` to return 200,
