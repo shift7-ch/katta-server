@@ -1,0 +1,169 @@
+{{- if and .Values.minio.enabled .Values.storageProfileSeed.enabled }}
+{{- $fullname := include "katta-server.fullname" . -}}
+{{- $hubUrl := printf "http://%s-service-hub:%v" $fullname .Values.hub.service.port -}}
+{{- $kcUrl := include "katta-server.keycloakLocalUrl" . | trimSuffix "/" -}}
+{{- $profileId := include "katta-server.resolvedMinioProfileId" . -}}
+{{- /* The storage-profile address must be the *single* URL that works from both inside
+       and outside the cluster (browser/clients vs Hub pod). Pull it from urls.s3.public;
+       if blank, fall back to the cluster-internal MinIO Service which only works in-cluster. */ -}}
+{{- $s3Url := .Values.urls.s3.public -}}
+{{- if not $s3Url -}}{{- $s3Url = printf "http://%s-service-minio:%v" $fullname (int .Values.minio.service.apiPort) -}}{{- end -}}
+{{- $s3Scheme := regexReplaceAll "^(https?)://.*" $s3Url "${1}" -}}
+{{- $s3Host := regexReplaceAll "^https?://([^:/]+).*" $s3Url "${1}" -}}
+{{- $s3PortMatch := regexReplaceAll "^https?://[^:/]+(?::(\\d+))?.*" $s3Url "${1}" -}}
+{{- $s3Port := default (ternary "443" "80" (eq $s3Scheme "https")) $s3PortMatch -}}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ $fullname }}-storageprofile-seed
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "katta-server.labels" . | nindent 4 }}
+    app.kubernetes.io/component: storageprofile-seed
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "10"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: 20
+  ttlSecondsAfterFinished: 600
+  template:
+    metadata:
+      labels:
+        {{- include "katta-server.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: storageprofile-seed
+    spec:
+      restartPolicy: OnFailure
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 100
+        runAsGroup: 101
+      containers:
+        - name: seed
+          image: "{{ .Values.storageProfileSeed.image.repository }}:{{ .Values.storageProfileSeed.image.tag }}"
+          imagePullPolicy: {{ .Values.storageProfileSeed.imagePullPolicy }}
+          env:
+            - name: HUB_URL
+              value: {{ $hubUrl | quote }}
+            - name: KEYCLOAK_URL
+              value: {{ $kcUrl | quote }}
+            - name: REALM
+              value: {{ .Values.hub.config.keycloakRealm | quote }}
+            - name: HUB_READY_TIMEOUT
+              value: {{ .Values.storageProfileSeed.hubReadyTimeoutSeconds | quote }}
+            - name: PROFILE_ID
+              value: {{ $profileId | quote }}
+            - name: PROFILE_NAME
+              value: {{ .Values.storageProfileSeed.profileName | quote }}
+            - name: BUCKET_PREFIX
+              value: {{ .Values.storageProfileSeed.bucketPrefix | quote }}
+            - name: S3_SCHEME
+              value: {{ $s3Scheme | quote }}
+            - name: S3_HOST
+              value: {{ $s3Host | quote }}
+            - name: S3_PORT
+              value: {{ $s3Port | quote }}
+            - name: SYSTEM_CLIENT_ID
+              value: "cryptomatorhub-system"
+            - name: SYSTEM_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $fullname }}-secrets-hub
+                  key: hub_system_client_secret
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            privileged: false
+            capabilities:
+              drop:
+                - ALL
+          command: ["/bin/sh", "-eu", "-c"]
+          args:
+            - |
+              echo "Waiting for Hub at $HUB_URL/q/health/ready (timeout ${HUB_READY_TIMEOUT}s)..."
+
+              deadline=$(( $(date +%s) + HUB_READY_TIMEOUT ))
+              while :; do
+                code=$(curl -sS -o /dev/null -w "%{http_code}" "$HUB_URL/q/health/ready" || true)
+                if [ "$code" = "200" ]; then
+                  echo "Hub is ready."
+                  break
+                fi
+                if [ "$(date +%s)" -ge "$deadline" ]; then
+                  echo "Hub did not become ready within ${HUB_READY_TIMEOUT}s (last code: $code)" >&2
+                  exit 1
+                fi
+                sleep 2
+              done
+
+              echo "Requesting admin token from Keycloak..."
+              token_response=$(curl -sS -X POST \
+                -H "Content-Type: application/x-www-form-urlencoded" \
+                -d "grant_type=client_credentials" \
+                --data-urlencode "client_id=${SYSTEM_CLIENT_ID}" \
+                --data-urlencode "client_secret=${SYSTEM_CLIENT_SECRET}" \
+                "$KEYCLOAK_URL/realms/$REALM/protocol/openid-connect/token")
+              access_token=$(printf '%s' "$token_response" | sed -n 's/.*"access_token"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
+              if [ -z "$access_token" ]; then
+                echo "Failed to obtain access token. Response was:" >&2
+                printf '%s\n' "$token_response" >&2
+                exit 1
+              fi
+              echo "Got access token."
+
+              # AWS SDK demands a non-empty region; MinIO ignores it.
+              # The sts* fields are required by the DTO contract even for S3STATIC profiles; the
+              # backend never reads them for the static path, so placeholder strings are fine.
+              payload=$(cat <<JSON
+              {
+                "id": "${PROFILE_ID}",
+                "name": "${PROFILE_NAME}",
+                "protocol": "S3STATIC",
+                "archived": false,
+                "scheme": "${S3_SCHEME}",
+                "hostname": "${S3_HOST}",
+                "port": ${S3_PORT},
+                "withPathStyleAccessEnabled": true,
+                "storageClass": "STANDARD",
+                "region": "us-east-1",
+                "regions": ["us-east-1"],
+                "bucketPrefix": "${BUCKET_PREFIX}",
+                "stsRoleCreateBucketClient": "n/a",
+                "stsRoleCreateBucketHub": "n/a",
+                "stsEndpoint": null,
+                "bucketVersioning": true,
+                "bucketAcceleration": null,
+                "bucketEncryption": "NONE"
+              }
+              JSON
+              )
+
+              echo "Posting storage profile ${PROFILE_ID} to Hub..."
+              http_code=$(curl -sS -o /tmp/response.json -w "%{http_code}" \
+                -X POST \
+                -H "Authorization: Bearer $access_token" \
+                -H "Content-Type: application/json" \
+                --data "$payload" \
+                "$HUB_URL/api/storageprofile/s3static")
+
+              case "$http_code" in
+                201)
+                  echo "Storage profile created (201)."
+                  ;;
+                409)
+                  echo "Storage profile already exists (409). Nothing to do."
+                  ;;
+                *)
+                  echo "Unexpected response ($http_code):" >&2
+                  cat /tmp/response.json >&2 || true
+                  echo >&2
+                  exit 1
+                  ;;
+              esac
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+{{- end }}

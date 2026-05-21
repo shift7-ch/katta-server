@@ -22,30 +22,168 @@ app.kubernetes.io/name: {{ include "katta-server.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end -}}
 
-{{/* 
+{{/*
 
-Compute relative URLs for hub and keycloak based on their public URLs and whether ingress is enabled.
-This allows users to set the public URLs to the actual external URLs of the services, and we can derive the relative paths required for configuring the services to work correctly both with and without ingress.
+Resolve the in-cluster ClusterIP of the ingress controller Service, used to populate
+hostAliases entries on pods so *.localhost names route through the ingress from inside
+the cluster. Returns empty if the Service can't be found (e.g. during `helm template`).
 
 */}}
-
-{{- define "katta-server.hubRelativePath" -}}
-{{- $path := regexReplaceAll "^https?://[^/]+" (required "urls.hub.public must be set" .Values.urls.hub.public) "" -}}
-{{- $trimmed := trimAll "/" $path -}}
-{{- printf "/%s" $trimmed -}}
+{{- define "katta-server.ingressControllerIP" -}}
+{{- if .Values.ingress.controllerService.clusterIPOverride -}}
+{{- .Values.ingress.controllerService.clusterIPOverride -}}
+{{- else -}}
+{{- $svc := lookup "v1" "Service" .Values.ingress.controllerService.namespace .Values.ingress.controllerService.name -}}
+{{- if and $svc $svc.spec $svc.spec.clusterIP -}}
+{{- $svc.spec.clusterIP -}}
+{{- end -}}
+{{- end -}}
 {{- end -}}
 
-{{- define "katta-server.keycloakRelativePath" -}}
-{{- $path := regexReplaceAll "^https?://[^/]+" (required "urls.kc.public must be set" .Values.urls.kc.public) "" -}}
-{{- $trimmed := trimAll "/" $path -}}
-{{- printf "/%s" $trimmed -}}
+{{/*
+
+Collect the set of hostnames from .Values.urls.*.public whose host portion is a
+*.localhost subdomain (excluding bare "localhost"). These are the names we want to
+add to pod hostAliases so internal calls route through the ingress.
+
+*/}}
+{{- define "katta-server.localhostHosts" -}}
+{{- $hostSet := dict -}}
+{{- range $name, $cfg := .Values.urls -}}
+  {{- if (and (kindIs "map" $cfg) (hasKey $cfg "public")) -}}
+    {{- $public := index $cfg "public" -}}
+    {{- if $public -}}
+      {{- $host := regexReplaceAll "^https?://([^:/]+).*" $public "${1}" -}}
+      {{- if and $host (ne $host "localhost") (hasSuffix ".localhost" $host) -}}
+        {{- $_ := set $hostSet $host true -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- keys $hostSet | sortAlpha | toJson -}}
+{{- end -}}
+
+{{/*
+
+Extract the port from the first *.localhost URL in .Values.urls.*.public. All such URLs
+are expected to share the same port (the chart's ingress proxy listens on exactly one
+port). Returns the empty string if there is no port (implicit 80) or no *.localhost URLs.
+
+*/}}
+{{- define "katta-server.localhostPort" -}}
+{{- $port := "" -}}
+{{- range $name, $cfg := .Values.urls -}}
+  {{- if (and (kindIs "map" $cfg) (hasKey $cfg "public") (eq $port "")) -}}
+    {{- $public := index $cfg "public" -}}
+    {{- if $public -}}
+      {{- $host := regexReplaceAll "^https?://([^:/]+).*" $public "${1}" -}}
+      {{- if and $host (ne $host "localhost") (hasSuffix ".localhost" $host) -}}
+        {{- $portMatch := regexReplaceAll "^https?://[^:/]+(?::(\\d+))?.*" $public "${1}" -}}
+        {{- if $portMatch -}}{{- $port = $portMatch -}}{{- end -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- $port -}}
+{{- end -}}
+
+{{/*
+
+Resolve the ClusterIP of the chart-managed port-translation proxy Service. Prefers
+ingress.proxy.clusterIP from values (deterministic on first install); falls back to
+`lookup` on the proxy Service if it already exists. Returns empty otherwise.
+
+*/}}
+{{- define "katta-server.proxyServiceIP" -}}
+{{- if .Values.ingress.proxy.clusterIP -}}
+{{- .Values.ingress.proxy.clusterIP -}}
+{{- else -}}
+{{- $name := printf "%s-ingress-proxy" (include "katta-server.fullname" .) -}}
+{{- $svc := lookup "v1" "Service" .Release.Namespace $name -}}
+{{- if and $svc $svc.spec $svc.spec.clusterIP -}}
+{{- $svc.spec.clusterIP -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+
+True when the chart should create the port-translation proxy. We create it when there
+are *.localhost URLs with a non-default port AND we can resolve the in-cluster ingress
+controller IP to populate the EndpointSlice.
+
+*/}}
+{{- define "katta-server.proxyEnabled" -}}
+{{- $hosts := include "katta-server.localhostHosts" . | fromJsonArray -}}
+{{- $port := include "katta-server.localhostPort" . -}}
+{{- $ip := include "katta-server.ingressControllerIP" . -}}
+{{- if and $hosts $port $ip -}}true{{- end -}}
+{{- end -}}
+
+{{/*
+
+Emit a `hostAliases:` YAML block (suitable for pod spec) that points every collected
+*.localhost host at the chart's port-translation proxy Service (when enabled) or
+directly at the ingress controller (when URLs use the default port 80). Emits nothing
+if no matching hosts or no resolvable target IP.
+
+Usage:
+  spec:
+    {{- include "katta-server.hostAliases" . | nindent N }}
+
+*/}}
+{{- define "katta-server.hostAliases" -}}
+{{- $hosts := include "katta-server.localhostHosts" . | fromJsonArray -}}
+{{- $proxyEnabled := include "katta-server.proxyEnabled" . -}}
+{{- $ip := "" -}}
+{{- if $proxyEnabled -}}
+  {{- $ip = include "katta-server.proxyServiceIP" . -}}
+{{- else -}}
+  {{- $ip = include "katta-server.ingressControllerIP" . -}}
+{{- end -}}
+{{- if and $ip $hosts -}}
+hostAliases:
+  - ip: {{ $ip | quote }}
+    hostnames:
+{{- range $h := $hosts }}
+      - {{ $h | quote }}
+{{- end }}
+{{- end -}}
+{{- end -}}
+
+{{/*
+
+Compose the Hub's Content-Security-Policy header. If hub.config.contentSecurityPolicy
+is set explicitly, return it verbatim. Otherwise build a policy whose connect-src
+includes every configured urls.*.public origin (scheme://host[:port]), so the SPA can
+reach the chart's Keycloak, S3, MinIO console etc. without browser CSP violations.
+
+*/}}
+{{- define "katta-server.contentSecurityPolicy" -}}
+{{- if .Values.hub.config.contentSecurityPolicy -}}
+{{- .Values.hub.config.contentSecurityPolicy -}}
+{{- else -}}
+{{- $origins := list "'self'" "api.cryptomator.org" -}}
+{{- range $name, $cfg := .Values.urls -}}
+  {{- if (and (kindIs "map" $cfg) (hasKey $cfg "public")) -}}
+    {{- $public := index $cfg "public" -}}
+    {{- if $public -}}
+      {{- $origin := regexReplaceAll "^(https?://[^/]+).*" $public "${1}" -}}
+      {{- if and $origin (not (has $origin $origins)) -}}
+        {{- $origins = append $origins $origin -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- printf "default-src 'self'; connect-src %s; object-src 'none'; child-src 'self'; img-src * data:; frame-ancestors 'none'" (join " " $origins) -}}
+{{- end -}}
 {{- end -}}
 
 {{- define "katta-server.keycloakLocalUrl" -}}
 {{- if .Values.urls.kc.clusterInternal -}}
 {{- trimSuffix "/" .Values.urls.kc.clusterInternal -}}
 {{- else if .Values.keycloak.enabled -}}
-{{- printf "http://%s:%v%s" (print (include "katta-server.fullname" .) "-service-kc") .Values.keycloak.service.httpPort (include "katta-server.keycloakRelativePath" .) -}}
+{{- printf "http://%s:%v" (print (include "katta-server.fullname" .) "-service-kc") .Values.keycloak.service.httpPort -}}
 {{- else -}}
 {{/* if keycloak isn't part of the deployment, use public url: */}}
 {{- trimSuffix "/" (required "urls.kc.public must be set" .Values.urls.kc.public) -}}

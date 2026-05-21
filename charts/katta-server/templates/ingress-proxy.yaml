@@ -1,0 +1,55 @@
+{{- if eq (include "katta-server.proxyEnabled" .) "true" }}
+{{- $name := printf "%s-ingress-proxy" (include "katta-server.fullname" .) -}}
+{{- $port := include "katta-server.localhostPort" . | int -}}
+{{- $ingressIP := include "katta-server.ingressControllerIP" . -}}
+# Port-translation proxy for *.localhost URLs.
+#
+# Pods in this chart reach `<host>.localhost:<port>` (e.g. http://s3.localhost:9090) via
+# hostAliases that resolve every *.localhost name to THIS Service's ClusterIP. The
+# Service then forwards :{port} to the cluster's nginx-ingress-controller on its
+# native port 80 — same destination external clients reach via `kubectl port-forward`,
+# so the same URL works from both sides.
+#
+# Selectorless Service + EndpointSlice pattern (Service has no pods of its own; we
+# manually point its endpoint slice at the ingress controller's ClusterIP). kube-proxy
+# DNATs traffic accordingly.
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "katta-server.labels" . | nindent 4 }}
+    app.kubernetes.io/component: ingress-proxy
+spec:
+  type: ClusterIP
+  {{- with .Values.ingress.proxy.clusterIP }}
+  clusterIP: {{ . | quote }}
+  {{- end }}
+  ports:
+    - name: http
+      port: {{ $port }}
+      targetPort: 80
+      protocol: TCP
+---
+apiVersion: discovery.k8s.io/v1
+kind: EndpointSlice
+metadata:
+  name: {{ $name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "katta-server.labels" . | nindent 4 }}
+    app.kubernetes.io/component: ingress-proxy
+    # Required for the EndpointSlice to be associated with the Service above.
+    kubernetes.io/service-name: {{ $name }}
+addressType: IPv4
+endpoints:
+  - addresses:
+      - {{ $ingressIP | quote }}
+    conditions:
+      ready: true
+ports:
+  - name: http
+    protocol: TCP
+    port: 80
+{{- end }}

@@ -1,23 +1,6 @@
 {{- if eq .Values.ingress.controller "traefik" }}
 {{- $hubHost := regexReplaceAll "^https?://([^:/]+).*" (required "urls.hub.public must be set" .Values.urls.hub.public) "${1}" -}}
-{{- $hubPath := include "katta-server.hubRelativePath" . -}}
-{{- $hubMetricsPath := printf "%s/q/metrics" $hubPath -}}
-{{- $kcHost := regexReplaceAll "^https?://([^:/]+).*" (required "urls.kc.public must be set" .Values.urls.kc.public) "${1}" -}}
-{{- $kcPath := include "katta-server.keycloakRelativePath" . -}}
-{{- if ne $hubPath "/" }}
----
-apiVersion: traefik.io/v1alpha1
-kind: Middleware
-metadata:
-  name: {{ include "katta-server.fullname" . }}-stripprefix
-  namespace: {{ .Release.Namespace }}
-  labels:
-    {{- include "katta-server.labels" . | nindent 4 }}
-spec:
-  stripPrefix:
-    prefixes:
-      - {{ $hubPath | quote }}
-{{- end }}
+{{- $kcHost := regexReplaceAll "^https?://([^:/]+).*" (required "urls.kc.public must be set" .Values.urls.kc.public) "${1}" }}
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -26,13 +9,10 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "katta-server.labels" . | nindent 4 }}
+  {{- with .Values.ingress.annotations }}
   annotations:
-    {{- if ne $hubPath "/" }}
-    traefik.ingress.kubernetes.io/router.middlewares: {{ printf "%s-%s-stripprefix@kubernetescrd" .Release.Namespace (include "katta-server.fullname" .) | quote }}
-    {{- end }}
-    {{- with .Values.ingress.annotations }}
     {{- toYaml . | nindent 4 }}
-    {{- end }}
+  {{- end }}
 spec:
   {{- if .Values.ingress.className }}
   ingressClassName: {{ .Values.ingress.className }}
@@ -41,7 +21,7 @@ spec:
     - host: {{ $hubHost | quote }}
       http:
         paths:
-          - path: {{ $hubPath | quote }}
+          - path: "/"
             pathType: Prefix
             backend:
               service:
@@ -74,12 +54,8 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "katta-server.labels" . | nindent 4 }}
-  {{- $metricsMiddleware := printf "%s-%s-metrics-auth@kubernetescrd" .Release.Namespace (include "katta-server.fullname" .) -}}
-  {{- if ne $hubPath "/" -}}
-    {{- $metricsMiddleware = printf "%[1]s-%[2]s-stripprefix@kubernetescrd,%[1]s-%[2]s-metrics-auth@kubernetescrd" .Release.Namespace (include "katta-server.fullname" .) -}}
-  {{- end }}
   annotations:
-    traefik.ingress.kubernetes.io/router.middlewares: {{ $metricsMiddleware | quote }}
+    traefik.ingress.kubernetes.io/router.middlewares: {{ printf "%s-%s-metrics-auth@kubernetescrd" .Release.Namespace (include "katta-server.fullname" .) | quote }}
     {{- with .Values.ingress.annotations }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
@@ -91,13 +67,13 @@ spec:
     - host: {{ $hubHost | quote }}
       http:
         paths:
-          - path: {{ $hubMetricsPath | quote }}
+          - path: "/q/metrics"
             pathType: Prefix
             backend:
               service:
                 name: {{ include "katta-server.fullname" . }}-service-hub
                 port:
-                  number: {{ .Values.hub.service.managementPort }}
+                  number: {{ .Values.hub.service.port }}
   {{- if .Values.ingress.tls.enabled }}
   tls:
     - hosts:
@@ -126,7 +102,7 @@ spec:
     - host: {{ $kcHost | quote }}
       http:
         paths:
-          - path: {{ $kcPath | quote }}
+          - path: "/"
             pathType: Prefix
             backend:
               service:
@@ -137,6 +113,78 @@ spec:
   tls:
     - hosts:
         - {{ $kcHost | quote }}
+      secretName: {{ .Values.ingress.tls.secretName | required "ingress.tls.secretName must be set when ingress.tls.enabled=true" }}
+  {{- end }}
+{{- end }}
+{{- if and .Values.minio.enabled .Values.urls.s3.public }}
+{{- $s3Host := regexReplaceAll "^https?://([^:/]+).*" .Values.urls.s3.public "${1}" }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "katta-server.fullname" . }}-ingress-s3
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "katta-server.labels" . | nindent 4 }}
+  {{- with .Values.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if .Values.ingress.className }}
+  ingressClassName: {{ .Values.ingress.className }}
+  {{- end }}
+  rules:
+    - host: {{ $s3Host | quote }}
+      http:
+        paths:
+          - path: "/"
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "katta-server.fullname" . }}-service-minio
+                port:
+                  number: {{ .Values.minio.service.apiPort }}
+  {{- if .Values.ingress.tls.enabled }}
+  tls:
+    - hosts:
+        - {{ $s3Host | quote }}
+      secretName: {{ .Values.ingress.tls.secretName | required "ingress.tls.secretName must be set when ingress.tls.enabled=true" }}
+  {{- end }}
+{{- end }}
+{{- if and .Values.minio.enabled .Values.urls.minio.public }}
+{{- $minioHost := regexReplaceAll "^https?://([^:/]+).*" .Values.urls.minio.public "${1}" }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "katta-server.fullname" . }}-ingress-minio
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "katta-server.labels" . | nindent 4 }}
+  {{- with .Values.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if .Values.ingress.className }}
+  ingressClassName: {{ .Values.ingress.className }}
+  {{- end }}
+  rules:
+    - host: {{ $minioHost | quote }}
+      http:
+        paths:
+          - path: "/"
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "katta-server.fullname" . }}-service-minio
+                port:
+                  number: {{ .Values.minio.service.consolePort }}
+  {{- if .Values.ingress.tls.enabled }}
+  tls:
+    - hosts:
+        - {{ $minioHost | quote }}
       secretName: {{ .Values.ingress.tls.secretName | required "ingress.tls.secretName must be set when ingress.tls.enabled=true" }}
   {{- end }}
 {{- end }}

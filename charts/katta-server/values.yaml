@@ -6,6 +6,10 @@ urls:
     clusterInternal: ""
     authServerUrl: ""
     tokenIssuer: ""
+  minio:
+    public: "" # only honored when minio.enabled=true; if blank, the console is not exposed via ingress
+  s3:
+    public: "" # only honored when minio.enabled=true; address stored in the seeded storage profile (S3 API, NOT the console)
 
 notes:
   useColor: true
@@ -18,13 +22,34 @@ ingress:
   tls:
     enabled: false
     secretName: ""
+  # In-cluster Service of the ingress controller. Used to populate hostAliases on the
+  # Hub and MinIO pods so that *.localhost names (extracted from urls.*.public) resolve
+  # to the ingress controller from inside pods — making pod-to-pod calls go through the
+  # same hostname clients use from outside. Override `clusterIPOverride` when `lookup`
+  # can't find the Service (e.g., `helm template` or non-default controller install).
+  controllerService:
+    name: ingress-nginx-controller
+    namespace: ingress-nginx
+    clusterIPOverride: ""
+  # Port-translation proxy. The ingress controller serves on port 80 cluster-internally,
+  # but urls.*.public often specify a non-standard port (e.g. 9090) so external clients
+  # don't need privileged ports. To make the same URL+port work inside pods, the chart
+  # creates a selectorless Service+EndpointSlice in this namespace that routes traffic
+  # from `proxyPort` to the ingress controller on port 80.
+  #
+  # Auto-enabled when any urls.*.public has a *.localhost host with a port other than 80.
+  # Pin clusterIP for deterministic first install — without pinning, the proxy's IP is
+  # only discoverable after creation, so hostAliases on Hub/MinIO pods would be empty on
+  # the first `helm install` and only populate on subsequent upgrades. Pick a free IP
+  # in your cluster's Service CIDR (minikube default: 10.96.0.0/12).
+  proxy:
+    clusterIP: ""
 
 hub:
   imagePullPolicy: IfNotPresent
   service:
     type: ClusterIP
     port: 8080
-    managementPort: 9000
   resources:
     requests:
       cpu: 10m
@@ -37,6 +62,12 @@ hub:
     keycloakSyncerPeriod: 5m
     keycloakPublicUrl: ""
     keycloakLocalUrl: ""
+    # Hub's Content-Security-Policy response header. When blank, the chart auto-composes
+    # a policy that lets the SPA fetch from every origin in `urls.*.public` (in addition
+    # to `'self'` and `api.cryptomator.org`). Set explicitly to lock down or extend in
+    # production; an explicit value is used verbatim and the auto-composed list is not
+    # applied. Maps to QUARKUS_HTTP_HEADER__CONTENT_SECURITY_POLICY__VALUE on the pod.
+    contentSecurityPolicy: ""
   metrics:
     enabled: true
     username: metrics
@@ -55,6 +86,7 @@ hub:
   secrets:
     create: true
     systemClientSecret: "" # optional; auto-generated when chart manages Hub secret
+    cryptomatorvaultsClientSecret: "" # optional; auto-generated when chart manages Hub secret
     initialId: ""
     initialLicense: ""
   license:
@@ -111,3 +143,43 @@ postgres:
   auth:
     adminUsername: postgres
     adminPassword: ""
+
+# Bundled MinIO (off by default). When enabled, the storageProfileSeed Job will
+# auto-register a matching S3STATIC profile in the Hub database.
+minio:
+  enabled: false
+  image:
+    repository: quay.io/minio/minio
+    tag: latest
+  imagePullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    apiPort: 9000
+    consolePort: 9001
+  storage:
+    size: 10Gi
+    storageClassName: ""
+    accessMode: ReadWriteOnce
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+  auth:
+    rootUser: minioadmin
+    rootPassword: "" # auto-generated if blank
+
+# Seeds an S3STATIC profile pointing at the bundled MinIO via a post-install/post-upgrade
+# Helm hook Job. Only takes effect when minio.enabled=true.
+storageProfileSeed:
+  enabled: true
+  profileId: "" # if blank, generated on first install and remembered via a ConfigMap
+  profileName: "Bundled MinIO"
+  bucketPrefix: "katta-"
+  image:
+    repository: curlimages/curl
+    tag: "8.10.1"
+  imagePullPolicy: IfNotPresent
+  hubReadyTimeoutSeconds: 300

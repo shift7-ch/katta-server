@@ -1,38 +1,44 @@
 {{- $useColor := .Values.notes.useColor }}
 {{- $ns := .Release.Namespace }}
-{{- $hubSvc := printf "%s-service-hub" (include "katta-server.fullname" .) }}
-{{- $kcSvc := printf "%s-service-kc" (include "katta-server.fullname" .) }}
-{{- $pgSvc := printf "%s-service-pg" (include "katta-server.fullname" .) }}
-{{- $hubSecret := printf "%s-secrets-hub" (include "katta-server.fullname" .) }}
-{{- $hubMetricsSecret := printf "%s-secrets-hub-metrics" (include "katta-server.fullname" .) }}
-{{- $kcSecret := printf "%s-secrets-kc" (include "katta-server.fullname" .) }}
-{{- $pgSecret := printf "%s-secrets-pg" (include "katta-server.fullname" .) }}
+{{- $release := include "katta-server.fullname" . }}
+{{- $hubSecret := printf "%s-secrets-hub" $release }}
+{{- $hubMetricsSecret := printf "%s-secrets-hub-metrics" $release }}
+{{- $kcSecret := printf "%s-secrets-kc" $release }}
+{{- $pgSecret := printf "%s-secrets-pg" $release }}
+{{- $minioSecret := printf "%s-secrets-minio" $release }}
 {{- $cTitle := ternary "\033[1;36m" "" $useColor }}
 {{- $cSection := ternary "\033[1;34m" "" $useColor }}
 {{- $cReset := ternary "\033[0m" "" $useColor }}
 {{ printf "%s✅ Katta Server Installed%s\n" $cTitle $cReset }}
 
-{{ printf "%s📦 Services%s" $cSection $cReset }}
-- Namespace: `{{ $ns }}`
-- Hub: `{{ $hubSvc }}:{{ .Values.hub.service.port }}`
-{{- if .Values.keycloak.enabled }}
-- Keycloak: `{{ $kcSvc }}:{{ .Values.keycloak.service.httpPort }}`
-{{- end }}
-{{- if .Values.postgres.enabled }}
-- PostgreSQL: `{{ $pgSvc }}:{{ .Values.postgres.service.port }}`
-{{- end }}
-
-{{ printf "%s🌐 Ingress%s" $cSection $cReset }}
-{{- if .Values.ingress.controller }}
-- Hub: {{ .Values.urls.hub.public }}
+{{ printf "%s🌐 URLs%s" $cSection $cReset }}
+- Hub UI:          {{ .Values.urls.hub.public }}
 {{- if .Values.hub.metrics.enabled }}
-- Hub metrics: {{ .Values.urls.hub.public }}/q/metrics
+- Hub metrics:     {{ trimSuffix "/" .Values.urls.hub.public }}/q/metrics
 {{- end }}
 {{- if .Values.keycloak.enabled }}
-- Keycloak: {{ .Values.urls.kc.public }}
+- Keycloak admin:  {{ .Values.urls.kc.public }}
 {{- end }}
+{{- if .Values.minio.enabled }}
+{{- if .Values.urls.minio.public }}
+- MinIO console:   {{ .Values.urls.minio.public }}
+{{- end }}
+{{- if .Values.urls.s3.public }}
+- MinIO S3 API:    {{ .Values.urls.s3.public }} (used by the seeded storage profile)
+{{- end }}
+{{- end }}
+{{- if not .Values.ingress.controller }}
+
+⚠️ Ingress is disabled. The URLs above resolve only via in-cluster Services; configure
+   ingress manually or `kubectl port-forward` to each Service.
 {{- else }}
-Ingress is disabled. Configure ingress manually to the services above.
+{{- $localhostPort := include "katta-server.localhostPort" . }}
+{{- if $localhostPort }}
+
+These URLs are *.localhost names; to reach them from your host machine, port-forward the
+ingress controller:
+   kubectl port-forward -n ingress-nginx svc/ingress-nginx-controller {{ $localhostPort }}:80
+{{- end }}
 {{- end }}
 
 {{ printf "%s🔐 Credentials%s" $cSection $cReset }}
@@ -50,6 +56,17 @@ Ingress is disabled. Configure ingress manually to the services above.
 {{- end }}
 {{- if .Values.postgres.enabled }}
 - PostgreSQL admin password: `kubectl get secret -n {{ $ns }} {{ $pgSecret }} -o jsonpath='{.data.pg_admin_password}' | base64 -d && echo`
+{{- end }}
+{{- if .Values.minio.enabled }}
+- MinIO root user: `kubectl get secret -n {{ $ns }} {{ $minioSecret }} -o jsonpath='{.data.minio_root_user}' | base64 -d && echo`
+- MinIO root password: `kubectl get secret -n {{ $ns }} {{ $minioSecret }} -o jsonpath='{.data.minio_root_password}' | base64 -d && echo`
+{{- end }}
+{{- if and .Values.minio.enabled .Values.storageProfileSeed.enabled }}
+
+{{ printf "%s📥 Storage Profile Seed%s" $cSection $cReset }}
+- A `S3STATIC` profile named "{{ .Values.storageProfileSeed.profileName }}" is being registered by the `{{ $release }}-storageprofile-seed` Job (post-install/upgrade hook).
+- Check status: `kubectl get job -n {{ $ns }} {{ $release }}-storageprofile-seed`
+- View logs:    `kubectl logs -n {{ $ns }} job/{{ $release }}-storageprofile-seed`
 {{- end }}
 
 {{ if and .Values.hub.metrics.enabled (eq .Values.ingress.controller "contour") }}

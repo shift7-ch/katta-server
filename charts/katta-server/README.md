@@ -1,5 +1,7 @@
 # Katta Server Helm Chart
 
+Helm chart for [Katta Server](https://github.com/shift7-ch/katta-server), a downstream fork of Cryptomator Hub.
+
 This chart deploys:
 
 - Katta Server (the "Hub" backend, required)
@@ -11,37 +13,103 @@ Image repositories/tags are fixed in templates:
 - Hub: `ghcr.io/shift7-ch/katta-server:<appVersion from Chart.yaml>`
 - Keycloak: `ghcr.io/shift7-ch/keycloak:26.5.7`
 - PostgreSQL: `postgres:17-alpine`
+- MinIO: configurable via `minio.image.{repository,tag}` (default `quay.io/minio/minio:latest`)
+- Storage-profile seed Job: configurable via `storageProfileSeed.image.{repository,tag}` (default `curlimages/curl:8.10.1`)
 
-TLS termination is currently expected to be done by ingress controller.
+TLS termination is currently expected to be done by the ingress controller.
 Supported ingress controller templates:
 - `ingress.controller=nginx`
 - `ingress.controller=traefik`
 - `ingress.controller=contour`
 
+## Quick Start (Local Demo with Bundled MinIO)
 
-## Quick Start (Full Internal Stack)
+The fastest way to spin up a complete Katta stack — Hub + Keycloak + Postgres + MinIO + a pre-seeded storage profile — is via `values-demo.yaml` against any local cluster with the nginx-ingress addon (tested on minikube + Podman).
 
-Assuming you have a local KIND cluster, e.g. via [Podman Desktop](https://podman-desktop.io/) with contour ingress on port 9090:
+```bash
+# one-off (skip if your cluster already has nginx-ingress)
+minikube addons enable ingress
+
+# deploy
+helm install katta charts/katta-server \
+  --namespace katta \
+  --create-namespace \
+  -f charts/katta-server/values-demo.yaml
+```
+
+In a separate terminal, expose the ingress controller on `localhost:9090`:
+
+```bash
+kubectl port-forward -n ingress-nginx svc/ingress-nginx-controller 9090:80
+```
+
+Once both commands are running:
+
+| URL | Credentials |
+|---|---|
+| Hub UI: <http://hub.localhost:9090> | `admin` / `admin` |
+| Keycloak admin: <http://kc.localhost:9090> | `admin` / `admin` |
+| MinIO console: <http://minio.localhost:9090> | `minioadmin` / `minioadmin` |
+| MinIO S3 API: <http://s3.localhost:9090> | (used by the seeded storage profile) |
+
+A post-install Helm hook Job (`<release>-storageprofile-seed`) registers an `S3STATIC` storage profile named "Bundled MinIO" pointing at `http://s3.localhost:9090`, so vault creation works end-to-end immediately after install. Re-runs are idempotent (the seed Job treats HTTP 409 as success).
+
+If the demo's pinned proxy ClusterIP `10.96.250.250` collides with something in your cluster, override it: `--set ingress.proxy.clusterIP=<another-free-IP-in-the-Service-CIDR>`.
+
+## Quick Start (Production-shaped, no MinIO, real DNS)
+
+Assumes a real domain with public DNS and a **pre-existing Traefik ingress controller** in the cluster — this chart only registers `Ingress` and `Middleware` resources against it; it does not install Traefik. Confirm the `IngressClass` you want to use (`kubectl get ingressclass`) and substitute its name below if it isn't `traefik`.
 
 ```bash
 helm install katta charts/katta-server \
   --namespace katta \
   --create-namespace \
   --wait --timeout 5m \
-  --set urls.hub.public=http://localhost:9090/hub \
-  --set urls.kc.public=http://localhost:9090/kc \
-  --set ingress.controller=contour \
-  --set hub.admin.password=password
+  --set urls.hub.public=https://hub.example.com \
+  --set urls.kc.public=https://kc.example.com \
+  --set ingress.controller=traefik \
+  --set ingress.className=traefik \
+  --set hub.admin.password=changeme
 ```
+
+Real public DNS handles in-cluster resolution naturally (the chart's port-translation proxy stays disabled when URLs use the default ports 80/443), so `hostAliases` is a no-op for production deployments.
 
 Passwords are optional by default. If unset, the chart generates random values and
 prints commands in `helm` notes to retrieve them from Kubernetes Secrets.
+
+### TLS
+
+`ingress.tls.*` is opt-in. The chart emits Ingress resources without a `spec.tls:` block by default, which is the right choice if Traefik is already configured with a default certificate or wildcard. Three common variants:
+
+| Scenario | Add to `helm install` |
+|---|---|
+| Traefik default cert / wildcard at the controller | — (no extra flags) |
+| cert-manager provisions per-host certs | `--set ingress.tls.enabled=true --set ingress.tls.secretName=katta-tls` plus a matching `Certificate` referencing your `ClusterIssuer` |
+| Bring-your-own Secret (pre-created in the release namespace) | `--set ingress.tls.enabled=true --set ingress.tls.secretName=<your-secret>` |
+
+When `ingress.tls.enabled=true`, each Ingress gets a `tls:` block binding the host to the named Secret; that's what per-host certificate selection and cert-manager pickup hook into.
 
 The Keycloak realm import is rendered from a dedicated template using:
 
 - `keycloak.realmBootstrap.realmId`
 - `hub.secrets.systemClientSecret` (optional; auto-generated when chart-managed Hub secret is used)
+- `hub.secrets.cryptomatorvaultsClientSecret` (optional; auto-generated when chart-managed Hub secret is used; required for the Katta token-exchange flow)
 - `hub.admin.*` (realm-level Hub admin user; separate from `keycloak.admin.*` bootstrap user)
+
+## Bundled MinIO (for evaluation)
+
+Set `minio.enabled=true` to deploy a single-replica MinIO StatefulSet with a PVC alongside the Hub.
+
+When `minio.enabled=true` and `storageProfileSeed.enabled=true`, a `post-install,post-upgrade` Helm hook Job:
+
+1. Waits for the Hub `/q/health/ready` endpoint to return 200.
+2. Obtains an admin access token via Keycloak `client_credentials` (using the `cryptomatorhub-system` service account).
+3. POSTs a `S3STATIC` storage profile pointing at the bundled MinIO service to `/api/storageprofile/s3static`.
+4. Treats both `201 Created` and `409 Conflict` as success, so re-runs are idempotent.
+
+The profile UUID is generated on first install and persisted in a `<release>-storageprofile-seed-state` ConfigMap, so subsequent upgrades reuse the same row.
+
+MinIO is **not** ingress-exposed by this chart — it's a backing store. Use `kubectl port-forward svc/<release>-service-minio 9001:9001` to reach the web console.
 
 ## Metrics Endpoint
 

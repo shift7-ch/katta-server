@@ -76,20 +76,20 @@ spec:
                 name: {{ include "katta-server.fullname" . }}-config-kc
           startupProbe:
             httpGet:
-              path: {{ printf "%s/health/started" (include "katta-server.keycloakRelativePath" .) }}
+              path: /health/started
               port: management
             initialDelaySeconds: 10
             periodSeconds: 5
             failureThreshold: 36
           livenessProbe:
             httpGet:
-              path: {{ printf "%s/health/live" (include "katta-server.keycloakRelativePath" .) }}
+              path: /health/live
               port: management
             periodSeconds: 10
             failureThreshold: 6
           readinessProbe:
             httpGet:
-              path: {{ printf "%s/health/ready" (include "katta-server.keycloakRelativePath" .) }}
+              path: /health/ready
               port: management
             periodSeconds: 5
             failureThreshold: 6

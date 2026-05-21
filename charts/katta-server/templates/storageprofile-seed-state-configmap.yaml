@@ -1,0 +1,16 @@
+{{- if and .Values.minio.enabled .Values.storageProfileSeed.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "katta-server.fullname" . }}-storageprofile-seed-state
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "katta-server.labels" . | nindent 4 }}
+    app.kubernetes.io/component: storageprofile-seed
+  annotations:
+    # Keep this ConfigMap across helm uninstall so the same profile UUID is reused on reinstall —
+    # otherwise the seed Job would generate a new UUID and orphan the old DB row.
+    "helm.sh/resource-policy": keep
+data:
+  profileId: {{ include "katta-server.resolvedMinioProfileId" . | quote }}
+{{- end }}

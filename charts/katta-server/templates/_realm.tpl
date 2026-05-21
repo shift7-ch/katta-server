@@ -5,8 +5,7 @@
   {{- end }}
   "realm": {{ .Values.hub.config.keycloakRealm | quote }},
   "displayName": "Katta Server",
-  {{/* TODO: rename the Keycloak theme directory keycloak/themes/cryptomator → keycloak/themes/katta, then update this value. */}}
-  "loginTheme": "cryptomator",
+  "loginTheme": "katta",
   "enabled": true,
   "sslRequired": "external",
   "defaultRole": {
@@ -68,6 +67,9 @@
       "email": "system@localhost",
       "enabled": true,
       "serviceAccountClientId": "cryptomatorhub-system",
+      "realmRoles": [
+        "admin"
+      ],
       "clientRoles": {
         "realm-management": [
           "realm-admin",
@@ -81,6 +83,12 @@
       "client": "cryptomatorhub",
       "roles": [
         "user",
+        "admin"
+      ]
+    },
+    {
+      "client": "cryptomatorhub-system",
+      "roles": [
         "admin"
       ]
     }
@@ -151,7 +159,74 @@
       "protocol": "openid-connect",
       "attributes": {
         "pkce.code.challenge.method": "S256"
-      }
+      },
+      "protocolMappers": [
+        {
+          "name": "aud",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "cryptomator",
+            "id.token.claim": "false",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "false",
+            "multivalued": "true"
+          }
+        },
+        {
+          "name": "aud-cryptomatorvaults",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "cryptomatorvaults",
+            "id.token.claim": "false",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "false",
+            "multivalued": "true"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "cryptomatorvaults",
+      "name": "Cryptomator S3 Access",
+      "serviceAccountsEnabled": false,
+      "publicClient": false,
+      "enabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "secret": {{ include "katta-server.resolvedCryptomatorvaultsClientSecret" . | quote }},
+      "bearerOnly": false,
+      "frontchannelLogout": false,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "protocol": "openid-connect",
+      "attributes": {
+        "standard.token.exchange.enabled": "true"
+      },
+      "protocolMappers": [
+        {
+          "name": "aud",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "cryptomatorvaults",
+            "id.token.claim": "false",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "false",
+            "multivalued": "true"
+          }
+        }
+      ],
+      "defaultClientScopes": [
+        "basic"
+      ],
+      "optionalClientScopes": [
+        "address"
+      ]
     },
     {
       "clientId": "cryptomatorhub-system",
@@ -161,7 +236,22 @@
       "enabled": true,
       "clientAuthenticatorType": "client-secret",
       "secret": {{ include "katta-server.resolvedSystemClientSecret" . | quote }},
-      "standardFlowEnabled": false
+      "standardFlowEnabled": false,
+      "fullScopeAllowed": true,
+      "protocolMappers": [
+        {
+          "name": "realm roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "access.token.claim": "true",
+            "claim.name": "realm_access.roles",
+            "jsonType.label": "String",
+            "multivalued": "true"
+          }
+        }
+      ]
     }
   ],
   "browserSecurityHeaders": {
