@@ -2,22 +2,22 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: {{ include "cryptomator-hub.fullname" . }}-pg
+  name: {{ include "katta-server.fullname" . }}-pg
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "cryptomator-hub.labels" . | nindent 4 }}
+    {{- include "katta-server.labels" . | nindent 4 }}
     app.kubernetes.io/component: postgres
 spec:
-  serviceName: {{ include "cryptomator-hub.fullname" . }}-service-pg
+  serviceName: {{ include "katta-server.fullname" . }}-service-pg
   replicas: 1
   selector:
     matchLabels:
-      {{- include "cryptomator-hub.selectorLabels" . | nindent 6 }}
+      {{- include "katta-server.selectorLabels" . | nindent 6 }}
       app.kubernetes.io/component: postgres
   template:
     metadata:
       labels:
-        {{- include "cryptomator-hub.selectorLabels" . | nindent 8 }}
+        {{- include "katta-server.selectorLabels" . | nindent 8 }}
         app.kubernetes.io/component: postgres
       annotations:
         checksum/postgres-secret: {{ include (print $.Template.BasePath "/postgres-secret.yaml") . | sha256sum }}
@@ -64,7 +64,7 @@ spec:
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "cryptomator-hub.fullname" . }}-secrets-pg
+                  name: {{ include "katta-server.fullname" . }}-secrets-pg
                   key: pg_admin_password
             - name: POSTGRES_USER
               value: {{ .Values.postgres.auth.adminUsername | quote }}
@@ -111,7 +111,7 @@ spec:
       volumes:
         - name: initdb
           secret:
-            secretName: {{ include "cryptomator-hub.fullname" . }}-secrets-pg
+            secretName: {{ include "katta-server.fullname" . }}-secrets-pg
             items:
               - key: initdb.sql
                 path: initdb.sql

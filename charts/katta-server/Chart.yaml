@@ -1,14 +1,15 @@
 apiVersion: v2
-name: cryptomator-hub
-home: https://cryptomator.org/hub/
+name: katta-server
+home: https://github.com/shift7-ch/katta-server
 icon: https://cryptomator.org/img/logo.png
-description: Helm chart for deploying Cryptomator Hub with optional Keycloak and PostgreSQL
+description: Helm chart for deploying Katta Server (downstream fork of Cryptomator Hub) with optional Keycloak, PostgreSQL and MinIO
 type: application
 version: 0.1.3
 appVersion: "1.5.0-alpha3"
 kubeVersion: ">=1.27.0-0"
 sources:
-  - https://github.com/cryptomator/hub
+  - https://github.com/shift7-ch/katta-server
 keywords:
-  - cryptomator
-  - cryptomator hub
+  - katta
+  - katta-server
+  - cryptomator-hub-fork

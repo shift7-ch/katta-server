@@ -2,15 +2,15 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "cryptomator-hub.fullname" . }}-service-kc
+  name: {{ include "katta-server.fullname" . }}-service-kc
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "cryptomator-hub.labels" . | nindent 4 }}
+    {{- include "katta-server.labels" . | nindent 4 }}
     app.kubernetes.io/component: keycloak
 spec:
   type: {{ .Values.keycloak.service.type }}
   selector:
-    {{- include "cryptomator-hub.selectorLabels" . | nindent 4 }}
+    {{- include "katta-server.selectorLabels" . | nindent 4 }}
     app.kubernetes.io/component: keycloak
   ports:
     - name: http

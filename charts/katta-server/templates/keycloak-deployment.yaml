@@ -2,21 +2,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "cryptomator-hub.fullname" . }}-kc
+  name: {{ include "katta-server.fullname" . }}-kc
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "cryptomator-hub.labels" . | nindent 4 }}
+    {{- include "katta-server.labels" . | nindent 4 }}
     app.kubernetes.io/component: keycloak
 spec:
   replicas: 1
   selector:
     matchLabels:
-      {{- include "cryptomator-hub.selectorLabels" . | nindent 6 }}
+      {{- include "katta-server.selectorLabels" . | nindent 6 }}
       app.kubernetes.io/component: keycloak
   template:
     metadata:
       labels:
-        {{- include "cryptomator-hub.selectorLabels" . | nindent 8 }}
+        {{- include "katta-server.selectorLabels" . | nindent 8 }}
         app.kubernetes.io/component: keycloak
       annotations:
         checksum/keycloak-secret: {{ include (print $.Template.BasePath "/keycloak-secret.yaml") . | sha256sum }}
@@ -40,13 +40,13 @@ spec:
           args:
             - |
               set -eux
-              until nc -zw 10 {{ include "cryptomator-hub.fullname" . }}-service-pg {{ .Values.postgres.service.port }}; do
+              until nc -zw 10 {{ include "katta-server.fullname" . }}-service-pg {{ .Values.postgres.service.port }}; do
                 echo "waiting for postgres..."
               done
       {{- end }}
       containers:
         - name: keycloak
-          image: "ghcr.io/cryptomator/keycloak:26.5.3"
+          image: "ghcr.io/shift7-ch/keycloak:26.5.7"
           imagePullPolicy: {{ .Values.keycloak.imagePullPolicy }}
           command:
             - /opt/keycloak/bin/kc.sh
@@ -64,32 +64,32 @@ spec:
             - name: KC_DB_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "cryptomator-hub.fullname" . }}-secrets-kc
+                  name: {{ include "katta-server.fullname" . }}-secrets-kc
                   key: kc_db_password
             - name: KC_BOOTSTRAP_ADMIN_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "cryptomator-hub.fullname" . }}-secrets-kc
+                  name: {{ include "katta-server.fullname" . }}-secrets-kc
                   key: kc_admin_password
           envFrom:
             - configMapRef:
-                name: {{ include "cryptomator-hub.fullname" . }}-config-kc
+                name: {{ include "katta-server.fullname" . }}-config-kc
           startupProbe:
             httpGet:
-              path: {{ printf "%s/health/started" (include "cryptomator-hub.keycloakRelativePath" .) }}
+              path: {{ printf "%s/health/started" (include "katta-server.keycloakRelativePath" .) }}
               port: management
             initialDelaySeconds: 10
             periodSeconds: 5
             failureThreshold: 36
           livenessProbe:
             httpGet:
-              path: {{ printf "%s/health/live" (include "cryptomator-hub.keycloakRelativePath" .) }}
+              path: {{ printf "%s/health/live" (include "katta-server.keycloakRelativePath" .) }}
               port: management
             periodSeconds: 10
             failureThreshold: 6
           readinessProbe:
             httpGet:
-              path: {{ printf "%s/health/ready" (include "cryptomator-hub.keycloakRelativePath" .) }}
+              path: {{ printf "%s/health/ready" (include "katta-server.keycloakRelativePath" .) }}
               port: management
             periodSeconds: 5
             failureThreshold: 6
@@ -119,7 +119,7 @@ spec:
           emptyDir: {}
         - name: realm
           secret:
-            secretName: {{ include "cryptomator-hub.fullname" . }}-secrets-kc
+            secretName: {{ include "katta-server.fullname" . }}-secrets-kc
             items:
               - key: realm.json
                 path: realm.json

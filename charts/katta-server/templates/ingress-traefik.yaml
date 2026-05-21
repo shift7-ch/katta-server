@@ -1,18 +1,18 @@
 {{- if eq .Values.ingress.controller "traefik" }}
 {{- $hubHost := regexReplaceAll "^https?://([^:/]+).*" (required "urls.hub.public must be set" .Values.urls.hub.public) "${1}" -}}
-{{- $hubPath := include "cryptomator-hub.hubRelativePath" . -}}
+{{- $hubPath := include "katta-server.hubRelativePath" . -}}
 {{- $hubMetricsPath := printf "%s/q/metrics" $hubPath -}}
 {{- $kcHost := regexReplaceAll "^https?://([^:/]+).*" (required "urls.kc.public must be set" .Values.urls.kc.public) "${1}" -}}
-{{- $kcPath := include "cryptomator-hub.keycloakRelativePath" . -}}
+{{- $kcPath := include "katta-server.keycloakRelativePath" . -}}
 {{- if ne $hubPath "/" }}
 ---
 apiVersion: traefik.io/v1alpha1
 kind: Middleware
 metadata:
-  name: {{ include "cryptomator-hub.fullname" . }}-stripprefix
+  name: {{ include "katta-server.fullname" . }}-stripprefix
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "cryptomator-hub.labels" . | nindent 4 }}
+    {{- include "katta-server.labels" . | nindent 4 }}
 spec:
   stripPrefix:
     prefixes:
@@ -22,13 +22,13 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ include "cryptomator-hub.fullname" . }}-ingress-hub
+  name: {{ include "katta-server.fullname" . }}-ingress-hub
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "cryptomator-hub.labels" . | nindent 4 }}
+    {{- include "katta-server.labels" . | nindent 4 }}
   annotations:
     {{- if ne $hubPath "/" }}
-    traefik.ingress.kubernetes.io/router.middlewares: {{ printf "%s-%s-stripprefix@kubernetescrd" .Release.Namespace (include "cryptomator-hub.fullname" .) | quote }}
+    traefik.ingress.kubernetes.io/router.middlewares: {{ printf "%s-%s-stripprefix@kubernetescrd" .Release.Namespace (include "katta-server.fullname" .) | quote }}
     {{- end }}
     {{- with .Values.ingress.annotations }}
     {{- toYaml . | nindent 4 }}
@@ -45,7 +45,7 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: {{ include "cryptomator-hub.fullname" . }}-service-hub
+                name: {{ include "katta-server.fullname" . }}-service-hub
                 port:
                   number: {{ .Values.hub.service.port }}
   {{- if .Values.ingress.tls.enabled }}
@@ -59,24 +59,24 @@ spec:
 apiVersion: traefik.io/v1alpha1
 kind: Middleware
 metadata:
-  name: {{ include "cryptomator-hub.fullname" . }}-metrics-auth
+  name: {{ include "katta-server.fullname" . }}-metrics-auth
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "cryptomator-hub.labels" . | nindent 4 }}
+    {{- include "katta-server.labels" . | nindent 4 }}
 spec:
   basicAuth:
-    secret: {{ include "cryptomator-hub.fullname" . }}-secrets-hub-metrics
+    secret: {{ include "katta-server.fullname" . }}-secrets-hub-metrics
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ include "cryptomator-hub.fullname" . }}-ingress-hub-metrics
+  name: {{ include "katta-server.fullname" . }}-ingress-hub-metrics
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "cryptomator-hub.labels" . | nindent 4 }}
-  {{- $metricsMiddleware := printf "%s-%s-metrics-auth@kubernetescrd" .Release.Namespace (include "cryptomator-hub.fullname" .) -}}
+    {{- include "katta-server.labels" . | nindent 4 }}
+  {{- $metricsMiddleware := printf "%s-%s-metrics-auth@kubernetescrd" .Release.Namespace (include "katta-server.fullname" .) -}}
   {{- if ne $hubPath "/" -}}
-    {{- $metricsMiddleware = printf "%[1]s-%[2]s-stripprefix@kubernetescrd,%[1]s-%[2]s-metrics-auth@kubernetescrd" .Release.Namespace (include "cryptomator-hub.fullname" .) -}}
+    {{- $metricsMiddleware = printf "%[1]s-%[2]s-stripprefix@kubernetescrd,%[1]s-%[2]s-metrics-auth@kubernetescrd" .Release.Namespace (include "katta-server.fullname" .) -}}
   {{- end }}
   annotations:
     traefik.ingress.kubernetes.io/router.middlewares: {{ $metricsMiddleware | quote }}
@@ -95,7 +95,7 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: {{ include "cryptomator-hub.fullname" . }}-service-hub
+                name: {{ include "katta-server.fullname" . }}-service-hub
                 port:
                   number: {{ .Values.hub.service.managementPort }}
   {{- if .Values.ingress.tls.enabled }}
@@ -110,10 +110,10 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ include "cryptomator-hub.fullname" . }}-ingress-kc
+  name: {{ include "katta-server.fullname" . }}-ingress-kc
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "cryptomator-hub.labels" . | nindent 4 }}
+    {{- include "katta-server.labels" . | nindent 4 }}
   {{- with .Values.ingress.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
@@ -130,7 +130,7 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: {{ include "cryptomator-hub.fullname" . }}-service-kc
+                name: {{ include "katta-server.fullname" . }}-service-kc
                 port:
                   number: {{ .Values.keycloak.service.httpPort }}
   {{- if .Values.ingress.tls.enabled }}

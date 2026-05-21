@@ -1,14 +1,15 @@
-# Cryptomator Hub Helm Chart
+# Katta Server Helm Chart
 
 This chart deploys:
 
-- Cryptomator Hub (required)
-- Keycloak (optional, enabled by default)
+- Katta Server (the "Hub" backend, required)
+- Keycloak (optional, enabled by default) — uses the Katta-customized image with the token-exchange SPI
 - PostgreSQL (optional, enabled by default)
+- MinIO (optional, disabled by default — see [Bundled MinIO](#bundled-minio-for-evaluation))
 
 Image repositories/tags are fixed in templates:
-- Hub: `ghcr.io/cryptomator/hub:<appVersion from Chart.yaml>`
-- Keycloak: `ghcr.io/cryptomator/keycloak:26.5.3`
+- Hub: `ghcr.io/shift7-ch/katta-server:<appVersion from Chart.yaml>`
+- Keycloak: `ghcr.io/shift7-ch/keycloak:26.5.7`
 - PostgreSQL: `postgres:17-alpine`
 
 TLS termination is currently expected to be done by ingress controller.
@@ -23,8 +24,8 @@ Supported ingress controller templates:
 Assuming you have a local KIND cluster, e.g. via [Podman Desktop](https://podman-desktop.io/) with contour ingress on port 9090:
 
 ```bash
-helm install hub charts/cryptomator-hub \
-  --namespace cryptomator \
+helm install katta charts/katta-server \
+  --namespace katta \
   --create-namespace \
   --wait --timeout 5m \
   --set urls.hub.public=http://localhost:9090/hub \
@@ -59,8 +60,8 @@ When metrics are enabled, the chart creates:
 ## Hub with External PostgreSQL and Keycloak
 
 ```bash
-helm install hub charts/cryptomator-hub \
-  --namespace cryptomator \
+helm install katta charts/katta-server \
+  --namespace katta \
   --create-namespace \
   --wait --timeout 5m \
   --set keycloak.enabled=false \
@@ -75,23 +76,29 @@ helm install hub charts/cryptomator-hub \
 
 ### Importing `realm.json`
 
-Even with `keycloak.enabled=false`, the chart still renders `realm.json` in Secret `<release>-keycloak` so you can manually export/import it for your existing Keycloak.
+Even with `keycloak.enabled=false`, the chart still renders `realm.json` in Secret `<release>-secrets-kc` so you can manually export/import it for your existing Keycloak.
 
-Assuming namespace `cryptomator` and name `hub`:
+Assuming namespace `katta` and name `hub`:
 
 ```bash
-kubectl get secret -n cryptomator hub-secrets-kc -o jsonpath='{.data.realm\.json}' | base64 -d | ...
+kubectl get secret -n katta hub-secrets-kc -o jsonpath='{.data.realm\.json}' | base64 -d | ...
 ```
+
+When pointing Katta Server at an external Keycloak, you must ensure the realm contains:
+- A `cryptomatorhub` public OIDC client
+- A `cryptomator` public OIDC client (for desktop/mobile)
+- A `cryptomatorvaults` confidential client with `standard.token.exchange.enabled=true` (required by the Katta token-exchange flow)
+- A `cryptomatorhub-system` service-account client with `realm-admin` and `view-system` roles
 
 ## Verify Published Chart (Signature + Provenance)
 
-This chart contains a OCI chart signature, which can be verified as follows (assuming chart version `0.1.0`):
+This chart contains an OCI chart signature, which can be verified as follows (assuming chart version `0.1.3`):
 
 ```bash
 cosign verify \
-  --certificate-identity-regexp 'https://github.com/cryptomator/hub/.github/workflows/helm-chart.yml@refs/(heads|tags)/.+' \
+  --certificate-identity-regexp 'https://github.com/shift7-ch/katta-server/.github/workflows/helm-chart.yml@refs/(heads|tags)/.+' \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com \
-  ghcr.io/cryptomator/charts/cryptomator-hub:0.1.1
+  ghcr.io/shift7-ch/charts/katta-server:0.1.3
 ```
 
 You can additionally inspect provenance attestations:
@@ -99,7 +106,7 @@ You can additionally inspect provenance attestations:
 ```bash
 cosign verify-attestation \
   --type https://slsa.dev/provenance/v1 \
-  --certificate-identity-regexp 'https://github.com/cryptomator/hub/.github/workflows/helm-chart.yml@refs/(heads|tags)/.+' \
+  --certificate-identity-regexp 'https://github.com/shift7-ch/katta-server/.github/workflows/helm-chart.yml@refs/(heads|tags)/.+' \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com \
-  ghcr.io/cryptomator/charts/cryptomator-hub:0.1.1
+  ghcr.io/shift7-ch/charts/katta-server:0.1.3
 ```

@@ -1,10 +1,11 @@
-{{- define "cryptomator-hub.realmJson" -}}
+{{- define "katta-server.realmJson" -}}
 {
   {{- if .Values.keycloak.realmBootstrap.realmId }}
   "id": {{ .Values.keycloak.realmBootstrap.realmId | quote }},
   {{- end }}
   "realm": {{ .Values.hub.config.keycloakRealm | quote }},
-  "displayName": "Cryptomator Hub",
+  "displayName": "Katta Server",
+  {{/* TODO: rename the Keycloak theme directory keycloak/themes/cryptomator → keycloak/themes/katta, then update this value. */}}
   "loginTheme": "cryptomator",
   "enabled": true,
   "sslRequired": "external",
@@ -49,7 +50,7 @@
       "credentials": [
         {
           "type": "password",
-          "value": {{ include "cryptomator-hub.resolvedHubAdminPassword" . | quote }},
+          "value": {{ include "katta-server.resolvedHubAdminPassword" . | quote }},
           "temporary": {{ .Values.hub.admin.passwordTemporary }}
         }
       ],
@@ -90,7 +91,7 @@
       "clientId": "cryptomatorhub",
       "serviceAccountsEnabled": false,
       "publicClient": true,
-      "name": "Cryptomator Hub",
+      "name": "Katta Server",
       "enabled": true,
       "redirectUris": [
         {{ printf "%s/*" $hubPublicUrl | quote }}
@@ -156,10 +157,10 @@
       "clientId": "cryptomatorhub-system",
       "serviceAccountsEnabled": true,
       "publicClient": false,
-      "name": "Cryptomator Hub System",
+      "name": "Katta Server System",
       "enabled": true,
       "clientAuthenticatorType": "client-secret",
-      "secret": {{ include "cryptomator-hub.resolvedSystemClientSecret" . | quote }},
+      "secret": {{ include "katta-server.resolvedSystemClientSecret" . | quote }},
       "standardFlowEnabled": false
     }
   ],
