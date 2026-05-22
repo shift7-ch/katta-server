@@ -9,7 +9,7 @@ metadata:
 data:
   KC_DB: "postgres"
   # Must match the Katta Keycloak image's baked-in features (keycloak/Dockerfile) so that
-  # `kc.sh start` doesn't detect drift and force an additional rebuild round.
+  # `kc.sh start --optimized` doesn't detect drift and force a re-augmentation round.
   KC_FEATURES: "web-authn"
   KC_DB_URL: {{ if .Values.postgres.enabled }}{{ printf "jdbc:postgresql://%s:%v/%s" (print (include "katta-server.fullname" .) "-service-pg") .Values.postgres.service.port .Values.keycloak.database.name | quote }}{{ else }}{{ required "keycloak.database.jdbcUrl must be set when keycloak.enabled=true and postgres.enabled=false" .Values.keycloak.database.jdbcUrl | quote }}{{ end }}
   KC_DB_USERNAME: {{ .Values.keycloak.database.username | quote }}

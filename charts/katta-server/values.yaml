@@ -167,20 +167,17 @@ minio:
   auth:
     rootUser: minioadmin
     rootPassword: "" # auto-generated if blank
-  # OpenID Connect integration. When enabled, MinIO accepts JWTs from the chart-managed
-  # Keycloak via AssumeRoleWithWebIdentity. The chart's seed Job uses this to register an
-  # S3STS storage profile (see storageProfileSeed.sts).
+  # OpenID Connect integration. When enabled, the seed Job runs `mc idp openid add`
+  # against MinIO at install time to register three named OIDC providers (one per
+  # Keycloak client) and `mc admin policy create` to install the two Katta policies.
   #
-  # Requires the `cryptomatorvaults` client to exist in the Keycloak realm (it does — see
-  # _realm.tpl) and the client secret to be available in the Hub secret.
+  # Why three providers (not one configured via MINIO_IDENTITY_OPENID_* env vars):
+  # MinIO checks JWTs with `azp == ClientID` strictly, so each Keycloak client that
+  # MinIO is supposed to accept needs its own provider with that client_id. Tokens
+  # issued for `cryptomatorhub` (SPA), `cryptomator` (desktop app), and
+  # `cryptomatorvaults` (per-vault, post-exchange) each get a matching MinIO provider.
   openid:
     enabled: false
-    clientId: "cryptomatorvaults"
-    # MinIO built-in policy assigned to every OIDC-authenticated user. Custom policies
-    # need to be created out of band (e.g. via `mc admin policy create`); for the demo
-    # the built-in `readwrite` is sufficient because Katta isolates per-vault buckets.
-    rolePolicy: "readwrite"
-    displayName: "Katta SSO"
     # OIDC discovery URL MinIO uses to validate Keycloak-issued tokens. When blank,
     # defaults to the IN-CLUSTER Keycloak Service URL — mirrors the same public/local
     # split the Hub uses (HUB_KEYCLOAK_PUBLIC_URL vs HUB_KEYCLOAK_LOCAL_URL). With

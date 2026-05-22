@@ -1,10 +1,12 @@
 {{- $staticEnabled := .Values.storageProfileSeed.static.enabled -}}
 {{- $stsEnabled := .Values.storageProfileSeed.sts.enabled -}}
+{{- $openidEnabled := .Values.minio.openid.enabled -}}
 {{- if and .Values.minio.enabled (or $staticEnabled $stsEnabled) }}
 {{- $fullname := include "katta-server.fullname" . -}}
 {{- $hubUrl := printf "http://%s-service-hub:%v" $fullname .Values.hub.service.port -}}
 {{- $kcUrl := include "katta-server.keycloakLocalUrl" . | trimSuffix "/" -}}
 {{- $minioInternalUrl := printf "http://%s-service-minio:%v" $fullname (int .Values.minio.service.apiPort) -}}
+{{- $oidcConfigUrl := include "katta-server.minioOidcConfigUrl" . -}}
 {{- $profileId := include "katta-server.resolvedMinioProfileId" . -}}
 {{- $stsProfileId := include "katta-server.resolvedMinioStsProfileId" . -}}
 {{- /* The storage-profile address must be the *single* URL that works from both inside
@@ -43,17 +45,21 @@ spec:
         runAsNonRoot: true
         runAsUser: 100
         runAsGroup: 101
-      {{- if $stsEnabled }}
-      # The S3STS profile holds a role ARN that MinIO computes from its OIDC config
-      # (sha1-base32 of configURL + clientID + rolePolicy, but we don't replicate the
-      # algorithm here — we ask MinIO directly via `mc admin idp openid info`). The
-      # init container writes the ARN to /state/role-arn for the main container.
+      {{- if $openidEnabled }}
+      # MinIO requires one OIDC provider per Keycloak client (its `azp == ClientID`
+      # check is strict). This init container:
+      #   1. creates the katta_create_bucket_policy / katta_access_bucket_policy MinIO
+      #      policies from the policies ConfigMap;
+      #   2. registers the `cryptomator`, `cryptomatorhub`, and `cryptomatorvaults`
+      #      OIDC providers via `mc idp openid add`;
+      #   3. waits for each provider's role ARN to appear (the ARN is computed only
+      #      after MinIO successfully fetches Keycloak's discovery doc) and writes the
+      #      three ARNs to /state/{cryptomator,cryptomatorhub,cryptomatorvaults}-role-arn
+      #      for the seed container to read.
+      # Reuses the MinIO server image (already cached on the node from the StatefulSet)
+      # so no extra pull is needed.
       initContainers:
-        # Reuse the MinIO server image (which already ships `/usr/bin/mc`) so the node
-        # doesn't have to pull a second image just for this Job — important on clusters
-        # with restricted egress where `quay.io/minio/mc` is unreachable but the MinIO
-        # server image is already cached locally because the StatefulSet is running.
-        - name: discover-role-arn
+        - name: setup-minio
           image: "quay.io/minio/minio:latest"
           imagePullPolicy: IfNotPresent
           env:
@@ -69,6 +75,8 @@ spec:
                 secretKeyRef:
                   name: {{ $fullname }}-secrets-minio
                   key: minio_root_password
+            - name: OIDC_CONFIG_URL
+              value: {{ $oidcConfigUrl | quote }}
             # mc respects HOME for its config dir (~/.mc). The MinIO image runs as a
             # non-root user without a writable home, so point HOME at the writable
             # emptyDir we mount below.
@@ -81,7 +89,6 @@ spec:
             capabilities:
               drop:
                 - ALL
-          # Override the MinIO server entrypoint; we want a shell that runs our mc script.
           command: ["/bin/sh", "-eu", "-c"]
           args:
             - |
@@ -91,10 +98,9 @@ spec:
                 sleep 2
               done
 
-              # Extract the first arn:minio:iam:::role/<id> substring from a command's
-              # output. The MinIO image's ubi-micro base ships coreutils-single only —
-              # no grep/sed/awk — so we use POSIX shell parameter expansion. MinIO names
-              # the env-var-configured provider "_" (literal underscore).
+              # Extract the first arn:minio:iam:::role/<id> substring from command output.
+              # The MinIO image's ubi-micro base ships coreutils-single only — no grep/sed/awk
+              # — so we use POSIX shell parameter expansion.
               extract_arn() {
                 output=$("$@" 2>/dev/null || true)
                 case "$output" in
@@ -110,30 +116,101 @@ spec:
                 return 1
               }
 
-              echo "Waiting for MinIO's OIDC provider to be ready (role ARN computed)..."
-              # The role ARN only appears once MinIO has successfully fetched the OIDC
-              # discovery doc from Keycloak. If MinIO can't reach Keycloak, `info` will
-              # show the config but not the ARN — the loop keeps spinning until both
-              # sides of the chain (kc-pod → ingress proxy → ingress controller) work.
-              while :; do
-                if role_arn=$(extract_arn /usr/bin/mc idp openid info local _); then
+              # Helper: run an mc command, print stdout+stderr regardless of exit code so
+              # we never silently mask "already exists" or actual errors during re-runs.
+              # Indents each output line with four spaces using a shell builtin (sed is not
+              # part of ubi-micro/coreutils-single).
+              try_mc() {
+                _label="$1"; shift
+                if output=$("$@" 2>&1); then
+                  echo "  [$_label] ok"
+                else
+                  echo "  [$_label] exit=$? (probably idempotent re-run; continuing)"
+                fi
+                if [ -n "$output" ]; then
+                  printf '%s\n' "$output" | while IFS= read -r line; do
+                    printf '    %s\n' "$line"
+                  done
+                fi
+              }
+
+              # If all three providers are already configured and have ARNs, skip the
+              # re-setup + restart cycle entirely — the StatefulSet survives helm
+              # uninstall/reinstall via its PVC, so on a typical `helm upgrade` MinIO
+              # already has the right state and a restart would just cause a brief outage.
+              all_present=1
+              for name in cryptomator cryptomatorhub cryptomatorvaults; do
+                if ! extract_arn /usr/bin/mc idp openid info local "$name" >/dev/null 2>&1; then
+                  all_present=0
                   break
                 fi
-                if role_arn=$(extract_arn /usr/bin/mc idp openid list local); then
-                  break
-                fi
-                if role_arn=$(extract_arn /usr/bin/mc admin config get local identity_openid); then
-                  break
-                fi
-                echo "  Role ARN not yet present in MinIO; retrying..."
-                sleep 2
               done
 
-              echo "Discovered role ARN: $role_arn"
-              printf '%s' "$role_arn" > /state/role-arn
+              if [ "$all_present" = "1" ]; then
+                echo "All three providers already configured with role ARNs; skipping setup."
+              else
+                echo "Creating MinIO policies..."
+                try_mc "policy create katta_create_bucket_policy" \
+                  /usr/bin/mc admin policy create local katta_create_bucket_policy /policies/create_bucket_policy.json
+                try_mc "policy create katta_access_bucket_policy" \
+                  /usr/bin/mc admin policy create local katta_access_bucket_policy /policies/access_bucket_policy.json
+
+                echo "Registering OIDC providers..."
+                # Triplets of "<provider-name>:<keycloak-client-id>:<minio-role-policy>".
+                # Provider name = Keycloak client_id by convention so `mc idp openid info
+                # local <name>` is easy to reason about.
+                for entry in \
+                  "cryptomator:cryptomator:katta_create_bucket_policy" \
+                  "cryptomatorhub:cryptomatorhub:katta_create_bucket_policy" \
+                  "cryptomatorvaults:cryptomatorvaults:katta_access_bucket_policy" \
+                ; do
+                  name="${entry%%:*}"
+                  rest="${entry#*:}"
+                  client_id="${rest%%:*}"
+                  policy="${rest#*:}"
+                  try_mc "idp openid add $name" \
+                    /usr/bin/mc idp openid add local "$name" \
+                      "config_url=$OIDC_CONFIG_URL" \
+                      "client_id=$client_id" \
+                      "client_secret=ignore-me" \
+                      "role_policy=$policy"
+                done
+
+                # mc tells us to restart after registering OIDC providers — the role ARN
+                # isn't computed until MinIO has reloaded its config. `--json` skips the
+                # interactive progress UI that needs /dev/tty (which we don't have here).
+                echo "Restarting MinIO to activate the new OIDC providers..."
+                /usr/bin/mc --json admin service restart local
+
+                echo "Waiting for MinIO to come back..."
+                until /usr/bin/mc admin info local >/dev/null 2>&1; do
+                  echo "  not ready yet, retrying..."
+                  sleep 2
+                done
+                echo "MinIO is back."
+              fi
+
+              echo "Discovering role ARN for each provider..."
+              # The ARN appears only after MinIO has successfully fetched Keycloak's
+              # discovery doc. Keep retrying until both sides of the chain work.
+              for name in cryptomator cryptomatorhub cryptomatorvaults; do
+                while :; do
+                  if arn=$(extract_arn /usr/bin/mc idp openid info local "$name"); then
+                    printf '%s' "$arn" > "/state/${name}-role-arn"
+                    echo "  $name -> $arn"
+                    break
+                  fi
+                  echo "  ARN for $name not ready yet, retrying..."
+                  sleep 2
+                done
+              done
+              echo "MinIO setup complete."
           volumeMounts:
             - name: state
               mountPath: /state
+            - name: policies
+              mountPath: /policies
+              readOnly: true
       {{- end }}
       containers:
         # Reuse alpine/curl — same image as the Hub's wait-for-oidc init container, so
@@ -280,14 +357,17 @@ spec:
               {{- if $stsEnabled }}
 
               # ----- S3STS profile ------------------------------------------------------
-              # The role ARN was discovered by the `discover-role-arn` init container.
-              # All three role fields point at the same ARN: MinIO's RolePolicy mode binds
-              # one policy to the OIDC provider, so bucket-create and bucket-access flows
-              # share it. stsRoleAccessBucketAssumeRoleTaggedSession is AWS-only role
-              # chaining; MinIO ignores it, so we leave it null.
-              role_arn=$(cat /state/role-arn)
-              if [ -z "$role_arn" ]; then
-                echo "STS profile requested but /state/role-arn is empty." >&2
+              # Each role field points at the ARN of a DIFFERENT MinIO OIDC provider:
+              #   - stsRoleCreateBucketClient = cryptomator provider (desktop app creates)
+              #   - stsRoleCreateBucketHub    = cryptomatorhub provider (SPA creates)
+              #   - stsRoleAccessBucket...    = cryptomatorvaults provider (vault access)
+              # stsRoleAccessBucketAssumeRoleTaggedSession is AWS-only role chaining;
+              # MinIO ignores it, so we leave it null.
+              CRYPTOMATOR_ARN=$(cat /state/cryptomator-role-arn)
+              CRYPTOMATORHUB_ARN=$(cat /state/cryptomatorhub-role-arn)
+              CRYPTOMATORVAULTS_ARN=$(cat /state/cryptomatorvaults-role-arn)
+              if [ -z "$CRYPTOMATOR_ARN" ] || [ -z "$CRYPTOMATORHUB_ARN" ] || [ -z "$CRYPTOMATORVAULTS_ARN" ]; then
+                echo "STS profile requested but one or more role ARNs are missing." >&2
                 exit 1
               fi
               if [ -n "${STS_DURATION_SECONDS}" ]; then
@@ -309,13 +389,13 @@ spec:
                 "region": "us-east-1",
                 "regions": ["us-east-1"],
                 "bucketPrefix": "${STS_BUCKET_PREFIX}",
-                "stsRoleCreateBucketClient": "${role_arn}",
-                "stsRoleCreateBucketHub": "${role_arn}",
+                "stsRoleCreateBucketClient": "${CRYPTOMATOR_ARN}",
+                "stsRoleCreateBucketHub": "${CRYPTOMATORHUB_ARN}",
                 "stsEndpoint": "${S3_SCHEME}://${S3_HOST}:${S3_PORT}",
                 "bucketVersioning": true,
                 "bucketAcceleration": null,
                 "bucketEncryption": "NONE",
-                "stsRoleAccessBucketAssumeRoleWithWebIdentity": "${role_arn}",
+                "stsRoleAccessBucketAssumeRoleWithWebIdentity": "${CRYPTOMATORVAULTS_ARN}",
                 "stsRoleAccessBucketAssumeRoleTaggedSession": null,
                 ${duration_field}
                 "stsSessionTag": "${STS_SESSION_TAG}"
@@ -337,8 +417,13 @@ spec:
       volumes:
         - name: tmp
           emptyDir: {}
-        {{- if $stsEnabled }}
+        {{- if or $stsEnabled $openidEnabled }}
         - name: state
           emptyDir: {}
+        {{- end }}
+        {{- if $openidEnabled }}
+        - name: policies
+          configMap:
+            name: {{ $fullname }}-minio-policies
         {{- end }}
 {{- end }}
