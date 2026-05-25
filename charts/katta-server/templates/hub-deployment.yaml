@@ -74,7 +74,7 @@ spec:
               done
       containers:
         - name: hub
-          image: "ghcr.io/shift7-ch/katta-server:9864f7c"
+          image: "ghcr.io/shift7-ch/katta-server:{{ .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.hub.imagePullPolicy }}
           ports:
             - name: http

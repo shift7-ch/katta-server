@@ -13,8 +13,9 @@ Image repositories/tags are fixed in templates:
 - Hub: `ghcr.io/shift7-ch/katta-server:<appVersion from Chart.yaml>`
 - Keycloak: `ghcr.io/shift7-ch/keycloak:26.5.7`
 - PostgreSQL: `postgres:17-alpine`
-- MinIO: configurable via `minio.image.{repository,tag}` (default `quay.io/minio/minio:latest`)
-- Storage-profile seed Job: configurable via `storageProfileSeed.image.{repository,tag}` (default `curlimages/curl:8.10.1`)
+- MinIO (StatefulSet + seed-Job setup container): `quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z`
+- Storage-profile seed Job: `alpine/curl:8.17.0`
+- Init waits (DB/OIDC readiness): `busybox:1.36`, `alpine/curl:8.17.0`
 
 TLS termination is currently expected to be done by the ingress controller.
 Supported ingress controller templates:
@@ -109,7 +110,14 @@ When `minio.enabled=true` and either `storageProfileSeed.static.enabled=true` or
 
 The profile UUID is generated on first install and persisted in a `<release>-storageprofile-seed-state` ConfigMap, so subsequent upgrades reuse the same row.
 
-MinIO is **not** ingress-exposed by this chart — it's a backing store. Use `kubectl port-forward svc/<release>-service-minio 9001:9001` to reach the web console.
+### MinIO ingress exposure
+
+MinIO is exposed via ingress only for the hostnames you explicitly configure:
+
+- Set `urls.s3.public` to expose the **S3 API** on its own hostname (required: S3 path-style addressing can't share a hostname with a subpath). This is the address baked into the seeded storage profile, so it must resolve for both the Hub pod and external clients.
+- Set `urls.minio.public` to expose the **web console**.
+
+Leave either blank and that ingress isn't created — the corresponding service is then reachable only in-cluster (or via `kubectl port-forward svc/<release>-service-minio 9001:9001` for the console). The demo values set both to `*.localhost:9090`.
 
 ## Metrics Endpoint
 

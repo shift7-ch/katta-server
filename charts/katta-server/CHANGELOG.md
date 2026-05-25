@@ -35,7 +35,7 @@
   `ghcr.io/shift7-ch/keycloak:26.5.7` (was `ghcr.io/cryptomator/hub` and
   `ghcr.io/cryptomator/keycloak:26.5.3`).
 - Realm display names and the `cryptomatorhub` / `cryptomatorhub-system` client names
-  rebranded to "Katta Server". The Keycloak `loginTheme` is still `cryptomator` until
-  the theme directory in `keycloak/themes/` is renamed.
+  rebranded to "Katta Server", and the Keycloak realm `loginTheme` set to `katta`
+  (the theme shipped in the Katta Keycloak image at `keycloak/themes/katta`).
 - Chart is now published to `oci://ghcr.io/shift7-ch/charts` (was
   `oci://ghcr.io/cryptomator/charts`).

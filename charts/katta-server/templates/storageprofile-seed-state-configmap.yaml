@@ -12,7 +12,7 @@ metadata:
   annotations:
     # Keep this ConfigMap across helm uninstall so the same profile UUID is reused on reinstall —
     # otherwise the seed Job would generate a new UUID and orphan the old DB row.
-    # "helm.sh/resource-policy": keep
+    "helm.sh/resource-policy": keep
 data:
   {{- if $staticEnabled }}
   profileId: {{ include "katta-server.resolvedMinioProfileId" . | quote }}

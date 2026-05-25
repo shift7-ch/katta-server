@@ -30,7 +30,7 @@ spec:
       {{- include "katta-server.hostAliases" . | nindent 6 }}
       containers:
         - name: minio
-          image: "{{ .Values.minio.image.repository }}:{{ .Values.minio.image.tag }}"
+          image: "quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z"
           imagePullPolicy: {{ .Values.minio.imagePullPolicy }}
           args:
             - server

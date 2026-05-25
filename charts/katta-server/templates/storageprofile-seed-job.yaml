@@ -60,7 +60,9 @@ spec:
       # so no extra pull is needed.
       initContainers:
         - name: setup-minio
-          image: "quay.io/minio/minio:latest"
+          # Hardcoded + version-pinned (not :latest) for reproducibility. Must be kept in
+          # sync with the same literal in minio-statefulset.yaml — both run the same mc/server.
+          image: "quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z"
           imagePullPolicy: IfNotPresent
           env:
             - name: MINIO_URL

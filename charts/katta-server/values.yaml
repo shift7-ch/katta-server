@@ -145,9 +145,9 @@ postgres:
 # auto-register a matching S3STATIC profile in the Hub database.
 minio:
   enabled: false
-  image:
-    repository: quay.io/minio/minio
-    tag: latest
+  # The MinIO image is hardcoded + version-pinned in the templates (minio-statefulset.yaml
+  # and the storage-profile seed Job), not configurable here — both must run the exact
+  # same MinIO/mc build.
   imagePullPolicy: IfNotPresent
   service:
     type: ClusterIP
