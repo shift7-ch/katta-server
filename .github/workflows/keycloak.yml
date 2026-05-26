@@ -9,9 +9,9 @@ on:
 
 env:
   NODE_VERSION: 22
-  # / cipherduck start addition
+  # / katta start addition
   JAVA_VERSION: 22
-  # \ cipherduck end addition
+  # \ katta end addition
 
 defaults:
   run:
@@ -43,18 +43,18 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'pnpm'
-          # / cipherduck start modification
+          # / katta start modification
           cache-dependency-path: keycloak/themes/katta/common/resources/pnpm-lock.yaml
-          # \ cipherduck end modification
+          # \ katta end modification
       - name: Install Dependencies
-        # / cipherduck start modification
+        # / katta start modification
         working-directory: keycloak/themes/katta/common/resources
-        # \ cipherduck end modification
+        # \ katta end modification
         run: pnpm install --frozen-lockfile
       - name: Build Theme
-        # / cipherduck start modification
+        # / katta start modification
         working-directory: keycloak/themes/katta/common/resources
-        # \ cipherduck end modification
+        # \ katta end modification
         run: pnpm run build
       # / katta start addition
       - uses: actions/setup-java@v5
