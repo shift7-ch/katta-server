@@ -2454,7 +2454,8 @@
         } ]
       },
       "put" : {
-        "summary" : "archive a storage profile",
+        "summary" : "set the archived state of a storage profile",
+        "description" : "Archives (archived=true) or unarchives (archived=false) the storage profile. While archived, no new vaults can be created for this profile.",
         "parameters" : [ {
           "name" : "profileId",
           "in" : "path",
@@ -2468,6 +2469,7 @@
             "application/x-www-form-urlencoded" : {
               "schema" : {
                 "type" : "object",
+                "required" : [ "archived" ],
                 "properties" : {
                   "archived" : {
                     "type" : "boolean"
@@ -2480,7 +2482,7 @@
         },
         "responses" : {
           "204" : {
-            "description" : "storage profile archived"
+            "description" : "archived state updated"
           },
           "403" : {
             "description" : "not an admin"
