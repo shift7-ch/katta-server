@@ -1,6 +1,8 @@
 {{- if eq .Values.ingress.controller "nginx" }}
 {{- $hubHost := regexReplaceAll "^https?://([^:/]+).*" (required "urls.hub.public must be set" .Values.urls.hub.public) "${1}" -}}
-{{- $kcHost := regexReplaceAll "^https?://([^:/]+).*" (required "urls.kc.public must be set" .Values.urls.kc.public) "${1}" }}
+{{- $hubPath := include "katta-server.hubRelativePath" . -}}
+{{- $kcHost := regexReplaceAll "^https?://([^:/]+).*" (required "urls.kc.public must be set" .Values.urls.kc.public) "${1}" -}}
+{{- $kcPath := include "katta-server.keycloakRelativePath" . -}}
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -9,47 +11,14 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "katta-server.labels" . | nindent 4 }}
-  {{- with .Values.ingress.annotations }}
-  annotations:
-    {{- toYaml . | nindent 4 }}
-  {{- end }}
-spec:
-  {{- if .Values.ingress.className }}
-  ingressClassName: {{ .Values.ingress.className }}
-  {{- end }}
-  rules:
-    - host: {{ $hubHost | quote }}
-      http:
-        paths:
-          - path: "/"
-            pathType: Prefix
-            backend:
-              service:
-                name: {{ include "katta-server.fullname" . }}-service-hub
-                port:
-                  number: {{ .Values.hub.service.port }}
-  {{- if .Values.ingress.tls.enabled }}
-  tls:
-    - hosts:
-        - {{ $hubHost | quote }}
-      secretName: {{ .Values.ingress.tls.secretName | required "ingress.tls.secretName must be set when ingress.tls.enabled=true" }}
-  {{- end }}
-{{- if .Values.hub.metrics.enabled }}
----
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: {{ include "katta-server.fullname" . }}-ingress-hub-metrics
-  namespace: {{ .Release.Namespace }}
-  labels:
-    {{- include "katta-server.labels" . | nindent 4 }}
   annotations:
     {{- with .Values.ingress.annotations }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
-    nginx.ingress.kubernetes.io/auth-type: "basic"
-    nginx.ingress.kubernetes.io/auth-secret: {{ printf "%s-secrets-hub-metrics" (include "katta-server.fullname" .) | quote }}
-    nginx.ingress.kubernetes.io/auth-realm: "Authentication Required"
+    {{- if ne $hubPath "/" }}
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: "/$2"
+    {{- end }}
 spec:
   {{- if .Values.ingress.className }}
   ingressClassName: {{ .Values.ingress.className }}
@@ -58,8 +27,8 @@ spec:
     - host: {{ $hubHost | quote }}
       http:
         paths:
-          - path: "/q/metrics"
-            pathType: Prefix
+          - path: {{ if eq $hubPath "/" }}{{ "/" | quote }}{{ else }}{{ printf "%s(/|$)(.*)" (regexQuoteMeta $hubPath) | quote }}{{ end }}
+            pathType: {{ if eq $hubPath "/" }}Prefix{{ else }}ImplementationSpecific{{ end }}
             backend:
               service:
                 name: {{ include "katta-server.fullname" . }}-service-hub
@@ -71,7 +40,6 @@ spec:
         - {{ $hubHost | quote }}
       secretName: {{ .Values.ingress.tls.secretName | required "ingress.tls.secretName must be set when ingress.tls.enabled=true" }}
   {{- end }}
-{{- end }}
 {{- if .Values.keycloak.enabled }}
 ---
 apiVersion: networking.k8s.io/v1
@@ -81,10 +49,14 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "katta-server.labels" . | nindent 4 }}
-  {{- with .Values.ingress.annotations }}
   annotations:
+    {{- with .Values.ingress.annotations }}
     {{- toYaml . | nindent 4 }}
-  {{- end }}
+    {{- end }}
+    {{- if ne $kcPath "/" }}
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: "/$2"
+    {{- end }}
 spec:
   {{- if .Values.ingress.className }}
   ingressClassName: {{ .Values.ingress.className }}
@@ -93,8 +65,8 @@ spec:
     - host: {{ $kcHost | quote }}
       http:
         paths:
-          - path: "/"
-            pathType: Prefix
+          - path: {{ if eq $kcPath "/" }}{{ "/" | quote }}{{ else }}{{ printf "%s(/|$)(.*)" (regexQuoteMeta $kcPath) | quote }}{{ end }}
+            pathType: {{ if eq $kcPath "/" }}Prefix{{ else }}ImplementationSpecific{{ end }}
             backend:
               service:
                 name: {{ include "katta-server.fullname" . }}-service-kc

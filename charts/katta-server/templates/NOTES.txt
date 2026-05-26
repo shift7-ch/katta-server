@@ -2,7 +2,6 @@
 {{- $ns := .Release.Namespace }}
 {{- $release := include "katta-server.fullname" . }}
 {{- $hubSecret := printf "%s-secrets-hub" $release }}
-{{- $hubMetricsSecret := printf "%s-secrets-hub-metrics" $release }}
 {{- $kcSecret := printf "%s-secrets-kc" $release }}
 {{- $pgSecret := printf "%s-secrets-pg" $release }}
 {{- $minioSecret := printf "%s-secrets-minio" $release }}
@@ -13,9 +12,6 @@
 
 {{ printf "%s🌐 URLs%s" $cSection $cReset }}
 - Hub UI:          {{ .Values.urls.hub.public }}
-{{- if .Values.hub.metrics.enabled }}
-- Hub metrics:     {{ trimSuffix "/" .Values.urls.hub.public }}/q/metrics
-{{- end }}
 {{- if .Values.keycloak.enabled }}
 - Keycloak admin:  {{ .Values.urls.kc.public }}
 {{- end }}
@@ -46,10 +42,6 @@ ingress controller:
 - Hub admin password (realm user): `kubectl get secret -n {{ $ns }} {{ $hubSecret }} -o jsonpath='{.data.hub_admin_password}' | base64 -d && echo`
 - Hub DB password: `kubectl get secret -n {{ $ns }} {{ $hubSecret }} -o jsonpath='{.data.hub_db_password}' | base64 -d && echo`
 {{- end }}
-{{- if .Values.hub.metrics.enabled }}
-- Hub metrics username: `kubectl get secret -n {{ $ns }} {{ $hubMetricsSecret }} -o jsonpath='{.data.username}' | base64 -d && echo`
-- Hub metrics password: `kubectl get secret -n {{ $ns }} {{ $hubMetricsSecret }} -o jsonpath='{.data.password}' | base64 -d && echo`
-{{- end }}
 {{- if .Values.keycloak.enabled }}
 - Keycloak admin password: `kubectl get secret -n {{ $ns }} {{ $kcSecret }} -o jsonpath='{.data.kc_admin_password}' | base64 -d && echo`
 - Keycloak DB password: `kubectl get secret -n {{ $ns }} {{ $kcSecret }} -o jsonpath='{.data.kc_db_password}' | base64 -d && echo`
@@ -75,8 +67,9 @@ ingress controller:
 - View logs:    `kubectl logs -n {{ $ns }} job/{{ $release }}-storageprofile-seed`
 {{- end }}
 
-{{ if and .Values.hub.metrics.enabled (eq .Values.ingress.controller "contour") }}
-⚠️ Contour doesn't support authentication, so the metrics endpoint isn't protected. Please secure it manually or set `hub.metrics.enabled` to `false` to avoid exposing it.
+{{ if .Values.hub.metrics.enabled }}
+{{ printf "%s📈 Telemetry%s" $cSection $cReset }}
+- Exporting to `{{ .Values.hub.metrics.endpoint }}` (metrics, traces, logs).
 {{ end }}
 
 {{ if not .Values.keycloak.enabled }}

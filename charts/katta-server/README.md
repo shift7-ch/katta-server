@@ -9,19 +9,18 @@ This chart deploys:
 - PostgreSQL (optional, enabled by default)
 - MinIO (optional, disabled by default — see [Bundled MinIO](#bundled-minio-for-evaluation))
 
-Image repositories/tags are fixed in templates:
-- Hub: `ghcr.io/shift7-ch/katta-server:<appVersion from Chart.yaml>`
-- Keycloak: `ghcr.io/shift7-ch/keycloak:26.5.7`
-- PostgreSQL: `postgres:17-alpine`
-- MinIO (StatefulSet + seed-Job setup container): `quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z`
-- Storage-profile seed Job: `alpine/curl:8.17.0`
-- Init waits (DB/OIDC readiness): `busybox:1.36`, `alpine/curl:8.17.0`
+Image repositories are fixed in templates; the core-component tags are overridable per workload:
+- Hub: `ghcr.io/shift7-ch/katta-server:<hub.image.tag>` (defaults to chart `appVersion`)
+- Keycloak: `ghcr.io/shift7-ch/keycloak:<keycloak.image.tag>` (default `26.6.2`)
+- PostgreSQL: `postgres:<postgres.image.tag>` (default `17-alpine`)
+- MinIO (StatefulSet + seed-Job setup container, shares one tag): `quay.io/minio/minio:<minio.image.tag>` (default `RELEASE.2025-09-07T16-13-09Z`)
+- Storage-profile seed Job: `alpine/curl:8.17.0` (hardcoded)
+- Init waits (DB/OIDC readiness): `busybox:1.36`, `alpine/curl:8.17.0` (hardcoded)
 
 TLS termination is currently expected to be done by the ingress controller.
 Supported ingress controller templates:
 - `ingress.controller=nginx`
 - `ingress.controller=traefik`
-- `ingress.controller=contour`
 
 ## Quick Start (Local Demo with Bundled MinIO)
 
@@ -119,19 +118,17 @@ MinIO is exposed via ingress only for the hostnames you explicitly configure:
 
 Leave either blank and that ingress isn't created — the corresponding service is then reachable only in-cluster (or via `kubectl port-forward svc/<release>-service-minio 9001:9001` for the console). The demo values set both to `*.localhost:9090`.
 
-## Metrics Endpoint
+## Telemetry (OpenTelemetry)
 
-Hub metrics are configured via:
+Hub exports metrics, traces and logs via OpenTelemetry / OTLP. Telemetry is **off by default**; enable it via:
 
-- `hub.metrics.enabled`
-- `hub.metrics.username`
-- `hub.metrics.password` (optional; auto-generated if unset)
+- `hub.metrics.enabled` (default `false`)
+- `hub.metrics.endpoint` — OTLP endpoint, default `https://otel-collector:443`
+- `hub.metrics.protocol` — OTLP wire protocol: `http/protobuf` (default) or `grpc`
+- `hub.metrics.resourceAttributes` — extra OTel resource attributes merged into the chart defaults (`service.name`, `service.version`). Setting a key with the same name overrides the default.
+- `hub.metrics.otlp.username` / `hub.metrics.otlp.password` — Credentials used to add `QUARKUS_OTEL_EXPORTER_OTLP_HEADERS` header `Authorization: Basic <base64(user:pass)>`.
 
-When metrics are enabled, the chart creates:
-
-- Secret `<release>-secrets-hub-metrics` of type `kubernetes.io/basic-auth`
-- Metrics ingress route on Hub management endpoint path `/q/metrics`
-- Basic-auth protection for metrics ingress on `nginx` and `traefik` controllers
+When disabled, the chart sets `QUARKUS_OTEL_SDK_DISABLED=true` so the SDK does not start. When enabled, the chart sets `QUARKUS_OTEL_EXPORTER_OTLP_ENDPOINT` and Hub pushes to your collector — there is no `/q/metrics` scrape endpoint. To bridge to Prometheus, run an OpenTelemetry Collector with a `prometheus` or `prometheusremotewrite` exporter.
 
 ## Hub with External PostgreSQL and Keycloak
 
@@ -144,10 +141,10 @@ helm install katta charts/katta-server \
   --set postgres.enabled=false \
   --set hub.database.jdbcUrl='jdbc:postgresql://db.example:5432/hub' \
   --set hub.database.username='hub' \
-  --set hub.config.keycloakPublicUrl='https://sso.example/kc' \
-  --set hub.config.keycloakLocalUrl='http://keycloak.svc.cluster.local:8080/kc' \
-  --set hub.oidc.authServerUrl='http://keycloak.svc.cluster.local:8080/kc/realms/cryptomator' \
-  --set hub.oidc.tokenIssuer='https://sso.example/kc/realms/cryptomator'
+  --set urls.kc.public='https://sso.example/kc' \
+  --set urls.kc.clusterInternal='http://keycloak.svc.cluster.local:8080/kc' \
+  --set urls.kc.authServerUrl='http://keycloak.svc.cluster.local:8080/kc/realms/cryptomator' \
+  --set urls.kc.tokenIssuer='https://sso.example/kc/realms/cryptomator'
 ```
 
 ### Importing `realm.json`

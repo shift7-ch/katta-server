@@ -10,12 +10,19 @@ urls:
     public: "" # only honored when minio.enabled=true; if blank, the console is not exposed via ingress
   s3:
     public: "" # only honored when minio.enabled=true; address stored in the seeded storage profile (S3 API, NOT the console)
+  billing:
+    public: ""
 
 notes:
   useColor: true
 
+secrets:
+  # When true, all chart-managed Secrets are annotated `helm.sh/resource-policy: keep` so they survive `helm uninstall`.
+  # Convenient for development (passwords stay stable across reinstalls) but a security risk in production
+  keepOnUninstall: false
+
 ingress:
-  # supported: nginx, traefik, contour
+  # supported: nginx, traefik
   controller: ""
   className: ""
   annotations: {}
@@ -44,21 +51,20 @@ ingress:
 
 hub:
   imagePullPolicy: IfNotPresent
+  image:
+    tag: "" # defaults to chart appVersion
   service:
     type: ClusterIP
     port: 8080
   resources:
     requests:
-      cpu: 10m
+      cpu: 50m
       memory: 16Mi
     limits:
-      cpu: 500m
       memory: 256Mi
   config:
     keycloakRealm: cryptomator
     keycloakSyncerPeriod: 5m
-    keycloakPublicUrl: ""
-    keycloakLocalUrl: ""
     # Hub's Content-Security-Policy response header. When blank, the chart auto-composes
     # a policy that lets the SPA fetch from every origin in `urls.*.public` (in addition
     # to `'self'` and `api.cryptomator.org`). Set explicitly to lock down or extend in
@@ -66,9 +72,16 @@ hub:
     # applied. Maps to QUARKUS_HTTP_HEADER__CONTENT_SECURITY_POLICY__VALUE on the pod.
     contentSecurityPolicy: ""
   metrics:
-    enabled: true
-    username: metrics
-    password: ""
+    # Hub ships metrics, traces and logs via OpenTelemetry / OTLP.
+    enabled: false
+    endpoint: "https://otel-collector:443"
+    protocol: "http/protobuf"
+    # Extra resource attributes merged into the defaults (service.name, service.version).
+    # Example: { deployment.environment: production, team: platform }
+    resourceAttributes: {}
+    otlp: # Optional Basic Authentication for OTLP endpoint
+      username: ""
+      password: ""
   oidc:
     clientId: cryptomatorhub
   database:
@@ -92,20 +105,22 @@ hub:
     managedApi:
       username: ""
       password: ""
+    apiUrl: ""
 
 keycloak:
   enabled: true
   imagePullPolicy: IfNotPresent
+  image:
+    tag: ""
   service:
     type: ClusterIP
     httpPort: 8080
     managementPort: 9000
   resources:
     requests:
-      cpu: 20m
+      cpu: 200m
       memory: 128Mi
     limits:
-      cpu: 1000m
       memory: 640Mi
   admin:
     username: admin
@@ -123,6 +138,8 @@ keycloak:
 postgres:
   enabled: true
   imagePullPolicy: IfNotPresent
+  image:
+    tag: ""
   service:
     type: ClusterIP
     port: 5432
@@ -132,10 +149,9 @@ postgres:
     accessMode: ReadWriteOnce
   resources:
     requests:
-      cpu: 10m
+      cpu: 200m
       memory: 32Mi
     limits:
-      cpu: 1000m
       memory: 256Mi
   auth:
     adminUsername: postgres
@@ -145,9 +161,11 @@ postgres:
 # auto-register a matching S3STATIC profile in the Hub database.
 minio:
   enabled: false
-  # The MinIO image is hardcoded + version-pinned in the templates (minio-statefulset.yaml
-  # and the storage-profile seed Job), not configurable here — both must run the exact
-  # same MinIO/mc build.
+  # Image repository is fixed (quay.io/minio/minio); the tag is shared by the MinIO
+  # StatefulSet and the storage-profile seed Job's setup container, so they always run
+  # the exact same MinIO/mc build. Defaults to a version-pinned release (not :latest).
+  image:
+    tag: ""
   imagePullPolicy: IfNotPresent
   service:
     type: ClusterIP

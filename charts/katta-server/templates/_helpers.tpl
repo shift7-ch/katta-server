@@ -170,32 +170,16 @@ hostAliases:
 {{- end -}}
 {{- end -}}
 
-{{/*
-
-Compose the Hub's Content-Security-Policy header. If hub.config.contentSecurityPolicy
-is set explicitly, return it verbatim. Otherwise build a policy whose connect-src
-includes every configured urls.*.public origin (scheme://host[:port]), so the SPA can
-reach the chart's Keycloak, S3, MinIO console etc. without browser CSP violations.
-
-*/}}
-{{- define "katta-server.contentSecurityPolicy" -}}
-{{- if .Values.hub.config.contentSecurityPolicy -}}
-{{- .Values.hub.config.contentSecurityPolicy -}}
-{{- else -}}
-{{- $origins := list "'self'" "api.cryptomator.org" -}}
-{{- range $name, $cfg := .Values.urls -}}
-  {{- if (and (kindIs "map" $cfg) (hasKey $cfg "public")) -}}
-    {{- $public := index $cfg "public" -}}
-    {{- if $public -}}
-      {{- $origin := regexReplaceAll "^(https?://[^/]+).*" $public "${1}" -}}
-      {{- if and $origin (not (has $origin $origins)) -}}
-        {{- $origins = append $origins $origin -}}
-      {{- end -}}
-    {{- end -}}
-  {{- end -}}
+{{- define "katta-server.hubRelativePath" -}}
+{{- $path := regexReplaceAll "^https?://[^/]+" (required "urls.hub.public must be set" .Values.urls.hub.public) "" -}}
+{{- $trimmed := trimAll "/" $path -}}
+{{- printf "/%s" $trimmed -}}
 {{- end -}}
-{{- printf "default-src 'self'; connect-src %s; object-src 'none'; child-src 'self'; img-src * data:; frame-ancestors 'none'" (join " " $origins) -}}
-{{- end -}}
+
+{{- define "katta-server.keycloakRelativePath" -}}
+{{- $path := regexReplaceAll "^https?://[^/]+" (required "urls.kc.public must be set" .Values.urls.kc.public) "" -}}
+{{- $trimmed := trimAll "/" $path -}}
+{{- printf "/%s" $trimmed -}}
 {{- end -}}
 
 {{- define "katta-server.keycloakLocalUrl" -}}
@@ -297,24 +281,6 @@ Auto-generated secrets below:
 {{- $_ := set .Values "_resolvedHubAdminPassword" (randAlphaNum 32) -}}
 {{- end -}}
 {{- index .Values "_resolvedHubAdminPassword" -}}
-{{- end -}}
-{{- end -}}
-
-{{- define "katta-server.resolvedHubMetricsPassword" -}}
-{{- if hasKey .Values "_resolvedHubMetricsPassword" -}}
-{{- index .Values "_resolvedHubMetricsPassword" -}}
-{{- else if .Values.hub.metrics.password -}}
-{{- $_ := set .Values "_resolvedHubMetricsPassword" .Values.hub.metrics.password -}}
-{{- index .Values "_resolvedHubMetricsPassword" -}}
-{{- else -}}
-{{- $secretName := print (include "katta-server.fullname" .) "-secrets-hub-metrics" -}}
-{{- $existing := lookup "v1" "Secret" .Release.Namespace $secretName -}}
-{{- if and $existing (hasKey $existing.data "password") -}}
-{{- $_ := set .Values "_resolvedHubMetricsPassword" (index $existing.data "password" | b64dec) -}}
-{{- else -}}
-{{- $_ := set .Values "_resolvedHubMetricsPassword" (randAlphaNum 32) -}}
-{{- end -}}
-{{- index .Values "_resolvedHubMetricsPassword" -}}
 {{- end -}}
 {{- end -}}
 
