@@ -78,6 +78,7 @@ class VaultResourceTest {
 		vaultResource.license = license;
 		vaultResource.keycloakCryptomatorVaultsHelper = keycloakCryptomatorVaultsHelper;
 		vaultResource.kattaConfig = kattaConfig;
+		vaultResource.vaultAccessChangedEvent = Mockito.mock();
 
 		final User user = Mockito.mock(User.class);
 		Mockito.when(userRepo.findById("alice")).thenReturn(user);
