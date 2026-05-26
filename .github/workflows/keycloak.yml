@@ -35,7 +35,9 @@ jobs:
           package_json_file: keycloak/themes/katta/common/resources/package.json
           # \ cipherduck end modification
       - name: Check lockfile integrity
-        working-directory: keycloak/themes/cryptomator/common/resources
+        # / cipherduck start modification
+        working-directory: keycloak/themes/katta/common/resources
+        # \ cipherduck end modification
         run: bash scripts/check-lockfile.sh
       - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
