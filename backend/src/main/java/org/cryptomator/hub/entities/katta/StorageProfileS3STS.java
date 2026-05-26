@@ -8,7 +8,7 @@ import jakarta.persistence.Table;
 @Entity
 @Table(name = "storage_profile_s3_sts")
 @DiscriminatorValue("S3STS")
-public final class StorageProfileS3STS extends StorageProfileS3Static {
+public class StorageProfileS3STS extends StorageProfileS3Static {
 
 	//======================================================================
 	// (2) STS only: bucket creation (only relevant for Desktop client)
