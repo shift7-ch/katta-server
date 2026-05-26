@@ -107,6 +107,8 @@ spec:
 {{- end }}
 {{- if and .Values.minio.enabled .Values.urls.s3.public }}
 {{- $s3Host := regexReplaceAll "^https?://([^:/]+).*" .Values.urls.s3.public "${1}" }}
+{{- /* S3 path-style addressing ignores any base path — clients hit the host root, and the seeded profile stores only scheme/host/port. So S3 cannot be served under a subpath: a subpath ingress would 404 the client's root requests (surfacing as a confusing CORS error). Fail fast; use urls.minio.public for the console subpath instead. */}}
+{{- if ne (include "katta-server.s3RelativePath" .) "/" }}{{- fail "urls.s3.public must not include a path: S3 path-style addressing requires a dedicated host served at root (e.g. http://s3.example.com). Use urls.minio.public for the console subpath." }}{{- end }}
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -143,6 +145,21 @@ spec:
 {{- end }}
 {{- if and .Values.minio.enabled .Values.urls.minio.public }}
 {{- $minioHost := regexReplaceAll "^https?://([^:/]+).*" .Values.urls.minio.public "${1}" }}
+{{- $minioPath := include "katta-server.minioRelativePath" . }}
+{{- if ne $minioPath "/" }}
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: {{ include "katta-server.fullname" . }}-stripprefix-minio
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "katta-server.labels" . | nindent 4 }}
+spec:
+  stripPrefix:
+    prefixes:
+      - {{ $minioPath | quote }}
+{{- end }}
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -151,10 +168,13 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "katta-server.labels" . | nindent 4 }}
-  {{- with .Values.ingress.annotations }}
   annotations:
+    {{- if ne $minioPath "/" }}
+    traefik.ingress.kubernetes.io/router.middlewares: {{ printf "%s-%s-stripprefix-minio@kubernetescrd" .Release.Namespace (include "katta-server.fullname" .) | quote }}
+    {{- end }}
+    {{- with .Values.ingress.annotations }}
     {{- toYaml . | nindent 4 }}
-  {{- end }}
+    {{- end }}
 spec:
   {{- if .Values.ingress.className }}
   ingressClassName: {{ .Values.ingress.className }}
@@ -163,7 +183,7 @@ spec:
     - host: {{ $minioHost | quote }}
       http:
         paths:
-          - path: "/"
+          - path: {{ $minioPath | quote }}
             pathType: Prefix
             backend:
               service:

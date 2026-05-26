@@ -113,10 +113,10 @@ The profile UUID is generated on first install and persisted in a `<release>-sto
 
 MinIO is exposed via ingress only for the hostnames you explicitly configure:
 
-- Set `urls.s3.public` to expose the **S3 API** on its own hostname (required: S3 path-style addressing can't share a hostname with a subpath). This is the address baked into the seeded storage profile, so it must resolve for both the Hub pod and external clients.
-- Set `urls.minio.public` to expose the **web console**.
+- Set `urls.s3.public` to expose the **S3 API**. This **must be a dedicated host served at the root** (e.g. `https://s3.example.com`), **not** a subpath. S3 path-style addressing ignores any base path — clients address buckets at the host root (`<host>/<bucket>/<key>`) — and the seeded storage profile stores only scheme/host/port, so a subpath would be silently dropped and the client's root requests would 404 at the ingress (surfacing as a misleading CORS error). The chart **fails fast** if `urls.s3.public` contains a path. This address is baked into the seeded storage profile, so it must resolve for both the Hub pod and external clients.
+- Set `urls.minio.public` to expose the **web console**. Unlike the S3 API, the console *may* be served under a subpath (e.g. `https://minio.example.com/minio`); the chart applies the same strip-prefix routing as Hub/Keycloak and sets `MINIO_BROWSER_REDIRECT_URL` so the console emits correctly-prefixed asset/redirect URLs.
 
-Leave either blank and that ingress isn't created — the corresponding service is then reachable only in-cluster (or via `kubectl port-forward svc/<release>-service-minio 9001:9001` for the console). The demo values set both to `*.localhost:9090`.
+Leave either blank and that ingress isn't created — the corresponding service is then reachable only in-cluster (or via `kubectl port-forward svc/<release>-service-minio 9001:9001` for the console). The demo serves the S3 API at `http://s3.localhost:9090` (its own root host) and the console at `http://minio.localhost:9090/minio`.
 
 ## Telemetry (OpenTelemetry)
 

@@ -182,6 +182,20 @@ hostAliases:
 {{- printf "/%s" $trimmed -}}
 {{- end -}}
 
+{{/* S3 / MinIO-console relative paths. Unlike hub/kc these URLs are optional (blank => no
+     ingress), so callers must guard on the value being set before including these. */}}
+{{- define "katta-server.s3RelativePath" -}}
+{{- $path := regexReplaceAll "^https?://[^/]+" .Values.urls.s3.public "" -}}
+{{- $trimmed := trimAll "/" $path -}}
+{{- printf "/%s" $trimmed -}}
+{{- end -}}
+
+{{- define "katta-server.minioRelativePath" -}}
+{{- $path := regexReplaceAll "^https?://[^/]+" .Values.urls.minio.public "" -}}
+{{- $trimmed := trimAll "/" $path -}}
+{{- printf "/%s" $trimmed -}}
+{{- end -}}
+
 {{- define "katta-server.keycloakLocalUrl" -}}
 {{- if .Values.urls.kc.clusterInternal -}}
 {{- trimSuffix "/" .Values.urls.kc.clusterInternal -}}

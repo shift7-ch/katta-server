@@ -81,6 +81,8 @@ spec:
 {{- end }}
 {{- if and .Values.minio.enabled .Values.urls.s3.public }}
 {{- $s3Host := regexReplaceAll "^https?://([^:/]+).*" .Values.urls.s3.public "${1}" }}
+{{- /* S3 path-style addressing ignores any base path — clients hit the host root, and the seeded profile stores only scheme/host/port. So S3 cannot be served under a subpath: a subpath ingress would 404 the client's root requests (surfacing as a confusing CORS error). Fail fast; use urls.minio.public for the console subpath instead. */}}
+{{- if ne (include "katta-server.s3RelativePath" .) "/" }}{{- fail "urls.s3.public must not include a path: S3 path-style addressing requires a dedicated host served at root (e.g. http://s3.example.com). Use urls.minio.public for the console subpath." }}{{- end }}
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -117,6 +119,7 @@ spec:
 {{- end }}
 {{- if and .Values.minio.enabled .Values.urls.minio.public }}
 {{- $minioHost := regexReplaceAll "^https?://([^:/]+).*" .Values.urls.minio.public "${1}" }}
+{{- $minioPath := include "katta-server.minioRelativePath" . }}
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -125,10 +128,14 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "katta-server.labels" . | nindent 4 }}
-  {{- with .Values.ingress.annotations }}
   annotations:
+    {{- with .Values.ingress.annotations }}
     {{- toYaml . | nindent 4 }}
-  {{- end }}
+    {{- end }}
+    {{- if ne $minioPath "/" }}
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: "/$2"
+    {{- end }}
 spec:
   {{- if .Values.ingress.className }}
   ingressClassName: {{ .Values.ingress.className }}
@@ -137,8 +144,8 @@ spec:
     - host: {{ $minioHost | quote }}
       http:
         paths:
-          - path: "/"
-            pathType: Prefix
+          - path: {{ if eq $minioPath "/" }}{{ "/" | quote }}{{ else }}{{ printf "%s(/|$)(.*)" (regexQuoteMeta $minioPath) | quote }}{{ end }}
+            pathType: {{ if eq $minioPath "/" }}Prefix{{ else }}ImplementationSpecific{{ end }}
             backend:
               service:
                 name: {{ include "katta-server.fullname" . }}-service-minio
