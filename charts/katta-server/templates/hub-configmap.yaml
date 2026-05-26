@@ -6,6 +6,7 @@ metadata:
   labels:
     {{- include "katta-server.labels" . | nindent 4 }}
 data:
+  HUB_PUBLIC_ROOT_PATH: {{ include "katta-server.hubRelativePath" . | trimSuffix "/" | printf "%s/" | quote }}
   HUB_KEYCLOAK_PUBLIC_URL: {{ .Values.urls.kc.public | quote }}
   HUB_KEYCLOAK_LOCAL_URL: {{ include "katta-server.keycloakLocalUrl" . | quote }}
   HUB_KEYCLOAK_REALM: {{ .Values.hub.config.keycloakRealm | quote }}
