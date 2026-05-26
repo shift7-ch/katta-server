@@ -31,7 +31,9 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
         with:
-          package_json_file: keycloak/themes/cryptomator/common/resources/package.json
+          # / cipherduck start modification
+          package_json_file: keycloak/themes/katta/common/resources/package.json
+          # \ cipherduck end modification
       - name: Check lockfile integrity
         working-directory: keycloak/themes/cryptomator/common/resources
         run: bash scripts/check-lockfile.sh
