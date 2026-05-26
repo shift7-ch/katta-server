@@ -59,6 +59,28 @@ spec:
       # Reuses the MinIO server image (already cached on the node from the StatefulSet)
       # so no extra pull is needed.
       initContainers:
+        # `mc idp openid add` validates config_url server-side, so Keycloak must already be
+        # serving its discovery endpoint when setup-minio runs. On a fresh install Keycloak's
+        # first-boot realm import can outlast this post-install hook; without this gate the
+        # adds fail with "connection refused", get swallowed, and the ARN loop hangs forever.
+        # Mirrors the Hub deployment's wait-for-oidc init container.
+        - name: wait-for-oidc
+          image: alpine/curl:8.17.0
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            privileged: false
+            capabilities:
+              drop:
+                - ALL
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -eux
+              until [ "$(curl -sS -o /dev/null -w "%{http_code}" "{{ $oidcConfigUrl }}")" = "200" ]; do
+                echo "waiting for OIDC discovery endpoint..."
+                sleep 5
+              done
         - name: setup-minio
           # Same image as the MinIO StatefulSet (shares minio.image.tag) — both run the same
           # mc/server build; the default tag is version-pinned (not :latest) for reproducibility.

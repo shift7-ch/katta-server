@@ -20,7 +20,7 @@
 - MinIO console:   {{ .Values.urls.minio.public }}
 {{- end }}
 {{- if .Values.urls.s3.public }}
-- MinIO S3 API:    {{ .Values.urls.s3.public }} (used by the seeded storage profile)
+- MinIO S3 API:    {{ .Values.urls.s3.public }}
 {{- end }}
 {{- end }}
 {{- if not .Values.ingress.controller }}
@@ -31,8 +31,7 @@
 {{- $localhostPort := include "katta-server.localhostPort" . }}
 {{- if $localhostPort }}
 
-These URLs are *.localhost names; to reach them from your host machine, port-forward the
-ingress controller:
+To reach them from your host machine, port-forward the ingress controller:
    kubectl port-forward -n ingress-nginx svc/ingress-nginx-controller {{ $localhostPort }}:80
 {{- end }}
 {{- end }}
