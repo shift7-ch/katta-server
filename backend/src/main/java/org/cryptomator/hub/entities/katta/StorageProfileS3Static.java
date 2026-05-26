@@ -23,8 +23,8 @@ public class StorageProfileS3Static extends StorageProfile {
 	@Column(name = "endpoint")
 	public String endpoint;
 
-	@Column(name = "withPathStyleAccessEnabled", nullable = false)
-	public Boolean withPathStyleAccessEnabled = false;
+	@Column(name = "pathStyleAccessEnabled", nullable = false)
+	public Boolean pathStyleAccessEnabled = false;
 
 	@Column(name = "storageClass", columnDefinition = "storage_class", nullable = false)
 	@Enumerated(EnumType.STRING)

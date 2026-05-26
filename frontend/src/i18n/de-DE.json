@@ -364,7 +364,7 @@
   "storageprofile.bucketPrefix": "bucketPrefix",
   "storageprofile.stsRoleArnClient": "stsRoleArnClient",
   "storageprofile.stsRoleArnHub": "stsRoleArnHub",
-  "storageprofile.withPathStyleAccessEnabled": "withPathStyleAccessEnabled",
+  "storageprofile.pathStyleAccessEnabled": "pathStyleAccessEnabled",
   "storageprofile.region": "region",
   "storageprofile.regions": "regions",
   "storageprofile.endpoint": "endpoint",

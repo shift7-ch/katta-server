@@ -20,7 +20,7 @@ CREATE TABLE "storage_profile_s3_static"
 
     -- (1) bucket creation, template upload and client profile
     "endpoint"  VARCHAR,
-    "withPathStyleAccessEnabled"
+    "pathStyleAccessEnabled"
                 bool NOT NULL,
     "storageClass" storage_class NOT NULL,
 
@@ -41,7 +41,6 @@ CREATE TABLE "storage_profile_s3_sts"
     "stsEndpoint" VARCHAR,
     "bucketVersioning"  bool NOT NULL,
     "bucketAcceleration" bool,
-    "bucketEncryption" VARCHAR NOT NULL,
 
     -- (3b) client profile custom properties
     "stsRoleAccessBucketAssumeRoleWithWebIdentity" VARCHAR NOT NULL,
@@ -50,6 +49,5 @@ CREATE TABLE "storage_profile_s3_sts"
     "stsSessionTag"      VARCHAR,
 
     CONSTRAINT "STORAGE_PROFILE_S3_STS_PK" PRIMARY KEY ("id"),
-    CONSTRAINT "STORAGE_PROFILE_S3_STS_FK" FOREIGN KEY ("id") REFERENCES "storage_profile_s3_static" ("id") ON DELETE CASCADE,
-    CONSTRAINT "STORAGE_PROFILE_S3_STS_CHK_BUCKET_ENCRYPTION" CHECK ("bucketEncryption" = 'NONE' OR "bucketEncryption" = 'SSE_AES256' OR "bucketEncryption" = 'SSE_KMS_DEFAULT')
+    CONSTRAINT "STORAGE_PROFILE_S3_STS_FK" FOREIGN KEY ("id") REFERENCES "storage_profile_s3_static" ("id") ON DELETE CASCADE
 );

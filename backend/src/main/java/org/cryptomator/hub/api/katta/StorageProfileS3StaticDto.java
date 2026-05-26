@@ -23,7 +23,7 @@ public sealed class StorageProfileS3StaticDto extends StorageProfileDto permits 
 
 	@URL
 	private final String endpoint;
-	private final boolean withPathStyleAccessEnabled;
+	private final boolean pathStyleAccessEnabled;
 	@NotNull
 	private final S3StorageClass storageClass;
 
@@ -34,11 +34,11 @@ public sealed class StorageProfileS3StaticDto extends StorageProfileDto permits 
 			@JsonProperty("protocol") Protocol protocol,
 			@JsonProperty("archived") boolean archived,
 			@JsonProperty("endpoint") String endpoint,
-			@JsonProperty("withPathStyleAccessEnabled") boolean withPathStyleAccessEnabled,
+			@JsonProperty("pathStyleAccessEnabled") boolean pathStyleAccessEnabled,
 			@JsonProperty("storageClass") S3StorageClass storageClass) {
 		super(id, name, protocol, archived);
 		this.endpoint = endpoint;
-		this.withPathStyleAccessEnabled = withPathStyleAccessEnabled;
+		this.pathStyleAccessEnabled = pathStyleAccessEnabled;
 		this.storageClass = storageClass;
 	}
 
@@ -48,10 +48,10 @@ public sealed class StorageProfileS3StaticDto extends StorageProfileDto permits 
 		return endpoint;
 	}
 
-	@JsonProperty("withPathStyleAccessEnabled")
+	@JsonProperty("pathStyleAccessEnabled")
 	@Schema(description = "Whether to use path style for S3 endpoint for template upload/bucket creation.", examples = "false", defaultValue = "false")
-	public boolean isWithPathStyleAccessEnabled() {
-		return withPathStyleAccessEnabled;
+	public boolean isPathStyleAccessEnabled() {
+		return pathStyleAccessEnabled;
 	}
 
 	@JsonProperty("storageClass")
@@ -61,7 +61,7 @@ public sealed class StorageProfileS3StaticDto extends StorageProfileDto permits 
 	}
 
 	static StorageProfileS3StaticDto fromEntity(StorageProfileS3Static entity) {
-		return new StorageProfileS3StaticDto(entity.id, entity.name, Protocol.S3_STATIC, entity.archived, entity.endpoint, entity.withPathStyleAccessEnabled, entity.storageClass);
+		return new StorageProfileS3StaticDto(entity.id, entity.name, Protocol.S3_STATIC, entity.archived, entity.endpoint, entity.pathStyleAccessEnabled, entity.storageClass);
 	}
 
 	@Override
@@ -71,7 +71,7 @@ public sealed class StorageProfileS3StaticDto extends StorageProfileDto permits 
 		entity.name = getName();
 		entity.archived = isArchived();
 		entity.endpoint = endpoint;
-		entity.withPathStyleAccessEnabled = withPathStyleAccessEnabled;
+		entity.pathStyleAccessEnabled = pathStyleAccessEnabled;
 		entity.storageClass = storageClass;
 		return entity;
 	}
@@ -82,11 +82,11 @@ public sealed class StorageProfileS3StaticDto extends StorageProfileDto permits 
 		if (o == null || getClass() != o.getClass()) return false;
 
 		StorageProfileS3StaticDto that = (StorageProfileS3StaticDto) o;
-		return withPathStyleAccessEnabled == that.withPathStyleAccessEnabled && Objects.equals(endpoint, that.endpoint) && storageClass == that.storageClass;
+		return pathStyleAccessEnabled == that.pathStyleAccessEnabled && Objects.equals(endpoint, that.endpoint) && storageClass == that.storageClass;
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(endpoint, withPathStyleAccessEnabled, storageClass);
+		return Objects.hash(endpoint, pathStyleAccessEnabled, storageClass);
 	}
 }

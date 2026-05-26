@@ -8,7 +8,6 @@ import io.quarkus.test.security.oidc.OidcSecurity;
 import io.restassured.common.mapper.TypeRef;
 import io.restassured.http.ContentType;
 import org.cryptomator.hub.api.katta.storage.S3StorageHelper;
-import org.cryptomator.hub.entities.katta.S3ServersideEncryption;
 import org.cryptomator.hub.entities.katta.S3StorageClass;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
@@ -85,7 +84,6 @@ public class StorageProfileResourceIT {
 					null,
 					true,
 					null,
-					S3ServersideEncryption.NONE,
 					"arn:aws:iam::430118840017:role/testing.katta.cloud-kc-realms-chipotle-sts-chain-01",
 					"JsonNullable[arn:aws:iam::430118840017:role/testing.katta.cloud-kc-realms-chipotle-sts-chain-02]",
 					null,
@@ -212,7 +210,6 @@ public class StorageProfileResourceIT {
 					null,
 					true,
 					null,
-					S3ServersideEncryption.NONE,
 					"arn:aws:iam::430118840017:role/testing.katta.cloud-kc-realms-chipotle-sts-chain-01",
 					"JsonNullable[arn:aws:iam::430118840017:role/testing.katta.cloud-kc-realms-chipotle-sts-chain-02]",
 					null,
@@ -256,7 +253,6 @@ public class StorageProfileResourceIT {
 					null,
 					true,
 					null,
-					S3ServersideEncryption.NONE,
 					"arn:aws:iam::430118840017:role/testing.katta.cloud-kc-realms-chipotle-sts-chain-01",
 					"JsonNullable[arn:aws:iam::430118840017:role/testing.katta.cloud-kc-realms-chipotle-sts-chain-02]",
 					null,

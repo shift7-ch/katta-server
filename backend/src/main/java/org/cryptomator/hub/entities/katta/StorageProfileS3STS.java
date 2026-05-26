@@ -3,8 +3,6 @@ package org.cryptomator.hub.entities.katta;
 import jakarta.persistence.Column;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
 
 import java.util.List;
@@ -40,10 +38,6 @@ public final class StorageProfileS3STS extends StorageProfileS3Static {
 
 	@Column(name = "bucketAcceleration")
 	public Boolean bucketAcceleration = true;
-
-	@Column(name = "bucketEncryption", nullable = false)
-	@Enumerated(EnumType.STRING)
-	public S3ServersideEncryption bucketEncryption;
 
 	//----------------------------------------------------------------------
 	// (3b) STS client profile custom properties

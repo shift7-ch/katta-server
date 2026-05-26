@@ -869,7 +869,7 @@ async function validateVaultDetails() {
         const client = new S3Client({
           region: selectedRegion.value,
           endpoint: endpoint,
-          forcePathStyle: storageProfile.withPathStyleAccessEnabled,
+          forcePathStyle: storageProfile.pathStyleAccessEnabled,
           credentials:{
             accessKeyId: vaultAccessKeyId.value,
             secretAccessKey: vaultSecretKey.value
@@ -1272,7 +1272,7 @@ async function uploadVaultTemplate() {
     const client = new S3Client({
       region: selectedRegion.value,
       endpoint: storageProfile.endpoint,
-      forcePathStyle: storageProfile.withPathStyleAccessEnabled,
+      forcePathStyle: storageProfile.pathStyleAccessEnabled,
       credentials:{
         accessKeyId: vaultAccessKeyId.value,
         secretAccessKey: vaultSecretKey.value
