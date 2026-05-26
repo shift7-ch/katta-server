@@ -61,7 +61,10 @@ public class StorageProfileResourceIT {
 					false,
 					null,
 					false,
-					S3StorageClass.STANDARD
+					S3StorageClass.STANDARD,
+					"eu-west-1",
+					Arrays.asList("eu-west-1", "eu-west-2", "eu-west-3"),
+					"katta-test-"
 			);
 			staticProfileId = UUID.fromString(given().contentType(ContentType.JSON).body(vaultDto)
 					.when().post("/storageprofile/")
@@ -122,7 +125,10 @@ public class StorageProfileResourceIT {
 					false,
 					invalidEndpoint,
 					false,
-					S3StorageClass.STANDARD
+					S3StorageClass.STANDARD,
+					"eu-west-1",
+					Arrays.asList("eu-west-1", "eu-west-2", "eu-west-3"),
+					"katta-test-"
 			);
 			given().contentType(ContentType.JSON).body(vaultDto)
 					.when().post("/storageprofile/")

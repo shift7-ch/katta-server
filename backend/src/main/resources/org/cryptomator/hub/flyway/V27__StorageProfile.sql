@@ -24,6 +24,11 @@ CREATE TABLE "storage_profile_s3_static"
                 bool NOT NULL,
     "storageClass" storage_class NOT NULL,
 
+    -- bucket creation (desktop client), relevant for both permanent and STS profiles
+    "region"    VARCHAR,
+    "regions"   text[],
+    "bucketPrefix" VARCHAR NOT NULL,
+
     CONSTRAINT "STORAGE_PROFILE_S3_STATIC_PK" PRIMARY KEY ("id"),
     CONSTRAINT "STORAGE_PROFILE_S3_STATIC_FK" FOREIGN KEY ("id") REFERENCES "storage_profile" ("id") ON DELETE CASCADE
 );
@@ -32,10 +37,7 @@ CREATE TABLE "storage_profile_s3_sts"
 (
     "id"        UUID    NOT NULL,
 
-    -- (2) bucket creation only (only relevant for Desktop client)
-    "region"    VARCHAR,
-    "regions"   text[],
-    "bucketPrefix" VARCHAR NOT NULL,
+    -- (2) STS only (only relevant for Desktop client)
     "stsRoleCreateBucketClient" VARCHAR NOT NULL,
     "stsRoleCreateBucketHub"    VARCHAR NOT NULL,
     "stsEndpoint" VARCHAR,

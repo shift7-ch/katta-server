@@ -19,12 +19,6 @@ public final class StorageProfileS3STSDto extends StorageProfileS3StaticDto {
 	//======================================================================
 
 	@NotNull
-	private final String region;
-	@NotNull
-	private final List<String> regions;
-	@NotNull
-	private final String bucketPrefix;
-	@NotNull
 	private final String stsRoleCreateBucketClient;
 	@NotNull
 	private final String stsRoleCreateBucketHub;
@@ -63,10 +57,7 @@ public final class StorageProfileS3STSDto extends StorageProfileS3StaticDto {
 			@JsonProperty("stsRoleAccessBucketAssumeRoleTaggedSession") String stsRoleAccessBucketAssumeRoleTaggedSession,
 			@JsonProperty("stsDurationSeconds") Integer stsDurationSeconds,
 			@JsonProperty("stsSessionTag") String stsSessionTag) {
-		super(id, name, protocol, archived, endpoint, pathStyleAccessEnabled, storageClass);
-		this.region = region;
-		this.regions = regions;
-		this.bucketPrefix = bucketPrefix;
+		super(id, name, protocol, archived, endpoint, pathStyleAccessEnabled, storageClass, region, regions, bucketPrefix);
 		this.stsRoleCreateBucketClient = stsRoleCreateBucketClient;
 		this.stsRoleCreateBucketHub = stsRoleCreateBucketHub;
 		this.stsEndpoint = stsEndpoint;
@@ -76,24 +67,6 @@ public final class StorageProfileS3STSDto extends StorageProfileS3StaticDto {
 		this.stsRoleAccessBucketAssumeRoleTaggedSession = stsRoleAccessBucketAssumeRoleTaggedSession;
 		this.stsDurationSeconds = stsDurationSeconds;
 		this.stsSessionTag = stsSessionTag;
-	}
-
-	@JsonProperty("region")
-	@Schema(description = "Default region selected in the frontend/client to create bucket in.", examples = "us-east-1", defaultValue = "us-east-1", required = true)
-	public String getRegion() {
-		return region;
-	}
-
-	@JsonProperty("regions")
-	@Schema(description = "List of selectable regions in the frontend/client to create bucket in. Defaults to full list from AWS SDK.", required = true)
-	public List<String> getRegions() {
-		return regions;
-	}
-
-	@JsonProperty("bucketPrefix")
-	@Schema(description = "Buckets are created with name <bucket prefix><vault UUID>.", examples = "katta", required = true)
-	public String getBucketPrefix() {
-		return bucketPrefix;
 	}
 
 	@JsonProperty("stsRoleCreateBucketClient")
@@ -183,9 +156,9 @@ public final class StorageProfileS3STSDto extends StorageProfileS3StaticDto {
 		entity.endpoint = getEndpoint();
 		entity.pathStyleAccessEnabled = isPathStyleAccessEnabled();
 		entity.storageClass = getStorageClass();
-		entity.region = region;
-		entity.regions = regions;
-		entity.bucketPrefix = bucketPrefix;
+		entity.region = getRegion();
+		entity.regions = getRegions();
+		entity.bucketPrefix = getBucketPrefix();
 		entity.stsRoleCreateBucketClient = stsRoleCreateBucketClient;
 		entity.stsRoleCreateBucketHub = stsRoleCreateBucketHub;
 		entity.stsEndpoint = stsEndpoint;
@@ -206,9 +179,6 @@ public final class StorageProfileS3STSDto extends StorageProfileS3StaticDto {
 
 		StorageProfileS3STSDto that = (StorageProfileS3STSDto) o;
 		return bucketVersioning == that.bucketVersioning
-				&& Objects.equals(region, that.region)
-				&& Objects.equals(regions, that.regions)
-				&& Objects.equals(bucketPrefix, that.bucketPrefix)
 				&& Objects.equals(stsRoleCreateBucketClient, that.stsRoleCreateBucketClient)
 				&& Objects.equals(stsRoleCreateBucketHub, that.stsRoleCreateBucketHub)
 				&& Objects.equals(stsEndpoint, that.stsEndpoint)
@@ -221,6 +191,6 @@ public final class StorageProfileS3STSDto extends StorageProfileS3StaticDto {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(super.hashCode(), region, regions, bucketPrefix, stsRoleCreateBucketClient, stsRoleCreateBucketHub, stsEndpoint, bucketVersioning, bucketAcceleration, stsRoleAccessBucketAssumeRoleWithWebIdentity, stsRoleAccessBucketAssumeRoleTaggedSession, stsDurationSeconds, stsSessionTag);
+		return Objects.hash(super.hashCode(), stsRoleCreateBucketClient, stsRoleCreateBucketHub, stsEndpoint, bucketVersioning, bucketAcceleration, stsRoleAccessBucketAssumeRoleWithWebIdentity, stsRoleAccessBucketAssumeRoleTaggedSession, stsDurationSeconds, stsSessionTag);
 	}
 }

@@ -283,6 +283,9 @@ export type StorageProfileS3StaticDto = {
   endpoint?: string;
   pathStyleAccessEnabled?: boolean;
   storageClass: S3StorageClass;
+  region: string;
+  regions: string[];
+  bucketPrefix: string;
 };
 
 export type StorageProfileS3STSDto = {

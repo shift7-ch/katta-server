@@ -5,8 +5,6 @@ import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 
-import java.util.List;
-
 @Entity
 @Table(name = "storage_profile_s3_sts")
 @DiscriminatorValue("S3STS")
@@ -15,15 +13,6 @@ public final class StorageProfileS3STS extends StorageProfileS3Static {
 	//======================================================================
 	// (2) STS only: bucket creation (only relevant for Desktop client)
 	//======================================================================
-	@Column(name = "region")
-	public String region;
-
-	@Column(name = "regions")
-	public List<String> regions;
-
-	@Column(name = "bucketPrefix", nullable = false)
-	public String bucketPrefix;
-
 	@Column(name = "stsRoleCreateBucketClient", nullable = false)
 	public String stsRoleCreateBucketClient;
 

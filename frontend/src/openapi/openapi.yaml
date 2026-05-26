@@ -582,10 +582,31 @@ components:
           examples:
           - STANDARD
           $ref: "#/components/schemas/S3StorageClass"
+        region:
+          type: string
+          description: Default region selected in the frontend/client to create bucket
+            in.
+          examples:
+          - us-east-1
+          default: us-east-1
+        regions:
+          type: array
+          items:
+            type: string
+          description: List of selectable regions in the frontend/client to create
+            bucket in. Defaults to full list from AWS SDK.
+        bucketPrefix:
+          type: string
+          description: Buckets are created with name <bucket prefix><vault UUID>.
+          examples:
+          - katta
       required:
       - name
       - protocol
       - storageClass
+      - region
+      - regions
+      - bucketPrefix
     TrustedUserDto:
       type: object
       properties:
