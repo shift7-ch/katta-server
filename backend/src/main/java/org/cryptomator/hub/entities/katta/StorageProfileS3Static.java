@@ -25,10 +25,10 @@ public class StorageProfileS3Static extends StorageProfile {
 	@Column(name = "endpoint")
 	public String endpoint;
 
-	@Column(name = "pathStyleAccessEnabled", nullable = false)
+	@Column(name = "path_style_access_enabled", nullable = false)
 	public Boolean pathStyleAccessEnabled = false;
 
-	@Column(name = "storageClass", columnDefinition = "storage_class", nullable = false)
+	@Column(name = "storage_class", columnDefinition = "storage_class", nullable = false)
 	@Enumerated(EnumType.STRING)
 	@JdbcTypeCode(SqlTypes.NAMED_ENUM)
 	public S3StorageClass storageClass = S3StorageClass.STANDARD;
@@ -40,6 +40,6 @@ public class StorageProfileS3Static extends StorageProfile {
 	@Column(name = "regions")
 	public List<String> regions;
 
-	@Column(name = "bucketPrefix", nullable = false)
+	@Column(name = "bucket_prefix", nullable = false)
 	public String bucketPrefix;
 }
