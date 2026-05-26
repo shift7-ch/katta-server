@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.text.IsEqualIgnoringCase.equalToIgnoringCase;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -44,12 +45,17 @@ public class StorageProfileResourceIT {
 	})
 	@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 	public class CreateStorageProfile {
+
+		// ids are assigned by the server on creation and captured here for the subsequent ordered tests.
+		static UUID staticProfileId;
+		static UUID stsProfileId;
+
 		@Test
 		@Order(1)
-		@DisplayName("POST /storageprofile/ returns 201 for S3STATIC body")
+		@DisplayName("POST /storageprofile/ returns 201 for S3STATIC body and assigns an id")
 		public void testPostS3StorageProfile() {
 			var vaultDto = new StorageProfileS3StaticDto(
-					UUID.fromString("72736c19-283c-49d3-80a5-ab74b5202543"),
+					null,
 					"AWS S3 static",
 					StorageProfileDto.Protocol.S3_STATIC,
 					false,
@@ -57,19 +63,20 @@ public class StorageProfileResourceIT {
 					false,
 					S3StorageClass.STANDARD
 			);
-			given().contentType(ContentType.JSON).body(vaultDto)
+			staticProfileId = UUID.fromString(given().contentType(ContentType.JSON).body(vaultDto)
 					.when().post("/storageprofile/")
 					.then().statusCode(201)
-					.body("id", equalToIgnoringCase("72736c19-283c-49d3-80a5-ab74b5202543"))
-					.body("name", equalToIgnoringCase("AWS S3 static"));
+					.body("id", notNullValue())
+					.body("name", equalToIgnoringCase("AWS S3 static"))
+					.extract().path("id"));
 		}
 
 		@Test
 		@Order(1)
-		@DisplayName("POST /storageprofile/ returns 201 for S3STS body")
+		@DisplayName("POST /storageprofile/ returns 201 for S3STS body and assigns an id")
 		public void testPostS3STSStorageProfile() {
 			var vaultDto = new StorageProfileS3STSDto(
-					UUID.fromString("844bd517-96d4-4787-bcfa-238e103149f6"),
+					null,
 					"AWS S3 STS",
 					StorageProfileDto.Protocol.S3_STS,
 					false,
@@ -90,11 +97,12 @@ public class StorageProfileResourceIT {
 					"Vault"
 			);
 
-			given().contentType(ContentType.JSON).body(vaultDto)
+			stsProfileId = UUID.fromString(given().contentType(ContentType.JSON).body(vaultDto)
 					.when().post("/storageprofile/")
 					.then().statusCode(201)
-					.body("id", equalToIgnoringCase("844bd517-96d4-4787-bcfa-238e103149f6"))
-					.body("name", equalToIgnoringCase("AWS S3 STS"));
+					.body("id", notNullValue())
+					.body("name", equalToIgnoringCase("AWS S3 STS"))
+					.extract().path("id"));
 		}
 
 		@ParameterizedTest
@@ -108,7 +116,7 @@ public class StorageProfileResourceIT {
 		})
 		public void testPostS3StorageProfileWithInvalidEndpoint(String invalidEndpoint) {
 			var vaultDto = new StorageProfileS3StaticDto(
-					UUID.randomUUID(),
+					null,
 					"Invalid endpoint test",
 					StorageProfileDto.Protocol.S3_STATIC,
 					false,
@@ -144,12 +152,12 @@ public class StorageProfileResourceIT {
 		@DisplayName("GET /storageprofile/{profileId} returns 200 for S3STATIC")
 		public void testGetS3StorageProfile() {
 			final StorageProfileDto dto = given()
-					.when().get("/storageprofile/{profileId}", "72736c19-283c-49d3-80a5-ab74b5202543")
+					.when().get("/storageprofile/{profileId}", staticProfileId)
 					.then().statusCode(200)
 					.extract()
 					.as(StorageProfileDto.class);
 
-			assertEquals(UUID.fromString("72736c19-283c-49d3-80a5-ab74b5202543"), dto.getId());
+			assertEquals(staticProfileId, dto.getId());
 			assertEquals(StorageProfileDto.Protocol.S3_STATIC, dto.getProtocol());
 			assertInstanceOf(StorageProfileS3StaticDto.class, dto);
 			assertFalse(dto.isArchived());
@@ -160,65 +168,16 @@ public class StorageProfileResourceIT {
 		@DisplayName("GET /storageprofile/{profileId} returns 200 for S3STS")
 		public void testGetS3STSStorageProfile() {
 			final StorageProfileDto dto = given()
-					.when().get("/storageprofile/{profileId}", "844bd517-96d4-4787-bcfa-238e103149f6")
+					.when().get("/storageprofile/{profileId}", stsProfileId)
 					.then().statusCode(200)
 					.extract()
 					.as(StorageProfileDto.class);
 
-			assertEquals(UUID.fromString("844bd517-96d4-4787-bcfa-238e103149f6"), dto.getId());
+			assertEquals(stsProfileId, dto.getId());
 			assertEquals(StorageProfileDto.Protocol.S3_STS, dto.getProtocol());
 			final StorageProfileS3STSDto stsDto = assertInstanceOf(StorageProfileS3STSDto.class, dto);
 			assertEquals("arn:aws:iam::430118840017:role/testing.katta.cloud-kc-realms-chipotle-sts-chain-01", stsDto.getStsRoleAccessBucketAssumeRoleWithWebIdentity());
 			assertFalse(stsDto.isArchived());
-		}
-
-		@Test
-		@Order(3)
-		@DisplayName("POST /storageprofile/ S3STATIC again returns 409")
-		public void testPostS3StorageProfileAgain() {
-			var vaultDto = new StorageProfileS3StaticDto(
-					UUID.fromString("72736c19-283c-49d3-80a5-ab74b5202543"),
-					"AWS S3 static",
-					StorageProfileDto.Protocol.S3_STATIC,
-					false,
-					null,
-					false,
-					S3StorageClass.STANDARD
-			);
-			given().contentType(ContentType.JSON).body(vaultDto)
-					.when().post("/storageprofile/")
-					.then().statusCode(409);
-		}
-
-		@Test
-		@Order(3)
-		@DisplayName("POST /storageprofile/ S3STS again returns 409")
-		public void testPostS3STSStorageProfileAgain() {
-			var vaultDto = new StorageProfileS3STSDto(
-					UUID.fromString("844bd517-96d4-4787-bcfa-238e103149f6"),
-					"AWS S3 STS",
-					StorageProfileDto.Protocol.S3_STS,
-					false,
-					null,
-					false,
-					S3StorageClass.STANDARD,
-					"eu-west-1",
-					Arrays.asList("eu-west-1", "eu-west-2", "eu-west-3"),
-					"katta-test-",
-					"arn:aws:iam::430118840017:role/testing.katta.cloud-kc-realms-chipotle-createbucket",
-					"arn:aws:iam::430118840017:role/testing.katta.cloud-kc-realms-chipotle-createbucket",
-					null,
-					true,
-					null,
-					"arn:aws:iam::430118840017:role/testing.katta.cloud-kc-realms-chipotle-sts-chain-01",
-					"JsonNullable[arn:aws:iam::430118840017:role/testing.katta.cloud-kc-realms-chipotle-sts-chain-02]",
-					null,
-					"Vault"
-			);
-
-			given().contentType(ContentType.JSON).body(vaultDto)
-					.when().post("/storageprofile/")
-					.then().statusCode(409);
 		}
 
 		@Test
@@ -228,7 +187,7 @@ public class StorageProfileResourceIT {
 			final String vaultId = UUID.randomUUID().toString();
 			var createS3STSBucketDto = new CreateS3STSBucketDto(
 					vaultId,
-					UUID.fromString("844bd517-96d4-4787-bcfa-238e103149f6"),
+					stsProfileId,
 					"",
 					"",
 					"",
@@ -238,7 +197,7 @@ public class StorageProfileResourceIT {
 					""
 			);
 			var vaultDto = new StorageProfileS3STSDto(
-					UUID.fromString("844bd517-96d4-4787-bcfa-238e103149f6"),
+					stsProfileId,
 					"AWS S3 STS",
 					StorageProfileDto.Protocol.S3_STS,
 					false,
@@ -269,7 +228,7 @@ public class StorageProfileResourceIT {
 		@DisplayName("PUT /storageprofile/{profileId} archiving returns 204")
 		public void testArchiveS3StorageProfile() {
 			given().formParam("archived", true)
-					.when().put("/storageprofile/{profileId}", "72736c19-283c-49d3-80a5-ab74b5202543")
+					.when().put("/storageprofile/{profileId}", staticProfileId)
 					.then().statusCode(204);
 
 		}
@@ -279,7 +238,7 @@ public class StorageProfileResourceIT {
 		@DisplayName("PUT /storageprofile/{profileId} archiving returns 204")
 		public void testArchiveS3STSStorageProfile() {
 			given().formParam("archived", true)
-					.when().put("/storageprofile/{profileId}", "844bd517-96d4-4787-bcfa-238e103149f6")
+					.when().put("/storageprofile/{profileId}", stsProfileId)
 					.then().statusCode(204);
 		}
 
@@ -288,7 +247,7 @@ public class StorageProfileResourceIT {
 		@DisplayName("GET /storageprofile/{profileId} returns 200 for archived S3STATIC")
 		public void testGetArchivedS3StorageProfile() {
 			final StorageProfileDto dto = given()
-					.when().get("/storageprofile/{profileId}", "72736c19-283c-49d3-80a5-ab74b5202543")
+					.when().get("/storageprofile/{profileId}", staticProfileId)
 					.then().statusCode(200)
 					.extract()
 					.as(StorageProfileDto.class);
@@ -301,7 +260,7 @@ public class StorageProfileResourceIT {
 		@DisplayName("GET /storageprofile/{profileId} returns 200 for archived S3STS")
 		public void testGetArchivedS3STSStorageProfile() {
 			final StorageProfileDto dto = given()
-					.when().get("/storageprofile/{profileId}", "844bd517-96d4-4787-bcfa-238e103149f6")
+					.when().get("/storageprofile/{profileId}", stsProfileId)
 					.then().statusCode(200)
 					.extract()
 					.as(StorageProfileDto.class);
@@ -316,7 +275,7 @@ public class StorageProfileResourceIT {
 			final String vaultId = UUID.randomUUID().toString();
 			var createS3STSBucketDto = new CreateS3STSBucketDto(
 					vaultId,
-					UUID.fromString("844bd517-96d4-4787-bcfa-238e103149f6"),
+					stsProfileId,
 					"",
 					"",
 					"",

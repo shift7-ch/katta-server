@@ -385,15 +385,12 @@ components:
           S3STATIC: "#/components/schemas/StorageProfileS3StaticDto"
           S3STS: "#/components/schemas/StorageProfileS3STSDto"
       type: object
-      required:
-      - id
-      - name
-      - protocol
       properties:
         id:
-          description: Technical identifier for a storage profile. Must be unique
-            UUID. Clients will use this as vendor in profile and provider in vault
-            bookmark
+          description: "Technical identifier for a storage profile, assigned by the\
+            \ server on creation (read-only). Clients use this as vendor in profile\
+            \ and provider in vault bookmark."
+          readOnly: true
           type: string
           $ref: "#/components/schemas/UUID"
         name:
@@ -408,27 +405,18 @@ components:
           type: boolean
           description: "For archived storage profiles, no vaults can be created any\
             \ more."
+      required:
+      - name
+      - protocol
     StorageProfileS3STSDto:
       title: StorageProfileS3STSDto
       type: object
-      required:
-      - id
-      - name
-      - protocol
-      - storageClass
-      - region
-      - regions
-      - bucketPrefix
-      - stsRoleCreateBucketClient
-      - stsRoleCreateBucketHub
-      - bucketVersioning
-      - stsRoleAccessBucketAssumeRoleWithWebIdentity
-      - stsSessionTag
       properties:
         id:
-          description: Technical identifier for a storage profile. Must be unique
-            UUID. Clients will use this as vendor in profile and provider in vault
-            bookmark
+          description: "Technical identifier for a storage profile, assigned by the\
+            \ server on creation (read-only). Clients use this as vendor in profile\
+            \ and provider in vault bookmark."
+          readOnly: true
           type: string
           $ref: "#/components/schemas/UUID"
         name:
@@ -537,19 +525,27 @@ components:
           description: "Session tag to use for role chaining (AWS only, not MinIO).\
             \ Defaults to \"Vault\""
           default: Vault
-    StorageProfileS3StaticDto:
-      title: StorageProfileS3StaticDto
-      type: object
       required:
-      - id
       - name
       - protocol
       - storageClass
+      - region
+      - regions
+      - bucketPrefix
+      - stsRoleCreateBucketClient
+      - stsRoleCreateBucketHub
+      - bucketVersioning
+      - stsRoleAccessBucketAssumeRoleWithWebIdentity
+      - stsSessionTag
+    StorageProfileS3StaticDto:
+      title: StorageProfileS3StaticDto
+      type: object
       properties:
         id:
-          description: Technical identifier for a storage profile. Must be unique
-            UUID. Clients will use this as vendor in profile and provider in vault
-            bookmark
+          description: "Technical identifier for a storage profile, assigned by the\
+            \ server on creation (read-only). Clients use this as vendor in profile\
+            \ and provider in vault bookmark."
+          readOnly: true
           type: string
           $ref: "#/components/schemas/UUID"
         name:
@@ -586,6 +582,10 @@ components:
           examples:
           - STANDARD
           $ref: "#/components/schemas/S3StorageClass"
+      required:
+      - name
+      - protocol
+      - storageClass
     TrustedUserDto:
       type: object
       properties:
@@ -1806,7 +1806,8 @@ paths:
   /api/storageprofile:
     post:
       summary: create a storage profile
-      description: "Polymorphic by `protocol` discriminator: S3STATIC or S3STS."
+      description: "Polymorphic by `protocol` discriminator: S3STATIC or S3STS. The\
+        \ server assigns the profile id; any client-supplied id is ignored."
       requestBody:
         content:
           application/json:
@@ -1820,8 +1821,6 @@ paths:
           description: Constraint violation
         "403":
           description: not an admin
-        "409":
-          description: Storage profile with ID already exists
         "401":
           description: Not Authorized
       tags:
