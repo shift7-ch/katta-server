@@ -3,60 +3,43 @@ package org.cryptomator.hub.entities.katta;
 import jakarta.persistence.Column;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
-
-import java.util.List;
 
 @Entity
 @Table(name = "storage_profile_s3_sts")
 @DiscriminatorValue("S3STS")
-public final class StorageProfileS3STS extends StorageProfileS3Static {
+public class StorageProfileS3STS extends StorageProfileS3Static {
 
 	//======================================================================
 	// (2) STS only: bucket creation (only relevant for Desktop client)
 	//======================================================================
-	@Column(name = "region")
-	public String region;
-
-	@Column(name = "regions")
-	public List<String> regions;
-
-	@Column(name = "bucketPrefix", nullable = false)
-	public String bucketPrefix;
-
-	@Column(name = "stsRoleCreateBucketClient", nullable = false)
+	@Column(name = "sts_role_create_bucket_client", nullable = false)
 	public String stsRoleCreateBucketClient;
 
-	@Column(name = "stsRoleCreateBucketHub", nullable = false)
+	@Column(name = "sts_role_create_bucket_hub", nullable = false)
 	public String stsRoleCreateBucketHub;
 
-	@Column(name = "stsEndpoint")
+	@Column(name = "sts_endpoint")
 	public String stsEndpoint = null;
 
-	@Column(name = "bucketVersioning", nullable = false)
+	@Column(name = "bucket_versioning", nullable = false)
 	public Boolean bucketVersioning = true;
 
-	@Column(name = "bucketAcceleration")
+	@Column(name = "bucket_acceleration")
 	public Boolean bucketAcceleration = true;
-
-	@Column(name = "bucketEncryption", nullable = false)
-	@Enumerated(EnumType.STRING)
-	public S3ServersideEncryption bucketEncryption;
 
 	//----------------------------------------------------------------------
 	// (3b) STS client profile custom properties
 	//----------------------------------------------------------------------
-	@Column(name = "stsRoleAccessBucketAssumeRoleWithWebIdentity", nullable = false)
+	@Column(name = "sts_role_access_bucket_assume_role_with_web_identity", nullable = false)
 	public String stsRoleAccessBucketAssumeRoleWithWebIdentity;
 
-	@Column(name = "stsRoleAccessBucketAssumeRoleTaggedSession")
+	@Column(name = "sts_role_access_bucket_assume_role_tagged_session")
 	public String stsRoleAccessBucketAssumeRoleTaggedSession;
 
-	@Column(name = "stsDurationSeconds")
+	@Column(name = "sts_duration_seconds")
 	public Integer stsDurationSeconds = null;
 
-	@Column(name = "stsSessionTag")
+	@Column(name = "sts_session_tag")
 	public String stsSessionTag;
 }

@@ -21,26 +21,18 @@ import software.amazon.awssdk.services.s3.model.CreateBucketConfiguration;
 import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
 import software.amazon.awssdk.services.s3.model.GetBucketAccelerateConfigurationRequest;
 import software.amazon.awssdk.services.s3.model.GetBucketAccelerateConfigurationResponse;
-import software.amazon.awssdk.services.s3.model.GetBucketEncryptionRequest;
-import software.amazon.awssdk.services.s3.model.GetBucketEncryptionResponse;
 import software.amazon.awssdk.services.s3.model.GetBucketVersioningRequest;
 import software.amazon.awssdk.services.s3.model.GetBucketVersioningResponse;
 import software.amazon.awssdk.services.s3.model.HeadBucketRequest;
 import software.amazon.awssdk.services.s3.model.NoSuchBucketException;
 import software.amazon.awssdk.services.s3.model.PutBucketAccelerateConfigurationRequest;
-import software.amazon.awssdk.services.s3.model.PutBucketEncryptionRequest;
 import software.amazon.awssdk.services.s3.model.PutBucketVersioningRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Exception;
-import software.amazon.awssdk.services.s3.model.ServerSideEncryption;
-import software.amazon.awssdk.services.s3.model.ServerSideEncryptionByDefault;
-import software.amazon.awssdk.services.s3.model.ServerSideEncryptionConfiguration;
-import software.amazon.awssdk.services.s3.model.ServerSideEncryptionRule;
 import software.amazon.awssdk.services.s3.model.VersioningConfiguration;
 
 import java.net.URI;
 import java.util.Base64;
-import java.util.Collections;
 
 @ApplicationScoped
 public class S3StorageHelper {
@@ -65,7 +57,7 @@ public class S3StorageHelper {
 			s3Builder = s3Builder
 					.endpointOverride(URI.create(storageConfig.getStsEndpoint()))
 					.serviceConfiguration(S3Configuration.builder()
-							.pathStyleAccessEnabled(storageConfig.isWithPathStyleAccessEnabled())
+							.pathStyleAccessEnabled(storageConfig.isPathStyleAccessEnabled())
 							.build());
 		}
 		if (region != null) {
@@ -148,55 +140,6 @@ public class S3StorageHelper {
 				final GetBucketAccelerateConfigurationResponse conf = s3.getBucketAccelerateConfiguration(GetBucketAccelerateConfigurationRequest.builder().bucket(bucketName).build());
 				if (log.isInfoEnabled()) {
 					log.info(String.format("Enabled/disabled bucket acceleration on %s (%s, %s) with status %s", bucketName, dto, storageConfig, conf.status()));
-				}
-			}
-
-			// enable/disable bucket encryption on the bucket
-			{
-				if (log.isInfoEnabled()) {
-					log.info(String.format("Enable/disable bucket encryption on %s (%s, %s)", bucketName, dto, storageConfig));
-				}
-				switch (storageConfig.getBucketEncryption()) {
-					case NONE -> {
-					}
-					case SSE_AES256 -> s3.putBucketEncryption(
-							PutBucketEncryptionRequest.builder()
-									.bucket(bucketName)
-									.serverSideEncryptionConfiguration(ServerSideEncryptionConfiguration.builder()
-											.rules(Collections.singleton(
-													ServerSideEncryptionRule.builder()
-															.applyServerSideEncryptionByDefault(ServerSideEncryptionByDefault.builder()
-																	.sseAlgorithm(ServerSideEncryption.AES256).build())
-															.build()))
-
-											.build())
-									.build());
-					case SSE_KMS_DEFAULT -> s3.putBucketEncryption(
-							PutBucketEncryptionRequest.builder()
-									.bucket(bucketName)
-									.serverSideEncryptionConfiguration(ServerSideEncryptionConfiguration.builder()
-											.rules(Collections.singleton(
-													ServerSideEncryptionRule.builder()
-															.applyServerSideEncryptionByDefault(ServerSideEncryptionByDefault.builder()
-																	.sseAlgorithm(ServerSideEncryption.AWS_KMS).build())
-															.build()))
-
-											.build())
-									.build());
-				}
-				switch (storageConfig.getBucketEncryption()) {
-					case NONE:
-						// MinIO does not support bucket acceleration nor encryption
-						// https://min.io/docs/minio/linux/administration/identity-access-management/policy-based-access-control.html
-						// https://github.com/minio/minio/blob/master/cmd/api-router.go
-						// https://github.com/minio/minio/issues/14586
-						break;
-					case SSE_AES256:
-					case SSE_KMS_DEFAULT:
-						final GetBucketEncryptionResponse conf = s3.getBucketEncryption(GetBucketEncryptionRequest.builder().bucket(bucketName).build());
-						if (log.isInfoEnabled()) {
-							log.info(String.format("Enabled/disabled bucket encryption on %s (%s, %s) with configuration %s", bucketName, dto, storageConfig, conf.serverSideEncryptionConfiguration()));
-						}
 				}
 			}
 		}

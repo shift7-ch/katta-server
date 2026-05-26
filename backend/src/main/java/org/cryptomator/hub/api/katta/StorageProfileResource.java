@@ -6,7 +6,6 @@ import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
-import jakarta.ws.rs.ClientErrorException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.FormParam;
 import jakarta.ws.rs.GET;
@@ -45,17 +44,14 @@ public class StorageProfileResource {
 	@Transactional
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	@Operation(summary = "create a storage profile", description = "Polymorphic by `protocol` discriminator: S3STATIC or S3STS.")
+	@Operation(summary = "create a storage profile", description = "Polymorphic by `protocol` discriminator: S3STATIC or S3STS. The server assigns the profile id; any client-supplied id is ignored.")
 	@APIResponse(responseCode = "201", description = "uploaded storage configuration")
 	@APIResponse(responseCode = "400", description = "Constraint violation")
 	@APIResponse(responseCode = "403", description = "not an admin")
-	@APIResponse(responseCode = "409", description = "Storage profile with ID already exists")
 	public Response uploadStorageProfile(@Valid @NotNull final StorageProfileDto dto) {
 		try {
 			final StorageProfile entity = dto.toEntity();
-			if (storageProfileRepo.findByIdOptional(entity.id).isPresent()) {
-				throw new ClientErrorException(Response.Status.CONFLICT);
-			}
+			entity.id = UUID.randomUUID(); // server-assigned; any client-supplied id is ignored
 			storageProfileRepo.persistAndFlush(entity);
 			return Response.created(URI.create(".")).contentLocation(URI.create(".")).entity(entity).type(MediaType.APPLICATION_JSON).build();
 		} catch (ConstraintViolationException e) {
@@ -93,13 +89,10 @@ public class StorageProfileResource {
 	@Transactional
 	@Consumes(MediaType.APPLICATION_FORM_URLENCODED)
 	@Produces(MediaType.APPLICATION_JSON)
-	@Operation(summary = "archive a storage profile")
-	@APIResponse(responseCode = "204", description = "storage profile archived")
+	@Operation(summary = "set the archived state of a storage profile", description = "Archives (archived=true) or unarchives (archived=false) the storage profile. While archived, no new vaults can be created for this profile.")
+	@APIResponse(responseCode = "204", description = "archived state updated")
 	@APIResponse(responseCode = "403", description = "not an admin")
-	public Response archive(@PathParam("profileId") UUID profileId, @FormParam("archived") final Boolean archived) {
-		if (archived == null) {
-			return Response.status(Response.Status.BAD_REQUEST).build();
-		}
+	public Response archive(@PathParam("profileId") UUID profileId, @NotNull @FormParam("archived") final boolean archived) {
 		final StorageProfile entity = storageProfileRepo.findByIdOptional(profileId).orElseThrow(NotFoundException::new);
 		storageProfileRepo.persistAndFlush(entity.setArchived(archived));
 		return Response.status(Response.Status.NO_CONTENT).build();

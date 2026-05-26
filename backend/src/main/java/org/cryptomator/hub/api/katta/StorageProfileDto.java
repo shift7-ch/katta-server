@@ -39,7 +39,7 @@ public abstract sealed class StorageProfileDto permits StorageProfileS3StaticDto
 		@JsonProperty("S3STS") S3_STS
 	}
 
-	@NotNull
+	// id is assigned by the server on creation; clients must not supply it (any supplied value is ignored).
 	private final UUID id;
 	@NotNull
 	private final String name;
@@ -55,7 +55,7 @@ public abstract sealed class StorageProfileDto permits StorageProfileS3StaticDto
 	}
 
 	@JsonProperty("id")
-	@Schema(description = "Technical identifier for a storage profile. Must be unique UUID. Clients will use this as vendor in profile and provider in vault bookmark")
+	@Schema(description = "Technical identifier for a storage profile, assigned by the server on creation (read-only). Clients use this as vendor in profile and provider in vault bookmark.", readOnly = true)
 	public UUID getId() {
 		return id;
 	}

@@ -275,16 +275,17 @@ export type StorageProtocol = 'S3STATIC' | 'S3STS';
 
 export type S3StorageClass = 'STANDARD' | 'INTELLIGENT_TIERING' | 'STANDARD_IA' | 'ONEZONE_IA' | 'REDUCED_REDUNDANCY' | 'GLACIER' | 'GLACIER_IR' | 'DEEP_ARCHIVE';
 
-export type S3ServerSideEncryption = 'NONE' | 'SSE_AES256' | 'SSE_KMS_DEFAULT';
-
 export type StorageProfileS3StaticDto = {
   protocol: 'S3STATIC';
   id: string;
   name: string;
   archived: boolean;
   endpoint?: string;
-  withPathStyleAccessEnabled?: boolean;
+  pathStyleAccessEnabled?: boolean;
   storageClass: S3StorageClass;
+  region: string;
+  regions: string[];
+  bucketPrefix: string;
 };
 
 export type StorageProfileS3STSDto = {
@@ -293,7 +294,7 @@ export type StorageProfileS3STSDto = {
   name: string;
   archived: boolean;
   endpoint?: string;
-  withPathStyleAccessEnabled?: boolean;
+  pathStyleAccessEnabled?: boolean;
   storageClass: S3StorageClass;
   region: string;
   regions: string[];
@@ -303,7 +304,6 @@ export type StorageProfileS3STSDto = {
   stsEndpoint?: string;
   bucketVersioning: boolean;
   bucketAcceleration?: boolean;
-  bucketEncryption: S3ServerSideEncryption;
   stsRoleAccessBucketAssumeRoleWithWebIdentity: string;
   stsRoleAccessBucketAssumeRoleTaggedSession?: string;
   stsDurationSeconds?: number;

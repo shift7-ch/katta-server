@@ -330,12 +330,6 @@ components:
       enum:
       - MEMBER
       - OWNER
-    S3ServersideEncryption:
-      type: string
-      enum:
-      - NONE
-      - SSE_AES256
-      - SSE_KMS_DEFAULT
     S3StorageClass:
       type: string
       enum:
@@ -391,59 +385,46 @@ components:
           S3STATIC: "#/components/schemas/StorageProfileS3StaticDto"
           S3STS: "#/components/schemas/StorageProfileS3STSDto"
       type: object
-      required:
-      - id
-      - name
-      - protocol
-      - archived
       properties:
         id:
-          description: Technical identifier for a storage profile. Must be unique
-            UUID. Clients will use this as vendor in profile and provider in vault
-            bookmark
+          description: "Technical identifier for a storage profile, assigned by the\
+            \ server on creation (read-only). Clients use this as vendor in profile\
+            \ and provider in vault bookmark."
+          readOnly: true
           type: string
           $ref: "#/components/schemas/UUID"
         name:
           type: string
           description: Displayed when choosing type of a new vault in dropdown.
         protocol:
-          description: "Storage protocol: S3 (permanent credentials) or S3STS (STS)."
+          description: "Storage protocol: S3STATIC (permanent credentials) or S3STS\
+            \ (STS)."
           type: string
           $ref: "#/components/schemas/Protocol"
         archived:
           type: boolean
           description: "For archived storage profiles, no vaults can be created any\
             \ more."
+      required:
+      - name
+      - protocol
     StorageProfileS3STSDto:
       title: StorageProfileS3STSDto
       type: object
-      required:
-      - id
-      - name
-      - protocol
-      - archived
-      - storageClass
-      - region
-      - regions
-      - bucketPrefix
-      - stsRoleCreateBucketClient
-      - stsRoleCreateBucketHub
-      - bucketVersioning
-      - bucketEncryption
-      - stsRoleAccessBucketAssumeRoleWithWebIdentity
-      - stsSessionTag
       properties:
         id:
-          description: Technical identifier for a storage profile. Must be unique
-            UUID. Clients will use this as vendor in profile and provider in vault
-            bookmark
+          description: "Technical identifier for a storage profile, assigned by the\
+            \ server on creation (read-only). Clients use this as vendor in profile\
+            \ and provider in vault bookmark."
+          readOnly: true
           type: string
           $ref: "#/components/schemas/UUID"
         name:
           type: string
           description: Displayed when choosing type of a new vault in dropdown.
         protocol:
-          description: "Storage protocol: S3 (permanent credentials) or S3STS (STS)."
+          description: "Storage protocol: S3STATIC (permanent credentials) or S3STS\
+            \ (STS)."
           type: string
           $ref: "#/components/schemas/Protocol"
         archived:
@@ -458,7 +439,8 @@ components:
             \ If unset, defaults to AWS SDK defaults."
           examples:
           - https://s3-us-gov-west-1.amazonaws.com
-        withPathStyleAccessEnabled:
+          pattern: ""
+        pathStyleAccessEnabled:
           type: boolean
           description: Whether to use path style for S3 endpoint for template upload/bucket
             creation.
@@ -518,10 +500,6 @@ components:
           - boolean
           - "null"
           description: Enable bucket versioning upon bucket creation (null for MinIO)
-        bucketEncryption:
-          description: Enable bucket versioning upon bucket creation
-          type: string
-          $ref: "#/components/schemas/S3ServersideEncryption"
         stsRoleAccessBucketAssumeRoleWithWebIdentity:
           type: string
           description: roleArn to for STS AssumeRoleWithWebIdentity (AWS and MinIO)
@@ -547,27 +525,35 @@ components:
           description: "Session tag to use for role chaining (AWS only, not MinIO).\
             \ Defaults to \"Vault\""
           default: Vault
+      required:
+      - name
+      - protocol
+      - storageClass
+      - region
+      - regions
+      - bucketPrefix
+      - stsRoleCreateBucketClient
+      - stsRoleCreateBucketHub
+      - bucketVersioning
+      - stsRoleAccessBucketAssumeRoleWithWebIdentity
+      - stsSessionTag
     StorageProfileS3StaticDto:
       title: StorageProfileS3StaticDto
       type: object
-      required:
-      - id
-      - name
-      - protocol
-      - archived
-      - storageClass
       properties:
         id:
-          description: Technical identifier for a storage profile. Must be unique
-            UUID. Clients will use this as vendor in profile and provider in vault
-            bookmark
+          description: "Technical identifier for a storage profile, assigned by the\
+            \ server on creation (read-only). Clients use this as vendor in profile\
+            \ and provider in vault bookmark."
+          readOnly: true
           type: string
           $ref: "#/components/schemas/UUID"
         name:
           type: string
           description: Displayed when choosing type of a new vault in dropdown.
         protocol:
-          description: "Storage protocol: S3 (permanent credentials) or S3STS (STS)."
+          description: "Storage protocol: S3STATIC (permanent credentials) or S3STS\
+            \ (STS)."
           type: string
           $ref: "#/components/schemas/Protocol"
         archived:
@@ -582,7 +568,8 @@ components:
             \ If unset, defaults to AWS SDK defaults."
           examples:
           - https://s3-us-gov-west-1.amazonaws.com
-        withPathStyleAccessEnabled:
+          pattern: ""
+        pathStyleAccessEnabled:
           type: boolean
           description: Whether to use path style for S3 endpoint for template upload/bucket
             creation.
@@ -595,6 +582,31 @@ components:
           examples:
           - STANDARD
           $ref: "#/components/schemas/S3StorageClass"
+        region:
+          type: string
+          description: Default region selected in the frontend/client to create bucket
+            in.
+          examples:
+          - us-east-1
+          default: us-east-1
+        regions:
+          type: array
+          items:
+            type: string
+          description: List of selectable regions in the frontend/client to create
+            bucket in. Defaults to full list from AWS SDK.
+        bucketPrefix:
+          type: string
+          description: Buckets are created with name <bucket prefix><vault UUID>.
+          examples:
+          - katta
+      required:
+      - name
+      - protocol
+      - storageClass
+      - region
+      - regions
+      - bucketPrefix
     TrustedUserDto:
       type: object
       properties:
@@ -1815,7 +1827,8 @@ paths:
   /api/storageprofile:
     post:
       summary: create a storage profile
-      description: "Polymorphic by `protocol` discriminator: S3STATIC or S3STS."
+      description: "Polymorphic by `protocol` discriminator: S3STATIC or S3STS. The\
+        \ server assigns the profile id; any client-supplied id is ignored."
       requestBody:
         content:
           application/json:
@@ -1829,8 +1842,6 @@ paths:
           description: Constraint violation
         "403":
           description: not an admin
-        "409":
-          description: Storage profile with ID already exists
         "401":
           description: Not Authorized
       tags:
@@ -1892,7 +1903,9 @@ paths:
         - user
         - admin
     put:
-      summary: archive a storage profile
+      summary: set the archived state of a storage profile
+      description: "Archives (archived=true) or unarchives (archived=false) the storage\
+        \ profile. While archived, no new vaults can be created for this profile."
       parameters:
       - name: profileId
         in: path
@@ -1904,13 +1917,15 @@ paths:
           application/x-www-form-urlencoded:
             schema:
               type: object
+              required:
+              - archived
               properties:
                 archived:
                   type: boolean
         required: true
       responses:
         "204":
-          description: storage profile archived
+          description: archived state updated
         "403":
           description: not an admin
         "401":
@@ -2406,9 +2421,9 @@ paths:
     put:
       summary: creates or updates a vault
       description: "Creates or updates a vault with the given vault id. The creationTime\
-        \ in the vaultDto is always ignored. On creation, the current server time\
-        \ is used and the archived field is ignored. On update, only the name, description,\
-        \ and archived fields are considered."
+        \ in the vaultDto is always ignored. The archived field is always ignored\
+        \ (use the dedicated endpoint). On creation, the current server time is used.\
+        \ On update, only the name and description fields are considered."
       parameters:
       - description: whether configuration for STS MinIO needs to be synched to Keycloak
           (defaults to false)
@@ -2553,6 +2568,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/VaultDto"
+        "402":
+          description: number of licensed seats would be exceeded after unarchiving
         "403":
           description: requesting user is neither a vault owner nor has the admin
             role

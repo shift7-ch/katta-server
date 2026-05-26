@@ -28,20 +28,20 @@
 
                     <div class="col-span-6 sm:col-span-3">
                       <label for="profileName" class="block text-sm font-medium text-gray-700">{{ t('storageprofile.name') }} <span class="text-red-600">*</span></label>
-                      <input id="profileName" v-model="state.name" :disabled="processing" type="text" required class="mt-1 block w-full rounded-md border-gray-300 shadow-xs focus:ring-primary focus:border-primary sm:text-sm disabled:bg-gray-200">
+                      <input id="profileName" v-model="state.name" :disabled="processing" type="text" required class="mt-1 block w-full rounded-md border-gray-300 shadow-xs focus:ring-primary focus:border-primary sm:text-sm disabled:bg-gray-200" />
                     </div>
 
                     <!-- (1) Common: S3 endpoint URL, used directly as `endpoint` on the DTO -->
                     <div class="col-span-6">
                       <label for="endpoint" class="block text-sm font-medium text-gray-700">{{ t('createStorageProfileDialog.endpoint.label') }}</label>
-                      <input id="endpoint" v-model="state.endpoint" :disabled="processing" type="url" placeholder="https://s3.example.com" class="mt-1 block w-full rounded-md border-gray-300 shadow-xs focus:ring-primary focus:border-primary sm:text-sm disabled:bg-gray-200">
+                      <input id="endpoint" v-model="state.endpoint" :disabled="processing" type="url" placeholder="https://s3.example.com" class="mt-1 block w-full rounded-md border-gray-300 shadow-xs focus:ring-primary focus:border-primary sm:text-sm disabled:bg-gray-200" />
                       <p class="mt-1 text-xs text-gray-500">{{ t('createStorageProfileDialog.endpoint.hint') }}</p>
                     </div>
 
                     <div class="col-span-6 sm:col-span-3 flex items-center">
                       <label class="inline-flex items-center mt-6">
-                        <input v-model="state.withPathStyleAccessEnabled" :disabled="processing" type="checkbox" class="h-4 w-4 text-primary border-gray-300 rounded focus:ring-primary">
-                        <span class="ml-2 text-sm text-gray-700">{{ t('storageprofile.withPathStyleAccessEnabled') }}</span>
+                        <input v-model="state.pathStyleAccessEnabled" :disabled="processing" type="checkbox" class="h-4 w-4 text-primary border-gray-300 rounded focus:ring-primary" />
+                        <span class="ml-2 text-sm text-gray-700">{{ t('storageprofile.pathStyleAccessEnabled') }}</span>
                       </label>
                     </div>
 
@@ -52,83 +52,76 @@
                       </select>
                     </div>
 
-                    <!-- (2) STS-only: bucket-creation config (Desktop client) -->
+                    <!-- (2) Common bucket-creation config (desktop client creates buckets for both S3STATIC and S3STS) -->
+                    <div class="col-span-6 sm:col-span-3">
+                      <label for="region" class="block text-sm font-medium text-gray-700">{{ t('storageprofile.region') }} <span class="text-red-600">*</span></label>
+                      <input id="region" v-model="state.region" :disabled="processing" type="text" required placeholder="us-east-1" class="mt-1 block w-full rounded-md border-gray-300 shadow-xs focus:ring-primary focus:border-primary sm:text-sm disabled:bg-gray-200" />
+                    </div>
+                    <div class="col-span-6 sm:col-span-3">
+                      <label for="regions" class="block text-sm font-medium text-gray-700">{{ t('storageprofile.regions') }}</label>
+                      <input id="regions" v-model="regionsCsv" :disabled="processing" type="text" placeholder="us-east-1,eu-west-1" class="mt-1 block w-full rounded-md border-gray-300 shadow-xs focus:ring-primary focus:border-primary sm:text-sm disabled:bg-gray-200" />
+                      <p class="mt-1 text-xs text-gray-500">{{ t('createStorageProfileDialog.hint.regions') }}</p>
+                    </div>
+                    <div class="col-span-6">
+                      <label for="bucketPrefix" class="block text-sm font-medium text-gray-700">{{ t('storageprofile.bucketPrefix') }} <span class="text-red-600">*</span></label>
+                      <input id="bucketPrefix" v-model="state.bucketPrefix" :disabled="processing" type="text" required class="mt-1 block w-full rounded-md border-gray-300 shadow-xs focus:ring-primary focus:border-primary sm:text-sm disabled:bg-gray-200" />
+                    </div>
+
+                    <!-- (3) STS-only: bucket-creation roles (Desktop client) -->
                     <template v-if="protocol === 'S3STS'">
                       <div class="col-span-6">
-                        <hr class="border-gray-200 my-2">
+                        <hr class="border-gray-200 my-2" />
                         <h4 class="text-sm font-semibold text-gray-700">{{ t('createStorageProfileDialog.section.bucketCreation') }}</h4>
-                      </div>
-
-                      <div class="col-span-6 sm:col-span-3">
-                        <label for="region" class="block text-sm font-medium text-gray-700">{{ t('storageprofile.region') }} <span class="text-red-600">*</span></label>
-                        <input id="region" v-model="state.region" :disabled="processing" type="text" required placeholder="us-east-1" class="mt-1 block w-full rounded-md border-gray-300 shadow-xs focus:ring-primary focus:border-primary sm:text-sm disabled:bg-gray-200">
-                      </div>
-                      <div class="col-span-6 sm:col-span-3">
-                        <label for="regions" class="block text-sm font-medium text-gray-700">{{ t('storageprofile.regions') }}</label>
-                        <input id="regions" v-model="regionsCsv" :disabled="processing" type="text" placeholder="us-east-1,eu-west-1" class="mt-1 block w-full rounded-md border-gray-300 shadow-xs focus:ring-primary focus:border-primary sm:text-sm disabled:bg-gray-200">
-                        <p class="mt-1 text-xs text-gray-500">{{ t('createStorageProfileDialog.hint.regions') }}</p>
-                      </div>
-
-                      <div class="col-span-6">
-                        <label for="bucketPrefix" class="block text-sm font-medium text-gray-700">{{ t('storageprofile.bucketPrefix') }} <span class="text-red-600">*</span></label>
-                        <input id="bucketPrefix" v-model="state.bucketPrefix" :disabled="processing" type="text" required class="mt-1 block w-full rounded-md border-gray-300 shadow-xs focus:ring-primary focus:border-primary sm:text-sm disabled:bg-gray-200">
                       </div>
 
                       <div class="col-span-6">
                         <label for="stsRoleCreateBucketClient" class="block text-sm font-medium text-gray-700">{{ t('storageprofile.stsRoleCreateBucketClient') }} <span class="text-red-600">*</span></label>
-                        <input id="stsRoleCreateBucketClient" v-model="state.stsRoleCreateBucketClient" :disabled="processing" type="text" required class="mt-1 block w-full rounded-md border-gray-300 shadow-xs focus:ring-primary focus:border-primary sm:text-sm disabled:bg-gray-200">
+                        <input id="stsRoleCreateBucketClient" v-model="state.stsRoleCreateBucketClient" :disabled="processing" type="text" required class="mt-1 block w-full rounded-md border-gray-300 shadow-xs focus:ring-primary focus:border-primary sm:text-sm disabled:bg-gray-200" />
                       </div>
                       <div class="col-span-6">
                         <label for="stsRoleCreateBucketHub" class="block text-sm font-medium text-gray-700">{{ t('storageprofile.stsRoleCreateBucketHub') }} <span class="text-red-600">*</span></label>
-                        <input id="stsRoleCreateBucketHub" v-model="state.stsRoleCreateBucketHub" :disabled="processing" type="text" required class="mt-1 block w-full rounded-md border-gray-300 shadow-xs focus:ring-primary focus:border-primary sm:text-sm disabled:bg-gray-200">
+                        <input id="stsRoleCreateBucketHub" v-model="state.stsRoleCreateBucketHub" :disabled="processing" type="text" required class="mt-1 block w-full rounded-md border-gray-300 shadow-xs focus:ring-primary focus:border-primary sm:text-sm disabled:bg-gray-200" />
                       </div>
 
                       <div class="col-span-6">
                         <label for="stsEndpoint" class="block text-sm font-medium text-gray-700">{{ t('storageprofile.stsEndpoint') }}</label>
-                        <input id="stsEndpoint" v-model="state.stsEndpoint" :disabled="processing" type="text" class="mt-1 block w-full rounded-md border-gray-300 shadow-xs focus:ring-primary focus:border-primary sm:text-sm disabled:bg-gray-200">
+                        <input id="stsEndpoint" v-model="state.stsEndpoint" :disabled="processing" type="text" class="mt-1 block w-full rounded-md border-gray-300 shadow-xs focus:ring-primary focus:border-primary sm:text-sm disabled:bg-gray-200" />
                       </div>
 
                       <div class="col-span-6 sm:col-span-3 flex items-center">
                         <label class="inline-flex items-center mt-6">
-                          <input v-model="state.bucketVersioning" :disabled="processing" type="checkbox" class="h-4 w-4 text-primary border-gray-300 rounded focus:ring-primary">
+                          <input v-model="state.bucketVersioning" :disabled="processing" type="checkbox" class="h-4 w-4 text-primary border-gray-300 rounded focus:ring-primary" />
                           <span class="ml-2 text-sm text-gray-700">{{ t('storageprofile.bucketVersioning') }}</span>
                         </label>
                       </div>
                       <div class="col-span-6 sm:col-span-3 flex items-center">
                         <label class="inline-flex items-center mt-6">
-                          <input v-model="state.bucketAcceleration" :disabled="processing" type="checkbox" class="h-4 w-4 text-primary border-gray-300 rounded focus:ring-primary">
+                          <input v-model="state.bucketAcceleration" :disabled="processing" type="checkbox" class="h-4 w-4 text-primary border-gray-300 rounded focus:ring-primary" />
                           <span class="ml-2 text-sm text-gray-700">{{ t('storageprofile.bucketAcceleration') }}</span>
                         </label>
                       </div>
 
+                      <!-- (4) STS-only: bucket-access config (token vending) -->
                       <div class="col-span-6">
-                        <label for="bucketEncryption" class="block text-sm font-medium text-gray-700">{{ t('storageprofile.bucketEncryption') }} <span class="text-red-600">*</span></label>
-                        <select id="bucketEncryption" v-model="state.bucketEncryption" :disabled="processing" class="mt-1 block w-full rounded-md border-gray-300 shadow-xs focus:ring-primary focus:border-primary sm:text-sm disabled:bg-gray-200">
-                          <option v-for="e in encryptionOptions" :key="e" :value="e">{{ e }}</option>
-                        </select>
-                      </div>
-
-                      <!-- (3) STS-only: bucket-access config (token vending) -->
-                      <div class="col-span-6">
-                        <hr class="border-gray-200 my-2">
+                        <hr class="border-gray-200 my-2" />
                         <h4 class="text-sm font-semibold text-gray-700">{{ t('createStorageProfileDialog.section.bucketAccess') }}</h4>
                       </div>
 
                       <div class="col-span-6">
                         <label for="stsRoleAccessBucketAssumeRoleWithWebIdentity" class="block text-sm font-medium text-gray-700">{{ t('storageprofile.stsRoleAccessBucketAssumeRoleWithWebIdentity') }} <span class="text-red-600">*</span></label>
-                        <input id="stsRoleAccessBucketAssumeRoleWithWebIdentity" v-model="state.stsRoleAccessBucketAssumeRoleWithWebIdentity" :disabled="processing" type="text" required class="mt-1 block w-full rounded-md border-gray-300 shadow-xs focus:ring-primary focus:border-primary sm:text-sm disabled:bg-gray-200">
+                        <input id="stsRoleAccessBucketAssumeRoleWithWebIdentity" v-model="state.stsRoleAccessBucketAssumeRoleWithWebIdentity" :disabled="processing" type="text" required class="mt-1 block w-full rounded-md border-gray-300 shadow-xs focus:ring-primary focus:border-primary sm:text-sm disabled:bg-gray-200" />
                       </div>
                       <div class="col-span-6">
                         <label for="stsRoleAccessBucketAssumeRoleTaggedSession" class="block text-sm font-medium text-gray-700">{{ t('storageprofile.stsRoleAccessBucketAssumeRoleTaggedSession') }}</label>
-                        <input id="stsRoleAccessBucketAssumeRoleTaggedSession" v-model="state.stsRoleAccessBucketAssumeRoleTaggedSession" :disabled="processing" type="text" class="mt-1 block w-full rounded-md border-gray-300 shadow-xs focus:ring-primary focus:border-primary sm:text-sm disabled:bg-gray-200">
+                        <input id="stsRoleAccessBucketAssumeRoleTaggedSession" v-model="state.stsRoleAccessBucketAssumeRoleTaggedSession" :disabled="processing" type="text" class="mt-1 block w-full rounded-md border-gray-300 shadow-xs focus:ring-primary focus:border-primary sm:text-sm disabled:bg-gray-200" />
                       </div>
                       <div class="col-span-6 sm:col-span-3">
                         <label for="stsDurationSeconds" class="block text-sm font-medium text-gray-700">{{ t('storageprofile.stsDurationSeconds') }}</label>
-                        <input id="stsDurationSeconds" v-model.number="state.stsDurationSeconds" :disabled="processing" type="number" min="0" class="mt-1 block w-full rounded-md border-gray-300 shadow-xs focus:ring-primary focus:border-primary sm:text-sm disabled:bg-gray-200">
+                        <input id="stsDurationSeconds" v-model.number="state.stsDurationSeconds" :disabled="processing" type="number" min="0" class="mt-1 block w-full rounded-md border-gray-300 shadow-xs focus:ring-primary focus:border-primary sm:text-sm disabled:bg-gray-200" />
                       </div>
                       <div class="col-span-6 sm:col-span-3">
                         <label for="stsSessionTag" class="block text-sm font-medium text-gray-700">{{ t('storageprofile.stsSessionTag') }} <span class="text-red-600">*</span></label>
-                        <input id="stsSessionTag" v-model="state.stsSessionTag" :disabled="processing" type="text" required class="mt-1 block w-full rounded-md border-gray-300 shadow-xs focus:ring-primary focus:border-primary sm:text-sm disabled:bg-gray-200">
+                        <input id="stsSessionTag" v-model="state.stsSessionTag" :disabled="processing" type="text" required class="mt-1 block w-full rounded-md border-gray-300 shadow-xs focus:ring-primary focus:border-primary sm:text-sm disabled:bg-gray-200" />
                       </div>
                     </template>
                   </div>
@@ -161,7 +154,7 @@
 import { Dialog, DialogOverlay, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue';
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import backend, { ConflictError, ForbiddenError, S3ServerSideEncryption, S3StorageClass, StorageProfileDto, StorageProfileS3StaticDto, StorageProfileS3STSDto, StorageProtocol } from '../../common/backend';
+import backend, { ConflictError, ForbiddenError, S3StorageClass, StorageProfileDto, StorageProfileS3StaticDto, StorageProfileS3STSDto, StorageProtocol } from '../../common/backend';
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -171,12 +164,11 @@ const onSubmitError = ref<Error | null>();
 
 const protocols: StorageProtocol[] = ['S3STATIC', 'S3STS'];
 const storageClasses: S3StorageClass[] = ['STANDARD', 'INTELLIGENT_TIERING', 'STANDARD_IA', 'ONEZONE_IA', 'REDUCED_REDUNDANCY', 'GLACIER', 'GLACIER_IR', 'DEEP_ARCHIVE'];
-const encryptionOptions: S3ServerSideEncryption[] = ['NONE', 'SSE_AES256', 'SSE_KMS_DEFAULT'];
 
 type FormState = {
   name: string;
   endpoint: string;
-  withPathStyleAccessEnabled: boolean;
+  pathStyleAccessEnabled: boolean;
   storageClass: S3StorageClass;
   region: string;
   bucketPrefix: string;
@@ -185,7 +177,6 @@ type FormState = {
   stsEndpoint: string;
   bucketVersioning: boolean;
   bucketAcceleration: boolean;
-  bucketEncryption: S3ServerSideEncryption;
   stsRoleAccessBucketAssumeRoleWithWebIdentity: string;
   stsRoleAccessBucketAssumeRoleTaggedSession: string;
   stsDurationSeconds: number | null;
@@ -207,7 +198,7 @@ function emptyState(): FormState {
   return {
     name: '',
     endpoint: '',
-    withPathStyleAccessEnabled: false,
+    pathStyleAccessEnabled: false,
     storageClass: 'STANDARD',
     region: 'us-east-1',
     bucketPrefix: '',
@@ -216,7 +207,6 @@ function emptyState(): FormState {
     stsEndpoint: '',
     bucketVersioning: true,
     bucketAcceleration: false,
-    bucketEncryption: 'NONE',
     stsRoleAccessBucketAssumeRoleWithWebIdentity: '',
     stsRoleAccessBucketAssumeRoleTaggedSession: '',
     stsDurationSeconds: null,
@@ -273,8 +263,11 @@ function buildS3StaticDto(endpoint: string | undefined): StorageProfileS3StaticD
     protocol: 'S3STATIC',
     archived: false,
     endpoint,
-    withPathStyleAccessEnabled: state.value.withPathStyleAccessEnabled,
-    storageClass: state.value.storageClass
+    pathStyleAccessEnabled: state.value.pathStyleAccessEnabled,
+    storageClass: state.value.storageClass,
+    region: state.value.region,
+    regions: parsedRegions(),
+    bucketPrefix: state.value.bucketPrefix
   };
 }
 
@@ -285,7 +278,7 @@ function buildS3STSDto(endpoint: string | undefined): StorageProfileS3STSDto {
     protocol: 'S3STS',
     archived: false,
     endpoint,
-    withPathStyleAccessEnabled: state.value.withPathStyleAccessEnabled,
+    pathStyleAccessEnabled: state.value.pathStyleAccessEnabled,
     storageClass: state.value.storageClass,
     region: state.value.region,
     regions: parsedRegions(),
@@ -295,7 +288,6 @@ function buildS3STSDto(endpoint: string | undefined): StorageProfileS3STSDto {
     stsEndpoint: undefinedIfBlank(state.value.stsEndpoint),
     bucketVersioning: state.value.bucketVersioning,
     bucketAcceleration: state.value.bucketAcceleration,
-    bucketEncryption: state.value.bucketEncryption,
     stsRoleAccessBucketAssumeRoleWithWebIdentity: state.value.stsRoleAccessBucketAssumeRoleWithWebIdentity,
     stsRoleAccessBucketAssumeRoleTaggedSession: undefinedIfBlank(state.value.stsRoleAccessBucketAssumeRoleTaggedSession),
     stsDurationSeconds: state.value.stsDurationSeconds ?? undefined,

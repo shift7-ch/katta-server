@@ -8,6 +8,7 @@ import org.cryptomator.hub.entities.katta.StorageProfileS3Static;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.hibernate.validator.constraints.URL;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -16,16 +17,22 @@ public sealed class StorageProfileS3StaticDto extends StorageProfileDto permits 
 
 	//======================================================================
 	// (1) STS and permanent:
-	// - bucket creation frontend/desktop client (STS)
+	// - bucket creation frontend/desktop client (STS and permanent)
 	// - template upload (STS and permanent)
 	// - client profile (STS and permanent)
 	//======================================================================
 
 	@URL
 	private final String endpoint;
-	private final boolean withPathStyleAccessEnabled;
+	private final boolean pathStyleAccessEnabled;
 	@NotNull
 	private final S3StorageClass storageClass;
+	@NotNull
+	private final String region;
+	@NotNull
+	private final List<String> regions;
+	@NotNull
+	private final String bucketPrefix;
 
 	@JsonCreator
 	public StorageProfileS3StaticDto(
@@ -34,12 +41,18 @@ public sealed class StorageProfileS3StaticDto extends StorageProfileDto permits 
 			@JsonProperty("protocol") Protocol protocol,
 			@JsonProperty("archived") boolean archived,
 			@JsonProperty("endpoint") String endpoint,
-			@JsonProperty("withPathStyleAccessEnabled") boolean withPathStyleAccessEnabled,
-			@JsonProperty("storageClass") S3StorageClass storageClass) {
+			@JsonProperty("pathStyleAccessEnabled") boolean pathStyleAccessEnabled,
+			@JsonProperty("storageClass") S3StorageClass storageClass,
+			@JsonProperty("region") String region,
+			@JsonProperty("regions") List<String> regions,
+			@JsonProperty("bucketPrefix") String bucketPrefix) {
 		super(id, name, protocol, archived);
 		this.endpoint = endpoint;
-		this.withPathStyleAccessEnabled = withPathStyleAccessEnabled;
+		this.pathStyleAccessEnabled = pathStyleAccessEnabled;
 		this.storageClass = storageClass;
+		this.region = region;
+		this.regions = regions;
+		this.bucketPrefix = bucketPrefix;
 	}
 
 	@JsonProperty("endpoint")
@@ -48,10 +61,10 @@ public sealed class StorageProfileS3StaticDto extends StorageProfileDto permits 
 		return endpoint;
 	}
 
-	@JsonProperty("withPathStyleAccessEnabled")
+	@JsonProperty("pathStyleAccessEnabled")
 	@Schema(description = "Whether to use path style for S3 endpoint for template upload/bucket creation.", examples = "false", defaultValue = "false")
-	public boolean isWithPathStyleAccessEnabled() {
-		return withPathStyleAccessEnabled;
+	public boolean isPathStyleAccessEnabled() {
+		return pathStyleAccessEnabled;
 	}
 
 	@JsonProperty("storageClass")
@@ -60,8 +73,26 @@ public sealed class StorageProfileS3StaticDto extends StorageProfileDto permits 
 		return storageClass;
 	}
 
+	@JsonProperty("region")
+	@Schema(description = "Default region selected in the frontend/client to create bucket in.", examples = "us-east-1", defaultValue = "us-east-1", required = true)
+	public String getRegion() {
+		return region;
+	}
+
+	@JsonProperty("regions")
+	@Schema(description = "List of selectable regions in the frontend/client to create bucket in. Defaults to full list from AWS SDK.", required = true)
+	public List<String> getRegions() {
+		return regions;
+	}
+
+	@JsonProperty("bucketPrefix")
+	@Schema(description = "Buckets are created with name <bucket prefix><vault UUID>.", examples = "katta", required = true)
+	public String getBucketPrefix() {
+		return bucketPrefix;
+	}
+
 	static StorageProfileS3StaticDto fromEntity(StorageProfileS3Static entity) {
-		return new StorageProfileS3StaticDto(entity.id, entity.name, Protocol.S3_STATIC, entity.archived, entity.endpoint, entity.withPathStyleAccessEnabled, entity.storageClass);
+		return new StorageProfileS3StaticDto(entity.id, entity.name, Protocol.S3_STATIC, entity.archived, entity.endpoint, entity.pathStyleAccessEnabled, entity.storageClass, entity.region, entity.regions == null ? List.of() : entity.regions, entity.bucketPrefix);
 	}
 
 	@Override
@@ -71,8 +102,11 @@ public sealed class StorageProfileS3StaticDto extends StorageProfileDto permits 
 		entity.name = getName();
 		entity.archived = isArchived();
 		entity.endpoint = endpoint;
-		entity.withPathStyleAccessEnabled = withPathStyleAccessEnabled;
+		entity.pathStyleAccessEnabled = pathStyleAccessEnabled;
 		entity.storageClass = storageClass;
+		entity.region = region;
+		entity.regions = regions;
+		entity.bucketPrefix = bucketPrefix;
 		return entity;
 	}
 
@@ -82,11 +116,16 @@ public sealed class StorageProfileS3StaticDto extends StorageProfileDto permits 
 		if (o == null || getClass() != o.getClass()) return false;
 
 		StorageProfileS3StaticDto that = (StorageProfileS3StaticDto) o;
-		return withPathStyleAccessEnabled == that.withPathStyleAccessEnabled && Objects.equals(endpoint, that.endpoint) && storageClass == that.storageClass;
+		return pathStyleAccessEnabled == that.pathStyleAccessEnabled
+				&& Objects.equals(endpoint, that.endpoint)
+				&& storageClass == that.storageClass
+				&& Objects.equals(region, that.region)
+				&& Objects.equals(regions, that.regions)
+				&& Objects.equals(bucketPrefix, that.bucketPrefix);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(endpoint, withPathStyleAccessEnabled, storageClass);
+		return Objects.hash(endpoint, pathStyleAccessEnabled, storageClass, region, regions, bucketPrefix);
 	}
 }

@@ -254,7 +254,10 @@
               <label for="vaultBucketName" class="block text-sm font-medium text-gray-700">
                 {{ t('CreateVaultS3.enterVaultDetails.vaultPermanentBucketName') }}
               </label>
-              <input id="vaultBucketName" v-model="vaultBucketName" :disabled="processing" type="text" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200" :class="{ 'invalid:border-red-300 invalid:text-red-900 focus:invalid:ring-red-500 focus:invalid:border-red-500': onCreateError instanceof FormValidationFailedError }" required />
+              <div class="mt-1 flex rounded-md shadow-sm">
+                <span v-if="bucketPrefix" class="inline-flex items-center rounded-l-md border border-r-0 border-gray-300 bg-gray-50 px-3 text-gray-500 sm:text-sm">{{ bucketPrefix }}</span>
+                <input id="vaultBucketName" v-model="vaultBucketName" :disabled="processing" type="text" class="focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 disabled:bg-gray-200" :class="[bucketPrefix ? 'rounded-none rounded-r-md' : 'rounded-md', { 'invalid:border-red-300 invalid:text-red-900 focus:invalid:ring-red-500 focus:invalid:border-red-500': onCreateError instanceof FormValidationFailedError }]" required />
+              </div>
             </div>
             <br />
             <div class="col-span-6 sm:col-span-3">
@@ -664,6 +667,10 @@ const onFetchError = ref<Error | null>(null);
 const vaultAccessKeyId = ref('');
 const vaultSecretKey = ref('');
 const vaultBucketName = ref('');
+// Admin-configured prefix for the selected profile (empty if none). The actual bucket name is this prefix
+// followed by the user-provided suffix, so the prefix amends (never replaces) the entered name.
+const bucketPrefix = computed(() => selectedStorageProfile.value?.bucketPrefix ?? '');
+const effectiveBucketName = computed(() => bucketPrefix.value + vaultBucketName.value);
 const automaticAccessGrant = ref<boolean>(true);
 const onOpenBookmarkError = ref<Error | null>(null);
 const onUploadTemplateError = ref<Error | null>(null);
@@ -844,7 +851,7 @@ async function validateVaultDetails() {
         });
 
         const command = new GetBucketLocationCommand({
-          Bucket: vaultBucketName.value
+          Bucket: effectiveBucketName.value
         });
         try {
           const response = await headBucketClient.send(command);
@@ -867,7 +874,7 @@ async function validateVaultDetails() {
         const client = new S3Client({
           region: selectedRegion.value,
           endpoint: endpoint,
-          forcePathStyle: storageProfile.withPathStyleAccessEnabled,
+          forcePathStyle: storageProfile.pathStyleAccessEnabled,
           credentials:{
             accessKeyId: vaultAccessKeyId.value,
             secretAccessKey: vaultSecretKey.value
@@ -875,7 +882,7 @@ async function validateVaultDetails() {
         });
         // N.B. there seems to be no API to check write permissions without actually writing.
         const commandListObjects = new ListObjectsV2Command({
-          Bucket: vaultBucketName.value,
+          Bucket: effectiveBucketName.value,
           MaxKeys: 1,
         });
         const responseListObjects = await client.send(commandListObjects);
@@ -889,7 +896,7 @@ async function validateVaultDetails() {
         // TODO review can we improve whether this is a CORS problem? FF message is "NetworkError when attempting to fetch resource", Safari "Load failed".
         if (error instanceof TypeError){
           onCreateError.value = new ErrorWithCodeHint(error.message + '. ' + t('CreateVaultS3.error.invalidCORS'), `
-          aws s3api put-bucket-cors --endpoint-url ${endpoint} --bucket ${vaultBucketName.value} --cors-configuration file://cors.json
+          aws s3api put-bucket-cors --endpoint-url ${endpoint} --bucket ${effectiveBucketName.value} --cors-configuration file://cors.json
 
           cors.json:
           {
@@ -1031,7 +1038,7 @@ async function createVault() {
         } else if (storageProfile.protocol === 'S3STATIC') {
           uvfVault.value.metadata.backend.username = vaultAccessKeyId.value;
           uvfVault.value.metadata.backend.password = vaultSecretKey.value;
-          uvfVault.value.metadata.backend.defaultPath = vaultBucketName.value;
+          uvfVault.value.metadata.backend.defaultPath = effectiveBucketName.value;
         } else {
           throw new Error('Unsupported backend protocol');
         }
@@ -1273,14 +1280,14 @@ async function uploadVaultTemplate() {
       // providers (Scaleway, MinIO) typically ignore it. Default to us-east-1 if unknown.
       region: selectedRegion.value ?? 'us-east-1',
       endpoint: storageProfile.endpoint,
-      forcePathStyle: storageProfile.withPathStyleAccessEnabled,
+      forcePathStyle: storageProfile.pathStyleAccessEnabled,
       credentials:{
         accessKeyId: vaultAccessKeyId.value,
         secretAccessKey: vaultSecretKey.value
       }
     });
     const commandListObjects = new ListObjectsV2Command({
-      Bucket: vaultBucketName.value,
+      Bucket: effectiveBucketName.value,
       MaxKeys: 1,
     });
     const responseListObjects = await client.send(commandListObjects);
@@ -1300,7 +1307,7 @@ async function uploadVaultTemplate() {
     }
 
     const commandPutVaultCryptomator = new PutObjectCommand({
-      Bucket: vaultBucketName.value,
+      Bucket: effectiveBucketName.value,
       Key: 'vault.uvf',
       Body: vault.value.uvfMetadataFile
     });
@@ -1309,7 +1316,7 @@ async function uploadVaultTemplate() {
     console.log(responsePutVaultCryptomator);
 
     const commandPutDFolder = new PutObjectCommand({
-      Bucket: vaultBucketName.value,
+      Bucket: effectiveBucketName.value,
       Key: `d/${rootDirHash.substring(0, 2)}/${rootDirHash.substring(2)}/`,
       Body: '',
     });

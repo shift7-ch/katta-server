@@ -3,7 +3,6 @@ package org.cryptomator.hub.api.katta;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.NotNull;
-import org.cryptomator.hub.entities.katta.S3ServersideEncryption;
 import org.cryptomator.hub.entities.katta.S3StorageClass;
 import org.cryptomator.hub.entities.katta.StorageProfileS3STS;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -20,20 +19,12 @@ public final class StorageProfileS3STSDto extends StorageProfileS3StaticDto {
 	//======================================================================
 
 	@NotNull
-	private final String region;
-	@NotNull
-	private final List<String> regions;
-	@NotNull
-	private final String bucketPrefix;
-	@NotNull
 	private final String stsRoleCreateBucketClient;
 	@NotNull
 	private final String stsRoleCreateBucketHub;
 	private final String stsEndpoint;
 	private final boolean bucketVersioning;
 	private final Boolean bucketAcceleration;
-	@NotNull
-	private final S3ServersideEncryption bucketEncryption;
 
 	//----------------------------------------------------------------------
 	// (3b) STS client profile custom properties
@@ -52,7 +43,7 @@ public final class StorageProfileS3STSDto extends StorageProfileS3StaticDto {
 			@JsonProperty("protocol") Protocol protocol,
 			@JsonProperty("archived") boolean archived,
 			@JsonProperty("endpoint") String endpoint,
-			@JsonProperty("withPathStyleAccessEnabled") boolean withPathStyleAccessEnabled,
+			@JsonProperty("pathStyleAccessEnabled") boolean pathStyleAccessEnabled,
 			@JsonProperty("storageClass") S3StorageClass storageClass,
 			@JsonProperty("region") String region,
 			@JsonProperty("regions") List<String> regions,
@@ -62,43 +53,20 @@ public final class StorageProfileS3STSDto extends StorageProfileS3StaticDto {
 			@JsonProperty("stsEndpoint") String stsEndpoint,
 			@JsonProperty("bucketVersioning") boolean bucketVersioning,
 			@JsonProperty("bucketAcceleration") Boolean bucketAcceleration,
-			@JsonProperty("bucketEncryption") S3ServersideEncryption bucketEncryption,
 			@JsonProperty("stsRoleAccessBucketAssumeRoleWithWebIdentity") String stsRoleAccessBucketAssumeRoleWithWebIdentity,
 			@JsonProperty("stsRoleAccessBucketAssumeRoleTaggedSession") String stsRoleAccessBucketAssumeRoleTaggedSession,
 			@JsonProperty("stsDurationSeconds") Integer stsDurationSeconds,
 			@JsonProperty("stsSessionTag") String stsSessionTag) {
-		super(id, name, protocol, archived, endpoint, withPathStyleAccessEnabled, storageClass);
-		this.region = region;
-		this.regions = regions;
-		this.bucketPrefix = bucketPrefix;
+		super(id, name, protocol, archived, endpoint, pathStyleAccessEnabled, storageClass, region, regions, bucketPrefix);
 		this.stsRoleCreateBucketClient = stsRoleCreateBucketClient;
 		this.stsRoleCreateBucketHub = stsRoleCreateBucketHub;
 		this.stsEndpoint = stsEndpoint;
 		this.bucketVersioning = bucketVersioning;
 		this.bucketAcceleration = bucketAcceleration;
-		this.bucketEncryption = bucketEncryption;
 		this.stsRoleAccessBucketAssumeRoleWithWebIdentity = stsRoleAccessBucketAssumeRoleWithWebIdentity;
 		this.stsRoleAccessBucketAssumeRoleTaggedSession = stsRoleAccessBucketAssumeRoleTaggedSession;
 		this.stsDurationSeconds = stsDurationSeconds;
 		this.stsSessionTag = stsSessionTag;
-	}
-
-	@JsonProperty("region")
-	@Schema(description = "Default region selected in the frontend/client to create bucket in.", examples = "us-east-1", defaultValue = "us-east-1", required = true)
-	public String getRegion() {
-		return region;
-	}
-
-	@JsonProperty("regions")
-	@Schema(description = "List of selectable regions in the frontend/client to create bucket in. Defaults to full list from AWS SDK.", required = true)
-	public List<String> getRegions() {
-		return regions;
-	}
-
-	@JsonProperty("bucketPrefix")
-	@Schema(description = "Buckets are created with name <bucket prefix><vault UUID>.", examples = "katta", required = true)
-	public String getBucketPrefix() {
-		return bucketPrefix;
 	}
 
 	@JsonProperty("stsRoleCreateBucketClient")
@@ -129,12 +97,6 @@ public final class StorageProfileS3STSDto extends StorageProfileS3StaticDto {
 	@Schema(description = "Enable bucket versioning upon bucket creation (null for MinIO)", nullable = true)
 	public Boolean getBucketAcceleration() {
 		return bucketAcceleration;
-	}
-
-	@JsonProperty("bucketEncryption")
-	@Schema(description = "Enable bucket versioning upon bucket creation", required = true)
-	public S3ServersideEncryption getBucketEncryption() {
-		return bucketEncryption;
 	}
 
 	@JsonProperty("stsRoleAccessBucketAssumeRoleWithWebIdentity")
@@ -168,7 +130,7 @@ public final class StorageProfileS3STSDto extends StorageProfileS3StaticDto {
 				Protocol.S3_STS,
 				entity.archived,
 				entity.endpoint,
-				entity.withPathStyleAccessEnabled,
+				entity.pathStyleAccessEnabled,
 				entity.storageClass,
 				entity.region,
 				entity.regions == null ? List.of() : entity.regions,
@@ -178,7 +140,6 @@ public final class StorageProfileS3STSDto extends StorageProfileS3StaticDto {
 				entity.stsEndpoint,
 				entity.bucketVersioning,
 				entity.bucketAcceleration,
-				entity.bucketEncryption,
 				entity.stsRoleAccessBucketAssumeRoleWithWebIdentity,
 				entity.stsRoleAccessBucketAssumeRoleTaggedSession,
 				entity.stsDurationSeconds,
@@ -193,17 +154,16 @@ public final class StorageProfileS3STSDto extends StorageProfileS3StaticDto {
 		entity.name = getName();
 		entity.archived = isArchived();
 		entity.endpoint = getEndpoint();
-		entity.withPathStyleAccessEnabled = isWithPathStyleAccessEnabled();
+		entity.pathStyleAccessEnabled = isPathStyleAccessEnabled();
 		entity.storageClass = getStorageClass();
-		entity.region = region;
-		entity.regions = regions;
-		entity.bucketPrefix = bucketPrefix;
+		entity.region = getRegion();
+		entity.regions = getRegions();
+		entity.bucketPrefix = getBucketPrefix();
 		entity.stsRoleCreateBucketClient = stsRoleCreateBucketClient;
 		entity.stsRoleCreateBucketHub = stsRoleCreateBucketHub;
 		entity.stsEndpoint = stsEndpoint;
 		entity.bucketVersioning = bucketVersioning;
 		entity.bucketAcceleration = bucketAcceleration;
-		entity.bucketEncryption = bucketEncryption;
 		entity.stsRoleAccessBucketAssumeRoleWithWebIdentity = stsRoleAccessBucketAssumeRoleWithWebIdentity;
 		entity.stsRoleAccessBucketAssumeRoleTaggedSession = stsRoleAccessBucketAssumeRoleTaggedSession;
 		entity.stsDurationSeconds = stsDurationSeconds;
@@ -219,14 +179,10 @@ public final class StorageProfileS3STSDto extends StorageProfileS3StaticDto {
 
 		StorageProfileS3STSDto that = (StorageProfileS3STSDto) o;
 		return bucketVersioning == that.bucketVersioning
-				&& Objects.equals(region, that.region)
-				&& Objects.equals(regions, that.regions)
-				&& Objects.equals(bucketPrefix, that.bucketPrefix)
 				&& Objects.equals(stsRoleCreateBucketClient, that.stsRoleCreateBucketClient)
 				&& Objects.equals(stsRoleCreateBucketHub, that.stsRoleCreateBucketHub)
 				&& Objects.equals(stsEndpoint, that.stsEndpoint)
 				&& Objects.equals(bucketAcceleration, that.bucketAcceleration)
-				&& bucketEncryption == that.bucketEncryption
 				&& Objects.equals(stsRoleAccessBucketAssumeRoleWithWebIdentity, that.stsRoleAccessBucketAssumeRoleWithWebIdentity)
 				&& Objects.equals(stsRoleAccessBucketAssumeRoleTaggedSession, that.stsRoleAccessBucketAssumeRoleTaggedSession)
 				&& Objects.equals(stsDurationSeconds, that.stsDurationSeconds)
@@ -235,6 +191,6 @@ public final class StorageProfileS3STSDto extends StorageProfileS3StaticDto {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(super.hashCode(), region, regions, bucketPrefix, stsRoleCreateBucketClient, stsRoleCreateBucketHub, stsEndpoint, bucketVersioning, bucketAcceleration, bucketEncryption, stsRoleAccessBucketAssumeRoleWithWebIdentity, stsRoleAccessBucketAssumeRoleTaggedSession, stsDurationSeconds, stsSessionTag);
+		return Objects.hash(super.hashCode(), stsRoleCreateBucketClient, stsRoleCreateBucketHub, stsEndpoint, bucketVersioning, bucketAcceleration, stsRoleAccessBucketAssumeRoleWithWebIdentity, stsRoleAccessBucketAssumeRoleTaggedSession, stsDurationSeconds, stsSessionTag);
 	}
 }
