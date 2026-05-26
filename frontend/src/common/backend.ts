@@ -827,6 +827,7 @@ class StorageProfileService {
     await axiosAuth.put(`/storageprofile/${storageprofileId}`, params, { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } })
       .catch(error => rethrowAndConvertIfExpected(error, 403, 404));
   }
+
 }
 export const axiosUnAuth = AxiosStatic.create(axiosBaseCfg);
 class ConfigService {

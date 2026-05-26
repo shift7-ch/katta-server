@@ -31,13 +31,13 @@
   </div>
 
   <div class="pb-5 mt-3 border-b border-gray-200 flex flex-wrap sm:flex-nowrap gap-3 items-center whitespace-nowrap">
-    <input id="storageprofileSearch" v-model="query" :placeholder="t('storageProfileList.search.placeholder')" type="text" class="focus:ring-primary focus:border-primary block w-full shadow-sm text-sm border-gray-300 rounded-md disabled:bg-gray-200"/>
+    <input id="storageprofileSearch" v-model="query" :placeholder="t('storageProfileList.search.placeholder')" type="text" class="focus:ring-primary focus:border-primary block w-full shadow-sm text-sm border-gray-300 rounded-md disabled:bg-gray-200" />
     <label class="inline-flex items-center text-sm text-gray-700">
-      <input v-model="includeArchived" type="checkbox" class="h-4 w-4 text-primary border-gray-300 rounded focus:ring-primary mr-2">
+      <input v-model="includeArchived" type="checkbox" class="h-4 w-4 text-primary border-gray-300 rounded focus:ring-primary mr-2" />
       {{ t('storageProfileList.filter.includeArchived') }}
     </label>
     <button v-if="isAdmin" type="button" class="inline-flex items-center justify-center rounded-md border border-transparent bg-primary px-4 py-2 text-sm font-medium text-white shadow-xs hover:bg-primary-d1 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-primary" @click="openCreateDialog">
-      <PlusIcon class="h-4 w-4 mr-1" aria-hidden="true"/>
+      <PlusIcon class="h-4 w-4 mr-1" aria-hidden="true" />
       {{ t('storageProfileList.button.create') }}
     </button>
   </div>
@@ -83,7 +83,7 @@
     <StorageProfileDetails :storageprofile-id="selectedStorageprofile.id" @storageprofile-updated="v => onSelectedStorageprofileUpdate(v)" />
   </SlideOver>
 
-  <CreateStorageProfileDialog v-if="creatingProfile" ref="createDialog" @close="creatingProfile = false" @created="onCreated"/>
+  <CreateStorageProfileDialog v-if="creatingProfile" ref="createDialog" @close="creatingProfile = false" @created="onCreated" />
 </template>
 
 <script setup lang="ts">
