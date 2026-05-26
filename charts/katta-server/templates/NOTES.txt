@@ -11,13 +11,13 @@
 {{ printf "%s✅ Katta Server Installed%s\n" $cTitle $cReset }}
 
 {{ printf "%s🌐 URLs%s" $cSection $cReset }}
-- Hub UI:          {{ .Values.urls.hub.public }}
+- Hub UI:          {{ trimSuffix "/" .Values.urls.hub.public }}/
 {{- if .Values.keycloak.enabled }}
-- Keycloak admin:  {{ .Values.urls.kc.public }}
+- Keycloak admin:  {{ trimSuffix "/" .Values.urls.kc.public }}/
 {{- end }}
 {{- if .Values.minio.enabled }}
 {{- if .Values.urls.minio.public }}
-- MinIO console:   {{ .Values.urls.minio.public }}
+- MinIO console:   {{ trimSuffix "/" .Values.urls.minio.public }}/
 {{- end }}
 {{- if .Values.urls.s3.public }}
 - MinIO S3 API:    {{ .Values.urls.s3.public }}
