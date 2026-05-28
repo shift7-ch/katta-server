@@ -36,10 +36,12 @@
             v-model="enableEmergencyAccess"
             type="checkbox"
             class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+            aria-describedby="enableEmergencyAccessDescription"
           />
           <label for="enableEmergencyAccess" class="ml-2 text-sm text-gray-500">
             {{ t('admin.emergencyAccess.enabled.help') }}
           </label>
+          <span id="enableEmergencyAccessDescription" class="hidden">{{ t('admin.emergencyAccess.enabled.help') }}</span>
         </div>
       </div>
 
@@ -48,30 +50,29 @@
         <label for="requiredKeyShares" class="col-span-2 block text-sm font-medium text-gray-700 md:text-right md:pr-4 md:mt-2">
           {{ t('admin.emergencyAccess.requiredKeys.label') }}
         </label>
-        <div class="mt-1 md:mt-0 lg:col-span-3 md:col-span-4 relative">
-          <div class="flex items-center gap-2">
-            <div v-if="defaultRequiredEmergencyKeySharesLessThenTwoError || defaultRequiredEmergencyKeySharesToHighError instanceof FormValidationFailedError" class="absolute  -top-2 transform translate-y-full z-10">
+        <div class="mt-1 md:mt-0 lg:col-span-3 md:col-span-4">
+          <div class="relative flex-1">
+            <!-- Tooltip -->
+            <div
+              v-if="defaultRequiredEmergencyKeySharesLessThenTwoError || defaultRequiredEmergencyKeySharesToHighError instanceof FormValidationFailedError"
+              class="absolute left-1/2 -translate-x-1/2 -top-2 transform -translate-y-full z-10"
+            >
               <div class="bg-red-50 border border-red-300 text-red-900 px-2 py-1 rounded shadow-sm text-sm hyphens-auto">
                 {{ requiredKeySharesValidationText }}
+                <!-- Arrow -->
+                <div class="absolute bottom-0 left-1/2 transform translate-y-1/2 rotate-45 w-2 h-2 bg-red-50 border-r border-b border-red-300"></div>
               </div>
             </div>
-            <div class="relative flex-1">
-              <input
-                id="requiredKeyShares"
-                v-model.number="requiredShares"
-                type="number"
-                min="2"
-                max="255"
-                :disabled="!enableEmergencyAccess"
-                class="rounded-md border-gray-300 shadow-sm sm:text-sm focus:ring-primary focus:border-primary text-left w-full disabled:cursor-not-allowed disabled:bg-gray-200"
-                :class="{ 'border-red-300 text-red-900 focus:ring-red-500 focus:border-red-500': defaultRequiredEmergencyKeySharesError || defaultRequiredEmergencyKeySharesToHighError instanceof FormValidationFailedError}"
-                :aria-label="t('admin.emergencyAccess.requiredKeys.ariaLabel')"
-              />
-              <div v-if="defaultRequiredEmergencyKeySharesLessThenTwoError || defaultRequiredEmergencyKeySharesToHighError instanceof FormValidationFailedError" class="absolute  -top-2 transform translate-y-full z-10">
-                <div class="absolute bottom-0 left-5 transform translate-y-1/2 rotate-45 w-2 h-2 bg-red-50 border-r border-b border-red-300"></div>
-              </div>
-              <p class="mt-2 my-4 text-sm text-gray-500">{{ t('admin.emergencyAccess.requiredKeys.help') }}</p>
-            </div>
+            <input
+              id="requiredKeyShares"
+              v-model.number="requiredShares"
+              type="number" min="2" max="255"
+              :disabled="!enableEmergencyAccess"
+              class="rounded-md border-gray-300 shadow-sm sm:text-sm focus:ring-primary focus:border-primary text-left w-full disabled:cursor-not-allowed disabled:bg-gray-200"
+              :class="{ 'border-red-300 text-red-900 focus:ring-red-500 focus:border-red-500': defaultRequiredEmergencyKeySharesError || defaultRequiredEmergencyKeySharesToHighError instanceof FormValidationFailedError}"
+              :aria-label="t('admin.emergencyAccess.requiredKeys.ariaLabel')"
+            />
+            <p class="mt-2 my-4 text-sm text-gray-500">{{ t('admin.emergencyAccess.requiredKeys.help') }}</p>
           </div>
         </div>
       </div>
@@ -112,13 +113,13 @@
         <span class="col-span-2"></span>
         <div class="mt-1 md:mt-0 lg:col-span-3 md:col-span-4 flex items-center h-9.5">
           <input
-            id="allow"
+            id="allowChoosingCouncil"
             v-model="allowChoosing"
             :disabled="!enableEmergencyAccess"
             type="checkbox"
             class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
           />
-          <label for="allow" class="ml-2 text-sm text-gray-500">
+          <label for="allowChoosingCouncil" class="ml-2 text-sm text-gray-500">
             {{ t('admin.emergencyAccess.allowChoosing.label') }}
             <label v-if="allowChoosing" for="minMembers"> {{ t('admin.emergencyAccess.allowChoosing.atLeast') }}</label>
           </label>
@@ -258,7 +259,7 @@ const hasUnsavedChanges = computed(() => {
   return (
     initialEmergencyAccessSettings.value.enableEmergencyAccess !== enableEmergencyAccess.value
     || initialEmergencyAccessSettings.value.defaultRequiredEmergencyKeyShares !== requiredShares.value
-    || initialEmergencyAccessSettings.value.defaultMinMembers !== minMembers.value
+    || (allowChoosing.value ? initialEmergencyAccessSettings.value.defaultMinMembers !== minMembers.value : false)
     || initialEmergencyAccessSettings.value.allowChoosingEmergencyCouncil !== allowChoosing.value
     || !sameCouncilMemberIds.value
   );
