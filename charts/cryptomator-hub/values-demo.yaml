@@ -10,9 +10,9 @@
 #
 # Deploy:
 #   minikube addons enable ingress           # one-off
-#   helm install katta charts/katta-server \
+#   helm install katta charts/cryptomator-hub \
 #     --namespace katta --create-namespace \
-#     -f charts/katta-server/values-demo.yaml
+#     -f charts/cryptomator-hub/values-demo.yaml
 #
 # Port-forward — leave running in a separate terminal:
 #   kubectl port-forward -n ingress-nginx svc/ingress-nginx-controller 9090:80
