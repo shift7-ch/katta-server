@@ -1,4 +1,4 @@
-{{- define "katta-server.realmJson" -}}
+{{- define "cryptomator-hub.realmJson" -}}
 {
   {{- if .Values.keycloak.realmBootstrap.realmId }}
   "id": {{ .Values.keycloak.realmBootstrap.realmId | quote }},

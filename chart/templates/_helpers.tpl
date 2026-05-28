@@ -22,6 +22,13 @@ app.kubernetes.io/name: {{ include "cryptomator-hub.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end -}}
 
+{{/* 
+
+Compute relative URLs for hub and keycloak based on their public URLs and whether ingress is enabled.
+This allows users to set the public URLs to the actual external URLs of the services, and we can derive the relative paths required for configuring the services to work correctly both with and without ingress.
+
+*/}}
+
 {{- define "cryptomator-hub.hubRelativePath" -}}
 {{- $path := regexReplaceAll "^https?://[^/]+" (required "urls.hub.public must be set" .Values.urls.hub.public) "" -}}
 {{- $trimmed := trimAll "/" $path -}}
@@ -86,7 +93,7 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end -}}
 {{- end -}}
 
-{{/*
+{{/* 
 
 Auto-generated secrets below:
 
