@@ -24,6 +24,14 @@ type MetadataPayload = {
 
 type VaultMetadataJWEAutomaticAccessGrantDto = {
   enabled: boolean,
+  /**
+   * Maximum Web of Trust distance (number of signatures in the trust chain from an existing vault member to a new
+   * member) up to which access may be granted automatically:
+   * - `-1`: trust check disabled — grant regardless of any WoT relationship
+   * - `0`: self-signed identities only (no practical use case)
+   * - `1`: direct trust (an existing member has signed the new member's key directly)
+   * - `>= 2`: transitive trust (a chain of up to N signatures)
+   */
   maxWotDepth: number
 };
 
@@ -236,7 +244,7 @@ export class DecodeUvfRecoveryKeyError extends Error {
 export class VaultMetadata {
 
   private constructor(
-    readonly automaticAccessGrant: VaultMetadataJWEAutomaticAccessGrantDto,
+    public automaticAccessGrant: VaultMetadataJWEAutomaticAccessGrantDto,
     // / start katta extension
     readonly backend: VaultMetadataJWEBackendDto,
     // \ end katta extension

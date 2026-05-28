@@ -302,6 +302,68 @@
     </form>
   </div>
 
+  <div v-else-if="state == State.DefineAutomaticAccessGrant">
+    <BreadcrumbNav :crumbs="[ { label: t('vaultList.title'), to: '/app/vaults' }, { label: t('createVault.enterVaultDetails.title') } ]" />
+    <VaultCreationProgress :state="state" :steps="getCurrentStates" class="flex justify-center mb-4" />
+    <form @submit.prevent="validateAutomaticAccessGrant()">
+      <div class="flex justify-center">
+        <div class="bg-white shadow-sm rounded-lg sm:w-full sm:max-w-lg">
+          <div class="mx-auto mt-5 flex items-center justify-center h-12 w-12 rounded-full bg-emerald-100">
+            <UserPlusIcon class="h-6 w-6 text-emerald-600" aria-hidden="true" />
+          </div>
+          <div class="mt-3 mb-3 px-4 sm:mt-5">
+            <h3 class="text-lg leading-6 font-medium text-gray-900 text-center">
+              {{ t('createVault.automaticAccessGrant.title') }}
+            </h3>
+            <p class="mt-2 text-sm text-gray-500 text-center">
+              {{ t('createVault.automaticAccessGrant.description') }}
+            </p>
+            <div class="mt-5 space-y-4 text-left">
+              <div class="flex items-center">
+                <input id="vaultAutoGrantEnabled" v-model="vaultAutoGrantEnabled" :disabled="processing" type="checkbox" class="h-4 w-4 rounded-sm border-gray-300 text-primary focus:ring-primary" />
+                <label for="vaultAutoGrantEnabled" class="ml-2 block text-sm text-gray-700">{{ t('createVault.automaticAccessGrant.enabled.label') }}</label>
+              </div>
+              <div v-if="vaultAutoGrantEnabled">
+                <label for="vaultAutoGrantTrustThreshold" class="block text-sm font-medium text-gray-700">{{ t('createVault.automaticAccessGrant.trustThreshold.label') }}</label>
+                <input id="vaultAutoGrantTrustThreshold" v-model="vaultAutoGrantTrustThreshold" :disabled="processing" type="number" min="-1" max="9" step="1" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-xs sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200" />
+                <p class="mt-1 text-xs text-gray-500">{{ t('createVault.automaticAccessGrant.trustThreshold.help') }}</p>
+                <p v-if="Number(vaultAutoGrantTrustThreshold) === -1" class="mt-1 inline-flex items-start text-xs text-yellow-700">
+                  <ExclamationTriangleIcon class="shrink-0 text-yellow-500 mr-1 h-4 w-4" aria-hidden="true" />
+                  {{ t('createVault.automaticAccessGrant.trustThreshold.disabledWarning') }}
+                </p>
+              </div>
+            </div>
+          </div>
+          <div class="bg-gray-50 mt-4 px-4 py-3 sm:px-6 rounded-b-lg">
+            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center sm:space-x-4">
+              <div class="text-sm text-red-900 sm:flex-1 sm:min-w-0">
+                <template v-if="onCreateError">
+                  <p>{{ t('common.unexpectedError', [onCreateError.message]) }}</p>
+                </template>
+              </div>
+              <div class="flex flex-col-reverse sm:flex-row-reverse sm:space-x-reverse sm:space-x-3 shrink-0 mt-4 sm:mt-0">
+                <button
+                  type="submit"
+                  :disabled="processing"
+                  class="inline-flex justify-center rounded-md border border-transparent bg-primary px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-primary-d1 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-primary sm:text-sm disabled:opacity-50 disabled:hover:bg-primary disabled:cursor-not-allowed"
+                >
+                  {{ t('common.next') }}
+                </button>
+                <button
+                  type="button"
+                  class="mt-3 sm:mt-0 inline-flex justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-base font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-primary sm:text-sm"
+                  @click="goToPreviousState()"
+                >
+                  {{ t('common.previous') }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+
   <div v-else-if="state == State.DefineEmergencyAccess">
     <BreadcrumbNav :crumbs="[ { label: t('vaultList.title'), to: '/app/vaults' }, { label: t('createVault.enterVaultDetails.title') } ]" />
     <VaultCreationProgress :state="state" :steps="getCurrentStates" class="flex justify-center mb-4" />
@@ -344,7 +406,7 @@
                 <button
                   type="button"
                   class="mt-3 sm:mt-0 inline-flex justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-base font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-primary sm:text-sm"
-                  @click="backToEnterVaultDetails()"
+                  @click="goToPreviousState()"
                 >
                   {{ t('common.previous') }}
                 </button>
@@ -439,7 +501,7 @@
                 <button
                   type="button"
                   class="mt-3 sm:mt-0 inline-flex justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-base font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-primary sm:text-sm"
-                  @click="backToDefineEmergencyAccess()"
+                  @click="goToPreviousState()"
                 >
                   {{ t('common.previous') }}
                 </button>
@@ -524,8 +586,8 @@
 </template>
 
 <script setup lang="ts">
-import { ClipboardIcon, XCircleIcon, ArrowDownTrayIcon } from '@heroicons/vue/20/solid';
-import { ArrowPathIcon, ArrowUpOnSquareIcon, CheckIcon, DocumentCheckIcon, KeyIcon, PlusIcon } from '@heroicons/vue/24/outline';
+import { ClipboardIcon, XCircleIcon, ArrowDownTrayIcon, ExclamationTriangleIcon } from '@heroicons/vue/20/solid';
+import { ArrowPathIcon, ArrowUpOnSquareIcon, CheckIcon, DocumentCheckIcon, KeyIcon, PlusIcon, UserPlusIcon } from '@heroicons/vue/24/outline';
 import { saveAs } from 'file-saver';
 import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -562,6 +624,7 @@ enum State {
   Initial,
   EnterRecoveryKey,
   EnterVaultDetails,
+  DefineAutomaticAccessGrant,
   DefineEmergencyAccess,
   ShowRecoveryKey,
   Finished
@@ -638,6 +701,9 @@ const vault = ref<VaultDto>({
   requiredEmergencyKeyShares: 0,
   emergencyKeyShares: {}
 });
+// Per-vault override of the global "Automatic Access Grant" defaults; these values are applied when building the vault metadata payload.
+const vaultAutoGrantEnabled = ref<boolean>(false);
+const vaultAutoGrantTrustThreshold = ref<number>(0);
 const copiedRecoveryKey = ref(false);
 const debouncedCopyFinish = debounce(() => copiedRecoveryKey.value = false, 2000);
 const confirmRecoveryKey = ref(false);
@@ -696,10 +762,12 @@ async function initialize() {
         recoveryKeyStr.value = await vaultFormat8.value.createRecoveryKey();
         break;
       case VaultType.UniversalVaultFormat:
-        uvfVault.value = await UniversalVaultFormat.create({ enabled: false, maxWotDepth: -1 }, { provider: '', defaultPath: '', nickname: '', region: '' });
+        uvfVault.value = await UniversalVaultFormat.create({ enabled: settings.value.enableAutomaticAccessGrant, maxWotDepth: settings.value.automaticAccessGrantTrustThreshold }, { provider: '', defaultPath: '', nickname: '', region: '' });
         recoveryKeyStr.value = await uvfVault.value.recoveryKey.createRecoveryKey();
         break;
     }
+    vaultAutoGrantEnabled.value = settings.value.enableAutomaticAccessGrant;
+    vaultAutoGrantTrustThreshold.value = settings.value.automaticAccessGrantTrustThreshold;
     state.value = State.EnterVaultDetails;
   }
   licenseStatus.value = await backend.license.getUserInfo();
@@ -767,22 +835,16 @@ async function validateRecoveryKey() {
   await recoverVault();
 }
 
+const autoGrantOverrideAvailable = computed(() => !!settings.value?.enableAutomaticAccessGrant && !!settings.value?.allowAutomaticAccessGrantOverride);
+const emergencyAccessAvailable = computed(() => !isCommunityLicense.value && !!settings.value?.enableEmergencyAccess);
+
 const getCurrentStates = computed(() => {
-  return isCommunityLicense.value || !settings.value?.enableEmergencyAccess ? communityCreateStates : allCreateStates;
+  const steps: State[] = [State.EnterVaultDetails];
+  if (autoGrantOverrideAvailable.value) steps.push(State.DefineAutomaticAccessGrant);
+  if (emergencyAccessAvailable.value) steps.push(State.DefineEmergencyAccess);
+  steps.push(State.ShowRecoveryKey, State.Finished);
+  return steps;
 });
-
-const allCreateStates = [
-  State.EnterVaultDetails,
-  State.DefineEmergencyAccess,
-  State.ShowRecoveryKey,
-  State.Finished,
-];
-
-const communityCreateStates = [
-  State.EnterVaultDetails,
-  State.ShowRecoveryKey,
-  State.Finished,
-];
 
 async function recoverVault() {
   onRecoverError.value = undefined;
@@ -930,11 +992,13 @@ async function validateVaultDetails() {
   if (props.recover) {
     await createVault();
   } else {
-    if (!isCommunityLicense.value && settings.value?.enableEmergencyAccess)
-      state.value = State.DefineEmergencyAccess;
-    else
-      state.value = State.ShowRecoveryKey;
+    goToNextState();
   }
+}
+
+function validateAutomaticAccessGrant() {
+  onCreateError.value = undefined;
+  goToNextState();
 }
 
 async function validateVaultEmergencyAccess() {
@@ -978,15 +1042,20 @@ async function validateVaultEmergencyAccess() {
   }
 }
 
-function backToEnterVaultDetails(){
-  state.value = State.EnterVaultDetails;
+function goToNextState() {
+  const steps = getCurrentStates.value;
+  const idx = steps.indexOf(state.value);
+  if (idx >= 0 && idx < steps.length - 1) {
+    state.value = steps[idx + 1];
+  }
 }
 
-function backToDefineEmergencyAccess(){
-  if (isCommunityLicense.value || !settings.value?.enableEmergencyAccess)
-    state.value = State.EnterVaultDetails;
-  else
-    state.value = State.DefineEmergencyAccess;
+function goToPreviousState() {
+  const steps = getCurrentStates.value;
+  const idx = steps.indexOf(state.value);
+  if (idx > 0) {
+    state.value = steps[idx - 1];
+  }
 }
 
 async function createVault() {
@@ -1036,6 +1105,11 @@ async function createVault() {
         // \ end katta extension
 
         ownerGrant.token = await uvfVault.value.encryptForUser(await userdata.ecdhPublicKey, true);
+        if (!props.recover) {
+          // Apply the (possibly per-vault-overridden) automatic access grant policy now that the override step is done.
+          // On recovery the existing vault's policy must be preserved, so we leave the recovered metadata untouched.
+          uvfVault.value.metadata.automaticAccessGrant = { enabled: vaultAutoGrantEnabled.value, maxWotDepth: Number(vaultAutoGrantTrustThreshold.value) };
+        }
         const recoveryPublicKey = await uvfVault.value.recoveryKey.serializePublicKey();
         vault.value.uvfMetadataFile = await uvfVault.value.createMetadataFile(absBackendBaseURL, vault.value);
         vault.value.uvfKeySet = `{"keys": [${recoveryPublicKey}]}`;
