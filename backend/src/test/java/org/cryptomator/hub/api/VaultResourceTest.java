@@ -1,6 +1,7 @@
 package org.cryptomator.hub.api;
 
 import io.quarkus.security.identity.SecurityIdentity;
+import jakarta.enterprise.event.Event;
 import jakarta.ws.rs.NotFoundException;
 import org.cryptomator.hub.api.katta.KattaConfig;
 import org.cryptomator.hub.entities.EffectiveVaultAccess;
@@ -9,6 +10,7 @@ import org.cryptomator.hub.entities.User;
 import org.cryptomator.hub.entities.Vault;
 import org.cryptomator.hub.entities.VaultAccess;
 import org.cryptomator.hub.entities.events.EventLogger;
+import org.cryptomator.hub.events.VaultMembersJoined;
 import org.cryptomator.hub.katta.KeycloakCryptomatorVaultsHelper;
 import org.cryptomator.hub.license.HubLicenseEntitlements;
 import org.cryptomator.hub.license.LicenseHolder;
@@ -43,6 +45,7 @@ class VaultResourceTest {
 	private final LicenseHolder license = Mockito.mock(LicenseHolder.class);
 	private final KeycloakCryptomatorVaultsHelper keycloakCryptomatorVaultsHelper = Mockito.mock(KeycloakCryptomatorVaultsHelper.class);
 	private final KattaConfig kattaConfig = Mockito.mock(KattaConfig.class);
+	private final Event<VaultMembersJoined> vaultMembersJoinedEvent = Mockito.mock();
 
 
 	@BeforeEach
@@ -78,7 +81,7 @@ class VaultResourceTest {
 		vaultResource.license = license;
 		vaultResource.keycloakCryptomatorVaultsHelper = keycloakCryptomatorVaultsHelper;
 		vaultResource.kattaConfig = kattaConfig;
-		vaultResource.vaultAccessChangedEvent = Mockito.mock();
+		vaultResource.vaultMembersJoinedEvent = vaultMembersJoinedEvent;
 
 		final User user = Mockito.mock(User.class);
 		Mockito.when(userRepo.findById("alice")).thenReturn(user);
