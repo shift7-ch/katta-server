@@ -8,9 +8,6 @@ metadata:
     {{- include "katta-server.labels" . | nindent 4 }}
 data:
   KC_DB: "postgres"
-  # Must match the Katta Keycloak image's baked-in features (keycloak/Dockerfile) so that
-  # `kc.sh start --optimized` doesn't detect drift and force a re-augmentation round.
-  KC_FEATURES: "web-authn"
   KC_DB_URL: {{ if .Values.postgres.enabled }}{{ printf "jdbc:postgresql://%s:%v/%s" (print (include "katta-server.fullname" .) "-service-pg") .Values.postgres.service.port .Values.keycloak.database.name | quote }}{{ else }}{{ required "keycloak.database.jdbcUrl must be set when keycloak.enabled=true and postgres.enabled=false" .Values.keycloak.database.jdbcUrl | quote }}{{ end }}
   KC_DB_USERNAME: {{ .Values.keycloak.database.username | quote }}
   KC_BOOTSTRAP_ADMIN_USERNAME: {{ .Values.keycloak.admin.username | quote }}
@@ -18,13 +15,8 @@ data:
   KC_METRICS_ENABLED: "true"
   KC_HTTP_ENABLED: "true"
   KC_PROXY_HEADERS: {{ .Values.keycloak.config.proxyHeaders | quote }}
+  {{- /* Keycloak always serves at "/" (matching the image's baked KC_HTTP_RELATIVE_PATH default, so `start --optimized` stays valid). When exposed under a subpath, the ingress strips the prefix; KC_HOSTNAME carries the full public URL incl. path, so issuer/discovery URLs advertise the external prefix. */}}
   KC_HOSTNAME: {{ trimSuffix "/" (required "urls.kc.public must be set" .Values.urls.kc.public) | quote }}
   QUARKUS_TRANSACTION_MANAGER_ENABLE_RECOVERY: "false"
-  # With DYNAMIC=true Keycloak emits backchannel URLs (jwks_uri, etc.) based on the
-  # REQUEST host, while frontchannel URLs and the `issuer` claim stay pinned to
-  # KC_HOSTNAME. This lets internal clients (Hub via HUB_KEYCLOAK_LOCAL_URL, MinIO via
-  # minio.openid.configUrl pointing at the in-cluster Keycloak Service) fetch JWKS
-  # directly from KC without going through the public ingress, while tokens still
-  # carry the public KC_HOSTNAME as `iss` so external clients validate against it.
   KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
 {{- end }}
