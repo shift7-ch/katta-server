@@ -31,7 +31,7 @@ The fastest way to spin up a complete Katta stack — Hub + Keycloak + Postgres 
 minikube addons enable ingress
 
 # deploy
-helm install katta charts/cryptomator-hub \
+helm install katta chart \
   --namespace katta \
   --create-namespace \
   -f charts/cryptomator-hub/values-demo.yaml
@@ -133,7 +133,7 @@ When disabled, the chart sets `QUARKUS_OTEL_SDK_DISABLED=true` so the SDK does n
 ## Hub with External PostgreSQL and Keycloak
 
 ```bash
-helm install katta charts/cryptomator-hub \
+helm install katta chart \
   --namespace katta \
   --create-namespace \
   --wait --timeout 5m \
