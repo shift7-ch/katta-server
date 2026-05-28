@@ -15,3 +15,7 @@ spec:
       protocol: TCP
       port: {{ .Values.hub.service.port }}
       targetPort: http
+    - name: mgmt
+      protocol: TCP
+      port: {{ .Values.hub.service.managementPort }}
+      targetPort: management

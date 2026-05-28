@@ -22,154 +22,6 @@ app.kubernetes.io/name: {{ include "katta-server.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end -}}
 
-{{/*
-
-Resolve the ingress controller's pod IPs by walking its EndpointSlices. Used to populate
-the chart's port-translation proxy EndpointSlice — pointing at pod IPs (single DNAT)
-rather than the controller's ClusterIP (broken double-DNAT in iptables kube-proxy).
-
-EndpointSlices have generated names, so we list all slices in the controller's
-namespace and filter by the `kubernetes.io/service-name` label. Returns a JSON-encoded
-list of IPs (deduped, only `ready` endpoints), or empty if the lookup fails (e.g.
-`helm template` without a live cluster, or the controller isn't installed yet).
-
-*/}}
-{{- define "katta-server.ingressControllerPodIPs" -}}
-{{- $svcName := .Values.ingress.controllerService.name -}}
-{{- $namespace := .Values.ingress.controllerService.namespace -}}
-{{- $slices := lookup "discovery.k8s.io/v1" "EndpointSlice" $namespace "" -}}
-{{- $ips := list -}}
-{{- if $slices -}}
-  {{- range $slice := $slices.items -}}
-    {{- $labels := $slice.metadata.labels -}}
-    {{- if and $labels (eq (index $labels "kubernetes.io/service-name") $svcName) -}}
-      {{- range $ep := $slice.endpoints -}}
-        {{- /* `conditions.ready` is *bool: nil/missing means "unknown, assume ready"; only skip if explicitly false. */ -}}
-        {{- $skip := false -}}
-        {{- if $ep.conditions -}}
-          {{- if eq (index $ep.conditions "ready") false -}}
-            {{- $skip = true -}}
-          {{- end -}}
-        {{- end -}}
-        {{- if not $skip -}}
-          {{- range $addr := $ep.addresses -}}
-            {{- $ips = append $ips $addr -}}
-          {{- end -}}
-        {{- end -}}
-      {{- end -}}
-    {{- end -}}
-  {{- end -}}
-{{- end -}}
-{{- $ips | uniq | toJson -}}
-{{- end -}}
-
-{{/*
-
-Collect the set of hostnames from .Values.urls.*.public whose host portion is a
-*.localhost subdomain (excluding bare "localhost"). These are the names we want to
-add to pod hostAliases so internal calls route through the ingress.
-
-*/}}
-{{- define "katta-server.localhostHosts" -}}
-{{- $hostSet := dict -}}
-{{- range $name, $cfg := .Values.urls -}}
-  {{- if (and (kindIs "map" $cfg) (hasKey $cfg "public")) -}}
-    {{- $public := index $cfg "public" -}}
-    {{- if $public -}}
-      {{- $host := regexReplaceAll "^https?://([^:/]+).*" $public "${1}" -}}
-      {{- if and $host (ne $host "localhost") (hasSuffix ".localhost" $host) -}}
-        {{- $_ := set $hostSet $host true -}}
-      {{- end -}}
-    {{- end -}}
-  {{- end -}}
-{{- end -}}
-{{- keys $hostSet | sortAlpha | toJson -}}
-{{- end -}}
-
-{{/*
-
-Extract the port from the first *.localhost URL in .Values.urls.*.public. All such URLs
-are expected to share the same port (the chart's ingress proxy listens on exactly one
-port). Returns the empty string if there is no port (implicit 80) or no *.localhost URLs.
-
-*/}}
-{{- define "katta-server.localhostPort" -}}
-{{- $port := "" -}}
-{{- range $name, $cfg := .Values.urls -}}
-  {{- if (and (kindIs "map" $cfg) (hasKey $cfg "public") (eq $port "")) -}}
-    {{- $public := index $cfg "public" -}}
-    {{- if $public -}}
-      {{- $host := regexReplaceAll "^https?://([^:/]+).*" $public "${1}" -}}
-      {{- if and $host (ne $host "localhost") (hasSuffix ".localhost" $host) -}}
-        {{- $portMatch := regexReplaceAll "^https?://[^:/]+(?::(\\d+))?.*" $public "${1}" -}}
-        {{- if $portMatch -}}{{- $port = $portMatch -}}{{- end -}}
-      {{- end -}}
-    {{- end -}}
-  {{- end -}}
-{{- end -}}
-{{- $port -}}
-{{- end -}}
-
-{{/*
-
-Resolve the ClusterIP of the chart-managed port-translation proxy Service. Prefers
-ingress.proxy.clusterIP from values (deterministic on first install); falls back to
-`lookup` on the proxy Service if it already exists. Returns empty otherwise.
-
-*/}}
-{{- define "katta-server.proxyServiceIP" -}}
-{{- if .Values.ingress.proxy.clusterIP -}}
-{{- .Values.ingress.proxy.clusterIP -}}
-{{- else -}}
-{{- $name := printf "%s-ingress-proxy" (include "katta-server.fullname" .) -}}
-{{- $svc := lookup "v1" "Service" .Release.Namespace $name -}}
-{{- if and $svc $svc.spec $svc.spec.clusterIP -}}
-{{- $svc.spec.clusterIP -}}
-{{- end -}}
-{{- end -}}
-{{- end -}}
-
-{{/*
-
-True when the chart should create the port-translation proxy. We create it when there
-are *.localhost URLs with a non-default port AND we can resolve the in-cluster ingress
-controller IP to populate the EndpointSlice.
-
-*/}}
-{{- define "katta-server.proxyEnabled" -}}
-{{- $hosts := include "katta-server.localhostHosts" . | fromJsonArray -}}
-{{- $port := include "katta-server.localhostPort" . -}}
-{{- $podIPs := include "katta-server.ingressControllerPodIPs" . | fromJsonArray -}}
-{{- if and $hosts $port $podIPs -}}true{{- end -}}
-{{- end -}}
-
-{{/*
-
-Emit a `hostAliases:` YAML block (suitable for pod spec) that points every collected
-*.localhost host at the chart's port-translation proxy Service. Emits nothing if there
-are no matching hosts or the proxy isn't enabled (no non-default port, or the ingress
-controller's Endpoints couldn't be discovered).
-
-Usage:
-  spec:
-    {{- include "katta-server.hostAliases" . | nindent N }}
-
-*/}}
-{{- define "katta-server.hostAliases" -}}
-{{- if eq (include "katta-server.proxyEnabled" .) "true" -}}
-{{- $hosts := include "katta-server.localhostHosts" . | fromJsonArray -}}
-{{- $ip := include "katta-server.proxyServiceIP" . -}}
-{{- if and $ip $hosts -}}
-hostAliases:
-  - ip: {{ $ip | quote }}
-    hostnames:
-{{- range $h := $hosts }}
-      - {{ $h | quote }}
-{{- end }}
-{{- end -}}
-{{- end -}}
-{{- end -}}
-
 {{- define "katta-server.hubRelativePath" -}}
 {{- $path := regexReplaceAll "^https?://[^/]+" (required "urls.hub.public must be set" .Values.urls.hub.public) "" -}}
 {{- $trimmed := trimAll "/" $path -}}
@@ -182,8 +34,7 @@ hostAliases:
 {{- printf "/%s" $trimmed -}}
 {{- end -}}
 
-{{/* S3 / MinIO-console relative paths. Unlike hub/kc these URLs are optional (blank => no
-     ingress), so callers must guard on the value being set before including these. */}}
+{{- /* / katta start addition */ -}}
 {{- define "katta-server.s3RelativePath" -}}
 {{- $path := regexReplaceAll "^https?://[^/]+" .Values.urls.s3.public "" -}}
 {{- $trimmed := trimAll "/" $path -}}
@@ -195,11 +46,13 @@ hostAliases:
 {{- $trimmed := trimAll "/" $path -}}
 {{- printf "/%s" $trimmed -}}
 {{- end -}}
+{{- /* \ katta end addition */ -}}
 
 {{- define "katta-server.keycloakLocalUrl" -}}
 {{- if .Values.urls.kc.clusterInternal -}}
 {{- trimSuffix "/" .Values.urls.kc.clusterInternal -}}
 {{- else if .Values.keycloak.enabled -}}
+{{/* Bundled Keycloak serves at "/" (the external subpath is stripped by the ingress), so the in-cluster URL has no path. */}}
 {{- printf "http://%s:%v" (print (include "katta-server.fullname" .) "-service-kc") .Values.keycloak.service.httpPort -}}
 {{- else -}}
 {{/* if keycloak isn't part of the deployment, use public url: */}}
@@ -233,7 +86,7 @@ hostAliases:
 {{- end -}}
 {{- end -}}
 
-{{/* 
+{{/*
 
 Auto-generated secrets below:
 
@@ -352,6 +205,7 @@ Auto-generated secrets below:
 {{- end -}}
 {{- end -}}
 
+{{- /* / katta start addition */ -}}
 {{- define "katta-server.resolvedCryptomatorvaultsClientSecret" -}}
 {{- if hasKey .Values "_resolvedCryptomatorvaultsClientSecret" -}}
 {{- index .Values "_resolvedCryptomatorvaultsClientSecret" -}}
@@ -388,52 +242,39 @@ Auto-generated secrets below:
 {{- end -}}
 {{- end -}}
 
-{{/*
-
-Resolve a stable UUID for the bundled-MinIO storage profile. The Job is idempotent
-(the backend returns 409 on duplicate id), but we still want every upgrade to target
-the SAME row rather than spamming new rows that all fail. Lookup order:
-
-1. cached in-render value
-2. explicit pin via .Values.storageProfileSeed.profileId
-3. existing ConfigMap `<release>-storageprofile-seed-state` (data.profileId)
-4. generate a fresh UUID
-
-*/}}
-{{- define "katta-server.resolvedMinioProfileId" -}}
-{{- if hasKey .Values "_resolvedMinioProfileId" -}}
-{{- index .Values "_resolvedMinioProfileId" -}}
+{{- define "katta-server.resolvedMinioProfileId.S3STATIC" -}}
+{{- if hasKey .Values "_resolvedMinioProfileId.S3STATIC" -}}
+{{- index .Values "_resolvedMinioProfileId.S3STATIC" -}}
 {{- else if .Values.storageProfileSeed.static.profileId -}}
-{{- $_ := set .Values "_resolvedMinioProfileId" .Values.storageProfileSeed.static.profileId -}}
-{{- index .Values "_resolvedMinioProfileId" -}}
+{{- $_ := set .Values "_resolvedMinioProfileId.S3STATIC" .Values.storageProfileSeed.static.profileId -}}
+{{- index .Values "_resolvedMinioProfileId.S3STATIC" -}}
 {{- else -}}
 {{- $cmName := print (include "katta-server.fullname" .) "-storageprofile-seed-state" -}}
 {{- $existing := lookup "v1" "ConfigMap" .Release.Namespace $cmName -}}
 {{- if and $existing (hasKey $existing.data "profileId") -}}
-{{- $_ := set .Values "_resolvedMinioProfileId" (index $existing.data "profileId") -}}
+{{- $_ := set .Values "_resolvedMinioProfileId.S3STATIC" (index $existing.data "profileId") -}}
 {{- else -}}
-{{- $_ := set .Values "_resolvedMinioProfileId" (uuidv4) -}}
+{{- $_ := set .Values "_resolvedMinioProfileId.S3STATIC" (uuidv4) -}}
 {{- end -}}
-{{- index .Values "_resolvedMinioProfileId" -}}
+{{- index .Values "_resolvedMinioProfileId.S3STATIC" -}}
 {{- end -}}
 {{- end -}}
 
-{{/* Analogous to resolvedMinioProfileId but for the STS profile. */}}
-{{- define "katta-server.resolvedMinioStsProfileId" -}}
-{{- if hasKey .Values "_resolvedMinioStsProfileId" -}}
-{{- index .Values "_resolvedMinioStsProfileId" -}}
+{{- define "katta-server.resolvedMinioProfileId.S3STS" -}}
+{{- if hasKey .Values "_resolvedMinioProfileId.S3STS" -}}
+{{- index .Values "_resolvedMinioProfileId.S3STS" -}}
 {{- else if .Values.storageProfileSeed.sts.profileId -}}
-{{- $_ := set .Values "_resolvedMinioStsProfileId" .Values.storageProfileSeed.sts.profileId -}}
-{{- index .Values "_resolvedMinioStsProfileId" -}}
+{{- $_ := set .Values "_resolvedMinioProfileId.S3STS" .Values.storageProfileSeed.sts.profileId -}}
+{{- index .Values "_resolvedMinioProfileId.S3STS" -}}
 {{- else -}}
 {{- $cmName := print (include "katta-server.fullname" .) "-storageprofile-seed-state" -}}
 {{- $existing := lookup "v1" "ConfigMap" .Release.Namespace $cmName -}}
 {{- if and $existing (hasKey $existing.data "stsProfileId") -}}
-{{- $_ := set .Values "_resolvedMinioStsProfileId" (index $existing.data "stsProfileId") -}}
+{{- $_ := set .Values "_resolvedMinioProfileId.S3STS" (index $existing.data "stsProfileId") -}}
 {{- else -}}
-{{- $_ := set .Values "_resolvedMinioStsProfileId" (uuidv4) -}}
+{{- $_ := set .Values "_resolvedMinioProfileId.S3STS" (uuidv4) -}}
 {{- end -}}
-{{- index .Values "_resolvedMinioStsProfileId" -}}
+{{- index .Values "_resolvedMinioProfileId.S3STS" -}}
 {{- end -}}
 {{- end -}}
 
@@ -454,3 +295,4 @@ the public ingress hop). Override via `minio.openid.configUrl` when needed.
 {{- printf "%s/realms/%s/.well-known/openid-configuration" $kcLocal .Values.hub.config.keycloakRealm -}}
 {{- end -}}
 {{- end -}}
+{{- /* \ katta end addition */ -}}

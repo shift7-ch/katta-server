@@ -3,12 +3,13 @@
 {{- $openidEnabled := .Values.minio.openid.enabled -}}
 {{- if and .Values.minio.enabled (or $staticEnabled $stsEnabled) }}
 {{- $fullname := include "katta-server.fullname" . -}}
+{{- $hubReadyUrl := printf "http://%s-service-hub:%v/q/health/ready" $fullname .Values.hub.service.managementPort -}}
 {{- $hubUrl := printf "http://%s-service-hub:%v" $fullname .Values.hub.service.port -}}
 {{- $kcUrl := include "katta-server.keycloakLocalUrl" . | trimSuffix "/" -}}
 {{- $minioInternalUrl := printf "http://%s-service-minio:%v" $fullname (int .Values.minio.service.apiPort) -}}
 {{- $oidcConfigUrl := include "katta-server.minioOidcConfigUrl" . -}}
-{{- $profileId := include "katta-server.resolvedMinioProfileId" . -}}
-{{- $stsProfileId := include "katta-server.resolvedMinioStsProfileId" . -}}
+{{- $profileId := include "katta-server.resolvedMinioProfileId.S3STATIC" . -}}
+{{- $stsProfileId := include "katta-server.resolvedMinioProfileId.S3STS" . -}}
 {{- /* The storage-profile address must be the *single* URL that works from both inside
        and outside the cluster (browser/clients vs Hub pod). Pull it from urls.s3.public;
        if blank, fall back to the cluster-internal MinIO Service which only works in-cluster. */ -}}
@@ -243,6 +244,8 @@ spec:
           image: "alpine/curl:8.17.0"
           imagePullPolicy: IfNotPresent
           env:
+            - name: HUB_READY_URL
+              value: {{ $hubReadyUrl | quote }}
             - name: HUB_URL
               value: {{ $hubUrl | quote }}
             - name: KEYCLOAK_URL
@@ -294,10 +297,10 @@ spec:
           command: ["/bin/sh", "-eu", "-c"]
           args:
             - |
-              echo "Waiting for Hub at $HUB_URL/q/health/ready (timeout ${HUB_READY_TIMEOUT}s)..."
+              echo "Waiting for Hub at $HUB_READY_URL (timeout ${HUB_READY_TIMEOUT}s)..."
               deadline=$(( $(date +%s) + HUB_READY_TIMEOUT ))
               while :; do
-                code=$(curl -sS -o /dev/null -w "%{http_code}" "$HUB_URL/q/health/ready" || true)
+                code=$(curl -sS -o /dev/null -w "%{http_code}" "$HUB_READY_URL" || true)
                 if [ "$code" = "200" ]; then
                   echo "Hub is ready."
                   break

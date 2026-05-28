@@ -79,6 +79,7 @@ spec:
       secretName: {{ .Values.ingress.tls.secretName | required "ingress.tls.secretName must be set when ingress.tls.enabled=true" }}
   {{- end }}
 {{- end }}
+{{- /* / katta start addition */}}
 {{- if and .Values.minio.enabled .Values.urls.s3.public }}
 {{- $s3Host := regexReplaceAll "^https?://([^:/]+).*" .Values.urls.s3.public "${1}" }}
 {{- /* S3 path-style addressing ignores any base path — clients hit the host root, and the seeded profile stores only scheme/host/port. So S3 cannot be served under a subpath: a subpath ingress would 404 the client's root requests (surfacing as a confusing CORS error). Fail fast; use urls.minio.public for the console subpath instead. */}}
@@ -158,4 +159,5 @@ spec:
       secretName: {{ .Values.ingress.tls.secretName | required "ingress.tls.secretName must be set when ingress.tls.enabled=true" }}
   {{- end }}
 {{- end }}
+{{- /* \ katta end addition */}}
 {{- end }}

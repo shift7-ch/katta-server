@@ -15,9 +15,9 @@ metadata:
     "helm.sh/resource-policy": keep
 data:
   {{- if $staticEnabled }}
-  profileId: {{ include "katta-server.resolvedMinioProfileId" . | quote }}
+  profileId: {{ include "katta-server.resolvedMinioProfileId.S3STATIC" . | quote }}
   {{- end }}
   {{- if $stsEnabled }}
-  stsProfileId: {{ include "katta-server.resolvedMinioStsProfileId" . | quote }}
+  stsProfileId: {{ include "katta-server.resolvedMinioProfileId.S3STS" . | quote }}
   {{- end }}
 {{- end }}

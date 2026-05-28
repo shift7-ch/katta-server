@@ -34,7 +34,7 @@ minikube addons enable ingress
 helm install katta chart \
   --namespace katta \
   --create-namespace \
-  -f charts/cryptomator-hub/values-demo.yaml
+  -f chart/values-demo.yaml
 ```
 
 In a separate terminal, expose the ingress controller on `localhost:9090`:
@@ -61,7 +61,7 @@ If the demo's pinned proxy ClusterIP `10.96.250.250` collides with something in 
 Assumes a real domain with public DNS and a **pre-existing Traefik ingress controller** in the cluster — this chart only registers `Ingress` and `Middleware` resources against it; it does not install Traefik. Confirm the `IngressClass` you want to use (`kubectl get ingressclass`) and substitute its name below if it isn't `traefik`.
 
 ```bash
-helm install katta charts/cryptomator-hub \
+helm install katta chart \
   --namespace katta \
   --create-namespace \
   --wait --timeout 5m \

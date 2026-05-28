@@ -36,6 +36,9 @@ urls:
 ingress:
   controller: "nginx"
   className: "nginx"
+  controllerService:
+    name: ingress-nginx-controller
+    namespace: ingress-nginx
   proxy:
     # Pin the port-translation proxy's ClusterIP so hostAliases on Hub/MinIO pods are
     # populated on the FIRST `helm install` (without a pin, the IP is only discoverable

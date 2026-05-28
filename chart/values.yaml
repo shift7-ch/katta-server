@@ -33,8 +33,8 @@ ingress:
   # resource at render time to discover the controller's pod IPs, which are used by
   # the chart-managed port-translation proxy (see ingress.proxy below).
   controllerService:
-    name: ingress-nginx-controller
-    namespace: ingress-nginx
+    name: ""
+    namespace: ""
   # Port-translation proxy. The ingress controller serves on port 80 cluster-internally,
   # but urls.*.public often specify a non-standard port (e.g. 9090) so external clients
   # don't need privileged ports. To make the same URL+port work inside pods, the chart
@@ -56,6 +56,7 @@ hub:
   service:
     type: ClusterIP
     port: 8080
+    managementPort: 9000
   resources:
     requests:
       cpu: 50m
@@ -65,11 +66,6 @@ hub:
   config:
     keycloakRealm: cryptomator
     keycloakSyncerPeriod: 5m
-    # Hub's Content-Security-Policy response header. When blank, the chart auto-composes
-    # a policy that lets the SPA fetch from every origin in `urls.*.public` (in addition
-    # to `'self'` and `api.cryptomator.org`). Set explicitly to lock down or extend in
-    # production; an explicit value is used verbatim and the auto-composed list is not
-    # applied. Maps to QUARKUS_HTTP_HEADER__CONTENT_SECURITY_POLICY__VALUE on the pod.
     contentSecurityPolicy: ""
   metrics:
     # Hub ships metrics, traces and logs via OpenTelemetry / OTLP.
@@ -157,6 +153,8 @@ postgres:
     adminUsername: postgres
     adminPassword: ""
 
+# KATTA ADDITION:
+#
 # Bundled MinIO (off by default). When enabled, the storageProfileSeed Job will
 # auto-register a matching S3STATIC profile in the Hub database.
 minio:
@@ -205,6 +203,8 @@ minio:
     # request host so MinIO can fetch JWKS in-cluster without going through ingress.
     configUrl: ""
 
+# KATTA ADDITION:
+#
 # Seeds an S3STATIC profile (and optionally an S3STS profile) pointing at the bundled
 # MinIO via a post-install/post-upgrade Helm hook Job. Only takes effect when
 # minio.enabled=true.
