@@ -2,22 +2,22 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: {{ include "katta-server.fullname" . }}-minio
+  name: {{ include "cryptomator-hub.fullname" . }}-minio
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "katta-server.labels" . | nindent 4 }}
+    {{- include "cryptomator-hub.labels" . | nindent 4 }}
     app.kubernetes.io/component: minio
 spec:
   replicas: 1
-  serviceName: {{ include "katta-server.fullname" . }}-service-minio
+  serviceName: {{ include "cryptomator-hub.fullname" . }}-service-minio
   selector:
     matchLabels:
-      {{- include "katta-server.selectorLabels" . | nindent 6 }}
+      {{- include "cryptomator-hub.selectorLabels" . | nindent 6 }}
       app.kubernetes.io/component: minio
   template:
     metadata:
       labels:
-        {{- include "katta-server.selectorLabels" . | nindent 8 }}
+        {{- include "cryptomator-hub.selectorLabels" . | nindent 8 }}
         app.kubernetes.io/component: minio
       annotations:
         checksum/minio-secret: {{ include (print $.Template.BasePath "/minio-secret.yaml") . | sha256sum }}
@@ -50,12 +50,12 @@ spec:
             - name: MINIO_ROOT_USER
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "katta-server.fullname" . }}-secrets-minio
+                  name: {{ include "cryptomator-hub.fullname" . }}-secrets-minio
                   key: minio_root_user
             - name: MINIO_ROOT_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "katta-server.fullname" . }}-secrets-minio
+                  name: {{ include "cryptomator-hub.fullname" . }}-secrets-minio
                   key: minio_root_password
             {{- if .Values.urls.minio.public }}
             # Lets the MinIO Console emit its public URL in HTML/redirects instead of the
@@ -97,7 +97,7 @@ spec:
     - metadata:
         name: data
         labels:
-          {{- include "katta-server.labels" . | nindent 10 }}
+          {{- include "cryptomator-hub.labels" . | nindent 10 }}
           app.kubernetes.io/component: minio
       spec:
         accessModes:

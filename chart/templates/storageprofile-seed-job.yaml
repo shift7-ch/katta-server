@@ -2,10 +2,10 @@
 {{- $stsEnabled := .Values.storageProfileSeed.sts.enabled -}}
 {{- $openidEnabled := .Values.minio.openid.enabled -}}
 {{- if and .Values.minio.enabled (or $staticEnabled $stsEnabled) }}
-{{- $fullname := include "katta-server.fullname" . -}}
+{{- $fullname := include "cryptomator-hub.fullname" . -}}
 {{- $hubReadyUrl := printf "http://%s-service-hub:%v/q/health/ready" $fullname .Values.hub.service.managementPort -}}
 {{- $hubUrl := printf "http://%s-service-hub:%v" $fullname .Values.hub.service.port -}}
-{{- $kcUrl := include "katta-server.keycloakLocalUrl" . | trimSuffix "/" -}}
+{{- $kcUrl := include "cryptomator-hub.keycloakLocalUrl" . | trimSuffix "/" -}}
 {{- $minioInternalUrl := printf "http://%s-service-minio:%v" $fullname (int .Values.minio.service.apiPort) -}}
 {{- $oidcConfigUrl := include "katta-server.minioOidcConfigUrl" . -}}
 {{- $profileId := include "katta-server.resolvedMinioProfileId.S3STATIC" . -}}
@@ -25,7 +25,7 @@ metadata:
   name: {{ $fullname }}-storageprofile-seed
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "katta-server.labels" . | nindent 4 }}
+    {{- include "cryptomator-hub.labels" . | nindent 4 }}
     app.kubernetes.io/component: storageprofile-seed
   annotations:
     "helm.sh/hook": post-install,post-upgrade
@@ -37,7 +37,7 @@ spec:
   template:
     metadata:
       labels:
-        {{- include "katta-server.selectorLabels" . | nindent 8 }}
+        {{- include "cryptomator-hub.selectorLabels" . | nindent 8 }}
         app.kubernetes.io/component: storageprofile-seed
     spec:
       restartPolicy: OnFailure

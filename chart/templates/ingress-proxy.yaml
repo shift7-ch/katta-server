@@ -1,5 +1,5 @@
 {{- if eq (include "katta-server.proxyEnabled" .) "true" }}
-{{- $name := printf "%s-ingress-proxy" (include "katta-server.fullname" .) -}}
+{{- $name := printf "%s-ingress-proxy" (include "cryptomator-hub.fullname" .) -}}
 {{- $port := include "katta-server.localhostPort" . | int -}}
 {{- $podIPs := include "katta-server.ingressControllerPodIPs" . | fromJsonArray -}}
 # Port-translation proxy for *.localhost URLs.
@@ -20,7 +20,7 @@ metadata:
   name: {{ $name }}
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "katta-server.labels" . | nindent 4 }}
+    {{- include "cryptomator-hub.labels" . | nindent 4 }}
     app.kubernetes.io/component: ingress-proxy
 spec:
   type: ClusterIP
@@ -39,7 +39,7 @@ metadata:
   name: {{ $name }}
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "katta-server.labels" . | nindent 4 }}
+    {{- include "cryptomator-hub.labels" . | nindent 4 }}
     app.kubernetes.io/component: ingress-proxy
     # Required for the EndpointSlice to be associated with the Service above.
     kubernetes.io/service-name: {{ $name }}

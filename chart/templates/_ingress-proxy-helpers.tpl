@@ -112,7 +112,7 @@ ingress.proxy.clusterIP from values (deterministic on first install); falls back
 {{- if .Values.ingress.proxy.clusterIP -}}
 {{- .Values.ingress.proxy.clusterIP -}}
 {{- else -}}
-{{- $name := printf "%s-ingress-proxy" (include "katta-server.fullname" .) -}}
+{{- $name := printf "%s-ingress-proxy" (include "cryptomator-hub.fullname" .) -}}
 {{- $svc := lookup "v1" "Service" .Release.Namespace $name -}}
 {{- if and $svc $svc.spec $svc.spec.clusterIP -}}
 {{- $svc.spec.clusterIP -}}

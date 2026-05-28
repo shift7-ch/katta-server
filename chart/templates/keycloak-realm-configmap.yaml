@@ -2,13 +2,13 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ include "katta-server.fullname" . }}-config-kc
+  name: {{ include "cryptomator-hub.fullname" . }}-config-kc
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "katta-server.labels" . | nindent 4 }}
+    {{- include "cryptomator-hub.labels" . | nindent 4 }}
 data:
   KC_DB: "postgres"
-  KC_DB_URL: {{ if .Values.postgres.enabled }}{{ printf "jdbc:postgresql://%s:%v/%s" (print (include "katta-server.fullname" .) "-service-pg") .Values.postgres.service.port .Values.keycloak.database.name | quote }}{{ else }}{{ required "keycloak.database.jdbcUrl must be set when keycloak.enabled=true and postgres.enabled=false" .Values.keycloak.database.jdbcUrl | quote }}{{ end }}
+  KC_DB_URL: {{ if .Values.postgres.enabled }}{{ printf "jdbc:postgresql://%s:%v/%s" (print (include "cryptomator-hub.fullname" .) "-service-pg") .Values.postgres.service.port .Values.keycloak.database.name | quote }}{{ else }}{{ required "keycloak.database.jdbcUrl must be set when keycloak.enabled=true and postgres.enabled=false" .Values.keycloak.database.jdbcUrl | quote }}{{ end }}
   KC_DB_USERNAME: {{ .Values.keycloak.database.username | quote }}
   KC_BOOTSTRAP_ADMIN_USERNAME: {{ .Values.keycloak.admin.username | quote }}
   KC_HEALTH_ENABLED: "true"

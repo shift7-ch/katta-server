@@ -2,10 +2,10 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "katta-server.fullname" . }}-kc
+  name: {{ include "cryptomator-hub.fullname" . }}-kc
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "katta-server.labels" . | nindent 4 }}
+    {{- include "cryptomator-hub.labels" . | nindent 4 }}
     app.kubernetes.io/component: keycloak
 spec:
   replicas: 1
@@ -15,12 +15,12 @@ spec:
     type: Recreate
   selector:
     matchLabels:
-      {{- include "katta-server.selectorLabels" . | nindent 6 }}
+      {{- include "cryptomator-hub.selectorLabels" . | nindent 6 }}
       app.kubernetes.io/component: keycloak
   template:
     metadata:
       labels:
-        {{- include "katta-server.selectorLabels" . | nindent 8 }}
+        {{- include "cryptomator-hub.selectorLabels" . | nindent 8 }}
         app.kubernetes.io/component: keycloak
       annotations:
         checksum/keycloak-secret: {{ include (print $.Template.BasePath "/keycloak-secret.yaml") . | sha256sum }}
@@ -44,7 +44,7 @@ spec:
           args:
             - |
               set -eux
-              until nc -zw 10 {{ include "katta-server.fullname" . }}-service-pg {{ .Values.postgres.service.port }}; do
+              until nc -zw 10 {{ include "cryptomator-hub.fullname" . }}-service-pg {{ .Values.postgres.service.port }}; do
                 echo "waiting for postgres..."
               done
       {{- end }}
@@ -68,16 +68,16 @@ spec:
             - name: KC_DB_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "katta-server.fullname" . }}-secrets-kc
+                  name: {{ include "cryptomator-hub.fullname" . }}-secrets-kc
                   key: kc_db_password
             - name: KC_BOOTSTRAP_ADMIN_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ include "katta-server.fullname" . }}-secrets-kc
+                  name: {{ include "cryptomator-hub.fullname" . }}-secrets-kc
                   key: kc_admin_password
           envFrom:
             - configMapRef:
-                name: {{ include "katta-server.fullname" . }}-config-kc
+                name: {{ include "cryptomator-hub.fullname" . }}-config-kc
           startupProbe:
             httpGet:
               path: /health/started
@@ -124,7 +124,7 @@ spec:
           emptyDir: {}
         - name: realm
           secret:
-            secretName: {{ include "katta-server.fullname" . }}-secrets-kc
+            secretName: {{ include "cryptomator-hub.fullname" . }}-secrets-kc
             items:
               - key: realm.json
                 path: realm.json

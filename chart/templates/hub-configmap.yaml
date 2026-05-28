@@ -1,14 +1,14 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ include "katta-server.fullname" . }}-config-hub
+  name: {{ include "cryptomator-hub.fullname" . }}-config-hub
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "katta-server.labels" . | nindent 4 }}
+    {{- include "cryptomator-hub.labels" . | nindent 4 }}
 data:
-  HUB_PUBLIC_ROOT_PATH: {{ include "katta-server.hubRelativePath" . | trimSuffix "/" | printf "%s/" | quote }}
+  HUB_PUBLIC_ROOT_PATH: {{ include "cryptomator-hub.hubRelativePath" . | trimSuffix "/" | printf "%s/" | quote }}
   HUB_KEYCLOAK_PUBLIC_URL: {{ .Values.urls.kc.public | quote }}
-  HUB_KEYCLOAK_LOCAL_URL: {{ include "katta-server.keycloakLocalUrl" . | quote }}
+  HUB_KEYCLOAK_LOCAL_URL: {{ include "cryptomator-hub.keycloakLocalUrl" . | quote }}
   HUB_KEYCLOAK_REALM: {{ .Values.hub.config.keycloakRealm | quote }}
   HUB_KEYCLOAK_SYSTEM_CLIENT_ID: "cryptomatorhub-system"
   HUB_KEYCLOAK_SYNCER_PERIOD: {{ .Values.hub.config.keycloakSyncerPeriod | quote }}
@@ -27,10 +27,10 @@ data:
   {{- if .Values.urls.billing.public }}
   HUB_BILLING_URL: {{ .Values.urls.billing.public | quote }}
   {{- end }}
-  QUARKUS_OIDC_AUTH_SERVER_URL: {{ include "katta-server.oidcAuthServerUrl" . | quote }}
-  QUARKUS_OIDC_TOKEN_ISSUER: {{ include "katta-server.oidcTokenIssuer" . | quote }}
+  QUARKUS_OIDC_AUTH_SERVER_URL: {{ include "cryptomator-hub.oidcAuthServerUrl" . | quote }}
+  QUARKUS_OIDC_TOKEN_ISSUER: {{ include "cryptomator-hub.oidcTokenIssuer" . | quote }}
   QUARKUS_OIDC_CLIENT_ID: {{ .Values.hub.oidc.clientId | quote }}
-  QUARKUS_DATASOURCE_JDBC_URL: {{ include "katta-server.hubJdbcUrl" . | quote }}
+  QUARKUS_DATASOURCE_JDBC_URL: {{ include "cryptomator-hub.hubJdbcUrl" . | quote }}
   QUARKUS_DATASOURCE_USERNAME: {{ .Values.hub.database.username | quote }}
   QUARKUS_HTTP_PROXY_PROXY_ADDRESS_FORWARDING: "true"
   {{- /* Whole Content-Security-Policy header is assembled here and set via the env-var form of `quarkus.http.header."Content-Security-Policy".value`, overriding the image's application.properties default at runtime (no image rebuild). The browser must reach Keycloak's OIDC endpoints; when Keycloak is on a different origin than Hub (subdomain routing) that origin must be in connect-src. Origin only (scheme://host:port); a CSP source with a path would match only that exact path. */}}
@@ -51,7 +51,7 @@ data:
   {{- if .Values.hub.metrics.enabled }}
   QUARKUS_OTEL_EXPORTER_OTLP_ENDPOINT: {{ .Values.hub.metrics.endpoint | required "hub.metrics.endpoint must be set when hub.metrics.enabled=true" | quote }}
   QUARKUS_OTEL_EXPORTER_OTLP_PROTOCOL: {{ .Values.hub.metrics.protocol | required "hub.metrics.protocol must be set when hub.metrics.enabled=true" | quote }}
-  {{- $attrs := dict "service.name" (include "katta-server.fullname" .) "service.version" .Chart.AppVersion -}}
+  {{- $attrs := dict "service.name" (include "cryptomator-hub.fullname" .) "service.version" .Chart.AppVersion -}}
   {{- range $k, $v := .Values.hub.metrics.resourceAttributes }}{{- $_ := set $attrs $k $v }}{{- end }}
   {{- $pairs := list }}
   {{- range $k := keys $attrs | sortAlpha }}{{- $pairs = append $pairs (printf "%s=%v" $k (index $attrs $k)) }}{{- end }}

@@ -2,15 +2,15 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "katta-server.fullname" . }}-service-pg
+  name: {{ include "cryptomator-hub.fullname" . }}-service-pg
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "katta-server.labels" . | nindent 4 }}
+    {{- include "cryptomator-hub.labels" . | nindent 4 }}
     app.kubernetes.io/component: postgres
 spec:
   type: {{ .Values.postgres.service.type }}
   selector:
-    {{- include "katta-server.selectorLabels" . | nindent 4 }}
+    {{- include "cryptomator-hub.selectorLabels" . | nindent 4 }}
     app.kubernetes.io/component: postgres
   ports:
     - name: postgres

@@ -49,7 +49,7 @@
       "credentials": [
         {
           "type": "password",
-          "value": {{ include "katta-server.resolvedHubAdminPassword" . | quote }},
+          "value": {{ include "cryptomator-hub.resolvedHubAdminPassword" . | quote }},
           "temporary": {{ .Values.hub.admin.passwordTemporary }}
         }
       ],
@@ -248,7 +248,7 @@
       "name": "Katta Server System",
       "enabled": true,
       "clientAuthenticatorType": "client-secret",
-      "secret": {{ include "katta-server.resolvedSystemClientSecret" . | quote }},
+      "secret": {{ include "cryptomator-hub.resolvedSystemClientSecret" . | quote }},
       "standardFlowEnabled": false,
       "fullScopeAllowed": true,
       "protocolMappers": [

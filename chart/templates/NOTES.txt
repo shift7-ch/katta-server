@@ -1,6 +1,6 @@
 {{- $useColor := .Values.notes.useColor }}
 {{- $ns := .Release.Namespace }}
-{{- $release := include "katta-server.fullname" . }}
+{{- $release := include "cryptomator-hub.fullname" . }}
 {{- $hubSecret := printf "%s-secrets-hub" $release }}
 {{- $kcSecret := printf "%s-secrets-kc" $release }}
 {{- $pgSecret := printf "%s-secrets-pg" $release }}
