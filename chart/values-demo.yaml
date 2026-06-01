@@ -1,37 +1,53 @@
 # Demo values: full stack on a local cluster with nginx ingress, including bundled MinIO
 # and a pre-seeded S3STATIC storage profile. Not intended for production.
 #
-# Every public URL is `*.localhost:9090`. macOS + every modern browser resolves
-# *.localhost to 127.0.0.1 (no /etc/hosts edits needed). From inside Hub/MinIO pods,
-# hostAliases (configured automatically) point those names at a chart-managed proxy
-# Service that forwards :9090 to the nginx-ingress-controller on its native port 80.
-# So the same URL works from the browser and from any pod, on a single non-privileged
-# port — no sudo, no /etc/hosts.
+# Hostname split (deliberate):
+#   - Hub UI lives on `hub.localhost`, which browsers treat as a "potentially trustworthy
+#     origin" per the Secure Contexts spec — so WebCrypto (which Hub uses for all its
+#     zero-knowledge crypto) works without HTTPS. macOS + every modern browser already
+#     resolves *.localhost to 127.0.0.1 with no /etc/hosts edits.
+#   - Keycloak, MinIO console, S3 live under the katta-controlled wildcard A-record
+#     `*.local.katta.cloud → 127.0.0.1`. Public DNS handles the browser side; CoreDNS
+#     rewrites (coredns.patch.enabled=true) handle in-cluster resolution to the chart's
+#     port-translation proxy Service, which forwards :9090 to the nginx-ingress-controller
+#     on its native port 80. So the same URL works from the browser AND from any pod.
+#
+# Why not put Hub on `local.katta.cloud` too? Plain HTTP to a public DNS hostname is NOT
+# a secure context — WebCrypto/SubtleCrypto returns undefined and Hub's crypto operations
+# silently fail. Why not put Keycloak/MinIO/S3 on `*.localhost`? Then in-cluster pods
+# couldn't resolve them — `*.localhost` is RFC 6761-special and gets shortcut to 127.0.0.1
+# by resolvers before DNS is consulted, defeating the CoreDNS rewrite. The Mountain Duck
+# desktop client also rejects `*.localhost` URLs outright.
+#
+# Prerequisites:
+# - Single-user local cluster (kind, minikube, k3d, Docker Desktop) — installer needs
+#   cluster-admin so the chart can create a Role+RoleBinding in kube-system for the
+#   CoreDNS-patching Job. Don't use these values on a shared or managed cluster.
+# - nginx-ingress addon enabled (`minikube addons enable ingress` etc.).
 #
 # Deploy:
-#   minikube addons enable ingress           # one-off
-#   helm install katta charts/cryptomator-hub \
+#   helm install katta chart \
 #     --namespace katta --create-namespace \
-#     -f charts/cryptomator-hub/values-demo.yaml
+#     -f chart/values-demo.yaml
 #
 # Port-forward — leave running in a separate terminal:
 #   kubectl port-forward -n ingress-nginx svc/ingress-nginx-controller 9090:80
 #
 # After install, in your browser:
-#   - Hub UI:          http://hub.localhost:9090       (admin / admin)
-#   - Keycloak admin:  http://kc.localhost:9090        (admin / admin)
-#   - MinIO console:   http://minio.localhost:9090     (minioadmin / minioadmin)
-#   - MinIO S3 API:    http://s3.localhost:9090        (used by the seeded storage profile)
+#   - Hub UI:          http://hub.localhost:9090                (admin / admin)
+#   - Keycloak admin:  http://kc.local.katta.cloud:9090         (admin / admin)
+#   - MinIO console:   http://minio.local.katta.cloud:9090      (minioadmin / minioadmin)
+#   - MinIO S3 API:    http://s3.local.katta.cloud:9090         (used by the seeded storage profile)
 
 urls:
   hub:
     public: "http://hub.localhost:9090"
   kc:
-    public: "http://kc.localhost:9090"
+    public: "http://kc.local.katta.cloud:9090"
   minio:
-    public: "http://minio.localhost:9090"
+    public: "http://minio.local.katta.cloud:9090"
   s3:
-    public: "http://s3.localhost:9090"
+    public: "http://s3.local.katta.cloud:9090"
 
 ingress:
   controller: "nginx"
@@ -39,13 +55,10 @@ ingress:
   controllerService:
     name: ingress-nginx-controller
     namespace: ingress-nginx
-  proxy:
-    # Pin the port-translation proxy's ClusterIP so hostAliases on Hub/MinIO pods are
-    # populated on the FIRST `helm install` (without a pin, the IP is only discoverable
-    # after the Service is created, so pod-to-pod routing breaks until the next upgrade).
-    # If this IP collides with something in your cluster, pick another free address in
-    # the Service CIDR (minikube default: 10.96.0.0/12).
-    clusterIP: "10.96.250.250"
+
+coredns:
+  patch:
+    enabled: true
 
 hub:
   admin:

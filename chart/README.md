@@ -24,7 +24,13 @@ Supported ingress controller templates:
 
 ## Quick Start (Local Demo with Bundled MinIO)
 
-The fastest way to spin up a complete Katta stack — Hub + Keycloak + Postgres + MinIO + a pre-seeded storage profile — is via `values-demo.yaml` against any local cluster with the nginx-ingress addon (tested on minikube + Podman).
+The fastest way to spin up a complete Katta stack — Hub + Keycloak + Postgres + MinIO + a pre-seeded storage profile — is via `values-demo.yaml` against any local single-user cluster with the nginx-ingress addon (tested on minikube + Podman).
+
+**Prerequisites:**
+
+- **Single-user local cluster** (kind, minikube, k3d, Docker Desktop). The installer needs cluster-admin: the chart provisions a `Role` + `RoleBinding` in `kube-system` so a post-install hook Job can patch the CoreDNS ConfigMap. Don't use these values on a shared or managed cluster.
+- **nginx-ingress addon enabled** (`minikube addons enable ingress` etc.).
+- Hostname split: Hub UI lives on `hub.localhost` (a browser "secure context" so WebCrypto works without HTTPS); Keycloak, MinIO console, and S3 live under the katta-controlled wildcard A-record `*.local.katta.cloud → 127.0.0.1` (resolvable from inside the cluster via the CoreDNS patch below, which `.localhost` is not — and the desktop client doesn't accept `*.localhost` URLs anyway). Both halves resolve to `127.0.0.1` browser-side without any `/etc/hosts` edits.
 
 ```bash
 # one-off (skip if your cluster already has nginx-ingress)
@@ -48,13 +54,13 @@ Once both commands are running:
 | URL | Credentials |
 |---|---|
 | Hub UI: <http://hub.localhost:9090> | `admin` / `admin` |
-| Keycloak admin: <http://kc.localhost:9090> | `admin` / `admin` |
-| MinIO console: <http://minio.localhost:9090> | `minioadmin` / `minioadmin` |
-| MinIO S3 API: <http://s3.localhost:9090> | (used by the seeded storage profile) |
+| Keycloak admin: <http://kc.local.katta.cloud:9090> | `admin` / `admin` |
+| MinIO console: <http://minio.local.katta.cloud:9090> | `minioadmin` / `minioadmin` |
+| MinIO S3 API: <http://s3.local.katta.cloud:9090> | (used by the seeded storage profile) |
 
-A post-install Helm hook Job (`<release>-storageprofile-seed`) registers an `S3STATIC` storage profile named "Bundled MinIO" pointing at `http://s3.localhost:9090`, so vault creation works end-to-end immediately after install. Re-runs are idempotent (the seed Job treats HTTP 409 as success).
+A post-install Helm hook Job (`<release>-storageprofile-seed`) registers an `S3STATIC` storage profile named "Bundled MinIO" pointing at `http://s3.local.katta.cloud:9090`, so vault creation works end-to-end immediately after install. Re-runs are idempotent (the seed Job treats HTTP 409 as success).
 
-If the demo's pinned proxy ClusterIP `10.96.250.250` collides with something in your cluster, override it: `--set ingress.proxy.clusterIP=<another-free-IP-in-the-Service-CIDR>`.
+**How in-cluster DNS works in demo mode:** the same hostnames the browser uses need to resolve inside the cluster too (MinIO has to fetch Keycloak's OIDC discovery URL, and the issuer it sees must match the browser-facing one). The chart's demo profile sets `coredns.patch.enabled=true`, which runs a post-install hook Job that adds a release-scoped `# BEGIN katta:<release>` / `# END katta:<release>` stanza to `kube-system/coredns`'s Corefile, rewriting `*.local.katta.cloud` queries to the chart's port-translation proxy Service. A matching `pre-delete` Job removes the stanza on `helm uninstall`. CoreDNS's `reload` plugin picks up the change within ~30 s; the apply Job sleeps 45 s as a settling buffer before the storage-profile seed Job runs.
 
 ## Quick Start (Production-shaped, no MinIO, real DNS)
 
@@ -72,7 +78,7 @@ helm install katta chart \
   --set hub.admin.password=changeme
 ```
 
-Real public DNS handles in-cluster resolution naturally (the chart's port-translation proxy stays disabled when URLs use the default ports 80/443), so `hostAliases` is a no-op for production deployments.
+Real public DNS handles in-cluster resolution naturally (the chart's port-translation proxy stays disabled when URLs use the default ports 80/443, and `coredns.patch.enabled` defaults to off), so neither the CoreDNS patch nor the port-translation proxy is created for production deployments.
 
 Passwords are optional by default. If unset, the chart generates random values and
 prints commands in `helm` notes to retrieve them from Kubernetes Secrets.
@@ -116,7 +122,7 @@ MinIO is exposed via ingress only for the hostnames you explicitly configure:
 - Set `urls.s3.public` to expose the **S3 API**. This **must be a dedicated host served at the root** (e.g. `https://s3.example.com`), **not** a subpath. S3 path-style addressing ignores any base path — clients address buckets at the host root (`<host>/<bucket>/<key>`) — and the seeded storage profile stores only scheme/host/port, so a subpath would be silently dropped and the client's root requests would 404 at the ingress (surfacing as a misleading CORS error). The chart **fails fast** if `urls.s3.public` contains a path. This address is baked into the seeded storage profile, so it must resolve for both the Hub pod and external clients.
 - Set `urls.minio.public` to expose the **web console**. Unlike the S3 API, the console *may* be served under a subpath (e.g. `https://minio.example.com/minio`); the chart applies the same strip-prefix routing as Hub/Keycloak and sets `MINIO_BROWSER_REDIRECT_URL` so the console emits correctly-prefixed asset/redirect URLs.
 
-Leave either blank and that ingress isn't created — the corresponding service is then reachable only in-cluster (or via `kubectl port-forward svc/<release>-service-minio 9001:9001` for the console). The demo serves the S3 API at `http://s3.localhost:9090` (its own root host) and the console at `http://minio.localhost:9090/minio`.
+Leave either blank and that ingress isn't created — the corresponding service is then reachable only in-cluster (or via `kubectl port-forward svc/<release>-service-minio 9001:9001` for the console). The demo serves the S3 API at `http://s3.local.katta.cloud:9090` (its own root host) and the console at `http://minio.local.katta.cloud:9090`.
 
 ## Telemetry (OpenTelemetry)
 

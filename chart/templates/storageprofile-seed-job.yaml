@@ -41,7 +41,6 @@ spec:
         app.kubernetes.io/component: storageprofile-seed
     spec:
       restartPolicy: OnFailure
-      {{- include "katta-server.hostAliases" . | nindent 6 }}
       securityContext:
         runAsNonRoot: true
         runAsUser: 100

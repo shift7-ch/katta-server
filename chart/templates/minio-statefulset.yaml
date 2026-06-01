@@ -27,7 +27,6 @@ spec:
         runAsUser: 1000
         runAsGroup: 1000
         fsGroup: 1000
-      {{- include "katta-server.hostAliases" . | nindent 6 }}
       containers:
         - name: minio
           image: "quay.io/minio/minio:{{ .Values.minio.image.tag | default "RELEASE.2025-09-07T16-13-09Z" }}"

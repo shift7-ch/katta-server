@@ -28,11 +28,11 @@
 ⚠️ Ingress is disabled. The URLs above resolve only via in-cluster Services; configure
    ingress manually or `kubectl port-forward` to each Service.
 {{- else }}
-{{- $localhostPort := include "katta-server.localhostPort" . }}
-{{- if $localhostPort }}
+{{- $proxyPort := include "katta-server.proxyPort" . }}
+{{- if $proxyPort }}
 
 To reach them from your host machine, port-forward the ingress controller:
-   kubectl port-forward -n ingress-nginx svc/ingress-nginx-controller {{ $localhostPort }}:80
+   kubectl port-forward -n ingress-nginx svc/ingress-nginx-controller {{ $proxyPort }}:80
 {{- end }}
 {{- end }}
 

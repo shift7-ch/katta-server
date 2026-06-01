@@ -26,7 +26,6 @@ spec:
     spec:
       securityContext:
         runAsNonRoot: true
-      {{- include "katta-server.hostAliases" . | nindent 6 }}
       initContainers:
         - name: wait-for-postgres
           image: busybox:1.36

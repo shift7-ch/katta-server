@@ -1,15 +1,19 @@
 {{/*
 
-Helpers for the chart's port-translation proxy — the mechanism that makes *.localhost:<port>
-URLs reachable from inside the cluster (active only when any urls.*.public is a *.localhost
-host on a non-default port, i.e. the local-demo mode). Together with templates/ingress-proxy.yaml
-this forms a self-contained subsystem: ingressControllerPodIPs / localhostHosts / localhostPort /
-proxyServiceIP / proxyEnabled are internal plumbing; hostAliases is what the consumer pods
-(Hub / MinIO / seed Job) actually include in their podSpec.
+Helpers for the chart's port-translation proxy — the mechanism that makes a public URL
+served on a non-default port (e.g. http://kc.local.katta.cloud:9090) reachable from
+INSIDE the cluster. Together with templates/ingress-proxy.yaml this forms a self-contained
+subsystem: ingressControllerPodIPs / proxyPort / proxyServiceIP are internal plumbing;
+proxyEnabled is the single gate used by ingress-proxy.yaml itself.
 
-These defines are split into their own file so the cluster is easy to find, audit, and eventually
-peel out as a separate subchart. They're still resolved globally by Helm, so callers in other
-templates work unchanged.
+DNS resolution for the public hostnames is handled separately by templates/coredns-patch.yaml
+(CoreDNS rewrite plugin), not by per-pod hostAliases. This file used to emit hostAliases
+back when the demo ran on *.localhost names (RFC 6761 forces /etc/hosts plumbing); those
+helpers are gone now that the demo uses real DNS names.
+
+These defines live in their own file so the cluster is easy to find, audit, and eventually
+peel out as a separate subchart. They're still resolved globally by Helm, so callers in
+other templates work unchanged.
 
 */}}
 
@@ -56,44 +60,26 @@ list of IPs (deduped, only `ready` endpoints), or empty if the lookup fails (e.g
 
 {{/*
 
-Collect the set of hostnames from .Values.urls.*.public whose host portion is a
-*.localhost subdomain (excluding bare "localhost"). These are the names we want to
-add to pod hostAliases so internal calls route through the ingress.
+Extract the first non-default port from .Values.urls.*.public. The proxy listens on
+exactly one port (the same port every public URL is expected to use), so we just need
+to find it once. Returns the empty string if every URL uses the implicit/default port
+(80 for http, 443 for https) — in which case the proxy is unnecessary and proxyEnabled
+returns false.
 
 */}}
-{{- define "katta-server.localhostHosts" -}}
-{{- $hostSet := dict -}}
-{{- range $name, $cfg := .Values.urls -}}
-  {{- if (and (kindIs "map" $cfg) (hasKey $cfg "public")) -}}
-    {{- $public := index $cfg "public" -}}
-    {{- if $public -}}
-      {{- $host := regexReplaceAll "^https?://([^:/]+).*" $public "${1}" -}}
-      {{- if and $host (ne $host "localhost") (hasSuffix ".localhost" $host) -}}
-        {{- $_ := set $hostSet $host true -}}
-      {{- end -}}
-    {{- end -}}
-  {{- end -}}
-{{- end -}}
-{{- keys $hostSet | sortAlpha | toJson -}}
-{{- end -}}
-
-{{/*
-
-Extract the port from the first *.localhost URL in .Values.urls.*.public. All such URLs
-are expected to share the same port (the chart's ingress proxy listens on exactly one
-port). Returns the empty string if there is no port (implicit 80) or no *.localhost URLs.
-
-*/}}
-{{- define "katta-server.localhostPort" -}}
+{{- define "katta-server.proxyPort" -}}
 {{- $port := "" -}}
 {{- range $name, $cfg := .Values.urls -}}
   {{- if (and (kindIs "map" $cfg) (hasKey $cfg "public") (eq $port "")) -}}
     {{- $public := index $cfg "public" -}}
     {{- if $public -}}
-      {{- $host := regexReplaceAll "^https?://([^:/]+).*" $public "${1}" -}}
-      {{- if and $host (ne $host "localhost") (hasSuffix ".localhost" $host) -}}
-        {{- $portMatch := regexReplaceAll "^https?://[^:/]+(?::(\\d+))?.*" $public "${1}" -}}
-        {{- if $portMatch -}}{{- $port = $portMatch -}}{{- end -}}
+      {{- $scheme := regexReplaceAll "^(https?)://.*" $public "${1}" -}}
+      {{- $portMatch := regexReplaceAll "^https?://[^:/]+(?::(\\d+))?.*" $public "${1}" -}}
+      {{- if $portMatch -}}
+        {{- $defaultPort := ternary "443" "80" (eq $scheme "https") -}}
+        {{- if ne $portMatch $defaultPort -}}
+          {{- $port = $portMatch -}}
+        {{- end -}}
       {{- end -}}
     {{- end -}}
   {{- end -}}
@@ -122,41 +108,14 @@ ingress.proxy.clusterIP from values (deterministic on first install); falls back
 
 {{/*
 
-True when the chart should create the port-translation proxy. We create it when there
-are *.localhost URLs with a non-default port AND we can resolve the in-cluster ingress
-controller IP to populate the EndpointSlice.
+True when the chart should create the port-translation proxy. We create it whenever
+any urls.*.public uses a non-default port (so the public URL doesn't naturally work
+from inside the cluster) AND we can resolve the in-cluster ingress controller's pod
+IPs to populate the proxy's EndpointSlice.
 
 */}}
 {{- define "katta-server.proxyEnabled" -}}
-{{- $hosts := include "katta-server.localhostHosts" . | fromJsonArray -}}
-{{- $port := include "katta-server.localhostPort" . -}}
+{{- $port := include "katta-server.proxyPort" . -}}
 {{- $podIPs := include "katta-server.ingressControllerPodIPs" . | fromJsonArray -}}
-{{- if and $hosts $port $podIPs -}}true{{- end -}}
-{{- end -}}
-
-{{/*
-
-Emit a `hostAliases:` YAML block (suitable for pod spec) that points every collected
-*.localhost host at the chart's port-translation proxy Service. Emits nothing if there
-are no matching hosts or the proxy isn't enabled (no non-default port, or the ingress
-controller's Endpoints couldn't be discovered).
-
-Usage:
-  spec:
-    {{- include "katta-server.hostAliases" . | nindent N }}
-
-*/}}
-{{- define "katta-server.hostAliases" -}}
-{{- if eq (include "katta-server.proxyEnabled" .) "true" -}}
-{{- $hosts := include "katta-server.localhostHosts" . | fromJsonArray -}}
-{{- $ip := include "katta-server.proxyServiceIP" . -}}
-{{- if and $ip $hosts -}}
-hostAliases:
-  - ip: {{ $ip | quote }}
-    hostnames:
-{{- range $h := $hosts }}
-      - {{ $h | quote }}
-{{- end }}
-{{- end -}}
-{{- end -}}
+{{- if and $port $podIPs -}}true{{- end -}}
 {{- end -}}
