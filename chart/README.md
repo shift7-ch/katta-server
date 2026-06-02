@@ -124,6 +124,27 @@ MinIO is exposed via ingress only for the hostnames you explicitly configure:
 
 Leave either blank and that ingress isn't created — the corresponding service is then reachable only in-cluster (or via `kubectl port-forward svc/<release>-service-minio 9001:9001` for the console). The demo serves the S3 API at `http://s3.local.katta.cloud:9090` (its own root host) and the console at `http://minio.local.katta.cloud:9090`.
 
+### MinIO IdP debugging
+
+````shell
+mc alias set helm http://s3.local.katta.cloud:9090 minioadmin minioadmin
+mc idp openid ls helm                                                                                                                                                                                                                                                                                                         a05d2a4c
+╭──────────────────────────────────────────────────────────────────────────╮
+│ On?        Name                             RoleARN                      │
+│ 🔴           (default)                                                   │
+│ 🟢         cryptomator  arn:minio:iam:::role/IqZpDC5ahW_DCAvZPZA4ACjEnDE │
+│ 🟢      cryptomatorhub  arn:minio:iam:::role/HGKdlY4eFFsXVvJmwlMYMhmbnDE │
+│ 🟢   cryptomatorvaults  arn:minio:iam:::role/Hdms6XDZ6oOpuWYI3gu4gmgHN94 │
+╰──────────────────────────────────────────────────────────────────────────╯
+mc admin policy list helm
+# ...
+mc admin policy info helm katta_access_bucket_policy                                                                                                                                                                                                                                                                          a05d2a4c
+# {
+#  "PolicyName": "katta_access_bucket_policy",
+# ...
+# }
+```
+
 ## Telemetry (OpenTelemetry)
 
 Hub exports metrics, traces and logs via OpenTelemetry / OTLP. Telemetry is **off by default**; enable it via:
