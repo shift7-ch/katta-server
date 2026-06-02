@@ -149,6 +149,7 @@
       "enabled": true,
       "redirectUris": [
         "http://127.0.0.1/*",
+        "x-katta-action:oauth",
         "org.cryptomator.ios:/hub/auth",
         "org.cryptomator.android:/hub/auth"
       ],
