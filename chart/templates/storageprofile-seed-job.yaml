@@ -130,7 +130,7 @@ spec:
                 case "$output" in
                   *"arn:minio:iam:::role/"*)
                     rest="${output#*arn:minio:iam:::role/}"
-                    arn_id="${rest%%[!A-Za-z0-9]*}"
+                    arn_id="${rest%%[!A-Za-z0-9_]*}"
                     if [ -n "$arn_id" ]; then
                       printf '%s' "arn:minio:iam:::role/$arn_id"
                       return 0
