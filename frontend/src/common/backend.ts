@@ -312,7 +312,7 @@ export type StorageProfileDto = {
 export type VaultMetadataJWEBackendDto = {
   provider: string;
 
-  defaultPath: string;
+  bucket: string;
   nickname: string;
 
   region: string;
