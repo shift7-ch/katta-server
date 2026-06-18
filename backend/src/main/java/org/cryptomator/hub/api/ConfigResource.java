@@ -15,6 +15,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Optional;
 
 @Path("/config")
 public class ConfigResource {
@@ -39,6 +40,11 @@ public class ConfigResource {
     @Inject
     @ConfigProperty(name = "hub.keycloak.oidc.cryptomator-vaults-client-id", defaultValue = "")
     String keycloakClientIdCryptomatorVaults;
+
+    // Optional<String> because SmallRye converts the empty default to null, which fails a non-Optional String @ConfigProperty (SRCFG00040).
+    @Inject
+    @ConfigProperty(name = "hub.download-url.desktop")
+    Optional<String> desktopDownloadUrl;
 
     @Inject
     Settings.Repository settingsRepo;
@@ -71,6 +77,7 @@ public class ConfigResource {
                 // / start katta extension
                 , keycloakClientIdCryptomatorVaults
                 , settingsRepo.get().getHubId()
+                , desktopDownloadUrl.orElse("")
                 // \ end katta extension
         );
     }
@@ -106,6 +113,7 @@ public class ConfigResource {
                             // / start katta extension
             , @JsonProperty("keycloakClientIdCryptomatorVaults") String keycloakClientIdCryptomatorVaults
             , @JsonProperty("uuid") String uuid
+            , @JsonProperty("desktopDownloadUrl") String desktopDownloadUrl
                             // \ end katta extension
     ) {
     }
