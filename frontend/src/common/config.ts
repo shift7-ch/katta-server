@@ -35,7 +35,8 @@ export type ConfigDto = {
   };
   billingUrl: string;
   // / start katta extension
-  desktopDownloadUrl: string;
+  desktopDownloadUrlMac: string;
+  desktopDownloadUrlWin: string;
   // \ end katta extension
 };
 

@@ -37,10 +37,25 @@
           <p class="mt-1 text-sm text-gray-500">
             {{ t('onboarding.download.description') }}
           </p>
-          <a :href="downloadUrl" target="_blank" rel="noopener" class="mt-3 inline-flex w-full justify-center items-center rounded-md border border-transparent bg-primary px-4 py-2 text-base font-medium text-white shadow-xs hover:bg-primary-d1 focus:outline-hidden focus:ring-2 focus:ring-primary focus:ring-offset-2 sm:text-sm">
-            <ArrowDownTrayIcon class="-ml-1 mr-2 h-5 w-5 shrink-0" aria-hidden="true" />
-            {{ t('onboarding.download.button') }}
-          </a>
+          <template v-if="primaryOS">
+            <a :href="primaryHref" target="_blank" rel="noopener" class="mt-3 inline-flex w-full justify-center items-center rounded-md border border-transparent bg-primary px-4 py-2 text-base font-medium text-white shadow-xs hover:bg-primary-d1 focus:outline-hidden focus:ring-2 focus:ring-primary focus:ring-offset-2 sm:text-sm">
+              <ArrowDownTrayIcon class="-ml-1 mr-2 h-5 w-5 shrink-0" aria-hidden="true" />
+              {{ t(primaryLabelKey) }}
+            </a>
+            <a v-if="alternateOS" :href="alternateHref" target="_blank" rel="noopener" class="mt-3 block text-center text-sm font-medium text-primary hover:text-primary-d1">
+              {{ t(alternateLabelKey) }}
+            </a>
+          </template>
+          <template v-else>
+            <a :href="macUrl" target="_blank" rel="noopener" class="mt-3 inline-flex w-full justify-center items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-base font-medium text-gray-700 shadow-xs hover:bg-gray-50 focus:outline-hidden focus:ring-2 focus:ring-primary focus:ring-offset-2 sm:text-sm">
+              <ArrowDownTrayIcon class="-ml-1 mr-2 h-5 w-5 shrink-0" aria-hidden="true" />
+              {{ t('onboarding.download.mac') }}
+            </a>
+            <a :href="winUrl" target="_blank" rel="noopener" class="mt-3 inline-flex w-full justify-center items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-base font-medium text-gray-700 shadow-xs hover:bg-gray-50 focus:outline-hidden focus:ring-2 focus:ring-primary focus:ring-offset-2 sm:text-sm">
+              <ArrowDownTrayIcon class="-ml-1 mr-2 h-5 w-5 shrink-0" aria-hidden="true" />
+              {{ t('onboarding.download.win') }}
+            </a>
+          </template>
         </div>
 
         <div>
@@ -75,11 +90,40 @@ import { ArrowDownTrayIcon, ArrowTopRightOnSquareIcon } from '@heroicons/vue/20/
 import { useI18n } from 'vue-i18n';
 import config from '../../common/config';
 import { openInKatta } from '../../common/deeplink';
+import { detectOS } from '../../common/os';
 
 const { t } = useI18n({ useScope: 'global' });
 
-const downloadUrl = config.get().desktopDownloadUrl;
-const downloadAvailable = downloadUrl.length > 0;
+const macUrl = config.get().desktopDownloadUrlMac;
+const winUrl = config.get().desktopDownloadUrlWin;
+const downloadAvailable = macUrl.length > 0 || winUrl.length > 0;
+
+const primaryOS = resolvePrimaryOS();
+const alternateOS = primaryOS === 'mac' && winUrl.length > 0 ? 'win'
+  : primaryOS === 'win' && macUrl.length > 0 ? 'mac'
+    : null;
+const primaryHref = primaryOS === 'mac' ? macUrl : winUrl;
+const primaryLabelKey = `onboarding.download.${primaryOS}`;
+const alternateHref = alternateOS === 'mac' ? macUrl : winUrl;
+const alternateLabelKey = alternateOS === 'mac' ? 'onboarding.download.alternateMac' : 'onboarding.download.alternateWin';
+
+// Lead with the detected platform's build when its URL is configured, otherwise the single configured platform; both configured but no match falls through to two equal buttons.
+function resolvePrimaryOS(): 'mac' | 'win' | null {
+  const detectedOS = detectOS();
+  if (detectedOS === 'mac' && macUrl.length > 0) {
+    return 'mac';
+  }
+  if (detectedOS === 'win' && winUrl.length > 0) {
+    return 'win';
+  }
+  if (macUrl.length > 0 && winUrl.length === 0) {
+    return 'mac';
+  }
+  if (winUrl.length > 0 && macUrl.length === 0) {
+    return 'win';
+  }
+  return null;
+}
 
 function openBookmark() {
   try {

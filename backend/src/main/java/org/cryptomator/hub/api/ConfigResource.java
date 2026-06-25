@@ -43,8 +43,12 @@ public class ConfigResource {
 
     // Optional<String> because SmallRye converts the empty default to null, which fails a non-Optional String @ConfigProperty (SRCFG00040).
     @Inject
-    @ConfigProperty(name = "hub.download-url.desktop")
-    Optional<String> desktopDownloadUrl;
+    @ConfigProperty(name = "hub.download-url.desktop.mac")
+    Optional<String> desktopDownloadUrlMac;
+
+    @Inject
+    @ConfigProperty(name = "hub.download-url.desktop.win")
+    Optional<String> desktopDownloadUrlWin;
 
     @Inject
     Settings.Repository settingsRepo;
@@ -77,7 +81,8 @@ public class ConfigResource {
                 // / start katta extension
                 , keycloakClientIdCryptomatorVaults
                 , settingsRepo.get().getHubId()
-                , desktopDownloadUrl.orElse("")
+                , desktopDownloadUrlMac.orElse("")
+                , desktopDownloadUrlWin.orElse("")
                 // \ end katta extension
         );
     }
@@ -113,7 +118,8 @@ public class ConfigResource {
                             // / start katta extension
             , @JsonProperty("keycloakClientIdCryptomatorVaults") String keycloakClientIdCryptomatorVaults
             , @JsonProperty("uuid") String uuid
-            , @JsonProperty("desktopDownloadUrl") String desktopDownloadUrl
+            , @JsonProperty("desktopDownloadUrlMac") String desktopDownloadUrlMac
+            , @JsonProperty("desktopDownloadUrlWin") String desktopDownloadUrlWin
                             // \ end katta extension
     ) {
     }
