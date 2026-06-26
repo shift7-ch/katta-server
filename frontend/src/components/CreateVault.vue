@@ -1097,11 +1097,11 @@ async function createVault() {
         uvfVault.value.metadata.backend.region = selectedRegion.value;
         uvfVault.value.metadata.automaticAccessGrant.enabled = automaticAccessGrant.value;
         if (storageProfile.protocol === 'S3STS') {
-          uvfVault.value.metadata.backend.defaultPath = storageProfile.bucketPrefix + vault.value.id;
+          uvfVault.value.metadata.backend.bucket = storageProfile.bucketPrefix + vault.value.id;
         } else if (storageProfile.protocol === 'S3STATIC') {
           uvfVault.value.metadata.backend.username = vaultAccessKeyId.value;
           uvfVault.value.metadata.backend.password = vaultSecretKey.value;
-          uvfVault.value.metadata.backend.defaultPath = vaultBucketName.value;
+          uvfVault.value.metadata.backend.bucket = vaultBucketName.value;
         } else {
           throw new Error('Unsupported backend protocol');
         }
@@ -1177,7 +1177,7 @@ async function createVault() {
               ]
             }
           ]
-        }`.replaceAll('{}', uvfVault.value.metadata.backend.defaultPath),
+        }`.replaceAll('{}', uvfVault.value.metadata.backend.bucket),
         // Required. ARN of the role that the caller is assuming.
         RoleArn: storageProfile.stsRoleCreateBucketHub
       };
@@ -1242,7 +1242,7 @@ async function createVault() {
         msg += '.';
       }
       if (error.response?.status === 409){
-        msg += ` Details: Bucket ${uvfVault.value?.metadata.backend.defaultPath} already exists or no permission to list.`;
+        msg += ` Details: Bucket ${uvfVault.value?.metadata.backend.bucket} already exists or no permission to list.`;
       } else if (error.response?.data.details){
         msg += ` Details: ${error.response.data.details}.`;
       }
