@@ -1162,9 +1162,7 @@ async function createVault() {
               "Effect": "Allow",
               "Action": [
                 "s3:CreateBucket",
-                "s3:GetBucketPolicy",
-                "s3:PutBucketVersioning",
-                "s3:GetBucketVersioning"
+                "s3:GetBucketPolicy"
               ],
               "Resource": "arn:aws:s3:::{}"
             },

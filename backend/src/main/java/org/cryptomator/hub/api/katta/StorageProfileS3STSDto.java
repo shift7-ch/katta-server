@@ -23,8 +23,6 @@ public final class StorageProfileS3STSDto extends StorageProfileS3StaticDto {
 	@NotNull
 	private final String stsRoleCreateBucketHub;
 	private final String stsEndpoint;
-	private final boolean bucketVersioning;
-	private final Boolean bucketAcceleration;
 
 	//----------------------------------------------------------------------
 	// (3b) STS client profile custom properties
@@ -51,8 +49,6 @@ public final class StorageProfileS3STSDto extends StorageProfileS3StaticDto {
 			@JsonProperty("stsRoleCreateBucketClient") String stsRoleCreateBucketClient,
 			@JsonProperty("stsRoleCreateBucketHub") String stsRoleCreateBucketHub,
 			@JsonProperty("stsEndpoint") String stsEndpoint,
-			@JsonProperty("bucketVersioning") boolean bucketVersioning,
-			@JsonProperty("bucketAcceleration") Boolean bucketAcceleration,
 			@JsonProperty("stsRoleAccessBucketAssumeRoleWithWebIdentity") String stsRoleAccessBucketAssumeRoleWithWebIdentity,
 			@JsonProperty("stsRoleAccessBucketAssumeRoleTaggedSession") String stsRoleAccessBucketAssumeRoleTaggedSession,
 			@JsonProperty("stsDurationSeconds") Integer stsDurationSeconds,
@@ -61,8 +57,6 @@ public final class StorageProfileS3STSDto extends StorageProfileS3StaticDto {
 		this.stsRoleCreateBucketClient = stsRoleCreateBucketClient;
 		this.stsRoleCreateBucketHub = stsRoleCreateBucketHub;
 		this.stsEndpoint = stsEndpoint;
-		this.bucketVersioning = bucketVersioning;
-		this.bucketAcceleration = bucketAcceleration;
 		this.stsRoleAccessBucketAssumeRoleWithWebIdentity = stsRoleAccessBucketAssumeRoleWithWebIdentity;
 		this.stsRoleAccessBucketAssumeRoleTaggedSession = stsRoleAccessBucketAssumeRoleTaggedSession;
 		this.stsDurationSeconds = stsDurationSeconds;
@@ -85,18 +79,6 @@ public final class StorageProfileS3STSDto extends StorageProfileS3StaticDto {
 	@Schema(description = "STS endpoint to use for AssumeRoleWithWebIdentity and AssumeRole for getting a temporary access token passed to the storage. Defaults to AWS SDK default.", nullable = true)
 	public String getStsEndpoint() {
 		return stsEndpoint;
-	}
-
-	@JsonProperty("bucketVersioning")
-	@Schema(description = "Enable bucket versioning upon bucket creation", defaultValue = "true", required = true)
-	public boolean isBucketVersioning() {
-		return bucketVersioning;
-	}
-
-	@JsonProperty("bucketAcceleration")
-	@Schema(description = "Enable bucket versioning upon bucket creation (null for MinIO)", nullable = true)
-	public Boolean getBucketAcceleration() {
-		return bucketAcceleration;
 	}
 
 	@JsonProperty("stsRoleAccessBucketAssumeRoleWithWebIdentity")
@@ -138,8 +120,6 @@ public final class StorageProfileS3STSDto extends StorageProfileS3StaticDto {
 				entity.stsRoleCreateBucketClient,
 				entity.stsRoleCreateBucketHub,
 				entity.stsEndpoint,
-				entity.bucketVersioning,
-				entity.bucketAcceleration,
 				entity.stsRoleAccessBucketAssumeRoleWithWebIdentity,
 				entity.stsRoleAccessBucketAssumeRoleTaggedSession,
 				entity.stsDurationSeconds,
@@ -162,8 +142,6 @@ public final class StorageProfileS3STSDto extends StorageProfileS3StaticDto {
 		entity.stsRoleCreateBucketClient = stsRoleCreateBucketClient;
 		entity.stsRoleCreateBucketHub = stsRoleCreateBucketHub;
 		entity.stsEndpoint = stsEndpoint;
-		entity.bucketVersioning = bucketVersioning;
-		entity.bucketAcceleration = bucketAcceleration;
 		entity.stsRoleAccessBucketAssumeRoleWithWebIdentity = stsRoleAccessBucketAssumeRoleWithWebIdentity;
 		entity.stsRoleAccessBucketAssumeRoleTaggedSession = stsRoleAccessBucketAssumeRoleTaggedSession;
 		entity.stsDurationSeconds = stsDurationSeconds;
@@ -178,11 +156,9 @@ public final class StorageProfileS3STSDto extends StorageProfileS3StaticDto {
 		if (!super.equals(o)) return false;
 
 		StorageProfileS3STSDto that = (StorageProfileS3STSDto) o;
-		return bucketVersioning == that.bucketVersioning
-				&& Objects.equals(stsRoleCreateBucketClient, that.stsRoleCreateBucketClient)
+		return Objects.equals(stsRoleCreateBucketClient, that.stsRoleCreateBucketClient)
 				&& Objects.equals(stsRoleCreateBucketHub, that.stsRoleCreateBucketHub)
 				&& Objects.equals(stsEndpoint, that.stsEndpoint)
-				&& Objects.equals(bucketAcceleration, that.bucketAcceleration)
 				&& Objects.equals(stsRoleAccessBucketAssumeRoleWithWebIdentity, that.stsRoleAccessBucketAssumeRoleWithWebIdentity)
 				&& Objects.equals(stsRoleAccessBucketAssumeRoleTaggedSession, that.stsRoleAccessBucketAssumeRoleTaggedSession)
 				&& Objects.equals(stsDurationSeconds, that.stsDurationSeconds)
@@ -191,6 +167,6 @@ public final class StorageProfileS3STSDto extends StorageProfileS3StaticDto {
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(super.hashCode(), stsRoleCreateBucketClient, stsRoleCreateBucketHub, stsEndpoint, bucketVersioning, bucketAcceleration, stsRoleAccessBucketAssumeRoleWithWebIdentity, stsRoleAccessBucketAssumeRoleTaggedSession, stsDurationSeconds, stsSessionTag);
+		return Objects.hash(super.hashCode(), stsRoleCreateBucketClient, stsRoleCreateBucketHub, stsEndpoint, stsRoleAccessBucketAssumeRoleWithWebIdentity, stsRoleAccessBucketAssumeRoleTaggedSession, stsDurationSeconds, stsSessionTag);
 	}
 }

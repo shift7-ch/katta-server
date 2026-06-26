@@ -41,8 +41,6 @@ CREATE TABLE "storage_profile_s3_sts"
 	"sts_role_create_bucket_client" VARCHAR NOT NULL,
 	"sts_role_create_bucket_hub"    VARCHAR NOT NULL,
 	"sts_endpoint" VARCHAR,
-	"bucket_versioning"  bool NOT NULL,
-	"bucket_acceleration" bool,
 
 	-- (3b) client profile custom properties
 	"sts_role_access_bucket_assume_role_with_web_identity" VARCHAR NOT NULL,

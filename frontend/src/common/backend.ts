@@ -34,7 +34,6 @@ axiosAuth.interceptors.request.use(async request => {
   }
 });
 
-
 // #region DTOs
 
 export type VaultDto = {
@@ -314,8 +313,6 @@ export type StorageProfileS3STSDto = {
   stsRoleCreateBucketClient: string;
   stsRoleCreateBucketHub: string;
   stsEndpoint?: string;
-  bucketVersioning: boolean;
-  bucketAcceleration?: boolean;
   stsRoleAccessBucketAssumeRoleWithWebIdentity: string;
   stsRoleAccessBucketAssumeRoleTaggedSession?: string;
   stsDurationSeconds?: number;
