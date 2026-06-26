@@ -1,0 +1,78 @@
+{{- if and .Values.minio.enabled .Values.minio.openid.enabled }}
+{{- $bucketPrefix := .Values.storageProfileSeed.sts.bucketPrefix -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "cryptomator-hub.fullname" . }}-minio-policies
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "cryptomator-hub.labels" . | nindent 4 }}
+    app.kubernetes.io/component: minio-setup
+data:
+  # Bucket-creation policy. Assigned to the `cryptomator` and `cryptomatorhub`
+  # providers, so the SPA and the desktop app can create a vault's bucket. The Resource
+  # wildcard scopes creation to buckets whose name starts with the configured prefix.
+  create_bucket_policy.json: |
+    {
+      "Version": "2012-10-17",
+      "Statement": [
+        {
+          "Effect": "Allow",
+          "Action": [
+            "s3:CreateBucket",
+            "s3:GetBucketPolicy",
+            "s3:PutBucketVersioning",
+            "s3:GetBucketVersioning"
+          ],
+          "Resource": [
+            "arn:aws:s3:::{{ $bucketPrefix }}*"
+          ]
+        },
+        {
+          "Effect": "Allow",
+          "Action": [
+            "s3:PutObject"
+          ],
+          "Resource": [
+            "arn:aws:s3:::{{ $bucketPrefix }}*/*/",
+            "arn:aws:s3:::{{ $bucketPrefix }}*/*.uvf"
+          ]
+        }
+      ]
+    }
+  # Per-vault access policy. Assigned to the `cryptomatorvaults` provider — tokens
+  # carry `client_id=<vault-uuid>` because Hub provisions per-vault Keycloak clients
+  # named after each vault's UUID. `${jwt:client_id}` in the resource ARN restricts
+  # the STS-issued creds to exactly that vault's bucket.
+  access_bucket_policy.json: |
+    {
+      "Version": "2012-10-17",
+      "Statement": [
+        {
+          "Effect": "Allow",
+          "Action": [
+            "s3:GetBucketLocation",
+            "s3:GetBucketVersioning",
+            "s3:ListBucket",
+            "s3:ListBucketMultipartUploads"
+          ],
+          "Resource": [
+            "arn:aws:s3:::{{ $bucketPrefix }}${jwt:client_id}"
+          ]
+        },
+        {
+          "Effect": "Allow",
+          "Action": [
+            "s3:AbortMultipartUpload",
+            "s3:DeleteObject",
+            "s3:GetObject",
+            "s3:ListMultipartUploadParts",
+            "s3:PutObject"
+          ],
+          "Resource": [
+            "arn:aws:s3:::{{ $bucketPrefix }}${jwt:client_id}/*"
+          ]
+        }
+      ]
+    }
+{{- end }}

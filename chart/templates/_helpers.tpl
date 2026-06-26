@@ -41,6 +41,20 @@ This allows users to set the public URLs to the actual external URLs of the serv
 {{- printf "/%s" $trimmed -}}
 {{- end -}}
 
+{{- /* / katta start addition */ -}}
+{{- define "katta-server.s3RelativePath" -}}
+{{- $path := regexReplaceAll "^https?://[^/]+" .Values.urls.s3.public "" -}}
+{{- $trimmed := trimAll "/" $path -}}
+{{- printf "/%s" $trimmed -}}
+{{- end -}}
+
+{{- define "katta-server.minioRelativePath" -}}
+{{- $path := regexReplaceAll "^https?://[^/]+" .Values.urls.minio.public "" -}}
+{{- $trimmed := trimAll "/" $path -}}
+{{- printf "/%s" $trimmed -}}
+{{- end -}}
+{{- /* \ katta end addition */ -}}
+
 {{- define "cryptomator-hub.keycloakLocalUrl" -}}
 {{- if .Values.urls.kc.clusterInternal -}}
 {{- trimSuffix "/" .Values.urls.kc.clusterInternal -}}
@@ -197,3 +211,95 @@ Auto-generated secrets below:
 {{- index .Values "_resolvedPostgresAdminPassword" -}}
 {{- end -}}
 {{- end -}}
+
+{{- /* / katta start addition */ -}}
+{{- define "katta-server.resolvedCryptomatorvaultsClientSecret" -}}
+{{- if hasKey .Values "_resolvedCryptomatorvaultsClientSecret" -}}
+{{- index .Values "_resolvedCryptomatorvaultsClientSecret" -}}
+{{- else if .Values.hub.secrets.cryptomatorvaultsClientSecret -}}
+{{- $_ := set .Values "_resolvedCryptomatorvaultsClientSecret" .Values.hub.secrets.cryptomatorvaultsClientSecret -}}
+{{- index .Values "_resolvedCryptomatorvaultsClientSecret" -}}
+{{- else -}}
+{{- $secretName := print (include "cryptomator-hub.fullname" .) "-secrets-hub" -}}
+{{- $existing := lookup "v1" "Secret" .Release.Namespace $secretName -}}
+{{- if and $existing (hasKey $existing.data "hub_cryptomatorvaults_client_secret") -}}
+{{- $_ := set .Values "_resolvedCryptomatorvaultsClientSecret" (index $existing.data "hub_cryptomatorvaults_client_secret" | b64dec) -}}
+{{- else -}}
+{{- $_ := set .Values "_resolvedCryptomatorvaultsClientSecret" (randAlphaNum 32) -}}
+{{- end -}}
+{{- index .Values "_resolvedCryptomatorvaultsClientSecret" -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "katta-server.resolvedMinioRootPassword" -}}
+{{- if hasKey .Values "_resolvedMinioRootPassword" -}}
+{{- index .Values "_resolvedMinioRootPassword" -}}
+{{- else if .Values.minio.auth.rootPassword -}}
+{{- $_ := set .Values "_resolvedMinioRootPassword" .Values.minio.auth.rootPassword -}}
+{{- index .Values "_resolvedMinioRootPassword" -}}
+{{- else -}}
+{{- $secretName := print (include "cryptomator-hub.fullname" .) "-secrets-minio" -}}
+{{- $existing := lookup "v1" "Secret" .Release.Namespace $secretName -}}
+{{- if and $existing (hasKey $existing.data "minio_root_password") -}}
+{{- $_ := set .Values "_resolvedMinioRootPassword" (index $existing.data "minio_root_password" | b64dec) -}}
+{{- else -}}
+{{- $_ := set .Values "_resolvedMinioRootPassword" (randAlphaNum 32) -}}
+{{- end -}}
+{{- index .Values "_resolvedMinioRootPassword" -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "katta-server.resolvedMinioProfileId.S3STATIC" -}}
+{{- if hasKey .Values "_resolvedMinioProfileId.S3STATIC" -}}
+{{- index .Values "_resolvedMinioProfileId.S3STATIC" -}}
+{{- else if .Values.storageProfileSeed.static.profileId -}}
+{{- $_ := set .Values "_resolvedMinioProfileId.S3STATIC" .Values.storageProfileSeed.static.profileId -}}
+{{- index .Values "_resolvedMinioProfileId.S3STATIC" -}}
+{{- else -}}
+{{- $cmName := print (include "cryptomator-hub.fullname" .) "-storageprofile-seed-state" -}}
+{{- $existing := lookup "v1" "ConfigMap" .Release.Namespace $cmName -}}
+{{- if and $existing (hasKey $existing.data "profileId") -}}
+{{- $_ := set .Values "_resolvedMinioProfileId.S3STATIC" (index $existing.data "profileId") -}}
+{{- else -}}
+{{- $_ := set .Values "_resolvedMinioProfileId.S3STATIC" (uuidv4) -}}
+{{- end -}}
+{{- index .Values "_resolvedMinioProfileId.S3STATIC" -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "katta-server.resolvedMinioProfileId.S3STS" -}}
+{{- if hasKey .Values "_resolvedMinioProfileId.S3STS" -}}
+{{- index .Values "_resolvedMinioProfileId.S3STS" -}}
+{{- else if .Values.storageProfileSeed.sts.profileId -}}
+{{- $_ := set .Values "_resolvedMinioProfileId.S3STS" .Values.storageProfileSeed.sts.profileId -}}
+{{- index .Values "_resolvedMinioProfileId.S3STS" -}}
+{{- else -}}
+{{- $cmName := print (include "cryptomator-hub.fullname" .) "-storageprofile-seed-state" -}}
+{{- $existing := lookup "v1" "ConfigMap" .Release.Namespace $cmName -}}
+{{- if and $existing (hasKey $existing.data "stsProfileId") -}}
+{{- $_ := set .Values "_resolvedMinioProfileId.S3STS" (index $existing.data "stsProfileId") -}}
+{{- else -}}
+{{- $_ := set .Values "_resolvedMinioProfileId.S3STS" (uuidv4) -}}
+{{- end -}}
+{{- index .Values "_resolvedMinioProfileId.S3STS" -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+
+OIDC discovery URL handed to MinIO. Defaults to the in-cluster Keycloak Service URL —
+with Keycloak's KC_HOSTNAME_BACKCHANNEL_DYNAMIC=true, this produces a discovery doc
+whose `issuer` field is the public KC_HOSTNAME (matching real-token `iss` claims) but
+whose `jwks_uri` is the in-cluster URL (so MinIO can fetch JWKS without going through
+the public ingress hop). Override via `minio.openid.configUrl` when needed.
+
+*/}}
+{{- define "katta-server.minioOidcConfigUrl" -}}
+{{- if .Values.minio.openid.configUrl -}}
+{{- .Values.minio.openid.configUrl -}}
+{{- else -}}
+{{- $kcLocal := include "cryptomator-hub.keycloakLocalUrl" . | trimSuffix "/" -}}
+{{- printf "%s/realms/%s/.well-known/openid-configuration" $kcLocal .Values.hub.config.keycloakRealm -}}
+{{- end -}}
+{{- end -}}
+{{- /* \ katta end addition */ -}}

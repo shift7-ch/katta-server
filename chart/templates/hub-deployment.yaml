@@ -76,7 +76,7 @@ spec:
               done
       containers:
         - name: hub
-          image: "ghcr.io/cryptomator/hub:{{ .Values.hub.image.tag | default .Chart.AppVersion }}"
+          image: "ghcr.io/shift7-ch/katta-server:{{ .Values.hub.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.hub.imagePullPolicy }}
           ports:
             - name: http
@@ -112,6 +112,11 @@ spec:
                 secretKeyRef:
                   name: {{ include "cryptomator-hub.fullname" . }}-secrets-hub
                   key: hub_system_client_secret
+            - name: HUB_KEYCLOAK_OIDC_CRYPTOMATOR_VAULTS_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "cryptomator-hub.fullname" . }}-secrets-hub
+                  key: hub_cryptomatorvaults_client_secret
             - name: QUARKUS_DATASOURCE_PASSWORD
               valueFrom:
                 secretKeyRef:
