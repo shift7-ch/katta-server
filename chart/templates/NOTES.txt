@@ -1,0 +1,77 @@
+{{- $useColor := .Values.notes.useColor }}
+{{- $ns := .Release.Namespace }}
+{{- $release := include "cryptomator-hub.fullname" . }}
+{{- $hubSecret := printf "%s-secrets-hub" $release }}
+{{- $kcSecret := printf "%s-secrets-kc" $release }}
+{{- $pgSecret := printf "%s-secrets-pg" $release }}
+{{- $minioSecret := printf "%s-secrets-minio" $release }}
+{{- $cTitle := ternary "\033[1;36m" "" $useColor }}
+{{- $cSection := ternary "\033[1;34m" "" $useColor }}
+{{- $cReset := ternary "\033[0m" "" $useColor }}
+{{ printf "%s✅ Katta Server Installed%s\n" $cTitle $cReset }}
+
+{{ printf "%s🌐 URLs%s" $cSection $cReset }}
+- Hub UI:          {{ trimSuffix "/" .Values.urls.hub.public }}/
+{{- if .Values.keycloak.enabled }}
+- Keycloak admin:  {{ trimSuffix "/" .Values.urls.kc.public }}/
+{{- end }}
+{{- if .Values.minio.enabled }}
+{{- if .Values.urls.minio.public }}
+- MinIO console:   {{ trimSuffix "/" .Values.urls.minio.public }}/
+{{- end }}
+{{- if .Values.urls.s3.public }}
+- MinIO S3 API:    {{ .Values.urls.s3.public }}
+{{- end }}
+{{- end }}
+{{- if not .Values.ingress.controller }}
+
+⚠️ Ingress is disabled. The URLs above resolve only via in-cluster Services; configure
+   ingress manually or `kubectl port-forward` to each Service.
+{{- else }}
+{{- $proxyPort := include "katta-server.proxyPort" . }}
+{{- if $proxyPort }}
+
+To reach them from your host machine, port-forward the ingress controller:
+   kubectl port-forward -n ingress-nginx svc/ingress-nginx-controller {{ $proxyPort }}:80
+{{- end }}
+{{- end }}
+
+{{ printf "%s🔐 Credentials%s" $cSection $cReset }}
+{{- if .Values.hub.secrets.create }}
+- Hub admin password (realm user): `kubectl get secret -n {{ $ns }} {{ $hubSecret }} -o jsonpath='{.data.hub_admin_password}' | base64 -d && echo`
+- Hub DB password: `kubectl get secret -n {{ $ns }} {{ $hubSecret }} -o jsonpath='{.data.hub_db_password}' | base64 -d && echo`
+{{- end }}
+{{- if .Values.keycloak.enabled }}
+- Keycloak admin password: `kubectl get secret -n {{ $ns }} {{ $kcSecret }} -o jsonpath='{.data.kc_admin_password}' | base64 -d && echo`
+- Keycloak DB password: `kubectl get secret -n {{ $ns }} {{ $kcSecret }} -o jsonpath='{.data.kc_db_password}' | base64 -d && echo`
+{{- end }}
+{{- if .Values.postgres.enabled }}
+- PostgreSQL admin password: `kubectl get secret -n {{ $ns }} {{ $pgSecret }} -o jsonpath='{.data.pg_admin_password}' | base64 -d && echo`
+{{- end }}
+{{- if .Values.minio.enabled }}
+- MinIO root user: `kubectl get secret -n {{ $ns }} {{ $minioSecret }} -o jsonpath='{.data.minio_root_user}' | base64 -d && echo`
+- MinIO root password: `kubectl get secret -n {{ $ns }} {{ $minioSecret }} -o jsonpath='{.data.minio_root_password}' | base64 -d && echo`
+{{- end }}
+{{- if and .Values.minio.enabled (or .Values.storageProfileSeed.static.enabled .Values.storageProfileSeed.sts.enabled) }}
+
+{{ printf "%s📥 Storage Profile Seed%s" $cSection $cReset }}
+- The following storage profiles are being registered by the `{{ $release }}-storageprofile-seed` Job (post-install/upgrade hook):
+{{- if .Values.storageProfileSeed.static.enabled }}
+  - S3STATIC: "{{ .Values.storageProfileSeed.static.profileName }}"
+{{- end }}
+{{- if .Values.storageProfileSeed.sts.enabled }}
+  - S3STS:    "{{ .Values.storageProfileSeed.sts.profileName }}"
+{{- end }}
+- Check status: `kubectl get job -n {{ $ns }} {{ $release }}-storageprofile-seed`
+- View logs:    `kubectl logs -n {{ $ns }} job/{{ $release }}-storageprofile-seed`
+{{- end }}
+
+{{ if .Values.hub.metrics.enabled }}
+{{ printf "%s📈 Telemetry%s" $cSection $cReset }}
+- Exporting to `{{ .Values.hub.metrics.endpoint }}` (metrics, traces, logs).
+{{ end }}
+
+{{ if not .Values.keycloak.enabled }}
+{{ printf "%s📥 Manual Realm Import%s" $cSection $cReset }}
+- `kubectl get secret -n {{ $ns }} {{ $kcSecret }} -o jsonpath='{.data.realm\.json}' | base64 -d`
+{{ end }}

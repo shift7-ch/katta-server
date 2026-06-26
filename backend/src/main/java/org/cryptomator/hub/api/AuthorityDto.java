@@ -7,6 +7,7 @@ import org.cryptomator.hub.entities.Group;
 import org.cryptomator.hub.entities.User;
 import org.eclipse.microprofile.openapi.annotations.media.DiscriminatorMapping;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.jspecify.annotations.Nullable;
 
 // / start katta extension
 // TODO review: backport @Schema upstream?
@@ -38,9 +39,9 @@ abstract sealed class AuthorityDto permits UserDto, GroupDto, MemberDto {
 	public final String name;
 
 	@JsonProperty("pictureUrl")
-	public final String pictureUrl;
+	public final @Nullable String pictureUrl;
 
-	protected AuthorityDto(String id, Type type, String name, String pictureUrl) {
+	protected AuthorityDto(String id, Type type, String name, @Nullable String pictureUrl) {
 		this.id = id;
 		this.type = type;
 		this.name = name;
