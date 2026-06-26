@@ -76,7 +76,7 @@ public class ConfigResource {
 	}
 
 	//visible for testing
-	String replacePrefix(String str, String prefix, String replacement) {
+	static String replacePrefix(String str, String prefix, String replacement) {
 		int index = str.indexOf(prefix);
 		if (index == 0) {
 			return replacement + str.substring(prefix.length());
@@ -86,7 +86,7 @@ public class ConfigResource {
 	}
 
 	//visible for testing
-	String trimTrailingSlash(String str) {
+	static String trimTrailingSlash(String str) {
 		if (str.endsWith("/")) {
 			return str.substring(0, str.length() - 1);
 		} else {

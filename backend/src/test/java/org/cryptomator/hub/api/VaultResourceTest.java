@@ -1,6 +1,5 @@
 package org.cryptomator.hub.api;
 
-import io.quarkus.security.identity.SecurityIdentity;
 import jakarta.enterprise.event.Event;
 import jakarta.ws.rs.NotFoundException;
 import org.cryptomator.hub.api.katta.KattaConfig;
@@ -41,7 +40,6 @@ class VaultResourceTest {
 	private final Vault.Repository vaultRepo = Mockito.mock(Vault.Repository.class);
 	private final VaultAccess.Repository vaultAccessRepo = Mockito.mock(VaultAccess.Repository.class);
 
-	private final SecurityIdentity identity = Mockito.mock(SecurityIdentity.class);
 	private final LicenseHolder license = Mockito.mock(LicenseHolder.class);
 	private final KeycloakCryptomatorVaultsHelper keycloakCryptomatorVaultsHelper = Mockito.mock(KeycloakCryptomatorVaultsHelper.class);
 	private final KattaConfig kattaConfig = Mockito.mock(KattaConfig.class);
@@ -50,14 +48,7 @@ class VaultResourceTest {
 
 	@BeforeEach
 	void setUp() {
-		vaultResource = new VaultResource();
-		vaultResource.eventLogger = eventLogger;
-		vaultResource.userRepo = userRepo;
-		vaultResource.groupRepo = groupRepo;
-		vaultResource.effectiveVaultAccessRepo = effectiveVaultAccessRepo;
-		vaultResource.vaultRepo = vaultRepo;
-		vaultResource.vaultAccessRepo = vaultAccessRepo;
-		vaultResource.jwt = new JsonWebToken() {
+		final JsonWebToken jwt = new JsonWebToken() {
 			@Override
 			public String getName() {
 				return "";
@@ -77,11 +68,7 @@ class VaultResourceTest {
 				return null;
 			}
 		};
-		vaultResource.identity = identity;
-		vaultResource.license = license;
-		vaultResource.keycloakCryptomatorVaultsHelper = keycloakCryptomatorVaultsHelper;
-		vaultResource.kattaConfig = kattaConfig;
-		vaultResource.vaultMembersJoinedEvent = vaultMembersJoinedEvent;
+		vaultResource = new VaultResource(eventLogger, null, null, groupRepo, userRepo, null, effectiveVaultAccessRepo, null, vaultRepo, vaultAccessRepo, jwt, license, null, null, vaultMembersJoinedEvent, kattaConfig, keycloakCryptomatorVaultsHelper);
 
 		final User user = Mockito.mock(User.class);
 		Mockito.when(userRepo.findById("alice")).thenReturn(user);
