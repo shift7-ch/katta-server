@@ -101,7 +101,7 @@ class VaultResourceTest {
 
 		vaultResource.createOrUpdate(vaultId, vaultDto, minio, aws);
 
-		Mockito.verify(keycloakCryptomatorVaultsHelper, Mockito.times(1)).keycloakPrepareVault(vaultId.toString(), minio, aws);
+		Mockito.verify(keycloakCryptomatorVaultsHelper, Mockito.times(1)).keycloakPrepareVault("pesto", vaultId.toString(), minio, aws);
 		Mockito.verify(keycloakCryptomatorVaultsHelper, Mockito.times(1)).keycloakGrantAccessToVault(vaultId.toString(), "alice", "pesto", false);
 	}
 
