@@ -43,7 +43,7 @@ helm install katta chart \
   -f chart/values-demo.yaml
 ```
 
-In a separate terminal, expose the ingress controller on `localhost:9090`:
+Expose the ingress controller on `localhost:9090`:
 
 ```bash
 kubectl port-forward -n ingress-nginx svc/ingress-nginx-controller 9090:80
