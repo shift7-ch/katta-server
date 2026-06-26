@@ -762,7 +762,7 @@ async function initialize() {
         recoveryKeyStr.value = await vaultFormat8.value.createRecoveryKey();
         break;
       case VaultType.UniversalVaultFormat:
-        uvfVault.value = await UniversalVaultFormat.create({ enabled: settings.value.enableAutomaticAccessGrant, maxWotDepth: settings.value.automaticAccessGrantTrustThreshold }, { provider: '', defaultPath: '', nickname: '', region: '' });
+        uvfVault.value = await UniversalVaultFormat.create({ enabled: settings.value.enableAutomaticAccessGrant, maxWotDepth: settings.value.automaticAccessGrantTrustThreshold }, { provider: '', bucket: '', nickname: '', region: '' });
         recoveryKeyStr.value = await uvfVault.value.recoveryKey.createRecoveryKey();
         break;
     }
@@ -1092,7 +1092,7 @@ async function createVault() {
         }
 
         uvfVault.value.metadata.backend.provider = selectedBackend.value.id;
-        uvfVault.value.metadata.backend.defaultPath = selectedBackend.value.bucketPrefix + vault.value.id;
+        uvfVault.value.metadata.backend.bucket = selectedBackend.value.bucketPrefix + vault.value.id;
         uvfVault.value.metadata.backend.nickname = vault.value.name;
         uvfVault.value.metadata.backend.region = selectedRegion.value;
         uvfVault.value.metadata.automaticAccessGrant.enabled = automaticAccessGrant.value;
@@ -1100,7 +1100,7 @@ async function createVault() {
         if (isPermanent.value){
           uvfVault.value.metadata.backend.username = vaultAccessKeyId.value;
           uvfVault.value.metadata.backend.password = vaultSecretKey.value;
-          uvfVault.value.metadata.backend.defaultPath = vaultBucketName.value;
+          uvfVault.value.metadata.backend.bucket = vaultBucketName.value;
         }
         // \ end katta extension
 
@@ -1176,7 +1176,7 @@ async function createVault() {
                 ]
               }
             ]
-          }`.replaceAll('{}', uvfVault.value.metadata.backend.defaultPath),
+          }`.replaceAll('{}', uvfVault.value.metadata.backend.bucket),
         // Required. ARN of the role that the caller is assuming.
         RoleArn: selectedBackend.value.stsRoleCreateBucketHub
       };
@@ -1243,7 +1243,7 @@ async function createVault() {
         msg += '.';
       }
       if (error.response?.status === 409){
-        msg += ` Details: Bucket ${uvfVault.value?.metadata.backend.defaultPath} already exists or no permission to list.`;
+        msg += ` Details: Bucket ${uvfVault.value?.metadata.backend.bucket} already exists or no permission to list.`;
       }
       else if (error.response?.data.details){
         msg += ` Details: ${error.response.data.details}.`;
