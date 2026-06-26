@@ -72,6 +72,7 @@ coredns:
       tag: "1.31.0"              # bundles kubectl + yq + awk
 
 hub:
+  replicas: 1
   imagePullPolicy: IfNotPresent
   image:
     tag: "" # defaults to chart appVersion
@@ -127,6 +128,7 @@ hub:
 
 keycloak:
   enabled: true
+  replicas: 1
   imagePullPolicy: IfNotPresent
   image:
     tag: ""
