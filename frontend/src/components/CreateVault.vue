@@ -724,8 +724,8 @@ const props = defineProps<{
 }>();
 
 // / start katta extension
-// Vault creation only works for STS profiles today (it needs region/regions/bucket-creation roles).
-// Static profiles are filtered out at fetch time, so the typed dropdown only carries S3STS.
+// The dropdown carries every non-archived storage profile (both S3STS and S3STATIC); vault creation
+// supports the full lifecycle for each protocol (STS-vended credentials vs. static access keys).
 const selectedStorageProfile = ref<StorageProfileDto>();
 const selectedRegion = ref<string>();
 const regions = ref<string[]>([]);
@@ -1070,6 +1070,15 @@ async function createVault() {
       throw new Error('User not set up');
     }
     const ownerGrant: AccessGrant = { userId: owner.id, token: '' };
+
+    // / start katta extension
+    // Region is user-selected only for S3STS profiles; a static profile — especially a non-AWS/MinIO
+    // endpoint that never runs the GetBucketLocation lookup — may carry none, so default it here before
+    // the region guards below would otherwise reject it as "Invalid state" despite passing validation.
+    if (selectedStorageProfile.value?.protocol === 'S3STATIC' && !selectedRegion.value) {
+      selectedRegion.value = 'us-east-1';
+    }
+    // \ end katta extension
 
     switch (vaultType.value) {
       case VaultType.VaultFormat8: {
