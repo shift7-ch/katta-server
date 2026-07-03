@@ -53,7 +53,8 @@ public class StorageProfileResource {
 			final StorageProfile entity = dto.toEntity();
 			entity.id = UUID.randomUUID(); // server-assigned; any client-supplied id is ignored
 			storageProfileRepo.persistAndFlush(entity);
-			return Response.created(URI.create(".")).contentLocation(URI.create(".")).entity(entity).type(MediaType.APPLICATION_JSON).build();
+			var result = StorageProfileDto.fromEntity(entity);
+			return Response.created(URI.create(".")).contentLocation(URI.create(".")).entity(result).type(MediaType.APPLICATION_JSON).build();
 		} catch (ConstraintViolationException e) {
 			return Response.status(Response.Status.BAD_REQUEST).entity(e).build();
 		}
