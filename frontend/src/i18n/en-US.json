@@ -209,6 +209,7 @@
   "createVault.showRecoveryKey.confirmRecoveryKey": "I understand that I will lose access to the vault in the event of an emergency if I don't have the recovery key.",
   "createVault.showRecoveryKey.submit": "Create Vault",
   "createVault.error.illegalVaultName": "The vault name must not contain any of the following characters:",
+  "createVault.error.illegalVaultDescription": "The description must not contain any of the following characters:",
   "createVault.error.formValidationFailed": "Please check the form and try again.",
   "createVault.error.uploadTooBig": "The vault metadata file is too big. Files up to 8KB are supported.",
   "createVault.error.failedUpload": "The vault metadata file could not be uploaded.",
