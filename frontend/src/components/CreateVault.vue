@@ -1076,6 +1076,15 @@ async function createVault() {
     }
     const ownerGrant: AccessGrant = { userId: owner.id, token: '' };
 
+    // / start katta extension
+    // Region is user-selected only for S3STS profiles; a static profile — especially a non-AWS/MinIO
+    // endpoint that never runs the GetBucketLocation lookup — may carry none, so default it here before
+    // the region guards below would otherwise reject it as "Invalid state" despite passing validation.
+    if (selectedStorageProfile.value?.protocol === 'S3STATIC' && !selectedRegion.value) {
+      selectedRegion.value = 'us-east-1';
+    }
+    // \ end katta extension
+
     switch (vaultType.value) {
       case VaultType.VaultFormat8: {
         if (!vaultFormat8.value) {

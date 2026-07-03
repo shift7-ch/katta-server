@@ -3,6 +3,7 @@ package org.cryptomator.hub.api.katta;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
+import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
@@ -19,6 +20,8 @@ import org.cryptomator.hub.entities.User;
 import org.cryptomator.hub.entities.Vault;
 import org.cryptomator.hub.entities.katta.AccessTokenResponse;
 import org.cryptomator.hub.entities.katta.StorageProfile;
+import org.cryptomator.hub.entities.katta.StorageProfileS3STS;
+import org.cryptomator.hub.entities.katta.StorageProfileS3Static;
 import org.cryptomator.hub.katta.KeycloakCryptomatorVaultsHelper;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 import org.eclipse.microprofile.openapi.annotations.Operation;
@@ -76,22 +79,18 @@ public class StorageResource {
 	@APIResponse(responseCode = "409", description = "Bucket with this name already exists")
 	@APIResponse(responseCode = "410", description = "Storage profile is archived")
 	public Response createBucket(@PathParam("vaultId") UUID vaultId, final CreateS3STSBucketDto storage) {
-		final Map<UUID, StorageProfileDto> storageConfigs = storageProfileRepo.findAll().stream().map(StorageProfileDto::fromEntity).collect(Collectors.toMap(StorageProfileDto::getId, Function.identity()));
-		if (!storageConfigs.containsKey(storage.storageConfigId())) {
-			return Response.status(Response.Status.BAD_REQUEST).entity(String.format("Storage profile %s not found on this server", storage.storageConfigId())).build();
-		}
-		final StorageProfileDto storageProfileDto = storageConfigs.get(storage.storageConfigId());
-		if (storageProfileDto.isArchived()) {
-			throw new GoneException("Storage profile is archived.");
-		}
-		if (!(storageProfileDto instanceof StorageProfileS3STSDto)) {
-			return Response.status(Response.Status.BAD_REQUEST).entity(String.format("Storage profile must be StorageProfileS3STSDto. Found %s", storageProfileDto.getClass().getName())).build();
-		}
-
-		// N.B. if the bucket already exists, this will fail, so we do not prevent calling this method several times.
-		s3StorageHelper.makeS3Bucket((StorageProfileS3STSDto) storageProfileDto, storage);
-
-		return Response.created(URI.create(".")).build();
+		var storageProfileId = storage.storageConfigId();
+		var storageProfile = storageProfileRepo.findById(storageProfileId);
+		return switch (storageProfile) {
+			case null -> throw new BadRequestException(String.format("Storage profile %s not found on this server", storageProfileId));
+			case StorageProfileS3STS stsProfile when stsProfile.isArchived() -> throw new GoneException("Storage profile is archived.");
+			case StorageProfileS3STS stsProfile when !stsProfile.isArchived() -> {
+				// N.B. if the bucket already exists, this will fail, so we do not prevent calling this method several times.
+				s3StorageHelper.makeS3Bucket(StorageProfileS3STSDto.fromEntity(stsProfile), storage);
+				yield Response.created(URI.create(".")).build();
+			}
+			default -> throw new BadRequestException("Storage profile must be StorageProfileS3STSDto. Found" + storageProfile.getClass());
+		};
 	}
 
 	@POST

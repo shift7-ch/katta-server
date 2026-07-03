@@ -29,6 +29,10 @@ public class StorageProfile {
 	@Column(name = "archived", nullable = false)
 	public boolean archived;
 
+	public boolean isArchived() {
+		return archived;
+	}
+
 	public StorageProfile setArchived(boolean archived) {
 		this.archived = archived;
 		return this;
