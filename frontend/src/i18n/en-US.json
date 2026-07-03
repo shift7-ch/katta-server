@@ -676,8 +676,6 @@
   "storageprofile.stsRoleCreateBucketClient": "stsRoleCreateBucketClient",
   "storageprofile.stsRoleCreateBucketHub": "stsRoleCreateBucketHub",
   "storageprofile.stsEndpoint": "stsEndpoint",
-  "storageprofile.bucketVersioning": "bucketVersioning",
-  "storageprofile.bucketAcceleration": "bucketAcceleration",
   "storageprofile.storageClass": "storageClass",
   "storageprofile.region": "region",
   "storageprofile.regions": "regions",

@@ -88,19 +88,6 @@
                         <input id="stsEndpoint" v-model="state.stsEndpoint" :disabled="processing" type="text" class="mt-1 block w-full rounded-md border-gray-300 shadow-xs focus:ring-primary focus:border-primary sm:text-sm disabled:bg-gray-200" />
                       </div>
 
-                      <div class="col-span-6 sm:col-span-3 flex items-center">
-                        <label class="inline-flex items-center mt-6">
-                          <input v-model="state.bucketVersioning" :disabled="processing" type="checkbox" class="h-4 w-4 text-primary border-gray-300 rounded focus:ring-primary" />
-                          <span class="ml-2 text-sm text-gray-700">{{ t('storageprofile.bucketVersioning') }}</span>
-                        </label>
-                      </div>
-                      <div class="col-span-6 sm:col-span-3 flex items-center">
-                        <label class="inline-flex items-center mt-6">
-                          <input v-model="state.bucketAcceleration" :disabled="processing" type="checkbox" class="h-4 w-4 text-primary border-gray-300 rounded focus:ring-primary" />
-                          <span class="ml-2 text-sm text-gray-700">{{ t('storageprofile.bucketAcceleration') }}</span>
-                        </label>
-                      </div>
-
                       <!-- (4) STS-only: bucket-access config (token vending) -->
                       <div class="col-span-6">
                         <hr class="border-gray-200 my-2" />
@@ -175,8 +162,6 @@ type FormState = {
   stsRoleCreateBucketClient: string;
   stsRoleCreateBucketHub: string;
   stsEndpoint: string;
-  bucketVersioning: boolean;
-  bucketAcceleration: boolean;
   stsRoleAccessBucketAssumeRoleWithWebIdentity: string;
   stsRoleAccessBucketAssumeRoleTaggedSession: string;
   stsDurationSeconds: number | null;
@@ -205,8 +190,6 @@ function emptyState(): FormState {
     stsRoleCreateBucketClient: '',
     stsRoleCreateBucketHub: '',
     stsEndpoint: '',
-    bucketVersioning: true,
-    bucketAcceleration: false,
     stsRoleAccessBucketAssumeRoleWithWebIdentity: '',
     stsRoleAccessBucketAssumeRoleTaggedSession: '',
     stsDurationSeconds: null,
@@ -286,8 +269,6 @@ function buildS3STSDto(endpoint: string | undefined): StorageProfileS3STSDto {
     stsRoleCreateBucketClient: state.value.stsRoleCreateBucketClient,
     stsRoleCreateBucketHub: state.value.stsRoleCreateBucketHub,
     stsEndpoint: undefinedIfBlank(state.value.stsEndpoint),
-    bucketVersioning: state.value.bucketVersioning,
-    bucketAcceleration: state.value.bucketAcceleration,
     stsRoleAccessBucketAssumeRoleWithWebIdentity: state.value.stsRoleAccessBucketAssumeRoleWithWebIdentity,
     stsRoleAccessBucketAssumeRoleTaggedSession: undefinedIfBlank(state.value.stsRoleAccessBucketAssumeRoleTaggedSession),
     stsDurationSeconds: state.value.stsDurationSeconds ?? undefined,
