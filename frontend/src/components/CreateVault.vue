@@ -117,9 +117,9 @@
           <div class="mt-6 px-4 space-y-6">
             <div>
               <label for="vaultName" class="block text-sm font-medium text-gray-700 text-left">{{ t('createVault.enterVaultDetails.vaultName') }}</label>
-              <input id="vaultName" v-model="vault.name" :disabled="processing" type="text" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-xs sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200" :class="{ 'invalid:border-red-300 invalid:text-red-900 focus:invalid:ring-red-500 focus:invalid:border-red-500': onCreateError instanceof FormValidationFailedError }" pattern="^(?! )([^\x5C\x2F:*?\x22<>\x7C])+(?<![ \x2E])$" required />
+              <input id="vaultName" v-model="vaultName" :disabled="processing" type="text" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-xs sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200" :class="{ 'invalid:border-red-300 invalid:text-red-900 focus:invalid:ring-red-500 focus:invalid:border-red-500': onCreateError instanceof FormValidationFailedError }" pattern="^(?! )([^\\\/:*?&quot;<>\|])+(?<![ \.])$" required />
               <p v-if="(onCreateError instanceof FormValidationFailedError)" class="text-sm text-red-900 text-left mt-2">
-                {{ t('createVault.error.illegalVaultName') }} \, /, :, *, ?, ", &lt;, >, |
+                {{ t('createVault.error.illegalVaultName') }} \, /, :, *, ?, ", &lt;, &gt;, |
               </p>
             </div>
 
@@ -128,7 +128,10 @@
                 {{ t('createVault.enterVaultDetails.vaultDescription') }}
                 <span class="text-xs text-gray-500">({{ t('common.optional') }})</span>
               </label>
-              <input id="vaultDescription" v-model="vault.description" :disabled="processing" type="text" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-xs sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200" />
+              <input id="vaultDescription" v-model="vaultDescription" :disabled="processing" type="text" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-xs sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200" :class="{ 'invalid:border-red-300 invalid:text-red-900 focus:invalid:ring-red-500 focus:invalid:border-red-500': onCreateError instanceof FormValidationFailedError }" pattern="[^*<>&quot;]*" />
+              <p v-if="(onCreateError instanceof FormValidationFailedError)" class="text-sm text-red-900 text-left mt-2">
+                {{ t('createVault.error.illegalVaultDescription') }} *, &lt;, &gt;, "
+              </p>
             </div>
 
             <!-- / start katta extension -->
@@ -242,13 +245,13 @@
               <label for="vaultAccessKeyId" class="block text-sm font-medium text-gray-700">
                 {{ t('CreateVaultS3.enterVaultDetails.vaultPermanentAccessKeyId') }}
               </label>
-              <input id="vaultAccessKeyId" v-model="vaultAccessKeyId" :disabled="processing" type="text" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200" :class="{ 'invalid:border-red-300 invalid:text-red-900 focus:invalid:ring-red-500 focus:invalid:border-red-500': onCreateError instanceof FormValidationFailedError }" required />
+              <input id="vaultAccessKeyId" v-model="vaultAccessKeyId" :disabled="processing" type="text" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200" :class="{ 'invalid:border-red-300 invalid:text-red-900 focus:invalid:ring-red-500 focus:invalid:border-red-500': onCreateError instanceof FormValidationFailedError }" />
             </div>
             <div v-if="selectedStorageProfile?.protocol === 'S3STATIC'" class="col-span-6 sm:col-span-4">
               <label for="vaultSecretKey" class="block text-sm font-medium text-gray-700">
                 {{ t('CreateVaultS3.enterVaultDetails.vaultPermanentSecretKey') }}
               </label>
-              <input id="vaultSecretKey" v-model="vaultSecretKey" :disabled="processing" type="text" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200" :class="{ 'invalid:border-red-300 invalid:text-red-900 focus:invalid:ring-red-500 focus:invalid:border-red-500': onCreateError instanceof FormValidationFailedError }" required />
+              <input id="vaultSecretKey" v-model="vaultSecretKey" :disabled="processing" type="text" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200" :class="{ 'invalid:border-red-300 invalid:text-red-900 focus:invalid:ring-red-500 focus:invalid:border-red-500': onCreateError instanceof FormValidationFailedError }" />
             </div>
             <div v-if="selectedStorageProfile?.protocol === 'S3STATIC'" class="col-span-6 sm:col-span-4">
               <label for="vaultBucketName" class="block text-sm font-medium text-gray-700">
@@ -256,13 +259,13 @@
               </label>
               <div class="mt-1 flex rounded-md shadow-sm">
                 <span v-if="bucketPrefix" class="inline-flex items-center rounded-l-md border border-r-0 border-gray-300 bg-gray-50 px-3 text-gray-500 sm:text-sm">{{ bucketPrefix }}</span>
-                <input id="vaultBucketName" v-model="vaultBucketName" :disabled="processing" type="text" class="focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 disabled:bg-gray-200" :class="[bucketPrefix ? 'rounded-none rounded-r-md' : 'rounded-md', { 'invalid:border-red-300 invalid:text-red-900 focus:invalid:ring-red-500 focus:invalid:border-red-500': onCreateError instanceof FormValidationFailedError }]" required />
+                <input id="vaultBucketName" v-model="vaultBucketName" :disabled="processing" type="text" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 disabled:bg-gray-200" :class="[bucketPrefix ? 'rounded-none rounded-r-md' : 'rounded-md', { 'invalid:border-red-300 invalid:text-red-900 focus:invalid:ring-red-500 focus:invalid:border-red-500': onCreateError instanceof FormValidationFailedError }]" required />
               </div>
             </div>
             <br />
             <div class="col-span-6 sm:col-span-3">
               <label for="vaultName" class="block text-sm font-medium text-gray-700">{{ t('CreateVaultS3.enterVaultDetails.automaticAccessGrant') }}</label>
-              <input id="automaticAccessGrant" v-model="automaticAccessGrant" name="automaticAccessGrant" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" required />
+              <input id="automaticAccessGrant" v-model="automaticAccessGrant" name="automaticAccessGrant" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" />
             </div>
             <!-- \ end katta extension -->
           </div>
@@ -296,6 +299,68 @@
                   class="inline-flex justify-center rounded-md border border-transparent bg-primary px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-primary-d1 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-primary sm:text-sm disabled:opacity-50 disabled:hover:bg-primary disabled:cursor-not-allowed"
                 >
                   {{ t('common.next') }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <div v-else-if="state == State.DefineAutomaticAccessGrant">
+    <BreadcrumbNav :crumbs="[ { label: t('vaultList.title'), to: '/app/vaults' }, { label: t('createVault.enterVaultDetails.title') } ]" />
+    <VaultCreationProgress :state="state" :steps="getCurrentStates" class="flex justify-center mb-4" />
+    <form @submit.prevent="validateAutomaticAccessGrant()">
+      <div class="flex justify-center">
+        <div class="bg-white shadow-sm rounded-lg sm:w-full sm:max-w-lg">
+          <div class="mx-auto mt-5 flex items-center justify-center h-12 w-12 rounded-full bg-emerald-100">
+            <UserPlusIcon class="h-6 w-6 text-emerald-600" aria-hidden="true" />
+          </div>
+          <div class="mt-3 mb-3 px-4 sm:mt-5">
+            <h3 class="text-lg leading-6 font-medium text-gray-900 text-center">
+              {{ t('createVault.automaticAccessGrant.title') }}
+            </h3>
+            <p class="mt-2 text-sm text-gray-500 text-center">
+              {{ t('createVault.automaticAccessGrant.description') }}
+            </p>
+            <div class="mt-5 space-y-4 text-left">
+              <div class="flex items-center">
+                <input id="vaultAutoGrantEnabled" v-model="vaultAutoGrantEnabled" :disabled="processing" type="checkbox" class="h-4 w-4 rounded-sm border-gray-300 text-primary focus:ring-primary" />
+                <label for="vaultAutoGrantEnabled" class="ml-2 block text-sm text-gray-700">{{ t('createVault.automaticAccessGrant.enabled.label') }}</label>
+              </div>
+              <div v-if="vaultAutoGrantEnabled">
+                <label for="vaultAutoGrantTrustThreshold" class="block text-sm font-medium text-gray-700">{{ t('createVault.automaticAccessGrant.trustThreshold.label') }}</label>
+                <input id="vaultAutoGrantTrustThreshold" v-model="vaultAutoGrantTrustThreshold" :disabled="processing" type="number" min="-1" max="9" step="1" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-xs sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200" />
+                <p class="mt-1 text-xs text-gray-500">{{ t('createVault.automaticAccessGrant.trustThreshold.help') }}</p>
+                <p v-if="Number(vaultAutoGrantTrustThreshold) === -1" class="mt-1 inline-flex items-start text-xs text-yellow-700">
+                  <ExclamationTriangleIcon class="shrink-0 text-yellow-500 mr-1 h-4 w-4" aria-hidden="true" />
+                  {{ t('createVault.automaticAccessGrant.trustThreshold.disabledWarning') }}
+                </p>
+              </div>
+            </div>
+          </div>
+          <div class="bg-gray-50 mt-4 px-4 py-3 sm:px-6 rounded-b-lg">
+            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center sm:space-x-4">
+              <div class="text-sm text-red-900 sm:flex-1 sm:min-w-0">
+                <template v-if="onCreateError">
+                  <p>{{ t('common.unexpectedError', [onCreateError.message]) }}</p>
+                </template>
+              </div>
+              <div class="flex flex-col-reverse sm:flex-row-reverse sm:space-x-reverse sm:space-x-3 shrink-0 mt-4 sm:mt-0">
+                <button
+                  type="submit"
+                  :disabled="processing"
+                  class="inline-flex justify-center rounded-md border border-transparent bg-primary px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-primary-d1 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-primary sm:text-sm disabled:opacity-50 disabled:hover:bg-primary disabled:cursor-not-allowed"
+                >
+                  {{ t('common.next') }}
+                </button>
+                <button
+                  type="button"
+                  class="mt-3 sm:mt-0 inline-flex justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-base font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-primary sm:text-sm"
+                  @click="goToPreviousState()"
+                >
+                  {{ t('common.previous') }}
                 </button>
               </div>
             </div>
@@ -347,7 +412,7 @@
                 <button
                   type="button"
                   class="mt-3 sm:mt-0 inline-flex justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-base font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-primary sm:text-sm"
-                  @click="backToEnterVaultDetails()"
+                  @click="goToPreviousState()"
                 >
                   {{ t('common.previous') }}
                 </button>
@@ -442,7 +507,7 @@
                 <button
                   type="button"
                   class="mt-3 sm:mt-0 inline-flex justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-base font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-primary sm:text-sm"
-                  @click="backToDefineEmergencyAccess()"
+                  @click="goToPreviousState()"
                 >
                   {{ t('common.previous') }}
                 </button>
@@ -527,8 +592,8 @@
 </template>
 
 <script setup lang="ts">
-import { ClipboardIcon, XCircleIcon, ArrowDownTrayIcon } from '@heroicons/vue/20/solid';
-import { ArrowPathIcon, ArrowUpOnSquareIcon, CheckIcon, DocumentCheckIcon, KeyIcon, PlusIcon } from '@heroicons/vue/24/outline';
+import { ClipboardIcon, XCircleIcon, ArrowDownTrayIcon, ExclamationTriangleIcon } from '@heroicons/vue/20/solid';
+import { ArrowPathIcon, ArrowUpOnSquareIcon, CheckIcon, DocumentCheckIcon, KeyIcon, PlusIcon, UserPlusIcon } from '@heroicons/vue/24/outline';
 import { saveAs } from 'file-saver';
 import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -565,6 +630,7 @@ enum State {
   Initial,
   EnterRecoveryKey,
   EnterVaultDetails,
+  DefineAutomaticAccessGrant,
   DefineEmergencyAccess,
   ShowRecoveryKey,
   Finished
@@ -641,6 +707,9 @@ const vault = ref<VaultDto>({
   requiredEmergencyKeyShares: 0,
   emergencyKeyShares: {}
 });
+// Per-vault override of the global "Automatic Access Grant" defaults; these values are applied when building the vault metadata payload.
+const vaultAutoGrantEnabled = ref<boolean>(false);
+const vaultAutoGrantTrustThreshold = ref<number>(0);
 const copiedRecoveryKey = ref(false);
 const debouncedCopyFinish = debounce(() => copiedRecoveryKey.value = false, 2000);
 const confirmRecoveryKey = ref(false);
@@ -695,17 +764,19 @@ async function initialize() {
   if (props.recover) {
     state.value = State.EnterRecoveryKey;
   } else {
+    settings.value = await backend.settings.get();
     switch (vaultType.value) {
       case VaultType.VaultFormat8:
         vaultFormat8.value = await VaultFormat8.create();
         recoveryKeyStr.value = await vaultFormat8.value.createRecoveryKey();
         break;
       case VaultType.UniversalVaultFormat:
-        uvfVault.value = await UniversalVaultFormat.create({ enabled: false, maxWotDepth: 0 }, { provider: '', defaultPath: '', nickname: '', region: '' });
+        uvfVault.value = await UniversalVaultFormat.create({ enabled: settings.value.enableAutomaticAccessGrant, maxWotDepth: settings.value.automaticAccessGrantTrustThreshold }, { provider: '', bucket: '', nickname: '', region: '' });
         recoveryKeyStr.value = await uvfVault.value.recoveryKey.createRecoveryKey();
         break;
     }
-    settings.value = await backend.settings.get();
+    vaultAutoGrantEnabled.value = settings.value.enableAutomaticAccessGrant;
+    vaultAutoGrantTrustThreshold.value = settings.value.automaticAccessGrantTrustThreshold;
     state.value = State.EnterVaultDetails;
   }
   licenseStatus.value = await backend.license.getUserInfo();
@@ -773,22 +844,16 @@ async function validateRecoveryKey() {
   await recoverVault();
 }
 
+const autoGrantOverrideAvailable = computed(() => !!settings.value?.enableAutomaticAccessGrant && !!settings.value?.allowAutomaticAccessGrantOverride);
+const emergencyAccessAvailable = computed(() => !isCommunityLicense.value && !!settings.value?.enableEmergencyAccess);
+
 const getCurrentStates = computed(() => {
-  return isCommunityLicense.value || !settings.value?.enableEmergencyAccess ? communityCreateStates : allCreateStates;
+  const steps: State[] = [State.EnterVaultDetails];
+  if (autoGrantOverrideAvailable.value) steps.push(State.DefineAutomaticAccessGrant);
+  if (emergencyAccessAvailable.value) steps.push(State.DefineEmergencyAccess);
+  steps.push(State.ShowRecoveryKey, State.Finished);
+  return steps;
 });
-
-const allCreateStates = [
-  State.EnterVaultDetails,
-  State.DefineEmergencyAccess,
-  State.ShowRecoveryKey,
-  State.Finished,
-];
-
-const communityCreateStates = [
-  State.EnterVaultDetails,
-  State.ShowRecoveryKey,
-  State.Finished,
-];
 
 async function recoverVault() {
   onRecoverError.value = undefined;
@@ -926,10 +991,7 @@ async function validateVaultDetails() {
   if (props.recover) {
     await createVault();
   } else {
-    if (!isCommunityLicense.value && settings.value?.enableEmergencyAccess)
-      state.value = State.DefineEmergencyAccess;
-    else
-      state.value = State.ShowRecoveryKey;
+    goToNextState();
   }
 }
 
@@ -940,6 +1002,11 @@ function isS3ErrorWithRegion(error: unknown): error is { Code: string; Region: s
     && 'Code' in error
     && 'Region' in error
   );
+}
+
+function validateAutomaticAccessGrant() {
+  onCreateError.value = undefined;
+  goToNextState();
 }
 
 async function validateVaultEmergencyAccess() {
@@ -983,15 +1050,20 @@ async function validateVaultEmergencyAccess() {
   }
 }
 
-function backToEnterVaultDetails(){
-  state.value = State.EnterVaultDetails;
+function goToNextState() {
+  const steps = getCurrentStates.value;
+  const idx = steps.indexOf(state.value);
+  if (idx >= 0 && idx < steps.length - 1) {
+    state.value = steps[idx + 1];
+  }
 }
 
-function backToDefineEmergencyAccess(){
-  if (isCommunityLicense.value || !settings.value?.enableEmergencyAccess)
-    state.value = State.EnterVaultDetails;
-  else
-    state.value = State.DefineEmergencyAccess;
+function goToPreviousState() {
+  const steps = getCurrentStates.value;
+  const idx = steps.indexOf(state.value);
+  if (idx > 0) {
+    state.value = steps[idx - 1];
+  }
 }
 
 async function createVault() {
@@ -1034,17 +1106,22 @@ async function createVault() {
         uvfVault.value.metadata.backend.region = selectedRegion.value ?? 'us-east-1';
         uvfVault.value.metadata.automaticAccessGrant.enabled = automaticAccessGrant.value;
         if (storageProfile.protocol === 'S3STS') {
-          uvfVault.value.metadata.backend.defaultPath = storageProfile.bucketPrefix + vault.value.id;
+          uvfVault.value.metadata.backend.bucket = storageProfile.bucketPrefix + vault.value.id;
         } else if (storageProfile.protocol === 'S3STATIC') {
           uvfVault.value.metadata.backend.username = vaultAccessKeyId.value;
           uvfVault.value.metadata.backend.password = vaultSecretKey.value;
-          uvfVault.value.metadata.backend.defaultPath = effectiveBucketName.value;
+          uvfVault.value.metadata.backend.bucket = vaultBucketName.value;
         } else {
           throw new Error('Unsupported backend protocol');
         }
         // \ end katta extension
 
         ownerGrant.token = await uvfVault.value.encryptForUser(await userdata.ecdhPublicKey, true);
+        if (!props.recover) {
+          // Apply the (possibly per-vault-overridden) automatic access grant policy now that the override step is done.
+          // On recovery the existing vault's policy must be preserved, so we leave the recovered metadata untouched.
+          uvfVault.value.metadata.automaticAccessGrant = { enabled: vaultAutoGrantEnabled.value, maxWotDepth: Number(vaultAutoGrantTrustThreshold.value) };
+        }
         const recoveryPublicKey = await uvfVault.value.recoveryKey.serializePublicKey();
         vault.value.uvfMetadataFile = await uvfVault.value.createMetadataFile(absBackendBaseURL, vault.value);
         vault.value.uvfKeySet = `{"keys": [${recoveryPublicKey}]}`;
@@ -1094,9 +1171,7 @@ async function createVault() {
               "Effect": "Allow",
               "Action": [
                 "s3:CreateBucket",
-                "s3:GetBucketPolicy",
-                "s3:PutBucketVersioning",
-                "s3:GetBucketVersioning"
+                "s3:GetBucketPolicy"
               ],
               "Resource": "arn:aws:s3:::{}"
             },
@@ -1111,7 +1186,7 @@ async function createVault() {
               ]
             }
           ]
-        }`.replaceAll('{}', uvfVault.value.metadata.backend.defaultPath),
+        }`.replaceAll('{}', uvfVault.value.metadata.backend.bucket),
         // Required. ARN of the role that the caller is assuming.
         RoleArn: storageProfile.stsRoleCreateBucketHub
       };
@@ -1176,7 +1251,7 @@ async function createVault() {
         msg += '.';
       }
       if (error.response?.status === 409){
-        msg += ` Details: Bucket ${uvfVault.value?.metadata.backend.defaultPath} already exists or no permission to list.`;
+        msg += ` Details: Bucket ${uvfVault.value?.metadata.backend.bucket} already exists or no permission to list.`;
       } else if (error.response?.data.details){
         msg += ` Details: ${error.response.data.details}.`;
       }

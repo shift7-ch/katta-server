@@ -1,0 +1,270 @@
+{{- if .Values.coredns.patch.enabled }}
+{{- $fullname := include "cryptomator-hub.fullname" . -}}
+{{- $name := printf "%s-coredns-patch" $fullname -}}
+{{- $target := printf "%s-ingress-proxy.%s.svc.cluster.local" $fullname .Release.Namespace -}}
+{{- /*
+Patches `kube-system/coredns`'s Corefile with a release-scoped rewrite stanza so the
+chart's public hostnames (*.local.katta.cloud) resolve to the in-cluster port-translation
+proxy Service. The apply Job runs post-install/post-upgrade and is idempotent; the revert
+Job runs pre-delete and strips only the same-release stanza, leaving any other release's
+markers (and the upstream Corefile) untouched.
+
+The zone is hard-coded to `local.katta.cloud` (the wildcard A-record katta controls) —
+no values knob.
+
+RBAC is intentionally regular resources, not hook-managed:
+  - Hook resources persist forever after `helm uninstall` unless `hook-delete-policy:
+    hook-succeeded` is set, but then they're gone before the pre-delete revert Job
+    needs them.
+  - Regular resources exist throughout the release lifecycle: created during install
+    before post-install hooks fire; still present during pre-delete hooks; deleted by
+    Helm after pre-delete hooks complete.
+
+The release-name is baked into the BEGIN/END markers so multiple chart releases in the
+same cluster co-exist with independent stanzas. The apply script strips any same-release
+stanza before re-inserting (handles `helm upgrade` cleanly).
+*/}}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ $name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "cryptomator-hub.labels" . | nindent 4 }}
+    app.kubernetes.io/component: coredns-patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ $name }}
+  namespace: {{ .Values.coredns.patch.namespace }}
+  labels:
+    {{- include "cryptomator-hub.labels" . | nindent 4 }}
+    app.kubernetes.io/component: coredns-patch
+rules:
+  # Scoped to the single ConfigMap the Jobs need to read/update — no list/watch, no
+  # access to any other resource in kube-system.
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    resourceNames: ["coredns"]
+    verbs: ["get", "update", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ $name }}
+  namespace: {{ .Values.coredns.patch.namespace }}
+  labels:
+    {{- include "cryptomator-hub.labels" . | nindent 4 }}
+    app.kubernetes.io/component: coredns-patch
+subjects:
+  - kind: ServiceAccount
+    name: {{ $name }}
+    namespace: {{ .Release.Namespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ $name }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "cryptomator-hub.labels" . | nindent 4 }}
+    app.kubernetes.io/component: coredns-patch
+data:
+  apply.sh: |
+    #!/bin/sh
+    # Insert a release-scoped rewrite stanza into kube-system/coredns's Corefile.
+    # Idempotent: strips any pre-existing same-release stanza before re-inserting.
+    set -eu
+
+    # Zone is hard-coded — the chart only manages *.local.katta.cloud.
+    ZONE_REGEX='^[^.]+\.local\.katta\.cloud\.?$'
+
+    BEGIN_MARK="# BEGIN katta:${RELEASE_NAME}"
+    END_MARK="# END katta:${RELEASE_NAME}"
+
+    CUR=$(kubectl -n "${COREDNS_NS}" get cm coredns -o jsonpath='{.data.Corefile}')
+
+    STRIPPED=$(printf '%s\n' "$CUR" | awk -v b="$BEGIN_MARK" -v e="$END_MARK" '
+      index($0, b) { skip=1; next }
+      index($0, e) { skip=0; next }
+      !skip { print }')
+
+    STANZA=$(cat <<EOF
+        ${BEGIN_MARK}
+        rewrite name regex ${ZONE_REGEX} ${TARGET} answer auto
+        ${END_MARK}
+    EOF
+    )
+
+    # Inject right after the opening of the .:53 { ... } block. Plugin order in the
+    # Corefile is cosmetic — CoreDNS's plugin execution order is fixed at build time
+    # via plugin.cfg (rewrite always runs before kubernetes).
+    NEW=$(printf '%s\n' "$STRIPPED" | awk -v s="$STANZA" '
+      !done && /^\.:53[[:space:]]*\{[[:space:]]*$/ { print; print s; done=1; next }
+      { print }')
+
+    if [ "$NEW" = "$STRIPPED" ]; then
+      echo "ERROR: could not find .:53 { block in coredns Corefile" >&2
+      exit 1
+    fi
+
+    printf '%s\n' "$NEW" > /tmp/Corefile.new
+    kubectl -n "${COREDNS_NS}" get cm coredns -o yaml \
+      | yq eval '.data.Corefile = load_str("/tmp/Corefile.new")' - \
+      | kubectl apply -f -
+
+    echo "Stanza applied for release ${RELEASE_NAME}. Sleeping 45s for CoreDNS reload..."
+    sleep 45
+    echo "Done."
+
+  revert.sh: |
+    #!/bin/sh
+    # Strip the release-scoped rewrite stanza from kube-system/coredns's Corefile.
+    # No-op if the stanza isn't there (covers re-runs and partial installs).
+    set -eu
+
+    BEGIN_MARK="# BEGIN katta:${RELEASE_NAME}"
+    END_MARK="# END katta:${RELEASE_NAME}"
+
+    CUR=$(kubectl -n "${COREDNS_NS}" get cm coredns -o jsonpath='{.data.Corefile}')
+
+    NEW=$(printf '%s\n' "$CUR" | awk -v b="$BEGIN_MARK" -v e="$END_MARK" '
+      index($0, b) { skip=1; next }
+      index($0, e) { skip=0; next }
+      !skip { print }')
+
+    if [ "$NEW" = "$CUR" ]; then
+      echo "No katta stanza found for release ${RELEASE_NAME}; already reverted."
+      exit 0
+    fi
+
+    printf '%s\n' "$NEW" > /tmp/Corefile.new
+    kubectl -n "${COREDNS_NS}" get cm coredns -o yaml \
+      | yq eval '.data.Corefile = load_str("/tmp/Corefile.new")' - \
+      | kubectl apply -f -
+
+    echo "Stanza removed for release ${RELEASE_NAME}."
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ $name }}-apply
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "cryptomator-hub.labels" . | nindent 4 }}
+    app.kubernetes.io/component: coredns-patch
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "5"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: 3
+  ttlSecondsAfterFinished: 600
+  template:
+    metadata:
+      labels:
+        {{- include "cryptomator-hub.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: coredns-patch
+    spec:
+      restartPolicy: OnFailure
+      serviceAccountName: {{ $name }}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+      containers:
+        - name: apply
+          image: "{{ .Values.coredns.patch.image.repository }}:{{ .Values.coredns.patch.image.tag }}"
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: RELEASE_NAME
+              value: {{ .Release.Name | quote }}
+            - name: COREDNS_NS
+              value: {{ .Values.coredns.patch.namespace | quote }}
+            - name: TARGET
+              value: {{ $target | quote }}
+          command: ["/bin/sh", "/scripts/apply.sh"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false  # writes /tmp/Corefile.new
+            privileged: false
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: scripts
+              mountPath: /scripts
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: scripts
+          configMap:
+            name: {{ $name }}
+            defaultMode: 0755
+        - name: tmp
+          emptyDir: {}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ $name }}-revert
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "cryptomator-hub.labels" . | nindent 4 }}
+    app.kubernetes.io/component: coredns-patch
+  annotations:
+    "helm.sh/hook": pre-delete
+    "helm.sh/hook-weight": "-10"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: 3
+  ttlSecondsAfterFinished: 600
+  template:
+    metadata:
+      labels:
+        {{- include "cryptomator-hub.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: coredns-patch
+    spec:
+      restartPolicy: OnFailure
+      serviceAccountName: {{ $name }}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+      containers:
+        - name: revert
+          image: "{{ .Values.coredns.patch.image.repository }}:{{ .Values.coredns.patch.image.tag }}"
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: RELEASE_NAME
+              value: {{ .Release.Name | quote }}
+            - name: COREDNS_NS
+              value: {{ .Values.coredns.patch.namespace | quote }}
+          command: ["/bin/sh", "/scripts/revert.sh"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            privileged: false
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: scripts
+              mountPath: /scripts
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: scripts
+          configMap:
+            name: {{ $name }}
+            defaultMode: 0755
+        - name: tmp
+          emptyDir: {}
+{{- end }}

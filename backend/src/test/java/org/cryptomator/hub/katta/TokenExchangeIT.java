@@ -110,7 +110,7 @@ public class TokenExchangeIT {
         Assertions.assertEquals("Received: 'Bad Request', status code 400 from Keycloak.", tokenExchangeResponse.body().asString());
     }
 
-    private static HttpClient newTrustingHttpClient() throws NoSuchAlgorithmException, KeyManagementException, KeyStoreException {
+    protected static HttpClient newTrustingHttpClient() throws NoSuchAlgorithmException, KeyManagementException, KeyStoreException {
         return HttpClient.newBuilder()
                 .sslContext(
                         new SSLContextBuilder().loadTrustMaterial(null, new TrustStrategy() {

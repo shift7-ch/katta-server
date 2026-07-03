@@ -14,22 +14,12 @@ import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.S3ClientBuilder;
 import software.amazon.awssdk.services.s3.S3Configuration;
-import software.amazon.awssdk.services.s3.model.AccelerateConfiguration;
-import software.amazon.awssdk.services.s3.model.BucketAccelerateStatus;
-import software.amazon.awssdk.services.s3.model.BucketVersioningStatus;
 import software.amazon.awssdk.services.s3.model.CreateBucketConfiguration;
 import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
-import software.amazon.awssdk.services.s3.model.GetBucketAccelerateConfigurationRequest;
-import software.amazon.awssdk.services.s3.model.GetBucketAccelerateConfigurationResponse;
-import software.amazon.awssdk.services.s3.model.GetBucketVersioningRequest;
-import software.amazon.awssdk.services.s3.model.GetBucketVersioningResponse;
 import software.amazon.awssdk.services.s3.model.HeadBucketRequest;
 import software.amazon.awssdk.services.s3.model.NoSuchBucketException;
-import software.amazon.awssdk.services.s3.model.PutBucketAccelerateConfigurationRequest;
-import software.amazon.awssdk.services.s3.model.PutBucketVersioningRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Exception;
-import software.amazon.awssdk.services.s3.model.VersioningConfiguration;
 
 import java.net.URI;
 import java.util.Base64;
@@ -109,39 +99,6 @@ public class S3StorageHelper {
 					.key(String.format("d/%s/%s/dir.uvf", dto.rootDirHash().substring(0, 2), dto.rootDirHash().substring(2)))
 					.build();
 			s3.putObject(dirUvfPutRequest, RequestBody.fromBytes(Base64.getUrlDecoder().decode(dto.dirUvf())));
-
-
-			// enable versioning on the bucket.
-			{
-				if (log.isInfoEnabled()) {
-					log.info(String.format("Enable/disable bucket versioning on %s (%s, %s)", bucketName, dto, storageConfig));
-				}
-				s3.putBucketVersioning(PutBucketVersioningRequest.builder()
-						.bucket(bucketName)
-						.versioningConfiguration(VersioningConfiguration.builder().status(storageConfig.isBucketVersioning() ? BucketVersioningStatus.ENABLED : BucketVersioningStatus.SUSPENDED).build())
-						.build());
-				final GetBucketVersioningResponse conf = s3.getBucketVersioning(GetBucketVersioningRequest.builder().bucket(bucketName).build());
-				if (log.isInfoEnabled()) {
-					log.info(String.format("Enabled/disabled bucket versioning on %s (%s, %s) with status %s", bucketName, dto, storageConfig, conf.statusAsString()));
-				}
-			}
-
-			// enable/disable bucket acceleration on the bucket. Skip if not set (e.g. MinIO which has no bucket acceleration API)
-			if (storageConfig.getBucketAcceleration() != null) {
-				if (log.isInfoEnabled()) {
-					log.info(String.format("Enable/disable bucket acceleration on %s (%s, %s)", bucketName, dto, storageConfig));
-				}
-				s3.putBucketAccelerateConfiguration(PutBucketAccelerateConfigurationRequest.builder()
-						.bucket(bucketName)
-						.accelerateConfiguration(AccelerateConfiguration.builder()
-								.status(storageConfig.getBucketAcceleration() ? BucketAccelerateStatus.ENABLED : BucketAccelerateStatus.SUSPENDED)
-								.build())
-						.build());
-				final GetBucketAccelerateConfigurationResponse conf = s3.getBucketAccelerateConfiguration(GetBucketAccelerateConfigurationRequest.builder().bucket(bucketName).build());
-				if (log.isInfoEnabled()) {
-					log.info(String.format("Enabled/disabled bucket acceleration on %s (%s, %s) with status %s", bucketName, dto, storageConfig, conf.status()));
-				}
-			}
 		}
 	}
 }

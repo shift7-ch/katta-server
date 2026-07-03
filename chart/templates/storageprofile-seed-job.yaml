@@ -1,0 +1,455 @@
+{{- $staticEnabled := .Values.storageProfileSeed.static.enabled -}}
+{{- $stsEnabled := .Values.storageProfileSeed.sts.enabled -}}
+{{- $openidEnabled := .Values.minio.openid.enabled -}}
+{{- if and .Values.minio.enabled (or $staticEnabled $stsEnabled) }}
+{{- $fullname := include "cryptomator-hub.fullname" . -}}
+{{- $hubReadyUrl := printf "http://%s-service-hub:%v/q/health/ready" $fullname .Values.hub.service.managementPort -}}
+{{- $hubUrl := printf "http://%s-service-hub:%v" $fullname .Values.hub.service.port -}}
+{{- $kcUrl := include "cryptomator-hub.keycloakLocalUrl" . | trimSuffix "/" -}}
+{{- $minioInternalUrl := printf "http://%s-service-minio:%v" $fullname (int .Values.minio.service.apiPort) -}}
+{{- $oidcConfigUrl := include "katta-server.minioOidcConfigUrl" . -}}
+{{- $profileId := include "katta-server.resolvedMinioProfileId.S3STATIC" . -}}
+{{- $stsProfileId := include "katta-server.resolvedMinioProfileId.S3STS" . -}}
+{{- /* The storage-profile address must be the *single* URL that works from both inside
+       and outside the cluster (browser/clients vs Hub pod). Pull it from urls.s3.public;
+       if blank, fall back to the cluster-internal MinIO Service which only works in-cluster. */ -}}
+{{- $s3Url := .Values.urls.s3.public -}}
+{{- if not $s3Url -}}{{- $s3Url = $minioInternalUrl -}}{{- end -}}
+{{- $s3Scheme := regexReplaceAll "^(https?)://.*" $s3Url "${1}" -}}
+{{- $s3Host := regexReplaceAll "^https?://([^:/]+).*" $s3Url "${1}" -}}
+{{- $s3PortMatch := regexReplaceAll "^https?://[^:/]+(?::(\\d+))?.*" $s3Url "${1}" -}}
+{{- $s3Port := default (ternary "443" "80" (eq $s3Scheme "https")) $s3PortMatch -}}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ $fullname }}-storageprofile-seed
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "cryptomator-hub.labels" . | nindent 4 }}
+    app.kubernetes.io/component: storageprofile-seed
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-weight": "10"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: 20
+  ttlSecondsAfterFinished: 600
+  template:
+    metadata:
+      labels:
+        {{- include "cryptomator-hub.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: storageprofile-seed
+    spec:
+      restartPolicy: OnFailure
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 100
+        runAsGroup: 101
+      {{- if $openidEnabled }}
+      # MinIO requires one OIDC provider per Keycloak client (its `azp == ClientID`
+      # check is strict). This init container:
+      #   1. creates the katta_create_bucket_policy / katta_access_bucket_policy MinIO
+      #      policies from the policies ConfigMap;
+      #   2. registers the `cryptomator`, `cryptomatorhub`, and `cryptomatorvaults`
+      #      OIDC providers via `mc idp openid add`;
+      #   3. waits for each provider's role ARN to appear (the ARN is computed only
+      #      after MinIO successfully fetches Keycloak's discovery doc) and writes the
+      #      three ARNs to /state/{cryptomator,cryptomatorhub,cryptomatorvaults}-role-arn
+      #      for the seed container to read.
+      # Reuses the MinIO server image (already cached on the node from the StatefulSet)
+      # so no extra pull is needed.
+      initContainers:
+        # `mc idp openid add` validates config_url server-side, so Keycloak must already be
+        # serving its discovery endpoint when setup-minio runs. On a fresh install Keycloak's
+        # first-boot realm import can outlast this post-install hook; without this gate the
+        # adds fail with "connection refused", get swallowed, and the ARN loop hangs forever.
+        # Mirrors the Hub deployment's wait-for-oidc init container.
+        - name: wait-for-oidc
+          image: alpine/curl:8.17.0
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            privileged: false
+            capabilities:
+              drop:
+                - ALL
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -eux
+              until [ "$(curl -sS -o /dev/null -w "%{http_code}" "{{ $oidcConfigUrl }}")" = "200" ]; do
+                echo "waiting for OIDC discovery endpoint..."
+                sleep 5
+              done
+        - name: setup-minio
+          # Same image as the MinIO StatefulSet (shares minio.image.tag) — both run the same
+          # mc/server build; the default tag is version-pinned (not :latest) for reproducibility.
+          image: "quay.io/minio/minio:{{ .Values.minio.image.tag | default "RELEASE.2025-09-07T16-13-09Z" }}"
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: MINIO_URL
+              value: {{ $minioInternalUrl | quote }}
+            - name: MINIO_ROOT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $fullname }}-secrets-minio
+                  key: minio_root_user
+            - name: MINIO_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $fullname }}-secrets-minio
+                  key: minio_root_password
+            - name: OIDC_CONFIG_URL
+              value: {{ $oidcConfigUrl | quote }}
+            # mc respects HOME for its config dir (~/.mc). The MinIO image runs as a
+            # non-root user without a writable home, so point HOME at the writable
+            # emptyDir we mount below.
+            - name: HOME
+              value: /state
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false  # mc writes its config under $HOME/.mc
+            privileged: false
+            capabilities:
+              drop:
+                - ALL
+          command: ["/bin/sh", "-eu", "-c"]
+          args:
+            - |
+              echo "Configuring mc alias for $MINIO_URL..."
+              until /usr/bin/mc alias set local "$MINIO_URL" "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD" >/dev/null 2>&1; do
+                echo "  MinIO not reachable yet, retrying..."
+                sleep 2
+              done
+
+              # Extract the first arn:minio:iam:::role/<id> substring from command output.
+              # The MinIO image's ubi-micro base ships coreutils-single only — no grep/sed/awk
+              # — so we use POSIX shell parameter expansion.
+              extract_arn() {
+                output=$("$@" 2>/dev/null || true)
+                case "$output" in
+                  *"arn:minio:iam:::role/"*)
+                    rest="${output#*arn:minio:iam:::role/}"
+                    arn_id="${rest%%[!A-Za-z0-9_]*}"
+                    if [ -n "$arn_id" ]; then
+                      printf '%s' "arn:minio:iam:::role/$arn_id"
+                      return 0
+                    fi
+                    ;;
+                esac
+                return 1
+              }
+
+              # Helper: run an mc command, print stdout+stderr regardless of exit code so
+              # we never silently mask "already exists" or actual errors during re-runs.
+              # Indents each output line with four spaces using a shell builtin (sed is not
+              # part of ubi-micro/coreutils-single).
+              try_mc() {
+                _label="$1"; shift
+                if output=$("$@" 2>&1); then
+                  echo "  [$_label] ok"
+                else
+                  echo "  [$_label] exit=$? (probably idempotent re-run; continuing)"
+                fi
+                if [ -n "$output" ]; then
+                  printf '%s\n' "$output" | while IFS= read -r line; do
+                    printf '    %s\n' "$line"
+                  done
+                fi
+              }
+
+              # If all three providers are already configured and have ARNs, skip the
+              # re-setup + restart cycle entirely — the StatefulSet survives helm
+              # uninstall/reinstall via its PVC, so on a typical `helm upgrade` MinIO
+              # already has the right state and a restart would just cause a brief outage.
+              all_present=1
+              for name in cryptomator cryptomatorhub cryptomatorvaults; do
+                if ! extract_arn /usr/bin/mc idp openid info local "$name" >/dev/null 2>&1; then
+                  all_present=0
+                  break
+                fi
+              done
+
+              if [ "$all_present" = "1" ]; then
+                echo "All three providers already configured with role ARNs; skipping setup."
+              else
+                echo "Creating MinIO policies..."
+                try_mc "policy create katta_create_bucket_policy" \
+                  /usr/bin/mc admin policy create local katta_create_bucket_policy /policies/create_bucket_policy.json
+                try_mc "policy create katta_access_bucket_policy" \
+                  /usr/bin/mc admin policy create local katta_access_bucket_policy /policies/access_bucket_policy.json
+
+                echo "Registering OIDC providers..."
+                # Triplets of "<provider-name>:<keycloak-client-id>:<minio-role-policy>".
+                # Provider name = Keycloak client_id by convention so `mc idp openid info
+                # local <name>` is easy to reason about.
+                for entry in \
+                  "cryptomator:cryptomator:katta_create_bucket_policy" \
+                  "cryptomatorhub:cryptomatorhub:katta_create_bucket_policy" \
+                  "cryptomatorvaults:cryptomatorvaults:katta_access_bucket_policy" \
+                ; do
+                  name="${entry%%:*}"
+                  rest="${entry#*:}"
+                  client_id="${rest%%:*}"
+                  policy="${rest#*:}"
+                  try_mc "idp openid add $name" \
+                    /usr/bin/mc idp openid add local "$name" \
+                      "config_url=$OIDC_CONFIG_URL" \
+                      "client_id=$client_id" \
+                      "client_secret=ignore-me" \
+                      "role_policy=$policy"
+                done
+
+                # mc tells us to restart after registering OIDC providers — the role ARN
+                # isn't computed until MinIO has reloaded its config. `--json` skips the
+                # interactive progress UI that needs /dev/tty (which we don't have here).
+                echo "Restarting MinIO to activate the new OIDC providers..."
+                /usr/bin/mc --json admin service restart local
+
+                echo "Waiting for MinIO to come back..."
+                until /usr/bin/mc admin info local >/dev/null 2>&1; do
+                  echo "  not ready yet, retrying..."
+                  sleep 2
+                done
+                echo "MinIO is back."
+              fi
+
+              echo "Discovering role ARN for each provider..."
+              # The ARN appears only after MinIO has successfully fetched Keycloak's
+              # discovery doc. Keep retrying until both sides of the chain work.
+              for name in cryptomator cryptomatorhub cryptomatorvaults; do
+                while :; do
+                  if arn=$(extract_arn /usr/bin/mc idp openid info local "$name"); then
+                    printf '%s' "$arn" > "/state/${name}-role-arn"
+                    echo "  $name -> $arn"
+                    break
+                  fi
+                  echo "  ARN for $name not ready yet, retrying..."
+                  sleep 2
+                done
+              done
+              echo "MinIO setup complete."
+          volumeMounts:
+            - name: state
+              mountPath: /state
+            - name: policies
+              mountPath: /policies
+              readOnly: true
+      {{- end }}
+      containers:
+        # Reuse alpine/curl — same image as the Hub's wait-for-oidc init container, so
+        # it's guaranteed to be in the node's image cache by the time this Job runs.
+        - name: seed
+          image: "alpine/curl:8.17.0"
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: HUB_READY_URL
+              value: {{ $hubReadyUrl | quote }}
+            - name: HUB_URL
+              value: {{ $hubUrl | quote }}
+            - name: KEYCLOAK_URL
+              value: {{ $kcUrl | quote }}
+            - name: REALM
+              value: {{ .Values.hub.config.keycloakRealm | quote }}
+            - name: HUB_READY_TIMEOUT
+              value: {{ .Values.storageProfileSeed.hubReadyTimeoutSeconds | quote }}
+            - name: S3_SCHEME
+              value: {{ $s3Scheme | quote }}
+            - name: S3_HOST
+              value: {{ $s3Host | quote }}
+            - name: S3_PORT
+              value: {{ $s3Port | quote }}
+            - name: SYSTEM_CLIENT_ID
+              value: "cryptomatorhub-system"
+            - name: SYSTEM_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $fullname }}-secrets-hub
+                  key: hub_system_client_secret
+            {{- if $staticEnabled }}
+            - name: STATIC_PROFILE_ID
+              value: {{ $profileId | quote }}
+            - name: STATIC_PROFILE_NAME
+              value: {{ .Values.storageProfileSeed.static.profileName | quote }}
+            - name: STATIC_BUCKET_PREFIX
+              value: {{ .Values.storageProfileSeed.static.bucketPrefix | quote }}
+            {{- end }}
+            {{- if $stsEnabled }}
+            - name: STS_PROFILE_ID
+              value: {{ $stsProfileId | quote }}
+            - name: STS_PROFILE_NAME
+              value: {{ .Values.storageProfileSeed.sts.profileName | quote }}
+            - name: STS_BUCKET_PREFIX
+              value: {{ .Values.storageProfileSeed.sts.bucketPrefix | quote }}
+            - name: STS_SESSION_TAG
+              value: {{ .Values.storageProfileSeed.sts.sessionTag | quote }}
+            - name: STS_DURATION_SECONDS
+              value: {{ .Values.storageProfileSeed.sts.durationSeconds | quote }}
+            {{- end }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            privileged: false
+            capabilities:
+              drop:
+                - ALL
+          command: ["/bin/sh", "-eu", "-c"]
+          args:
+            - |
+              echo "Waiting for Hub at $HUB_READY_URL (timeout ${HUB_READY_TIMEOUT}s)..."
+              deadline=$(( $(date +%s) + HUB_READY_TIMEOUT ))
+              while :; do
+                code=$(curl -sS -o /dev/null -w "%{http_code}" "$HUB_READY_URL" || true)
+                if [ "$code" = "200" ]; then
+                  echo "Hub is ready."
+                  break
+                fi
+                if [ "$(date +%s)" -ge "$deadline" ]; then
+                  echo "Hub did not become ready within ${HUB_READY_TIMEOUT}s (last code: $code)" >&2
+                  exit 1
+                fi
+                sleep 2
+              done
+
+              echo "Requesting admin token from Keycloak..."
+              token_response=$(curl -sS -X POST \
+                -H "Content-Type: application/x-www-form-urlencoded" \
+                -d "grant_type=client_credentials" \
+                --data-urlencode "client_id=${SYSTEM_CLIENT_ID}" \
+                --data-urlencode "client_secret=${SYSTEM_CLIENT_SECRET}" \
+                "$KEYCLOAK_URL/realms/$REALM/protocol/openid-connect/token")
+              access_token=$(printf '%s' "$token_response" | sed -n 's/.*"access_token"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')
+              if [ -z "$access_token" ]; then
+                echo "Failed to obtain access token. Response was:" >&2
+                printf '%s\n' "$token_response" >&2
+                exit 1
+              fi
+              echo "Got access token."
+
+              # Post-helper: POST a JSON payload and treat 201/409 as success.
+              post_profile() {
+                _path="$1"; _payload="$2"; _label="$3"
+                echo "Posting ${_label} to ${HUB_URL}${_path}..."
+                http_code=$(curl -sS -o /tmp/response.json -w "%{http_code}" \
+                  -X POST \
+                  -H "Authorization: Bearer $access_token" \
+                  -H "Content-Type: application/json" \
+                  --data "$_payload" \
+                  "${HUB_URL}${_path}")
+                case "$http_code" in
+                  201) echo "  ${_label} created (201)." ;;
+                  409) echo "  ${_label} already exists (409). Nothing to do." ;;
+                  *)
+                    echo "  Unexpected response ($http_code):" >&2
+                    cat /tmp/response.json >&2 || true
+                    echo >&2
+                    return 1
+                    ;;
+                esac
+              }
+
+              {{- if $staticEnabled }}
+
+              # ----- S3STATIC profile ---------------------------------------------------
+              # The sts* fields are required by the DTO contract even for S3STATIC
+              # profiles; the backend never reads them for the static path, so placeholder
+              # strings are fine.
+              static_payload=$(cat <<JSON
+              {
+                "id": "${STATIC_PROFILE_ID}",
+                "name": "${STATIC_PROFILE_NAME}",
+                "protocol": "S3STATIC",
+                "archived": false,
+                "scheme": "${S3_SCHEME}",
+                "hostname": "${S3_HOST}",
+                "port": ${S3_PORT},
+                "withPathStyleAccessEnabled": true,
+                "storageClass": "STANDARD",
+                "region": "us-east-1",
+                "regions": ["us-east-1"],
+                "bucketPrefix": "${STATIC_BUCKET_PREFIX}",
+                "stsRoleCreateBucketClient": "n/a",
+                "stsRoleCreateBucketHub": "n/a",
+                "stsEndpoint": null,
+                "bucketVersioning": true,
+                "bucketAcceleration": null,
+                "bucketEncryption": "NONE"
+              }
+              JSON
+              )
+              post_profile "/api/storageprofile/s3static" "$static_payload" "S3STATIC profile ${STATIC_PROFILE_ID}"
+              {{- end }}
+
+              {{- if $stsEnabled }}
+
+              # ----- S3STS profile ------------------------------------------------------
+              # Each role field points at the ARN of a DIFFERENT MinIO OIDC provider:
+              #   - stsRoleCreateBucketClient = cryptomator provider (desktop app creates)
+              #   - stsRoleCreateBucketHub    = cryptomatorhub provider (SPA creates)
+              #   - stsRoleAccessBucket...    = cryptomatorvaults provider (vault access)
+              # stsRoleAccessBucketAssumeRoleTaggedSession is AWS-only role chaining;
+              # MinIO ignores it, so we leave it null.
+              CRYPTOMATOR_ARN=$(cat /state/cryptomator-role-arn)
+              CRYPTOMATORHUB_ARN=$(cat /state/cryptomatorhub-role-arn)
+              CRYPTOMATORVAULTS_ARN=$(cat /state/cryptomatorvaults-role-arn)
+              if [ -z "$CRYPTOMATOR_ARN" ] || [ -z "$CRYPTOMATORHUB_ARN" ] || [ -z "$CRYPTOMATORVAULTS_ARN" ]; then
+                echo "STS profile requested but one or more role ARNs are missing." >&2
+                exit 1
+              fi
+              if [ -n "${STS_DURATION_SECONDS}" ]; then
+                duration_field="\"stsDurationSeconds\": ${STS_DURATION_SECONDS},"
+              else
+                duration_field="\"stsDurationSeconds\": null,"
+              fi
+              sts_payload=$(cat <<JSON
+              {
+                "id": "${STS_PROFILE_ID}",
+                "name": "${STS_PROFILE_NAME}",
+                "protocol": "S3STS",
+                "archived": false,
+                "scheme": "${S3_SCHEME}",
+                "hostname": "${S3_HOST}",
+                "port": ${S3_PORT},
+                "withPathStyleAccessEnabled": true,
+                "storageClass": "STANDARD",
+                "region": "us-east-1",
+                "regions": ["us-east-1"],
+                "bucketPrefix": "${STS_BUCKET_PREFIX}",
+                "stsRoleCreateBucketClient": "${CRYPTOMATOR_ARN}",
+                "stsRoleCreateBucketHub": "${CRYPTOMATORHUB_ARN}",
+                "stsEndpoint": "${S3_SCHEME}://${S3_HOST}:${S3_PORT}",
+                "bucketVersioning": true,
+                "bucketAcceleration": null,
+                "bucketEncryption": "NONE",
+                "stsRoleAccessBucketAssumeRoleWithWebIdentity": "${CRYPTOMATORVAULTS_ARN}",
+                "stsRoleAccessBucketAssumeRoleTaggedSession": null,
+                ${duration_field}
+                "stsSessionTag": "${STS_SESSION_TAG}"
+              }
+              JSON
+              )
+              post_profile "/api/storageprofile/s3sts" "$sts_payload" "S3STS profile ${STS_PROFILE_ID}"
+              {{- end }}
+
+              echo "Done."
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            {{- if $stsEnabled }}
+            - name: state
+              mountPath: /state
+              readOnly: true
+            {{- end }}
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        {{- if or $stsEnabled $openidEnabled }}
+        - name: state
+          emptyDir: {}
+        {{- end }}
+        {{- if $openidEnabled }}
+        - name: policies
+          configMap:
+            name: {{ $fullname }}-minio-policies
+        {{- end }}
+{{- end }}

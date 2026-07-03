@@ -22,12 +22,6 @@ public class StorageProfileS3STS extends StorageProfileS3Static {
 	@Column(name = "sts_endpoint")
 	public String stsEndpoint = null;
 
-	@Column(name = "bucket_versioning", nullable = false)
-	public Boolean bucketVersioning = true;
-
-	@Column(name = "bucket_acceleration")
-	public Boolean bucketAcceleration = true;
-
 	//----------------------------------------------------------------------
 	// (3b) STS client profile custom properties
 	//----------------------------------------------------------------------

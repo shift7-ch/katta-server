@@ -3,6 +3,7 @@ package org.cryptomator.hub.api;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.vertx.core.http.HttpServerRequest;
+import org.jspecify.annotations.Nullable;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -32,20 +33,21 @@ import java.util.stream.Collectors;
 @Path("/emergency-access")
 public class EmergencyAccessResource {
 
-	@Inject
-	EmergencyRecoveryProcess.Repository recoverProcessRepo;
-
-	@Inject
-	RecoveredEmergencyKeyShares.Repository recoveredKeySharesRepo;
-
-	@Inject
-	JsonWebToken jwt;
+	private final EmergencyRecoveryProcess.Repository recoverProcessRepo;
+	private final RecoveredEmergencyKeyShares.Repository recoveredKeySharesRepo;
+	private final JsonWebToken jwt;
+	private final EventLogger eventLogger;
 
 	@Context
 	HttpServerRequest request;
 
 	@Inject
-	EventLogger eventLogger;
+	EmergencyAccessResource(EmergencyRecoveryProcess.Repository recoverProcessRepo, RecoveredEmergencyKeyShares.Repository recoveredKeySharesRepo, JsonWebToken jwt, EventLogger eventLogger) {
+		this.recoverProcessRepo = recoverProcessRepo;
+		this.recoveredKeySharesRepo = recoveredKeySharesRepo;
+		this.jwt = jwt;
+		this.eventLogger = eventLogger;
+	}
 
 	@PUT
 	@Path("/{processId}")
@@ -156,6 +158,17 @@ public class EmergencyAccessResource {
 	}
 
 	@GET
+	@RolesAllowed("user")
+	@Produces(MediaType.APPLICATION_JSON)
+	@Operation(summary = "finds all recovery processes for vaults recoverable by the current user")
+	@APIResponse(responseCode = "200")
+	@Transactional
+	public List<RecoveryProcessDto> findAllForRecoverableVaults() {
+		var currentUser = jwt.getSubject();
+		return recoverProcessRepo.findByCouncilMemberOrProcessMember(currentUser).map(RecoveryProcessDto::fromEntity).toList();
+	}
+
+	@GET
 	@Path("/{vaultId}")
 	@RolesAllowed("user")
 	@Produces(MediaType.APPLICATION_JSON)
@@ -171,7 +184,7 @@ public class EmergencyAccessResource {
 			@JsonProperty("id") @NotNull UUID id,
 			@JsonProperty("vaultId") @NotNull UUID vaultId,
 			@JsonProperty("type") @NotNull EmergencyRecoveryProcess.Type type,
-			@JsonProperty("details") @RawJson String details,
+			@JsonProperty("details") @RawJson @Nullable String details,
 			@JsonProperty("requiredKeyShares") @Min(2) int requiredKeyShares,
 			@JsonProperty("processPublicKey") @NotNull String processPublicKey,
 			@JsonProperty("recoveredKeyShares") @NotEmpty Map<String, RecoveredKeyShareDto> recoveredKeyShares) {
@@ -191,10 +204,8 @@ public class EmergencyAccessResource {
 	}
 
 	@JsonInclude(JsonInclude.Include.NON_NULL)
-	public record RecoveredKeyShareDto(@JsonProperty("processPrivateKey") @ValidJWE String processPrivateKey,
-									   @JsonProperty("unrecoveredKeyShare") @ValidJWE String unrecoveredKeyShare,
-									   @JsonProperty("recoveredKeyShare") @ValidJWE String recoveredKeyShare,
-									   @JsonProperty("signedProcessInfo") @ValidJWS String signedProcessInfo) {
+	public record RecoveredKeyShareDto(@JsonProperty("processPrivateKey") @ValidJWE String processPrivateKey, @JsonProperty("unrecoveredKeyShare") @ValidJWE String unrecoveredKeyShare,
+									   @JsonProperty("recoveredKeyShare") @ValidJWE @Nullable String recoveredKeyShare, @JsonProperty("signedProcessInfo") @ValidJWS @Nullable String signedProcessInfo) {
 
 		public static RecoveredKeyShareDto fromEntity(RecoveredEmergencyKeyShares entity) {
 			return new RecoveredKeyShareDto(entity.getProcessPrivateKey(), entity.getUnrecoveredKeyShare(), entity.getRecoveredKeyShare(), entity.getSignedProcessInfo());

@@ -212,13 +212,6 @@
             "type" : "string",
             "maxLength" : 255
           },
-          "groupIds" : {
-            "type" : "array",
-            "uniqueItems" : true,
-            "items" : {
-              "type" : "string"
-            }
-          },
           "realmRoles" : {
             "type" : "array",
             "uniqueItems" : true,
@@ -485,6 +478,18 @@
             "items" : {
               "type" : "string"
             }
+          },
+          "enableAutomaticAccessGrant" : {
+            "type" : "boolean"
+          },
+          "automaticAccessGrantTrustThreshold" : {
+            "type" : "integer",
+            "format" : "int32",
+            "maximum" : 9,
+            "minimum" : -1
+          },
+          "allowAutomaticAccessGrantOverride" : {
+            "type" : "boolean"
           }
         },
         "required" : [ "emergencyCouncilMemberIds" ]
@@ -600,15 +605,6 @@
             "type" : [ "string", "null" ],
             "description" : "STS endpoint to use for AssumeRoleWithWebIdentity and AssumeRole for getting a temporary access token passed to the storage. Defaults to AWS SDK default."
           },
-          "bucketVersioning" : {
-            "type" : "boolean",
-            "description" : "Enable bucket versioning upon bucket creation",
-            "default" : true
-          },
-          "bucketAcceleration" : {
-            "type" : [ "boolean", "null" ],
-            "description" : "Enable bucket versioning upon bucket creation (null for MinIO)"
-          },
           "stsRoleAccessBucketAssumeRoleWithWebIdentity" : {
             "type" : "string",
             "description" : "roleArn to for STS AssumeRoleWithWebIdentity (AWS and MinIO)",
@@ -630,7 +626,7 @@
             "default" : "Vault"
           }
         },
-        "required" : [ "name", "protocol", "storageClass", "region", "regions", "bucketPrefix", "stsRoleCreateBucketClient", "stsRoleCreateBucketHub", "bucketVersioning", "stsRoleAccessBucketAssumeRoleWithWebIdentity", "stsSessionTag" ]
+        "required" : [ "name", "protocol", "storageClass", "region", "regions", "bucketPrefix", "stsRoleCreateBucketClient", "stsRoleCreateBucketHub", "stsRoleAccessBucketAssumeRoleWithWebIdentity", "stsSessionTag" ]
       },
       "StorageProfileS3StaticDto" : {
         "title" : "StorageProfileS3StaticDto",
@@ -794,13 +790,6 @@
           "language" : {
             "type" : "string"
           },
-          "realmRoles" : {
-            "type" : "array",
-            "uniqueItems" : true,
-            "items" : {
-              "type" : "string"
-            }
-          },
           "enabled" : {
             "type" : "boolean"
           },
@@ -959,13 +948,6 @@
           "firstName" : {
             "type" : "string"
           },
-          "realmRoles" : {
-            "type" : "array",
-            "uniqueItems" : true,
-            "items" : {
-              "type" : "string"
-            }
-          },
           "privateKey" : {
             "type" : "string",
             "deprecated" : true
@@ -1074,13 +1056,6 @@
           "firstName" : {
             "type" : "string"
           },
-          "realmRoles" : {
-            "type" : "array",
-            "uniqueItems" : true,
-            "items" : {
-              "type" : "string"
-            }
-          },
           "privateKey" : {
             "type" : "string",
             "deprecated" : true
@@ -1123,6 +1098,13 @@
             "uniqueItems" : true,
             "items" : {
               "$ref" : "#/components/schemas/DeviceDto"
+            }
+          },
+          "realmRoles" : {
+            "type" : "array",
+            "uniqueItems" : true,
+            "items" : {
+              "type" : "string"
             }
           }
         }
@@ -1689,6 +1671,36 @@
         } ]
       }
     },
+    "/api/emergency-access" : {
+      "get" : {
+        "summary" : "finds all recovery processes for vaults recoverable by the current user",
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/RecoveryProcessDto"
+                  }
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Not Authorized"
+          },
+          "403" : {
+            "description" : "Not Allowed"
+          }
+        },
+        "tags" : [ "Emergency Access Resource" ],
+        "security" : [ {
+          "SecurityScheme" : [ "user" ]
+        } ]
+      }
+    },
     "/api/emergency-access/{processId}" : {
       "put" : {
         "summary" : "starts a new recovery process",
@@ -1971,6 +1983,9 @@
           "404" : {
             "description" : "group not found"
           },
+          "409" : {
+            "description" : "group name already exists"
+          },
           "401" : {
             "description" : "Not Authorized"
           },
@@ -2175,9 +2190,27 @@
       "post" : {
         "summary" : "Refresh license information",
         "description" : "Refreshes the license information from the license server.",
+        "requestBody" : {
+          "content" : {
+            "application/x-www-form-urlencoded" : {
+              "schema" : {
+                "type" : "object",
+                "properties" : {
+                  "session" : {
+                    "$ref" : "#/components/schemas/UUID"
+                  }
+                }
+              }
+            }
+          },
+          "required" : true
+        },
         "responses" : {
           "204" : {
             "description" : "License information refreshed"
+          },
+          "404" : {
+            "description" : "Session not found"
           },
           "500" : {
             "description" : "License refresh failed"
@@ -2187,6 +2220,9 @@
           },
           "403" : {
             "description" : "Not Allowed"
+          },
+          "400" : {
+            "description" : "Bad Request"
           }
         },
         "tags" : [ "License Resource" ],
@@ -2343,7 +2379,12 @@
         },
         "responses" : {
           "200" : {
-            "description" : "Bucket and Keycloak config created"
+            "description" : "Bucket and Keycloak config created",
+            "content" : {
+              "application/json" : {
+                "schema" : { }
+              }
+            }
           },
           "400" : {
             "description" : "Could not create bucket"
@@ -2622,13 +2663,6 @@
           "schema" : {
             "type" : "boolean"
           }
-        }, {
-          "description" : "adds last access values to the devices (if present)",
-          "in" : "query",
-          "name" : "withLastAccess",
-          "schema" : {
-            "type" : "boolean"
-          }
         } ],
         "responses" : {
           "200" : {
@@ -2707,7 +2741,10 @@
         },
         "responses" : {
           "200" : {
-            "description" : "all keys stored"
+            "description" : "all keys stored",
+            "content" : {
+              "text/plain" : { }
+            }
           },
           "401" : {
             "description" : "Not Authorized"
@@ -2889,6 +2926,9 @@
           },
           "404" : {
             "description" : "user not found"
+          },
+          "409" : {
+            "description" : "email already exists"
           },
           "401" : {
             "description" : "Not Authorized"
@@ -3149,6 +3189,51 @@
         } ]
       }
     },
+    "/api/vaults/users-requiring-access-grant" : {
+      "get" : {
+        "summary" : "list pending access grants the caller could perform, grouped by vault",
+        "description" : "Long-polling endpoint for the automatic access grant flow. Returns members without an access token on\nvaults the caller holds a token for (i.e. can decrypt and therefore re-share). The Web-of-Trust decision\nand the vault's encrypted trust threshold / enabled flag are evaluated client-side — the server cannot\nsee them, and the recursive WoT view would be too costly to join here. Returns immediately if such\npending grants exist; otherwise blocks up to `wait` seconds and returns the next snapshot (or an empty\nmap on timeout). The client avoids re-evaluating candidates it has already ruled out (and backs off when\nonly such candidates remain). Best effort — events on other backend instances will not wake this call.",
+        "parameters" : [ {
+          "name" : "wait",
+          "in" : "query",
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "minimum" : 0,
+            "default" : 25
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object",
+                  "additionalProperties" : {
+                    "type" : "array",
+                    "uniqueItems" : true,
+                    "items" : {
+                      "type" : "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Not Authorized"
+          },
+          "403" : {
+            "description" : "Not Allowed"
+          }
+        },
+        "tags" : [ "Vault Resource" ],
+        "security" : [ {
+          "SecurityScheme" : [ "user" ]
+        } ]
+      }
+    },
     "/api/vaults/{vaultId}" : {
       "get" : {
         "summary" : "gets a vault",
@@ -3220,7 +3305,12 @@
         },
         "responses" : {
           "200" : {
-            "description" : "existing vault updated"
+            "description" : "existing vault updated",
+            "content" : {
+              "application/json" : {
+                "schema" : { }
+              }
+            }
           },
           "201" : {
             "description" : "new vault created"
@@ -3327,7 +3417,12 @@
         },
         "responses" : {
           "200" : {
-            "description" : "all keys stored"
+            "description" : "all keys stored",
+            "content" : {
+              "application/json" : {
+                "schema" : { }
+              }
+            }
           },
           "402" : {
             "description" : "number of users granted access exceeds available license seats"
@@ -3343,6 +3438,60 @@
           },
           "400" : {
             "description" : "Bad Request"
+          }
+        },
+        "tags" : [ "Vault Resource" ],
+        "security" : [ {
+          "SecurityScheme" : [ "user" ]
+        } ]
+      }
+    },
+    "/api/vaults/{vaultId}/access-tokens/auto" : {
+      "post" : {
+        "summary" : "adds user-specific vault keys via the automatic access grant flow",
+        "description" : "Stores one or more user-vaultkey-tuples, as defined in the request body ({user1: token1, user2: token2, ...}).",
+        "parameters" : [ {
+          "name" : "vaultId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/components/schemas/UUID"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "type" : "object",
+                "additionalProperties" : {
+                  "type" : "string"
+                },
+                "minProperties" : 1
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "all keys stored",
+            "content" : {
+              "application/json" : {
+                "schema" : { }
+              }
+            }
+          },
+          "400" : {
+            "description" : "at least one target user is not awaiting an access grant for this vault"
+          },
+          "403" : {
+            "description" : "not a vault member"
+          },
+          "404" : {
+            "description" : "at least one user has not been found"
+          },
+          "401" : {
+            "description" : "Not Authorized"
           }
         },
         "tags" : [ "Vault Resource" ],
@@ -3469,7 +3618,12 @@
         },
         "responses" : {
           "200" : {
-            "description" : "ownership claimed successfully"
+            "description" : "ownership claimed successfully",
+            "content" : {
+              "application/json" : {
+                "schema" : { }
+              }
+            }
           },
           "400" : {
             "description" : "incorrect proof"
@@ -3525,7 +3679,12 @@
         } ],
         "responses" : {
           "200" : {
-            "description" : "group's role updated"
+            "description" : "group's role updated",
+            "content" : {
+              "application/json" : {
+                "schema" : { }
+              }
+            }
           },
           "201" : {
             "description" : "group added"
@@ -3571,7 +3730,10 @@
         } ],
         "responses" : {
           "200" : {
-            "description" : "OK"
+            "description" : "OK",
+            "content" : {
+              "text/plain" : { }
+            }
           },
           "402" : {
             "description" : "number of effective vault users exceeds available license seats"
@@ -3749,7 +3911,12 @@
         } ],
         "responses" : {
           "200" : {
-            "description" : "user's role updated"
+            "description" : "user's role updated",
+            "content" : {
+              "application/json" : {
+                "schema" : { }
+              }
+            }
           },
           "201" : {
             "description" : "user added"

@@ -1,0 +1,202 @@
+{{- if eq .Values.ingress.controller "traefik" }}
+{{- $hubHost := regexReplaceAll "^https?://([^:/]+).*" (required "urls.hub.public must be set" .Values.urls.hub.public) "${1}" -}}
+{{- $hubPath := include "cryptomator-hub.hubRelativePath" . -}}
+{{- $kcHost := regexReplaceAll "^https?://([^:/]+).*" (required "urls.kc.public must be set" .Values.urls.kc.public) "${1}" -}}
+{{- $kcPath := include "cryptomator-hub.keycloakRelativePath" . -}}
+{{- if ne $hubPath "/" }}
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: {{ include "cryptomator-hub.fullname" . }}-stripprefix
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "cryptomator-hub.labels" . | nindent 4 }}
+spec:
+  stripPrefix:
+    prefixes:
+      - {{ $hubPath | quote }}
+{{- end }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "cryptomator-hub.fullname" . }}-ingress-hub
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "cryptomator-hub.labels" . | nindent 4 }}
+  annotations:
+    {{- if ne $hubPath "/" }}
+    traefik.ingress.kubernetes.io/router.middlewares: {{ printf "%s-%s-stripprefix@kubernetescrd" .Release.Namespace (include "cryptomator-hub.fullname" .) | quote }}
+    {{- end }}
+    {{- with .Values.ingress.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  {{- if .Values.ingress.className }}
+  ingressClassName: {{ .Values.ingress.className }}
+  {{- end }}
+  rules:
+    - host: {{ $hubHost | quote }}
+      http:
+        paths:
+          - path: {{ $hubPath | quote }}
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "cryptomator-hub.fullname" . }}-service-hub
+                port:
+                  number: {{ .Values.hub.service.port }}
+  {{- if .Values.ingress.tls.enabled }}
+  tls:
+    - hosts:
+        - {{ $hubHost | quote }}
+      secretName: {{ .Values.ingress.tls.secretName | required "ingress.tls.secretName must be set when ingress.tls.enabled=true" }}
+  {{- end }}
+{{- if .Values.keycloak.enabled }}
+{{- if ne $kcPath "/" }}
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: {{ include "cryptomator-hub.fullname" . }}-stripprefix-kc
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "cryptomator-hub.labels" . | nindent 4 }}
+spec:
+  stripPrefix:
+    prefixes:
+      - {{ $kcPath | quote }}
+{{- end }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "cryptomator-hub.fullname" . }}-ingress-kc
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "cryptomator-hub.labels" . | nindent 4 }}
+  annotations:
+    {{- if ne $kcPath "/" }}
+    traefik.ingress.kubernetes.io/router.middlewares: {{ printf "%s-%s-stripprefix-kc@kubernetescrd" .Release.Namespace (include "cryptomator-hub.fullname" .) | quote }}
+    {{- end }}
+    {{- with .Values.ingress.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  {{- if .Values.ingress.className }}
+  ingressClassName: {{ .Values.ingress.className }}
+  {{- end }}
+  rules:
+    - host: {{ $kcHost | quote }}
+      http:
+        paths:
+          - path: {{ $kcPath | quote }}
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "cryptomator-hub.fullname" . }}-service-kc
+                port:
+                  number: {{ .Values.keycloak.service.httpPort }}
+  {{- if .Values.ingress.tls.enabled }}
+  tls:
+    - hosts:
+        - {{ $kcHost | quote }}
+      secretName: {{ .Values.ingress.tls.secretName | required "ingress.tls.secretName must be set when ingress.tls.enabled=true" }}
+  {{- end }}
+{{- end }}
+{{- /* / katta start addition */}}
+{{- if and .Values.minio.enabled .Values.urls.s3.public }}
+{{- $s3Host := regexReplaceAll "^https?://([^:/]+).*" .Values.urls.s3.public "${1}" }}
+{{- /* S3 path-style addressing ignores any base path — clients hit the host root, and the seeded profile stores only scheme/host/port. So S3 cannot be served under a subpath: a subpath ingress would 404 the client's root requests (surfacing as a confusing CORS error). Fail fast; use urls.minio.public for the console subpath instead. */}}
+{{- if ne (include "katta-server.s3RelativePath" .) "/" }}{{- fail "urls.s3.public must not include a path: S3 path-style addressing requires a dedicated host served at root (e.g. http://s3.example.com). Use urls.minio.public for the console subpath." }}{{- end }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "cryptomator-hub.fullname" . }}-ingress-s3
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "cryptomator-hub.labels" . | nindent 4 }}
+  {{- with .Values.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if .Values.ingress.className }}
+  ingressClassName: {{ .Values.ingress.className }}
+  {{- end }}
+  rules:
+    - host: {{ $s3Host | quote }}
+      http:
+        paths:
+          - path: "/"
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "cryptomator-hub.fullname" . }}-service-minio
+                port:
+                  number: {{ .Values.minio.service.apiPort }}
+  {{- if .Values.ingress.tls.enabled }}
+  tls:
+    - hosts:
+        - {{ $s3Host | quote }}
+      secretName: {{ .Values.ingress.tls.secretName | required "ingress.tls.secretName must be set when ingress.tls.enabled=true" }}
+  {{- end }}
+{{- end }}
+{{- if and .Values.minio.enabled .Values.urls.minio.public }}
+{{- $minioHost := regexReplaceAll "^https?://([^:/]+).*" .Values.urls.minio.public "${1}" }}
+{{- $minioPath := include "katta-server.minioRelativePath" . }}
+{{- if ne $minioPath "/" }}
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: {{ include "cryptomator-hub.fullname" . }}-stripprefix-minio
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "cryptomator-hub.labels" . | nindent 4 }}
+spec:
+  stripPrefix:
+    prefixes:
+      - {{ $minioPath | quote }}
+{{- end }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "cryptomator-hub.fullname" . }}-ingress-minio
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "cryptomator-hub.labels" . | nindent 4 }}
+  annotations:
+    {{- if ne $minioPath "/" }}
+    traefik.ingress.kubernetes.io/router.middlewares: {{ printf "%s-%s-stripprefix-minio@kubernetescrd" .Release.Namespace (include "cryptomator-hub.fullname" .) | quote }}
+    {{- end }}
+    {{- with .Values.ingress.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  {{- if .Values.ingress.className }}
+  ingressClassName: {{ .Values.ingress.className }}
+  {{- end }}
+  rules:
+    - host: {{ $minioHost | quote }}
+      http:
+        paths:
+          - path: {{ $minioPath | quote }}
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "cryptomator-hub.fullname" . }}-service-minio
+                port:
+                  number: {{ .Values.minio.service.consolePort }}
+  {{- if .Values.ingress.tls.enabled }}
+  tls:
+    - hosts:
+        - {{ $minioHost | quote }}
+      secretName: {{ .Values.ingress.tls.secretName | required "ingress.tls.secretName must be set when ingress.tls.enabled=true" }}
+  {{- end }}
+{{- end }}
+{{- /* \ katta end addition */}}
+{{- end }}

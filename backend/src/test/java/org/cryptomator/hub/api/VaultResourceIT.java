@@ -7,6 +7,7 @@ import io.quarkus.narayana.jta.QuarkusTransaction;
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusMock;
 import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.mockito.InjectSpy;
 import io.quarkus.test.security.TestSecurity;
 import io.quarkus.test.security.oidc.Claim;
 import io.quarkus.test.security.oidc.OidcSecurity;
@@ -15,6 +16,7 @@ import io.restassured.http.ContentType;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Validator;
+import org.cryptomator.hub.entities.Device;
 import jakarta.ws.rs.core.Response;
 import org.cryptomator.hub.katta.KeycloakCryptomatorVaultsHelper;
 import org.cryptomator.hub.entities.EffectiveGroupMembership;
@@ -52,16 +54,15 @@ import org.keycloak.admin.client.resource.ClientScopeResource;
 import org.keycloak.admin.client.resource.ClientScopesResource;
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.GroupResource;
-import org.keycloak.admin.client.resource.GroupsResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RoleMappingResource;
 import org.keycloak.admin.client.resource.RoleResource;
 import org.keycloak.admin.client.resource.RoleScopeResource;
 import org.keycloak.admin.client.resource.RolesResource;
 import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
 import java.security.GeneralSecurityException;
@@ -84,6 +85,7 @@ import static org.hamcrest.Matchers.comparesEqualTo;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.text.IsEqualIgnoringCase.equalToIgnoringCase;
+import static org.mockito.Mockito.*;
 
 @QuarkusTest
 @DisplayName("Resource /vaults")
@@ -102,6 +104,8 @@ public class VaultResourceIT {
 	Group.Repository groupRepo;
 	@Inject
 	User.Repository userRepo;
+	@InjectSpy
+	Device.Repository deviceRepo;
 	@Inject
 	EffectiveGroupMembership.Repository effectiveGroupMembershipRepo;
 	@Inject
@@ -248,19 +252,57 @@ public class VaultResourceIT {
 		@Test
 		@DisplayName("GET /vaults/7E57C0DE-0000-4000-8000-000100001111/access-token with remote IP and device ID stores it in audit log")
 		void testUnlock4() {
-			given().header("HUB-DEVICE-ID", "123456789123456789")
+			given().header("HUB-DEVICE-ID", "device3")
 					.header("X-Forwarded-For", "1.2.3.4")
 					.when().get("/vaults/{vaultId}/access-token", "7E57C0DE-0000-4000-8000-000100001111")
 					.then().statusCode(200)
 					.body(is("jwe.jwe.jwe.vault1.user1"));
 
+			var timestampCaptor = ArgumentCaptor.forClass(Instant.class);
 			Mockito.verify(eventLogger).logVaultKeyRetrieved(
-					"user1",
-					UUID.fromString("7E57C0DE-0000-4000-8000-000100001111"),
-					VaultKeyRetrievedEvent.Result.SUCCESS,
-					"1.2.3.4",
-					"123456789123456789"
+					timestampCaptor.capture(),
+					eq("user1"),
+					eq(UUID.fromString("7E57C0DE-0000-4000-8000-000100001111")),
+					eq(VaultKeyRetrievedEvent.Result.SUCCESS),
+					eq("1.2.3.4"),
+					eq("device3")
 			);
+			Mockito.verify(deviceRepo).updateLastAccess(
+					eq("device3"),
+					eq(timestampCaptor.getValue()),
+					eq("1.2.3.4")
+			);
+		}
+
+		@Test
+		@DisplayName("GET /vaults/7E57C0DE-0000-4000-8000-000100001111/access-token without IP and device ID creates audit log")
+		void testUnlock5() {
+			given().when().get("/vaults/{vaultId}/access-token", "7E57C0DE-0000-4000-8000-000100001111")
+					.then().statusCode(200)
+					.body(is("jwe.jwe.jwe.vault1.user1"));
+
+			var timestampCaptor = ArgumentCaptor.forClass(Instant.class);
+			Mockito.verify(eventLogger).logVaultKeyRetrieved(
+					timestampCaptor.capture(),
+					eq("user1"),
+					eq(UUID.fromString("7E57C0DE-0000-4000-8000-000100001111")),
+					eq(VaultKeyRetrievedEvent.Result.SUCCESS),
+					anyString(),
+					isNull()
+			);
+			Mockito.verify(deviceRepo, never()).updateLastAccess(any(), any(), any());
+		}
+
+		@Test
+		@DisplayName("GET /vaults/7E57C0DE-0000-4000-8000-000100001111/access-token with remote IP and wrong device ID fails with 400")
+		void testUnlock6() {
+			given().header("HUB-DEVICE-ID", "d3v1c33")
+					.header("X-Forwarded-For", "5.6.7.8")
+					.when().get("/vaults/{vaultId}/access-token", "7E57C0DE-0000-4000-8000-000100001111")
+					.then().statusCode(400);
+
+			Mockito.verify(eventLogger, never()).logVaultKeyRetrieved(any(), any(), any(), any(), any(), any());
+			Mockito.verify(deviceRepo, never()).updateLastAccess(any(), any(), any());
 		}
 
 		@Test
@@ -283,11 +325,34 @@ public class VaultResourceIT {
 
 		@Test
 		@DisplayName("GET /vaults/7E57C0DE-0000-4000-8000-00010000AAAA/access-token returns 200 for archived vaults with evenIfArchived set to true")
-		void testUnlockArchived3() throws SQLException {
+		void testUnlockArchived3() {
 			when().get("/vaults/{vaultId}/access-token?evenIfArchived=true", "7E57C0DE-0000-4000-8000-00010000AAAA")
 					.then().statusCode(200);
 			Mockito.verify(vaultUnlockMetrics).recordUnlock();
 			Mockito.verify(vaultUnlockMetrics).recordSuccess();
+		}
+
+		@Test
+		@DisplayName("GET /vaults/users-requiring-access-grant?wait=0 returns 200 with decryptable pending user999 on vault2")
+		void testGetUsersRequiringAccessGrant() {
+			// user999 was added to group2 (owner of vault2) by @BeforeEach, has a valid ecdh key but no access token yet,
+			// so they are a pending member of vault2. The endpoint returns them because user1 holds a token for vault2
+			// (V9999), i.e. can decrypt and therefore re-share. The Web-of-Trust decision is left to the client, so no
+			// trust setup is needed here. user998 has no ecdh key, so it must not appear. We don't assert the total vault
+			// count: other tests may leave vaults around.
+			given().queryParam("wait", 0)
+					.when().get("/vaults/users-requiring-access-grant")
+					.then().statusCode(200)
+					.body("'7e57c0de-0000-4000-8000-000100002222'", hasItems("user999"))
+					.body("'7e57c0de-0000-4000-8000-000100002222'", not(hasItems("user998")));
+		}
+
+		@Test
+		@DisplayName("GET /vaults/users-requiring-access-grant?wait=-1 returns 400 (validation)")
+		void testGetUsersRequiringAccessGrantNegativeWait() {
+			given().queryParam("wait", -1)
+					.when().get("/vaults/users-requiring-access-grant")
+					.then().statusCode(400);
 		}
 
 		@Nested
@@ -481,6 +546,8 @@ public class VaultResourceIT {
 			given().contentType(ContentType.JSON).body(Map.of("user1", "jwe.jwe.jwe.vault666.user1"))
 					.when().post("/vaults/{vaultId}/access-tokens/", "7E57C0DE-0000-4000-8000-BADBADBADBAD")
 					.then().statusCode(403);
+
+			Mockito.verify(deviceRepo, never()).updateLastAccess(any(), any(), any());
 		}
 
 		@Test
@@ -505,6 +572,37 @@ public class VaultResourceIT {
 			given().contentType(ContentType.JSON).body(Map.of("user1", "jwe.jwe.jwe.vaultAAA.user1"))
 					.when().post("/vaults/{vaultId}/access-tokens/", "7E57C0DE-0000-4000-8000-00010000AAAA")
 					.then().statusCode(200);
+		}
+
+		@Test
+		@DisplayName("POST /vaults/7E57C0DE-0000-4000-8000-000100002222/access-tokens (manual) returns 403 for non-owner member user1")
+		void testManualGrantByNonOwnerForbidden() {
+			// user1 is only a MEMBER of vault2 (via group1), so the owner-only manual endpoint must reject the grant.
+			given().contentType(ContentType.JSON).body(Map.of("user999", "jwe.jwe.jwe.vault2.user999"))
+					.when().post("/vaults/{vaultId}/access-tokens/", "7E57C0DE-0000-4000-8000-000100002222")
+					.then().statusCode(403);
+		}
+
+		@Test
+		@DisplayName("POST /vaults/7E57C0DE-0000-4000-8000-000100002222/access-tokens/auto returns 200 for user999 (member-initiated automatic grant to a pending user)")
+		void testAutoGrantByMember() {
+			// Same member (user1, non-owner of vault2) and same target as above, but via the auto endpoint, which any
+			// member may call. user999 is in group2 (owner of vault2), has a public key, and holds no token yet → pending.
+			given().contentType(ContentType.JSON).body(Map.of("user999", "jwe.jwe.jwe.vault2.user999"))
+					.when().post("/vaults/{vaultId}/access-tokens/auto", "7E57C0DE-0000-4000-8000-000100002222")
+					.then().statusCode(200);
+
+			// the grant must be recorded as automatic (true), attributed to the member who performed it
+			Mockito.verify(eventLogger).logVaultAccessGranted("user1", UUID.fromString("7E57C0DE-0000-4000-8000-000100002222"), "user999", true);
+		}
+
+		@Test
+		@DisplayName("POST /vaults/7E57C0DE-0000-4000-8000-000100002222/access-tokens/auto returns 400 for user998 (not awaiting a grant: no public key)")
+		void testAutoGrantToNonPending() {
+			// user998 is also in group2 but has no public key, so it is not awaiting a grant and must be rejected.
+			given().contentType(ContentType.JSON).body(Map.of("user998", "jwe.jwe.jwe.vault2.user998"))
+					.when().post("/vaults/{vaultId}/access-tokens/auto", "7E57C0DE-0000-4000-8000-000100002222")
+					.then().statusCode(400);
 		}
 
 	}
@@ -532,7 +630,7 @@ public class VaultResourceIT {
 					.body("name", equalTo("VaultUpdated"))
 					.body("description", equalTo("Vault updated."))
 					.body("creationTime", not("2222-11-11T11:11:11Z"));
-			Mockito.verify(keycloakCryptomatorVaultsHelper, Mockito.times(1)).keycloakPrepareVault("7e57c0de-0000-4000-8000-000100008888", minio, aws);
+			Mockito.verify(keycloakCryptomatorVaultsHelper, Mockito.times(1)).keycloakPrepareVault("cryptomatorvaults", "7e57c0de-0000-4000-8000-000100008888", minio, aws);
 		}
 	}
 
@@ -1196,9 +1294,9 @@ public class VaultResourceIT {
 			final RolesResource rolesResourceMock = Mockito.mock(RolesResource.class);
 			final RoleResource roleResourceMock = Mockito.mock(RoleResource.class);
 			final RoleRepresentation roleRepresentationMock = Mockito.mock(RoleRepresentation.class);
-			final org.keycloak.admin.client.resource.UsersResource usersResourceMock = Mockito.mock(UsersResource.class);
+			final org.keycloak.admin.client.resource.UsersResource usersResourceMock = Mockito.mock();
 			final UserResource userResourceMock = Mockito.mock(UserResource.class);
-			final org.keycloak.admin.client.resource.GroupsResource groupsResourceMock = Mockito.mock(GroupsResource.class);
+			final org.keycloak.admin.client.resource.GroupsResource groupsResourceMock = Mockito.mock();
 			final GroupResource groupResourceMock = Mockito.mock(GroupResource.class);
 			Mockito.when(keycloakMock.realm(Mockito.anyString())).thenReturn(realmResourceMock);
 			Mockito.when(realmResourceMock.clients()).thenReturn(clientsResourceMock);
