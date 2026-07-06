@@ -20,93 +20,88 @@ import java.util.Optional;
 @Path("/config")
 public class ConfigResource {
 
-    @Inject
-    @ConfigProperty(name = "hub.keycloak.public-url", defaultValue = "")
-    String keycloakPublicUrl;
+	private final String keycloakPublicUrl;
+	private final String keycloakRealm;
+	private final String keycloakClientIdHub;
+	private final String keycloakClientIdCryptomator;
+	private final String internalRealmUrl;
+	private final String billingUrl;
+	private final OidcConfigurationMetadata oidcConfData;
+	private final LicenseHolder license;
 
-    @Inject
-    @ConfigProperty(name = "hub.keycloak.realm", defaultValue = "")
-    String keycloakRealm;
+	// / start katta extension
+	private final String keycloakClientIdCryptomatorVaults;
+	private final Settings.Repository settingsRepo;
+    private final Optional<String> desktopDownloadUrlMac;
+    private final Optional<String> desktopDownloadUrlWin;
+	// \ end katta extension
 
-    @Inject
-    @ConfigProperty(name = "quarkus.oidc.client-id", defaultValue = "")
-    String keycloakClientIdHub;
+	@Inject
+	ConfigResource(@ConfigProperty(name = "hub.keycloak.public-url", defaultValue = "") String keycloakPublicUrl,
+				   @ConfigProperty(name = "hub.keycloak.realm", defaultValue = "") String keycloakRealm,
+				   @ConfigProperty(name = "quarkus.oidc.client-id", defaultValue = "") String keycloakClientIdHub,
+				   @ConfigProperty(name = "hub.keycloak.oidc.cryptomator-client-id", defaultValue = "") String keycloakClientIdCryptomator,
+				   @ConfigProperty(name = "quarkus.oidc.auth-server-url") String internalRealmUrl,
+				   @ConfigProperty(name = "hub.billing-url", defaultValue = "") String billingUrl,
+				   // / start katta extension
+				   @ConfigProperty(name = "hub.keycloak.oidc.cryptomator-vaults-client-id", defaultValue = "") String keycloakClientIdCryptomatorVaults,
+                   @ConfigProperty(name = "hub.download-url.desktop.mac") Optional<String> desktopDownloadUrlMac,
+                   @ConfigProperty(name = "hub.download-url.desktop.win") Optional<String> desktopDownloadUrlWin,
+                   Settings.Repository settingsRepo,
+				   // \ end katta extension
+				   OidcConfigurationMetadata oidcConfData,
+				   LicenseHolder license) {
+		this.keycloakPublicUrl = keycloakPublicUrl;
+		this.keycloakRealm = keycloakRealm;
+		this.keycloakClientIdHub = keycloakClientIdHub;
+		this.keycloakClientIdCryptomator = keycloakClientIdCryptomator;
+		this.internalRealmUrl = internalRealmUrl;
+		this.billingUrl = billingUrl;
+		this.oidcConfData = oidcConfData;
+		this.license = license;
+		this.keycloakClientIdCryptomatorVaults = keycloakClientIdCryptomatorVaults;
+        this.desktopDownloadUrlMac = desktopDownloadUrlMac;
+        this.desktopDownloadUrlWin = desktopDownloadUrlWin;
+		this.settingsRepo = settingsRepo;
+	}
 
-    @Inject
-    @ConfigProperty(name = "hub.keycloak.oidc.cryptomator-client-id", defaultValue = "")
-    String keycloakClientIdCryptomator;
+	@PermitAll
+	@GET
+	@Path("/")
+	@Produces(MediaType.APPLICATION_JSON)
+	public ConfigDto getConfig() {
+		var publicRealmUri = trimTrailingSlash(keycloakPublicUrl + "/realms/" + keycloakRealm);
+		var authUri = replacePrefix(oidcConfData.getAuthorizationUri(), trimTrailingSlash(internalRealmUrl), publicRealmUri);
+		var tokenUri = replacePrefix(oidcConfData.getTokenUri(), trimTrailingSlash(internalRealmUrl), publicRealmUri);
 
-    // / start katta extension
-    @Inject
-    @ConfigProperty(name = "hub.keycloak.oidc.cryptomator-vaults-client-id", defaultValue = "")
-    String keycloakClientIdCryptomatorVaults;
-
-    // Optional<String> because SmallRye converts the empty default to null, which fails a non-Optional String @ConfigProperty (SRCFG00040).
-    @Inject
-    @ConfigProperty(name = "hub.download-url.desktop.mac")
-    Optional<String> desktopDownloadUrlMac;
-
-    @Inject
-    @ConfigProperty(name = "hub.download-url.desktop.win")
-    Optional<String> desktopDownloadUrlWin;
-
-    @Inject
-    Settings.Repository settingsRepo;
-    // \ end katta extension
-
-    @Inject
-    @ConfigProperty(name = "quarkus.oidc.auth-server-url")
-    String internalRealmUrl;
-
-    @Inject
-    @ConfigProperty(name = "hub.billing-url", defaultValue = "")
-    String billingUrl;
-
-    @Inject
-    OidcConfigurationMetadata oidcConfData;
-
-    @Inject
-    LicenseHolder license;
-
-    @PermitAll
-    @GET
-    @Path("/")
-    @Produces(MediaType.APPLICATION_JSON)
-    public ConfigDto getConfig() {
-        var publicRealmUri = trimTrailingSlash(keycloakPublicUrl + "/realms/" + keycloakRealm);
-        var authUri = replacePrefix(oidcConfData.getAuthorizationUri(), trimTrailingSlash(internalRealmUrl), publicRealmUri);
-        var tokenUri = replacePrefix(oidcConfData.getTokenUri(), trimTrailingSlash(internalRealmUrl), publicRealmUri);
-
-        return new ConfigDto(keycloakPublicUrl, keycloakRealm, keycloakClientIdHub, keycloakClientIdCryptomator, authUri, tokenUri, Instant.now().truncatedTo(ChronoUnit.MILLIS), 4, license.getEntitlements(), billingUrl
-                // / start katta extension
-                , keycloakClientIdCryptomatorVaults
-                , settingsRepo.get().getHubId()
-                , desktopDownloadUrlMac.orElse("")
+		return new ConfigDto(keycloakPublicUrl, keycloakRealm, keycloakClientIdHub, keycloakClientIdCryptomator, authUri, tokenUri, Instant.now().truncatedTo(ChronoUnit.MILLIS), 4, license.getEntitlements(), billingUrl
+				// / start katta extension
+				, keycloakClientIdCryptomatorVaults
+				, settingsRepo.get().getHubId()
+				, desktopDownloadUrlMac.orElse("")
                 , desktopDownloadUrlWin.orElse("")
                 // \ end katta extension
         );
     }
 
+	//visible for testing
+	static String replacePrefix(String str, String prefix, String replacement) {
+		int index = str.indexOf(prefix);
+		if (index == 0) {
+			return replacement + str.substring(prefix.length());
+		} else {
+			return str;
+		}
+	}
 
-    //visible for testing
-    String replacePrefix(String str, String prefix, String replacement) {
-        int index = str.indexOf(prefix);
-        if (index == 0) {
-            return replacement + str.substring(prefix.length());
-        } else {
-            return str;
-        }
-    }
-
-    //visible for testing
-    String trimTrailingSlash(String str) {
-        if (str.endsWith("/")) {
-            return str.substring(0, str.length() - 1);
-        } else {
-            return str;
-        }
-
-    }
+	//visible for testing
+	static String trimTrailingSlash(String str) {
+		if (str.endsWith("/")) {
+			return str.substring(0, str.length() - 1);
+		} else {
+			return str;
+		}
+	}
 
     public record ConfigDto(@JsonProperty("keycloakUrl") String keycloakUrl, @JsonProperty("keycloakRealm") String keycloakRealm,
                             @JsonProperty("keycloakClientIdHub") String keycloakClientIdHub,

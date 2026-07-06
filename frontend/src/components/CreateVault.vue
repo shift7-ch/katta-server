@@ -117,9 +117,9 @@
           <div class="mt-6 px-4 space-y-6">
             <div>
               <label for="vaultName" class="block text-sm font-medium text-gray-700 text-left">{{ t('createVault.enterVaultDetails.vaultName') }}</label>
-              <input id="vaultName" v-model="vault.name" :disabled="processing" type="text" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-xs sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200" :class="{ 'invalid:border-red-300 invalid:text-red-900 focus:invalid:ring-red-500 focus:invalid:border-red-500': onCreateError instanceof FormValidationFailedError }" pattern="^(?! )([^\x5C\x2F:*?\x22<>\x7C])+(?<![ \x2E])$" required />
+              <input id="vaultName" v-model="vaultName" :disabled="processing" type="text" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-xs sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200" :class="{ 'invalid:border-red-300 invalid:text-red-900 focus:invalid:ring-red-500 focus:invalid:border-red-500': onCreateError instanceof FormValidationFailedError }" pattern="^(?! )([^\\\/:*?&quot;<>\|])+(?<![ \.])$" required />
               <p v-if="(onCreateError instanceof FormValidationFailedError)" class="text-sm text-red-900 text-left mt-2">
-                {{ t('createVault.error.illegalVaultName') }} \, /, :, *, ?, ", &lt;, >, |
+                {{ t('createVault.error.illegalVaultName') }} \, /, :, *, ?, ", &lt;, &gt;, |
               </p>
             </div>
 
@@ -128,7 +128,10 @@
                 {{ t('createVault.enterVaultDetails.vaultDescription') }}
                 <span class="text-xs text-gray-500">({{ t('common.optional') }})</span>
               </label>
-              <input id="vaultDescription" v-model="vault.description" :disabled="processing" type="text" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-xs sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200" />
+              <input id="vaultDescription" v-model="vaultDescription" :disabled="processing" type="text" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-xs sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200" :class="{ 'invalid:border-red-300 invalid:text-red-900 focus:invalid:ring-red-500 focus:invalid:border-red-500': onCreateError instanceof FormValidationFailedError }" pattern="[^*<>&quot;]*" />
+              <p v-if="(onCreateError instanceof FormValidationFailedError)" class="text-sm text-red-900 text-left mt-2">
+                {{ t('createVault.error.illegalVaultDescription') }} *, &lt;, &gt;, "
+              </p>
             </div>
 
             <!-- / start katta extension -->
@@ -242,24 +245,24 @@
               <label for="vaultAccessKeyId" class="block text-sm font-medium text-gray-700">
                 {{ t('CreateVaultS3.enterVaultDetails.vaultPermanentAccessKeyId') }}
               </label>
-              <input id="vaultAccessKeyId" v-model="vaultAccessKeyId" :disabled="processing" type="text" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200" :class="{ 'invalid:border-red-300 invalid:text-red-900 focus:invalid:ring-red-500 focus:invalid:border-red-500': onCreateError instanceof FormValidationFailedError }" required />
+              <input id="vaultAccessKeyId" v-model="vaultAccessKeyId" :disabled="processing" type="text" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200" :class="{ 'invalid:border-red-300 invalid:text-red-900 focus:invalid:ring-red-500 focus:invalid:border-red-500': onCreateError instanceof FormValidationFailedError }" />
             </div>
             <div v-if="isPermanent" class="col-span-6 sm:col-span-4">
               <label for="vaultSecretKey" class="block text-sm font-medium text-gray-700">
                 {{ t('CreateVaultS3.enterVaultDetails.vaultPermanentSecretKey') }}
               </label>
-              <input id="vaultSecretKey" v-model="vaultSecretKey" :disabled="processing" type="text" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200" :class="{ 'invalid:border-red-300 invalid:text-red-900 focus:invalid:ring-red-500 focus:invalid:border-red-500': onCreateError instanceof FormValidationFailedError }" required />
+              <input id="vaultSecretKey" v-model="vaultSecretKey" :disabled="processing" type="text" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200" :class="{ 'invalid:border-red-300 invalid:text-red-900 focus:invalid:ring-red-500 focus:invalid:border-red-500': onCreateError instanceof FormValidationFailedError }" />
             </div>
             <div v-if="isPermanent" class="col-span-6 sm:col-span-4">
               <label for="vaultBucketName" class="block text-sm font-medium text-gray-700">
                 {{ t('CreateVaultS3.enterVaultDetails.vaultPermanentBucketName') }}
               </label>
-              <input id="vaultBucketName" v-model="vaultBucketName" :disabled="processing" type="text" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200" :class="{ 'invalid:border-red-300 invalid:text-red-900 focus:invalid:ring-red-500 focus:invalid:border-red-500': onCreateError instanceof FormValidationFailedError }" required />
+              <input id="vaultBucketName" v-model="vaultBucketName" :disabled="processing" type="text" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200" :class="{ 'invalid:border-red-300 invalid:text-red-900 focus:invalid:ring-red-500 focus:invalid:border-red-500': onCreateError instanceof FormValidationFailedError }" />
             </div>
             <br />
             <div class="col-span-6 sm:col-span-3">
               <label for="vaultName" class="block text-sm font-medium text-gray-700">{{ t('CreateVaultS3.enterVaultDetails.automaticAccessGrant') }}</label>
-              <input id="automaticAccessGrant" v-model="automaticAccessGrant" name="automaticAccessGrant" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" required />
+              <input id="automaticAccessGrant" v-model="automaticAccessGrant" name="automaticAccessGrant" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" />
             </div>
             <!-- \ end katta extension -->
           </div>
@@ -762,7 +765,7 @@ async function initialize() {
         recoveryKeyStr.value = await vaultFormat8.value.createRecoveryKey();
         break;
       case VaultType.UniversalVaultFormat:
-        uvfVault.value = await UniversalVaultFormat.create({ enabled: settings.value.enableAutomaticAccessGrant, maxWotDepth: settings.value.automaticAccessGrantTrustThreshold }, { provider: '', defaultPath: '', nickname: '', region: '' });
+        uvfVault.value = await UniversalVaultFormat.create({ enabled: settings.value.enableAutomaticAccessGrant, maxWotDepth: settings.value.automaticAccessGrantTrustThreshold }, { provider: '', bucket: '', nickname: '', region: '' });
         recoveryKeyStr.value = await uvfVault.value.recoveryKey.createRecoveryKey();
         break;
     }
@@ -1092,7 +1095,7 @@ async function createVault() {
         }
 
         uvfVault.value.metadata.backend.provider = selectedBackend.value.id;
-        uvfVault.value.metadata.backend.defaultPath = selectedBackend.value.bucketPrefix + vault.value.id;
+        uvfVault.value.metadata.backend.bucket = selectedBackend.value.bucketPrefix + vault.value.id;
         uvfVault.value.metadata.backend.nickname = vault.value.name;
         uvfVault.value.metadata.backend.region = selectedRegion.value;
         uvfVault.value.metadata.automaticAccessGrant.enabled = automaticAccessGrant.value;
@@ -1100,7 +1103,7 @@ async function createVault() {
         if (isPermanent.value){
           uvfVault.value.metadata.backend.username = vaultAccessKeyId.value;
           uvfVault.value.metadata.backend.password = vaultSecretKey.value;
-          uvfVault.value.metadata.backend.defaultPath = vaultBucketName.value;
+          uvfVault.value.metadata.backend.bucket = vaultBucketName.value;
         }
         // \ end katta extension
 
@@ -1176,7 +1179,7 @@ async function createVault() {
                 ]
               }
             ]
-          }`.replaceAll('{}', uvfVault.value.metadata.backend.defaultPath),
+          }`.replaceAll('{}', uvfVault.value.metadata.backend.bucket),
         // Required. ARN of the role that the caller is assuming.
         RoleArn: selectedBackend.value.stsRoleCreateBucketHub
       };
@@ -1243,7 +1246,7 @@ async function createVault() {
         msg += '.';
       }
       if (error.response?.status === 409){
-        msg += ` Details: Bucket ${uvfVault.value?.metadata.backend.defaultPath} already exists or no permission to list.`;
+        msg += ` Details: Bucket ${uvfVault.value?.metadata.backend.bucket} already exists or no permission to list.`;
       }
       else if (error.response?.data.details){
         msg += ` Details: ${error.response.data.details}.`;

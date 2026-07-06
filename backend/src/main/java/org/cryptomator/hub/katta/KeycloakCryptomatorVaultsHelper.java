@@ -35,8 +35,8 @@ public class KeycloakCryptomatorVaultsHelper {
 	@ConfigProperty(name = "hub.keycloak.realm")
 	protected String keycloakRealm;
 
-	public void keycloakPrepareVault(final String vaultId, final Boolean minio, final Boolean aws) {
-		keycloakPrepareVault(vaultId, getKeycloak(), keycloakRealm, minio, aws);
+	public void keycloakPrepareVault(final String clientId, final String vaultId, final Boolean minio, final Boolean aws) {
+		keycloakPrepareVault(clientId, vaultId, getKeycloak(), keycloakRealm, minio, aws);
 	}
 
 	public void keycloakGrantAccessToVault(final String vaultId, final String userOrGroupId, final String clientId, final boolean isGroup) {
@@ -77,13 +77,41 @@ public class KeycloakCryptomatorVaultsHelper {
 		}
 	}
 
-	protected static void keycloakPrepareVault(final String vaultId, final Keycloak keycloak, final String keycloakRealm, final Boolean minio, final Boolean aws) {
+	protected static void keycloakPrepareVault(final String clientId, final String vaultId, final Keycloak keycloak, final String keycloakRealm, final Boolean minio, final Boolean aws) {
 		// https://www.keycloak.org/docs-api/21.1.1/rest-api
 		final RealmResource realm = keycloak.realm(keycloakRealm);
+
+
+		final List<ClientRepresentation> byClientId = realm.clients().findByClientId(clientId);
+		if (byClientId.size() != 1) {
+			throw new RuntimeException(String.format("There are %s clients with clientId %s, expected to found exactly one.", byClientId.size(), clientId));
+		}
+		final ClientRepresentation cryptomatorVaultsClientRepresentation = byClientId.getFirst();
+		final ClientResource cryptomatorVaultsClientResource = realm.clients().get(cryptomatorVaultsClientRepresentation.getId());
 
 		// create client scope <vaultId> (if necessary)
 		ensureClientScopeForVaultExists(vaultId, realm);
 
+		// add client scope to "cryptomatorvaults" client
+		// -> requires role_manage-clients
+		cryptomatorVaultsClientResource.addOptionalClientScope(vaultId);
+
+		// create client role <vaultId> (if necessary)
+		// -> requires role_manage-clients
+		if (cryptomatorVaultsClientResource.roles().list().stream().map(RoleRepresentation::getName).noneMatch(vaultId::equals)) {
+			final RoleRepresentation vaultRole = new RoleRepresentation();
+			vaultRole.setName(vaultId);
+			vaultRole.setDescription(String.format("Role for vault %s", vaultId));
+			vaultRole.setClientRole(true);
+
+			cryptomatorVaultsClientResource.roles().create(vaultRole);
+		}
+
+		// scope the client scope to the client role for the vault
+		// IMPORTANT: if there is no role scope mapping defined, each user is permitted to use this client scope. If there are role scope mappings defined, the user must be a member of at least one of the roles.
+		realm.clientScopes().get(vaultId).getScopeMappings().clientLevel(cryptomatorVaultsClientRepresentation.getId()).add(List.of(cryptomatorVaultsClientResource.roles().get(vaultId).toRepresentation()));
+
+		// add protocol mappers
 		final ClientScopeResource clientScopeResource = realm.clientScopes().get(vaultId);
 		if (minio != null) {
 			final ProtocolMapperRepresentation minioProtocolMapper = minioProtocolMapper(vaultId);
@@ -175,28 +203,7 @@ public class KeycloakCryptomatorVaultsHelper {
 		}
 		final ClientRepresentation cryptomatorVaultsClientRepresentation = byClientId.getFirst();
 		final ClientResource cryptomatorVaultsClientResource = realm.clients().get(cryptomatorVaultsClientRepresentation.getId());
-
-		// create client scope <vaultId> (if necessary)
-		ensureClientScopeForVaultExists(vaultId, realm);
-
-		// add client scope to "cryptomatorvaults" client
-		// -> requires role_manage-clients
-		cryptomatorVaultsClientResource.addOptionalClientScope(vaultId);
-
-		// create client role <vaultId> (if necessary)
-		// -> requires role_manage-clients
-		if (cryptomatorVaultsClientResource.roles().list().stream().map(RoleRepresentation::getName).noneMatch(vaultId::equals)) {
-			RoleRepresentation vaultRole = new RoleRepresentation();
-			vaultRole.setName(vaultId);
-			vaultRole.setDescription(String.format("Role for vault %s", vaultId));
-			vaultRole.setClientRole(true);
-
-			cryptomatorVaultsClientResource.roles().create(vaultRole);
-		}
-
-		// scope the client scope to the client role for the vault
-		realm.clientScopes().get(vaultId).getScopeMappings().clientLevel(cryptomatorVaultsClientRepresentation.getId()).add(List.of(cryptomatorVaultsClientResource.roles().get(vaultId).toRepresentation()));
-
+		
 		// add client role to user/group
 		// -> requires role_manage-users
 		if (!isGroup) {
@@ -206,7 +213,7 @@ public class KeycloakCryptomatorVaultsHelper {
 		}
 	}
 
-	private static void ensureClientScopeForVaultExists(String vaultId, RealmResource realm) {
+	private static void ensureClientScopeForVaultExists(final String vaultId, final RealmResource realm) {
 		if (realm.clientScopes().findAll().stream().map(ClientScopeRepresentation::getId).noneMatch(vaultId::equals)) {
 			ClientScopeRepresentation vaultClientScope = new ClientScopeRepresentation();
 			vaultClientScope.setId(vaultId);

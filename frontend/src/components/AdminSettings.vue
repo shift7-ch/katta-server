@@ -96,7 +96,7 @@
           <div class="md:grid md:grid-cols-3 md:gap-6">
             <label for="email" class="block text-sm font-medium text-gray-700 md:text-right md:pr-4 md:mt-2">{{ t('admin.licenseInfo.email.title') }}</label>
             <div class="mt-1 md:mt-0 md:col-span-2 lg:col-span-1">
-              <input id="email" v-model="billing.email" type="text" class="focus:ring-primary focus:border-primary block w-full shadow-xs sm:text-sm border-gray-300 rounded-md bg-gray-200" readonly />
+              <input id="email" v-model="billing.email" autocomplete="off" type="text" class="focus:ring-primary focus:border-primary block w-full shadow-xs sm:text-sm border-gray-300 rounded-md bg-gray-200" readonly />
             </div>
           </div>
 
@@ -329,6 +329,7 @@ import ContentBanner from './ContentBanner.vue';
 const { t, d } = useI18n({ useScope: 'global' });
 const props = defineProps<{
   token?: string
+  session?: string
 }>();
 
 const cfg = ref<ConfigDto>(config.get());
@@ -342,8 +343,14 @@ const hasLegacyDevices = ref<boolean>(false);
 
 onMounted(async () => {
   keycloakAdminRealmURL.value = `${cfg.value.keycloakUrl}/admin/${cfg.value.keycloakRealm}/console/`;
-  if (props.token) {
-    await setToken(props.token);
+  try {
+    if (props.session) {
+      await backend.license.refresh(props.session);
+    } else if (props.token) {
+      await backend.billing.setToken(props.token);
+    }
+  } catch (error) {
+    console.error('Setting token or refreshing license failed.', error);
   }
   await fetchData();
 });
@@ -418,8 +425,8 @@ const manageSubscriptionUrl = computed(() => {
   if (!billing.value) {
     return '';
   }
-  const returnUrl = `${absFrontendBaseURL}admin`;
-  return `${cfg.value.billingUrl}#oldLicense=${encodeURIComponent(billing.value.licenseKey)}&returnUrl=${encodeURIComponent(returnUrl)}`;
+  const returnUrl = `${absFrontendBaseURL}admin/settings`;
+  return `${cfg.value.billingUrl}?hub_id=${encodeURIComponent(billing.value.hubId)}&return_url=${encodeURIComponent(returnUrl)}&token_transfer=session`;
 });
 
 async function refreshLicense() {
@@ -429,14 +436,6 @@ async function refreshLicense() {
     cfg.value = await config.reload();
   } catch (error) {
     console.error('Refreshing license info failed.', error);
-  }
-}
-
-async function setToken(token: string) {
-  try {
-    await backend.billing.setToken(token);
-  } catch (error) {
-    console.error('Setting token failed.', error);
   }
 }
 
