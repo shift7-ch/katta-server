@@ -655,8 +655,6 @@
   "CreateVaultS3.error.bucketNotEmpty": "Bucket not empty, cannot upload template. Empty the bucket manually and re-try.",
   "CreateVaultS3.error.invalidCORS": "Check your bucket CORS settings.",
 
-  "vaultList.openInKatta": "Open in Katta",
-
   "nav.profile.storageprofiles": "Admin Storage Locations",
   "storageProfileList.title": "Storage Locations",
   "storageProfileList.setup.title": "Katta web setup",
@@ -684,5 +682,20 @@
   "storageprofile.stsRoleArn": "stsRoleArn",
   "storageprofile.stsRoleArn2": "stsRoleArn2",
   "storageprofile.stsDurationSeconds": "stsDurationSeconds",
-  "storageprofile.oAuthTokenExchangeAudience": "oAuthTokenExchangeAudience"
+  "storageprofile.oAuthTokenExchangeAudience": "oAuthTokenExchangeAudience",
+
+  "onboarding.title": "Welcome to Katta",
+  "onboarding.intro": "Katta keeps your team's vaults end-to-end encrypted. Get started with the desktop app.",
+  "onboarding.download.title": "Get the desktop app",
+  "onboarding.download.description": "New to Katta? Download the desktop app to set up your account and access your vaults.",
+  "onboarding.download.mac": "Download for macOS",
+  "onboarding.download.win": "Download for Windows",
+  "onboarding.download.alternateMac": "Need the macOS version?",
+  "onboarding.download.alternateWin": "Need the Windows version?",
+  "onboarding.openInKatta.title": "Already installed?",
+  "onboarding.openInKatta.description": "Open Katta to manage your vaults.",
+  "onboarding.openInKatta.button": "Open in Katta",
+  "onboarding.login": "Log in",
+  "onboarding.accountKey.description": "Looking for your Account Key? {link} on a device where Katta is already set up to find it in your profile.",
+  "onboarding.accountKey.link": "Sign in"
 }

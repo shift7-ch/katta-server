@@ -1,9 +1,13 @@
 <template>
   <nav class="bg-tertiary2">
-    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 h-16 flex-1 flex items-center justify-center sm:items-stretch sm:justify-start">
-      <div class="shrink-0 flex items-center">
-        <img src="/logo.png" class="h-8" alt="Logo" />
-        <span class="font-headline font-bold text-primary ml-2 pb-px">KATTA</span>
+    <div class="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8">
+      <div class="relative flex justify-between h-16">
+        <div class="flex-1 flex items-center justify-center sm:items-stretch sm:justify-start">
+          <div class="shrink-0 flex items-center">
+            <img src="/logo.png" class="h-9" alt="Katta Logo" />
+            <span class="font-headline font-bold text-white ml-2 pb-px">KATTA</span>
+          </div>
+        </div>
       </div>
     </div>
   </nav>

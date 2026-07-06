@@ -15,6 +15,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Optional;
 
 @Path("/config")
 public class ConfigResource {
@@ -31,6 +32,8 @@ public class ConfigResource {
 	// / start katta extension
 	private final String keycloakClientIdCryptomatorVaults;
 	private final Settings.Repository settingsRepo;
+    private final Optional<String> desktopDownloadUrlMac;
+    private final Optional<String> desktopDownloadUrlWin;
 	// \ end katta extension
 
 	@Inject
@@ -42,7 +45,9 @@ public class ConfigResource {
 				   @ConfigProperty(name = "hub.billing-url", defaultValue = "") String billingUrl,
 				   // / start katta extension
 				   @ConfigProperty(name = "hub.keycloak.oidc.cryptomator-vaults-client-id", defaultValue = "") String keycloakClientIdCryptomatorVaults,
-				   Settings.Repository settingsRepo,
+                   @ConfigProperty(name = "hub.download-url.desktop.mac") Optional<String> desktopDownloadUrlMac,
+                   @ConfigProperty(name = "hub.download-url.desktop.win") Optional<String> desktopDownloadUrlWin,
+                   Settings.Repository settingsRepo,
 				   // \ end katta extension
 				   OidcConfigurationMetadata oidcConfData,
 				   LicenseHolder license) {
@@ -55,6 +60,8 @@ public class ConfigResource {
 		this.oidcConfData = oidcConfData;
 		this.license = license;
 		this.keycloakClientIdCryptomatorVaults = keycloakClientIdCryptomatorVaults;
+        this.desktopDownloadUrlMac = desktopDownloadUrlMac;
+        this.desktopDownloadUrlWin = desktopDownloadUrlWin;
 		this.settingsRepo = settingsRepo;
 	}
 
@@ -71,9 +78,11 @@ public class ConfigResource {
 				// / start katta extension
 				, keycloakClientIdCryptomatorVaults
 				, settingsRepo.get().getHubId()
-				// \ end katta extension
-		);
-	}
+				, desktopDownloadUrlMac.orElse("")
+                , desktopDownloadUrlWin.orElse("")
+                // \ end katta extension
+        );
+    }
 
 	//visible for testing
 	static String replacePrefix(String str, String prefix, String replacement) {
@@ -94,18 +103,20 @@ public class ConfigResource {
 		}
 	}
 
-	public record ConfigDto(@JsonProperty("keycloakUrl") String keycloakUrl, @JsonProperty("keycloakRealm") String keycloakRealm,
-							@JsonProperty("keycloakClientIdHub") String keycloakClientIdHub,
-							@JsonProperty("keycloakClientIdCryptomator") String keycloakClientIdCryptomator,
-							@JsonProperty("keycloakAuthEndpoint") String authEndpoint, @JsonProperty("keycloakTokenEndpoint") String tokenEndpoint,
-							@JsonProperty("serverTime") Instant serverTime, @JsonProperty("apiLevel") Integer apiLevel,
-							@JsonProperty("entitlements") HubLicenseEntitlements entitlements,
-							@JsonProperty("billingUrl") String billingUrl
-							// / start katta extension
-			, @JsonProperty("keycloakClientIdCryptomatorVaults") String keycloakClientIdCryptomatorVaults
-			, @JsonProperty("uuid") String uuid
-							// \ end katta extension
-	) {
-	}
+    public record ConfigDto(@JsonProperty("keycloakUrl") String keycloakUrl, @JsonProperty("keycloakRealm") String keycloakRealm,
+                            @JsonProperty("keycloakClientIdHub") String keycloakClientIdHub,
+                            @JsonProperty("keycloakClientIdCryptomator") String keycloakClientIdCryptomator,
+                            @JsonProperty("keycloakAuthEndpoint") String authEndpoint, @JsonProperty("keycloakTokenEndpoint") String tokenEndpoint,
+                            @JsonProperty("serverTime") Instant serverTime, @JsonProperty("apiLevel") Integer apiLevel,
+                            @JsonProperty("entitlements") HubLicenseEntitlements entitlements,
+                            @JsonProperty("billingUrl") String billingUrl
+                            // / start katta extension
+            , @JsonProperty("keycloakClientIdCryptomatorVaults") String keycloakClientIdCryptomatorVaults
+            , @JsonProperty("uuid") String uuid
+            , @JsonProperty("desktopDownloadUrlMac") String desktopDownloadUrlMac
+            , @JsonProperty("desktopDownloadUrlWin") String desktopDownloadUrlWin
+                            // \ end katta extension
+    ) {
+    }
 
 }
