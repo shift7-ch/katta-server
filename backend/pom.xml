@@ -341,10 +341,12 @@
 			</properties>
 		</profile>
 		<!-- / start katta modification -->
+		<!-- regenerate via ./mvnw quarkus:build -P generate-openapi  -->
 		<profile>
-			<id>generate-openapi-json</id>
+			<id>generate-openapi</id>
 			<properties>
-				<quarkus.smallrye-openapi.store-schema-directory>../frontend/src/openapi</quarkus.smallrye-openapi.store-schema-directory>
+				<quarkus.smallrye-openapi.auto-add-security>false</quarkus.smallrye-openapi.auto-add-security>
+				<quarkus.smallrye-openapi.store-schema-directory>${build.directory}/openapi</quarkus.smallrye-openapi.store-schema-directory>
 			</properties>
 		</profile>
 		<!-- \ end katta modification -->

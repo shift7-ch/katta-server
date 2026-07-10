@@ -11,64 +11,81 @@
   <div v-else class="pb-16 space-y-6">
     <div v-if="storageprofile.archived" class="rounded-md bg-yellow-50 p-4">
       <div class="flex">
-        <div class="flex-shrink-0">
+        <div class="shrink-0">
           <ExclamationTriangleIcon class="h-5 w-5 text-yellow-400" aria-hidden="true" />
         </div>
         <p class="ml-3 text-sm text-yellow-700">{{ t('storageProfileDetails.warning.archived') }}</p>
       </div>
     </div>
-    <div v-if="storageprofile['protocol'] == 'S3STATIC'">
-      <div v-for="(item,key) in openapi.components.schemas.StorageProfileS3StaticDto.properties" :key="key">
-        <h3 class="font-medium text-gray-900"><span v-if="!(item as OpenapiType).nullable" style="color: red;">* </span>{{ key }}</h3>
-        <div class="mt-2 flex items-center justify-between">
-          <p class="text-sm text-gray-600">{{ storageprofile[key] }}</p>
-        </div>
-        <div class="mt-2 flex items-center justify-between">
-          <p class="text-sm text-gray-400">{{ item.description }}</p>
-        </div>
-        <div class="mt-2 flex items-center justify-between">
-          <p class="text-sm text-gray-400">type: {{ openapi.components.schemas.StorageProfileS3StaticDto.properties[key].type }}</p>
-        </div>
-        <div v-if="(openapi.components.schemas.StorageProfileS3StaticDto.properties[key] as OpenapiType)?.allOf">
-          <div class="mt-2 flex items-center justify-between">
-            <p v-if="((openapi.components.schemas as OpenapiSchemas)?.[((openapi.components.schemas.StorageProfileS3StaticDto.properties[key] as OpenapiType)?.allOf?.[0].$ref.split('/').pop()) ?? ''] as OpenapiSchema)?.enum" class="text-sm text-gray-400">enum: {{ ((openapi.components.schemas as OpenapiSchemas)?.[((openapi.components.schemas.StorageProfileS3StaticDto.properties[key] as OpenapiType)?.allOf?.[0].$ref.split('/').pop()) ?? ''] as OpenapiSchema)?.enum }}</p>
-          </div>
-          <div class="mt-2 flex items-center justify-between">
-            <p v-if="((openapi.components.schemas as OpenapiSchemas)?.[((openapi.components.schemas.StorageProfileS3StaticDto.properties[key] as OpenapiType)?.allOf?.[0].$ref.split('/').pop()) ?? ''] as OpenapiSchema)?.pattern" class="text-sm text-gray-400">pattern: {{ ((openapi.components.schemas as OpenapiSchemas)?.[((openapi.components.schemas.StorageProfileS3StaticDto.properties[key] as OpenapiType)?.allOf?.[0].$ref.split('/').pop()) ?? ''] as OpenapiSchema)?.pattern }}</p>
-          </div>
-        </div>
-        <div class="mt-2 flex items-center justify-between">
-          <p v-if="(openapi.components.schemas.StorageProfileS3STSDto.properties[key] as OpenapiType)?.example" class="text-sm text-gray-400">example: {{ (openapi.components.schemas.StorageProfileS3STSDto.properties[key] as OpenapiType)?.example }}</p>
-        </div>
-        <br />
+
+    <dl class="divide-y divide-gray-100">
+      <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+        <dt class="text-sm/6 font-medium text-gray-900">Name</dt>
+        <dd class="mt-1 text-sm/6 text-gray-700 sm:col-span-2 sm:mt-0">{{ storageprofile.name }}</dd>
       </div>
-    </div>
-    <div v-if="storageprofile['protocol'] == 'S3STS'">
-      <div v-for="(item,key) in openapi.components.schemas.StorageProfileS3STSDto.properties" :key="key">
-        <h3 class="font-medium text-gray-900"><span v-if="!(item as OpenapiType).nullable" style="color: red;">* </span>{{ key }}</h3>
-        <div class="mt-2 flex items-center justify-between">
-          <p class="text-sm text-gray-600">{{ storageprofile[key] }}</p>
-        </div>
-        <div class="mt-2 flex items-center justify-between">
-          <p class="text-sm text-gray-400">{{ item.description }}</p>
-        </div>
-        <div class="mt-2 flex items-center justify-between">
-          <p class="text-sm text-gray-400">type: {{ openapi.components.schemas.StorageProfileS3STSDto.properties[key].type }}</p>
-        </div>
-        <div v-if="(openapi.components.schemas.StorageProfileS3STSDto.properties[key] as OpenapiType)?.allOf">
-          <div class="mt-2 flex items-center justify-between">
-            <p v-if="((openapi.components.schemas as OpenapiSchemas)?.[((openapi.components.schemas.StorageProfileS3STSDto.properties[key] as OpenapiType)?.allOf?.[0].$ref.split('/').pop()) ?? ''] as OpenapiSchema)?.enum" class="text-sm text-gray-400">enum: {{ ((openapi.components.schemas as OpenapiSchemas)?.[((openapi.components.schemas.StorageProfileS3STSDto.properties[key] as OpenapiType)?.allOf?.[0].$ref.split('/').pop()) ?? ''] as OpenapiSchema)?.enum }}</p>
-          </div>
-          <div class="mt-2 flex items-center justify-between">
-            <p v-if="((openapi.components.schemas as OpenapiSchemas)?.[((openapi.components.schemas.StorageProfileS3STSDto.properties[key] as OpenapiType)?.allOf?.[0].$ref.split('/').pop()) ?? ''] as OpenapiSchema)?.pattern" class="text-sm text-gray-400">pattern: {{ ((openapi.components.schemas as OpenapiSchemas)?.[((openapi.components.schemas.StorageProfileS3STSDto.properties[key] as OpenapiType)?.allOf?.[0].$ref.split('/').pop()) ?? ''] as OpenapiSchema)?.pattern }}</p>
-          </div>
-        </div>
-        <div class="mt-2 flex items-center justify-between">
-          <p v-if="(openapi.components.schemas.StorageProfileS3STSDto.properties[key] as OpenapiType)?.example" class="text-sm text-gray-400">example: {{ (openapi.components.schemas.StorageProfileS3STSDto.properties[key] as OpenapiType)?.example }}</p>
-        </div>
-        <br />
+
+      <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+        <dt class="text-sm/6 font-medium text-gray-900">Endpoint</dt>
+        <dd class="mt-1 text-sm/6 text-gray-700 sm:col-span-2 sm:mt-0">{{ storageprofile.endpoint }}</dd>
       </div>
-    </div>
+
+      <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+        <dt class="text-sm/6 font-medium text-gray-900">Path Style Access</dt>
+        <dd class="mt-1 text-sm/6 text-gray-700 sm:col-span-2 sm:mt-0">{{ storageprofile.pathStyleAccessEnabled ? 'Enabled' : 'Disabled' }}</dd>
+      </div>
+
+      <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+        <dt class="text-sm/6 font-medium text-gray-900">Storage Class</dt>
+        <dd class="mt-1 text-sm/6 text-gray-700 sm:col-span-2 sm:mt-0">{{ storageprofile.storageClass }}</dd>
+      </div>
+
+      <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+        <dt class="text-sm/6 font-medium text-gray-900">Region</dt>
+        <dd class="mt-1 text-sm/6 text-gray-700 sm:col-span-2 sm:mt-0">{{ storageprofile.region }}</dd>
+      </div>
+
+      <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+        <dt class="text-sm/6 font-medium text-gray-900">Bucket Prefix</dt>
+        <dd class="mt-1 text-sm/6 text-gray-700 sm:col-span-2 sm:mt-0">{{ storageprofile.bucketPrefix }}</dd>
+      </div>
+
+      <template v-if="storageprofile.protocol === 'S3STS'">
+        <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+          <dt class="text-sm/6 font-medium text-gray-900">STS Endpoint</dt>
+          <dd class="mt-1 text-sm/6 text-gray-700 sm:col-span-2 sm:mt-0">{{ storageprofile.stsEndpoint }}</dd>
+        </div>
+
+        <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+          <dt class="text-sm/6 font-medium text-gray-900">CreateBucket ARN (for Clients)</dt>
+          <dd class="mt-1 text-sm/6 text-gray-700 sm:col-span-2 sm:mt-0">{{ storageprofile.stsRoleCreateBucketClient }}</dd>
+        </div>
+
+        <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+          <dt class="text-sm/6 font-medium text-gray-900">CreateBucket ARN (for Hub)</dt>
+          <dd class="mt-1 text-sm/6 text-gray-700 sm:col-span-2 sm:mt-0">{{ storageprofile.stsRoleCreateBucketHub }}</dd>
+        </div>
+
+        <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+          <dt class="text-sm/6 font-medium text-gray-900">AssumeRoleWithWebIdentity ARN</dt>
+          <dd class="mt-1 text-sm/6 text-gray-700 sm:col-span-2 sm:mt-0">{{ storageprofile.stsRoleAccessBucketAssumeRoleWithWebIdentity }}</dd>
+        </div>
+
+        <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+          <dt class="text-sm/6 font-medium text-gray-900">AssumeRole ARN</dt>
+          <dd class="mt-1 text-sm/6 text-gray-700 sm:col-span-2 sm:mt-0">{{ storageprofile.stsRoleAccessBucketAssumeRoleTaggedSession }}</dd>
+        </div>
+
+        <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+          <dt class="text-sm/6 font-medium text-gray-900">STS Token Lifetime</dt>
+          <dd class="mt-1 text-sm/6 text-gray-700 sm:col-span-2 sm:mt-0">{{ storageprofile.stsDurationSeconds }}</dd>
+        </div>
+
+        <div class="px-4 py-6 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+          <dt class="text-sm/6 font-medium text-gray-900">STS Session Tag</dt>
+          <dd class="mt-1 text-sm/6 text-gray-700 sm:col-span-2 sm:mt-0">{{ storageprofile.stsSessionTag }}</dd>
+        </div>
+      </template>
+    </dl>
 
     <div v-if="isAdmin" class="pt-4 border-t border-gray-200 space-y-3">
       <button v-if="!storageprofile.archived" type="button" class="w-full inline-flex justify-center bg-red-600 py-2 px-4 border border-transparent rounded-md shadow-xs text-sm font-medium text-white hover:bg-red-700 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-red-500" @click="openArchiveDialog">
@@ -90,7 +107,6 @@ import { computed, nextTick, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import auth from '../../common/auth';
 import backend, { NotFoundError, StorageProfileDto } from '../../common/backend';
-import { openapi, OpenapiSchema, OpenapiSchemas, OpenapiType } from '../../openapi/index';
 import FetchError from '../FetchError.vue';
 import ArchiveStorageProfileDialog from './ArchiveStorageProfileDialog.vue';
 import ReactivateStorageProfileDialog from './ReactivateStorageProfileDialog.vue';
