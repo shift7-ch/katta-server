@@ -1309,11 +1309,11 @@ async function downloadVaultTemplate() {
 }
 
 // / start katta extension
-import { baseURL } from '../common/config';
-async function openBookmark() {
+import { openInKatta } from '../common/deeplink';
+function openBookmark() {
   onOpenBookmarkError.value = null;
   try {
-    window.location.href = `katta://${new URL(location.origin).host}${baseURL}`;
+    openInKatta();
   } catch (error) {
     console.error('Opening bookmark from browser failed.', error);
     onOpenBookmarkError.value = error instanceof Error ? error : new Error('Unknown Error');

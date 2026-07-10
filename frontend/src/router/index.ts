@@ -37,14 +37,18 @@ function checkRole(role: string): NavigationGuardWithThis<undefined> {
   };
 }
 // / start katta extension
+import PublicOnboarding from '../components/katta/PublicOnboarding.vue';
 import StorageProfiles from '../components/katta/StorageProfiles.vue';
 // \ end katta extension
 
 const routes: RouteRecordRaw[] = [
+  // / start katta extension
   {
     path: '/',
-    redirect: '/app'
+    component: PublicOnboarding,
+    meta: { skipAuth: true, skipSetup: true }
   },
+  // \ end katta extension
   {
     path: '/app',
     redirect: '/app/vaults'
@@ -203,6 +207,13 @@ const routes: RouteRecordRaw[] = [
     component: Forbidden,
     meta: { skipAuth: true, skipSetup: true }
   },
+  // / start katta extension
+  {
+    path: '/:pathMatch(.*)*',
+    component: NotFound,
+    meta: { skipAuth: true, skipSetup: true }
+  },
+  // \ end katta extension
 ];
 
 const router = createRouter({

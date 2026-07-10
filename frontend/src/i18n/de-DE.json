@@ -344,8 +344,6 @@
   "CreateVaultS3.error.uploadTemplateFailed": "Hochladen Tresorvorlage nach S3-Bucket fehlgeschlagen.",
 
 
-  "vaultList.openInKatta": "In Katta öffnen",
-
   "nav.profile.storageprofiles": "Admin Tresor-Speicherbereiche",
   "storageProfileList.title": "Tresor-Speicherbereiche",
   "storageProfileList.setup.title": "Katta web setup",
@@ -368,5 +366,21 @@
   "storageprofile.stsRoleAccessBucketAssumeRoleWithWebIdentity": "stsRoleAccessBucketAssumeRoleWithWebIdentity",
   "storageprofile.stsRoleAccessBucketAssumeRoleTaggedSession": "stsRoleAccessBucketAssumeRoleTaggedSession",
   "storageprofile.stsDurationSeconds": "stsDurationSeconds",
-  "storageprofile.stsSessionTag": "stsSessionTag"
+  "storageprofile.stsSessionTag": "stsSessionTag",
+  "storageprofile.oAuthTokenExchangeAudience": "oAuthTokenExchangeAudience",
+
+  "onboarding.title": "Willkommen bei Katta",
+  "onboarding.intro": "Katta verschlüsselt die Tresore deines Teams Ende-zu-Ende. Leg mit der Desktop-App los.",
+  "onboarding.download.title": "Desktop-App herunterladen",
+  "onboarding.download.description": "Neu bei Katta? Lade die Desktop-App herunter, um deinen Account einzurichten und auf deine Tresore zuzugreifen.",
+  "onboarding.download.mac": "Download für macOS",
+  "onboarding.download.win": "Download für Windows",
+  "onboarding.download.alternateMac": "macOS-Version benötigt?",
+  "onboarding.download.alternateWin": "Windows-Version benötigt?",
+  "onboarding.openInKatta.title": "Bereits installiert?",
+  "onboarding.openInKatta.description": "Öffne Katta, um deine Tresore zu verwalten.",
+  "onboarding.openInKatta.button": "In Katta öffnen",
+  "onboarding.login": "Anmelden",
+  "onboarding.accountKey.description": "Suchst du deinen Account Key? {link} auf einem Gerät, auf dem Katta bereits eingerichtet ist, um ihn in deinem Profil zu finden.",
+  "onboarding.accountKey.link": "Melde dich an"
 }

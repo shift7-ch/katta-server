@@ -34,6 +34,10 @@ export type ConfigDto = {
     desktopLicense: string;
   };
   billingUrl: string;
+  // / start katta extension
+  desktopDownloadUrlMac: string;
+  desktopDownloadUrlWin: string;
+  // \ end katta extension
 };
 
 class ConfigWrapper {
