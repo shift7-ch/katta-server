@@ -264,7 +264,7 @@
             </div>
             <br />
             <div class="col-span-6 sm:col-span-3">
-              <label for="vaultName" class="block text-sm font-medium text-gray-700">{{ t('CreateVaultS3.enterVaultDetails.automaticAccessGrant') }}</label>
+              <label for="automaticAccessGrant" class="block text-sm font-medium text-gray-700">{{ t('CreateVaultS3.enterVaultDetails.automaticAccessGrant') }}</label>
               <input id="automaticAccessGrant" v-model="automaticAccessGrant" name="automaticAccessGrant" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" />
             </div>
             <!-- \ end katta extension -->
@@ -1070,6 +1070,12 @@ async function createVault() {
   onCreateError.value = undefined;
   try {
     processing.value = true;
+    // / start katta modification
+    // Upstream passes vaultName/vaultDescription straight to createOrUpdateVault; our DTO-based call sends the
+    // vault object, so the form refs must be copied into it before it is used (metadata nickname, template zip name, PUT body).
+    vault.value.name = vaultName.value.trim();
+    vault.value.description = vaultDescription.value?.trim();
+    // \ end katta modification
     const owner = await userdata.me;
     if (!owner.setupCode) {
       throw new Error('User not set up');
