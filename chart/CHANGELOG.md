@@ -16,13 +16,12 @@
   with a PVC, plus a `ClusterIP` Service exposing the S3 API (9000) and web console
   (9001).
 - Optional post-install Job (`storageProfileSeed.static.enabled` / `storageProfileSeed.sts.enabled`, gated on
-  `minio.enabled`) that registers a matching `S3STATIC` storage profile in the Hub
-  database via the `/api/storageprofile/s3static` endpoint. The Job:
+  `minio.enabled`) that registers a matching `S3STATIC` (and optionally `S3STS`) storage
+  profile in the Hub database via the polymorphic `/api/storageprofile/` endpoint. The Job:
   - waits for `/q/health/ready` to return 200,
   - obtains an admin token via Keycloak `client_credentials` (`cryptomatorhub-system`),
-  - posts the profile, treating 201 and 409 as success (idempotent).
-- `<release>-storageprofile-seed-state` ConfigMap pinning the seeded profile's UUID
-  across upgrades (annotated `helm.sh/resource-policy: keep`).
+  - posts the profile, skipping any profile whose name already exists (idempotent;
+    profile UUIDs are assigned by the server).
 - `cryptomatorvaults` Keycloak client + audience mapper on the `cryptomator` client,
   required for the Katta token-exchange flow. Its secret is auto-generated and surfaced
   to the backend via `HUB_KEYCLOAK_OIDC_CRYPTOMATOR_VAULTS_CLIENT_SECRET`.
