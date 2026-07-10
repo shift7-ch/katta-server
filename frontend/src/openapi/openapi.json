@@ -1109,12 +1109,6 @@
           }
         }
       }
-    },
-    "securitySchemes" : {
-      "SecurityScheme" : {
-        "type" : "openIdConnect",
-        "description" : "Authentication"
-      }
     }
   },
   "paths" : {
@@ -2998,6 +2992,9 @@
           "404" : {
             "description" : "user not found"
           },
+          "409" : {
+            "description" : "user attempted to delete their own account"
+          },
           "401" : {
             "description" : "Not Authorized"
           }
@@ -3032,6 +3029,9 @@
         "responses" : {
           "204" : {
             "description" : "user updated"
+          },
+          "409" : {
+            "description" : "user attempted to disable their own account"
           },
           "401" : {
             "description" : "Not Authorized"

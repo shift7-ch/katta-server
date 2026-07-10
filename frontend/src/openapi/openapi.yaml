@@ -900,10 +900,6 @@ components:
           uniqueItems: true
           items:
             type: string
-  securitySchemes:
-    SecurityScheme:
-      type: openIdConnect
-      description: Authentication
 paths:
   /api/auditlog:
     get:
@@ -2276,6 +2272,8 @@ paths:
           description: user has federated identity and cannot be deleted
         "404":
           description: user not found
+        "409":
+          description: user attempted to delete their own account
         "401":
           description: Not Authorized
       tags:
@@ -2301,6 +2299,8 @@ paths:
       responses:
         "204":
           description: user updated
+        "409":
+          description: user attempted to disable their own account
         "401":
           description: Not Authorized
         "403":
