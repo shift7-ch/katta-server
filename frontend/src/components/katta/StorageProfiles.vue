@@ -32,17 +32,26 @@
 
   <div class="pb-5 mt-3 border-b border-gray-200 flex flex-wrap sm:flex-nowrap gap-3 items-center whitespace-nowrap">
     <input id="storageprofileSearch" v-model="query" :placeholder="t('storageProfileList.search.placeholder')" type="text" class="focus:ring-primary focus:border-primary block w-full shadow-sm text-sm border-gray-300 rounded-md disabled:bg-gray-200" />
+    <label class="inline-flex items-center text-sm text-gray-700">
+      <input v-model="includeArchived" type="checkbox" class="h-4 w-4 text-primary border-gray-300 rounded focus:ring-primary mr-2" />
+      {{ t('storageProfileList.filter.includeArchived') }}
+    </label>
+    <button v-if="isAdmin" type="button" class="inline-flex items-center justify-center rounded-md border border-transparent bg-primary px-4 py-2 text-sm font-medium text-white shadow-xs hover:bg-primary-d1 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-primary" @click="openCreateDialog">
+      <PlusIcon class="h-4 w-4 mr-1" aria-hidden="true" />
+      {{ t('storageProfileList.button.create') }}
+    </button>
   </div>
 
   <div v-if="filteredStorageprofiles != null && filteredStorageprofiles.length > 0" class="mt-5 bg-white shadow overflow-hidden rounded-md">
     <ul role="list" class="divide-y divide-gray-200">
-      <li v-for="(storageprofile, index) in filteredStorageprofiles" :key="storageprofile.name">
+      <li v-for="(storageprofile, index) in filteredStorageprofiles" :key="storageprofile.id">
         <a role="button" tabindex="0" class="block hover:bg-gray-50" :class="{'ring-2 ring-inset ring-primary': selectedStorageprofile == storageprofile, 'rounded-t-md': index == 0, 'rounded-b-md': index == filteredStorageprofiles.length - 1}" @click="showStorageProfileDetails(storageprofile)">
           <div class="px-4 py-4 flex items-center sm:px-6">
             <div class="min-w-0 flex-1">
               <div class="flex items-center gap-3">
                 <p class="truncate text-sm font-medium text-primary">{{ storageprofile.name }}</p>
-                <div v-if="storageprofile.archived" class="inline-flex items-center rounded-md bg-yellow-400/10 px-2 py-1 text-xs font-medium text-yellow-500 ring-1 ring-inset ring-yellow-400/20">{{ t('storageprofileList.badge.archived') }}</div>
+                <span class="text-xs text-gray-400">{{ storageprofile.protocol }}</span>
+                <div v-if="storageprofile.archived" class="inline-flex items-center rounded-md bg-yellow-400/10 px-2 py-1 text-xs font-medium text-yellow-500 ring-1 ring-inset ring-yellow-400/20">{{ t('storageProfileList.badge.archived') }}</div>
               </div>
             </div>
             <div class="ml-5 shrink-0">
@@ -73,16 +82,19 @@
   <SlideOver v-if="selectedStorageprofile != null" ref="StorageProfileDetailsSlideOver" :title="selectedStorageprofile.name" @close="selectedStorageprofile = null">
     <StorageProfileDetails :storageprofile-id="selectedStorageprofile.id" @storageprofile-updated="v => onSelectedStorageprofileUpdate(v)" />
   </SlideOver>
+
+  <CreateStorageProfileDialog v-if="creatingProfile" ref="createDialog" @close="creatingProfile = false" @created="onCreated" />
 </template>
 
 <script setup lang="ts">
-import { ChevronRightIcon, LinkIcon } from '@heroicons/vue/24/solid';
+import { ChevronRightIcon, LinkIcon, PlusIcon } from '@heroicons/vue/24/solid';
 import { computed, nextTick, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import auth from '../../common/auth';
 import backend, { StorageProfileDto } from '../../common/backend';
 import FetchError from '../FetchError.vue';
 import SlideOver from '../SlideOver.vue';
+import CreateStorageProfileDialog from './CreateStorageProfileDialog.vue';
 import StorageProfileDetails from './StorageProfileDetails.vue';
 
 const { t } = useI18n({ useScope: 'global' });
@@ -96,13 +108,25 @@ const selectedStorageprofile = ref<StorageProfileDto | null>(null);
 const isAdmin = ref<boolean>();
 
 const query = ref('');
-const filteredStorageprofiles = computed(() =>
-  query.value === ''
-    ? storageprofiles.value
-    : storageprofiles.value?.filter((storageprofile) => {
-      return storageprofile.name.toLowerCase().includes(query.value.toLowerCase());
-    })
-);
+const includeArchived = ref(false);
+const creatingProfile = ref(false);
+const createDialog = ref<typeof CreateStorageProfileDialog>();
+
+const filteredStorageprofiles = computed(() => {
+  const list = storageprofiles.value;
+  if (list == null) {
+    return list;
+  }
+  return list.filter(p => {
+    if (!includeArchived.value && p.archived) {
+      return false;
+    }
+    if (query.value !== '' && !p.name.toLowerCase().includes(query.value.toLowerCase())) {
+      return false;
+    }
+    return true;
+  });
+});
 
 onMounted(fetchData);
 
@@ -132,6 +156,20 @@ async function onSelectedStorageprofileUpdate(storageprofile: StorageProfileDto)
     selectedStorageprofile.value = storageprofiles.value[index];
   } else {
     selectedStorageprofile.value = storageprofile;
+  }
+}
+
+function openCreateDialog() {
+  creatingProfile.value = true;
+  nextTick(() => createDialog.value?.show());
+}
+
+async function onCreated(profile: StorageProfileDto) {
+  creatingProfile.value = false;
+  await fetchData();
+  const fresh = storageprofiles.value?.find(p => p.id === profile.id);
+  if (fresh != null) {
+    showStorageProfileDetails(fresh);
   }
 }
 

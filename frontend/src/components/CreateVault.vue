@@ -95,7 +95,7 @@
     </form>
   </div>
   <!-- // / start katta modification -->
-  <div v-else-if="state == State.EnterVaultDetails && backends.length > 0 && regions.length > 0">
+  <div v-else-if="state == State.EnterVaultDetails && backends.length > 0 && (selectedStorageProfile?.protocol === 'S3STATIC' || regions.length > 0)">
     <!-- // \ end katta modification -->
     <BreadcrumbNav :crumbs="[ { label: t('vaultList.title'), to: '/app/vaults' }, { label: t('createVault.enterVaultDetails.title') } ]" />
     <VaultCreationProgress :state="State.EnterVaultDetails" :steps="getCurrentStates" class="flex justify-center mb-4" />
@@ -257,7 +257,10 @@
               <label for="vaultBucketName" class="block text-sm font-medium text-gray-700">
                 {{ t('CreateVaultS3.enterVaultDetails.vaultPermanentBucketName') }}
               </label>
-              <input id="vaultBucketName" v-model="vaultBucketName" :disabled="processing" type="text" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200" :class="{ 'invalid:border-red-300 invalid:text-red-900 focus:invalid:ring-red-500 focus:invalid:border-red-500': onCreateError instanceof FormValidationFailedError }" />
+              <div class="mt-1 flex rounded-md shadow-sm">
+                <span v-if="bucketPrefix" class="inline-flex items-center rounded-l-md border border-r-0 border-gray-300 bg-gray-50 px-3 text-gray-500 sm:text-sm">{{ bucketPrefix }}</span>
+                <input id="vaultBucketName" v-model="vaultBucketName" :disabled="processing" type="text" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 disabled:bg-gray-200" :class="[bucketPrefix ? 'rounded-none rounded-r-md' : 'rounded-md', { 'invalid:border-red-300 invalid:text-red-900 focus:invalid:ring-red-500 focus:invalid:border-red-500': onCreateError instanceof FormValidationFailedError }]" required />
+              </div>
             </div>
             <br />
             <div class="col-span-6 sm:col-span-3">
@@ -578,7 +581,7 @@
     <BreadcrumbNav :crumbs="[ { label: t('vaultList.title'), to: '/app/vaults' }, { label: t('createVault.enterVaultDetails.title') } ]" />
     <FetchError :error="onFetchError" :retry="fetchStorageProfiles" />
   </div>
-  <div v-else-if="state == State.EnterVaultDetails && (backends.length == 0 || regions.length == 0)">
+  <div v-else-if="state == State.EnterVaultDetails && (backends.length == 0 || (selectedStorageProfile?.protocol === 'S3STS' && regions.length == 0))">
     <BreadcrumbNav :crumbs="[ { label: t('vaultList.title'), to: '/app/vaults' }, { label: t('createVault.enterVaultDetails.title') } ]" />
     <div class="mt-3 text-center">
       <ExclamationTriangleIcon class="mx-auto h-12 w-12 text-gray-400" aria-hidden="true" />
@@ -724,8 +727,6 @@ const props = defineProps<{
 }>();
 
 // / start katta extension
-// The dropdown carries every non-archived storage profile (both S3STS and S3STATIC); vault creation
-// supports the full lifecycle for each protocol (STS-vended credentials vs. static access keys).
 const selectedStorageProfile = ref<StorageProfileDto>();
 const selectedRegion = ref<string>();
 const regions = ref<string[]>([]);
@@ -735,6 +736,10 @@ const onFetchError = ref<Error | null>(null);
 const vaultAccessKeyId = ref('');
 const vaultSecretKey = ref('');
 const vaultBucketName = ref('');
+// Admin-configured prefix for the selected profile (empty if none). The actual bucket name is this prefix
+// followed by the user-provided suffix, so the prefix amends (never replaces) the entered name.
+const bucketPrefix = computed(() => selectedStorageProfile.value?.bucketPrefix ?? '');
+const effectiveBucketName = computed(() => bucketPrefix.value + vaultBucketName.value);
 const automaticAccessGrant = ref<boolean>(true);
 const onOpenBookmarkError = ref<Error | null>(null);
 const onUploadTemplateError = ref<Error | null>(null);
@@ -911,7 +916,7 @@ async function validateVaultDetails() {
         });
 
         const command = new GetBucketLocationCommand({
-          Bucket: vaultBucketName.value
+          Bucket: effectiveBucketName.value
         });
         try {
           const response = await headBucketClient.send(command);
@@ -942,7 +947,7 @@ async function validateVaultDetails() {
         });
         // N.B. there seems to be no API to check write permissions without actually writing.
         const commandListObjects = new ListObjectsV2Command({
-          Bucket: vaultBucketName.value,
+          Bucket: effectiveBucketName.value,
           MaxKeys: 1,
         });
         const responseListObjects = await client.send(commandListObjects);
@@ -956,7 +961,7 @@ async function validateVaultDetails() {
         // TODO review can we improve whether this is a CORS problem? FF message is "NetworkError when attempting to fetch resource", Safari "Load failed".
         if (error instanceof TypeError){
           onCreateError.value = new ErrorWithCodeHint(error.message + '. ' + t('CreateVaultS3.error.invalidCORS'), `
-          aws s3api put-bucket-cors --endpoint-url ${endpoint} --bucket ${vaultBucketName.value} --cors-configuration file://cors.json
+          aws s3api put-bucket-cors --endpoint-url ${endpoint} --bucket ${effectiveBucketName.value} --cors-configuration file://cors.json
 
           cors.json:
           {
@@ -1100,13 +1105,14 @@ async function createVault() {
         if (storageProfile === undefined) {
           throw new Error('Invalid state');
         }
-        if (!selectedRegion.value) {
+        if (storageProfile.protocol === 'S3STS' && !selectedRegion.value) {
           throw new Error('Invalid state');
         }
 
         uvfVault.value.metadata.backend.provider = storageProfile.id;
         uvfVault.value.metadata.backend.nickname = vault.value.name;
-        uvfVault.value.metadata.backend.region = selectedRegion.value;
+        // S3STATIC has no region on the profile; fall back to us-east-1 (AWS SDK rejects empty).
+        uvfVault.value.metadata.backend.region = selectedRegion.value ?? 'us-east-1';
         uvfVault.value.metadata.automaticAccessGrant.enabled = automaticAccessGrant.value;
         if (storageProfile.protocol === 'S3STS') {
           uvfVault.value.metadata.backend.bucket = storageProfile.bucketPrefix + vault.value.id;
@@ -1139,13 +1145,13 @@ async function createVault() {
     if (storageProfile === undefined) {
       throw new Error('Invalid state');
     }
-    if (!selectedRegion.value) {
-      throw new Error('Invalid state');
-    }
     // Decision 2024-02-01 upload vault template/create bucket before creating vault in hub and uploading JWE. This is the most delicate operation. No further rollback for now.
     if (storageProfile.protocol === 'S3STATIC'){
       await uploadVaultTemplate();
     } else if (storageProfile.protocol === 'S3STS') {
+      if (!selectedRegion.value) {
+        throw new Error('Invalid state');
+      }
       // N.B. the access tokens for cryptomator and cryptomator hub clients do only have realm roles added to them, but not client roles.
       //      We use client roles for vaults shared with a user. So this setup prevents access tokens from growing with new vaults.
       const token = await authPromise.then(auth => auth.bearerToken());
@@ -1354,7 +1360,9 @@ async function uploadVaultTemplate() {
       throw new Error('Invalid state.');
     }
     const client = new S3Client({
-      region: selectedRegion.value,
+      // AWS SDK requires a non-empty region even when an explicit endpoint is set; non-AWS
+      // providers (Scaleway, MinIO) typically ignore it. Default to us-east-1 if unknown.
+      region: selectedRegion.value ?? 'us-east-1',
       endpoint: storageProfile.endpoint,
       forcePathStyle: storageProfile.pathStyleAccessEnabled,
       credentials:{
@@ -1363,7 +1371,7 @@ async function uploadVaultTemplate() {
       }
     });
     const commandListObjects = new ListObjectsV2Command({
-      Bucket: vaultBucketName.value,
+      Bucket: effectiveBucketName.value,
       MaxKeys: 1,
     });
     const responseListObjects = await client.send(commandListObjects);
@@ -1383,7 +1391,7 @@ async function uploadVaultTemplate() {
     }
 
     const commandPutVaultCryptomator = new PutObjectCommand({
-      Bucket: vaultBucketName.value,
+      Bucket: effectiveBucketName.value,
       Key: 'vault.uvf',
       Body: vault.value.uvfMetadataFile
     });
@@ -1392,7 +1400,7 @@ async function uploadVaultTemplate() {
     console.log(responsePutVaultCryptomator);
 
     const commandPutDFolder = new PutObjectCommand({
-      Bucket: vaultBucketName.value,
+      Bucket: effectiveBucketName.value,
       Key: `d/${rootDirHash.substring(0, 2)}/${rootDirHash.substring(2)}/`,
       Body: '',
     });

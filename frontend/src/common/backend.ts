@@ -865,6 +865,18 @@ class StorageProfileService {
       .then(response => response.data);
   }
 
+  public async create(dto: StorageProfileDto): Promise<StorageProfileDto> {
+    return axiosAuth.post<StorageProfileDto>('/storageprofile/', dto)
+      .then(response => response.data)
+      .catch(error => rethrowAndConvertIfExpected(error, 400, 403, 409));
+  }
+
+  public async setArchived(storageprofileId: string, archived: boolean): Promise<void> {
+    const params = new URLSearchParams({ archived: String(archived) });
+    await axiosAuth.put(`/storageprofile/${storageprofileId}`, params, { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } })
+      .catch(error => rethrowAndConvertIfExpected(error, 403, 404));
+  }
+
 }
 export const axiosUnAuth = AxiosStatic.create(axiosBaseCfg);
 class ConfigService {
