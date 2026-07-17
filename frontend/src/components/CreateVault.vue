@@ -1065,6 +1065,12 @@ async function createVault() {
   onCreateError.value = undefined;
   try {
     processing.value = true;
+    // / start katta modification
+    // upstream passes vaultName/vaultDescription directly to createOrUpdateVault();
+    // the VaultDto-based flow must copy them into the DTO before use
+    vault.value.name = vaultName.value;
+    vault.value.description = vaultDescription.value;
+    // \ end katta modification
     const owner = await userdata.me;
     if (!owner.setupCode) {
       throw new Error('User not set up');
