@@ -10,7 +10,7 @@
           <Bars3Icon class="h-6 w-6" aria-hidden="true" />
         </button>
         <router-link to="/app" class="flex grow items-center justify-center">
-          <img src="/logo.svg" class="h-8" alt="Cryptomator Hub" />
+          <img src="/logo.png" class="h-8" alt="Katta" />
         </router-link>
       </div>
 

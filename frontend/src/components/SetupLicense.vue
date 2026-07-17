@@ -14,7 +14,7 @@
     <div v-else-if="state == State.NonAdmin" class="flex justify-center">
       <div class="bg-white px-4 py-5 shadow-sm sm:rounded-lg sm:p-6 text-center sm:w-full sm:max-w-lg">
         <div class="flex justify-center">
-          <img src="/logo.svg" class="h-12" alt="Logo" aria-hidden="true" />
+          <img src="/logo.png" class="h-12" alt="Logo" aria-hidden="true" />
         </div>
         <div class="mt-3 sm:mt-5">
           <h3 class="text-lg leading-6 font-medium text-gray-900">
@@ -31,7 +31,7 @@
 
     <div v-else-if="state == State.GetLicense" class="sm:w-8/12 mx-auto">
       <section class="w-full bg-white p-4 sm:p-6 shadow-sm sm:rounded-lg flex flex-col items-center">
-        <img src="/logo.svg" class="h-12" alt="Logo" aria-hidden="true" />
+        <img src="/logo.png" class="h-12" alt="Logo" aria-hidden="true" />
         <h1 class="text-lg leading-6 font-medium text-gray-900 my-3 sm:my-5">{{ t('setupLicense.title') }}</h1>
         <p v-if="onSessionError" class="mb-3 text-sm text-red-900">{{ t('setupLicense.session.error') }}</p>
 
