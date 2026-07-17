@@ -662,7 +662,7 @@
   "setupLicense.existing.description": "Already have a license key? Paste it below.",
   "setupLicense.existing.submit": "Apply License",
   "setupLicense.existing.error": "The license key is invalid or does not match this Hub instance (Hub ID: {0}).",
-  "setupLicense.session.error": "Retrieving your license from the store failed. Please try again or contact support if the problem persists."
+  "setupLicense.session.error": "Retrieving your license from the store failed. Please try again or contact support if the problem persists.",
 
   "CreateVaultS3.enterVaultDetails.storage": "Storage Locations",
   "CreateVaultS3.enterVaultDetails.region": "Region",
