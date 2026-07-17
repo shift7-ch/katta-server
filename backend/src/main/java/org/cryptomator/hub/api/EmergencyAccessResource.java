@@ -3,7 +3,6 @@ package org.cryptomator.hub.api;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.vertx.core.http.HttpServerRequest;
-import org.jspecify.annotations.Nullable;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -11,8 +10,16 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
-import jakarta.ws.rs.*;
-import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.cryptomator.hub.entities.EmergencyRecoveryProcess;
@@ -24,6 +31,7 @@ import org.cryptomator.hub.validation.ValidJWS;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.Map;
@@ -37,16 +45,15 @@ public class EmergencyAccessResource {
 	private final RecoveredEmergencyKeyShares.Repository recoveredKeySharesRepo;
 	private final JsonWebToken jwt;
 	private final EventLogger eventLogger;
-
-	@Context
-	HttpServerRequest request;
+	private final HttpServerRequest request; // @RequestScoped bean, injected as a client proxy resolving against the current request
 
 	@Inject
-	EmergencyAccessResource(EmergencyRecoveryProcess.Repository recoverProcessRepo, RecoveredEmergencyKeyShares.Repository recoveredKeySharesRepo, JsonWebToken jwt, EventLogger eventLogger) {
+	EmergencyAccessResource(EmergencyRecoveryProcess.Repository recoverProcessRepo, RecoveredEmergencyKeyShares.Repository recoveredKeySharesRepo, JsonWebToken jwt, EventLogger eventLogger, HttpServerRequest request) {
 		this.recoverProcessRepo = recoverProcessRepo;
 		this.recoveredKeySharesRepo = recoveredKeySharesRepo;
 		this.jwt = jwt;
 		this.eventLogger = eventLogger;
+		this.request = request;
 	}
 
 	@PUT

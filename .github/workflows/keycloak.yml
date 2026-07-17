@@ -8,7 +8,7 @@ on:
         required: true
 
 env:
-  NODE_VERSION: 22
+  NODE_VERSION: 26
   # / cipherduck start addition
   JAVA_VERSION: 22
   # \ cipherduck end addition
