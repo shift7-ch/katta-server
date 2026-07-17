@@ -68,7 +68,7 @@ class VaultResourceTest {
 				return null;
 			}
 		};
-		vaultResource = new VaultResource(eventLogger, null, null, groupRepo, userRepo, null, effectiveVaultAccessRepo, null, vaultRepo, vaultAccessRepo, jwt, license, null, null, vaultMembersJoinedEvent, kattaConfig, keycloakCryptomatorVaultsHelper);
+		vaultResource = new VaultResource(eventLogger, null, null, groupRepo, userRepo, null, effectiveVaultAccessRepo, null, vaultRepo, vaultAccessRepo, jwt, license, null, null, null, vaultMembersJoinedEvent, kattaConfig, keycloakCryptomatorVaultsHelper);
 
 		final User user = Mockito.mock(User.class);
 		Mockito.when(userRepo.findById("alice")).thenReturn(user);
