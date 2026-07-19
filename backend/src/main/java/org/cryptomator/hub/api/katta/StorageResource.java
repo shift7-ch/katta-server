@@ -68,7 +68,7 @@ public class StorageResource {
 	@RolesAllowed("user")
 	@Produces(MediaType.APPLICATION_JSON)
 	@Transactional
-	@Operation(summary = "creates bucket and policy", description = "creates an S3 bucket and uploads policy for it for call from Web Client (CORS).")
+	@Operation(summary = "creates bucket and uploads vault template", description = "Creates the S3 bucket for the vault and uploads the (client-side encrypted) vault template on behalf of the Web Client, using the temporary STS credentials it supplies. This offloads bucket creation from the browser, which is subject to CORS restrictions. No CORS configuration or bucket policy is set here.")
 	@APIResponse(responseCode = "200", description = "Bucket and Keycloak config created")
 	@APIResponse(responseCode = "400", description = "Could not create bucket")
 	@APIResponse(responseCode = "409", description = "Bucket with this name already exists")
