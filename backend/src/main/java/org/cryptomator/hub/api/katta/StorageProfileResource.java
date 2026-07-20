@@ -20,6 +20,8 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.cryptomator.hub.entities.katta.StorageProfile;
 import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.hibernate.exception.ConstraintViolationException;
 
@@ -45,7 +47,7 @@ public class StorageProfileResource {
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
 	@Operation(summary = "create a storage profile", description = "Polymorphic by `protocol` discriminator: S3STATIC or S3STS. The server assigns the profile id; any client-supplied id is ignored.")
-	@APIResponse(responseCode = "201", description = "uploaded storage configuration")
+	@APIResponse(responseCode = "201", description = "uploaded storage configuration", content = @Content(schema = @Schema(implementation = StorageProfileDto.class)))
 	@APIResponse(responseCode = "400", description = "Constraint violation")
 	@APIResponse(responseCode = "403", description = "not an admin")
 	public Response uploadStorageProfile(@Valid @NotNull final StorageProfileDto dto) {
