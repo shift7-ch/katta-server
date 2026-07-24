@@ -320,4 +320,40 @@ public class StorageProfileResourceIT {
 		}
 
 	}
+	@Nested
+	@DisplayName("As normal user2")
+	@TestSecurity(user = "User Name 2", roles = {"user"})
+	@OidcSecurity(claims = {
+			@Claim(key = "sub", value = "user2")
+	})
+	public class CreateStorageProfileAsNonAdmin {
+
+		@Test
+		@DisplayName("POST /storageprofile/ returns 403 for a user without the admin role")
+		public void testPostS3StorageProfileForbidden() {
+			var vaultDto = new StorageProfileS3StaticDto(
+					null,
+					"AWS S3 static",
+					StorageProfileDto.Protocol.S3_STATIC,
+					false,
+					null,
+					false,
+					S3StorageClass.STANDARD,
+					"eu-west-1",
+					Arrays.asList("eu-west-1", "eu-west-2", "eu-west-3"),
+					"katta-test-"
+			);
+			given().contentType(ContentType.JSON).body(vaultDto)
+					.when().post("/storageprofile/")
+					.then().statusCode(403);
+		}
+
+		@Test
+		@DisplayName("PUT /storageprofile/{profileId} returns 403 for a user without the admin role")
+		public void testArchiveS3StorageProfileForbidden() {
+			given().formParam("archived", true)
+					.when().put("/storageprofile/{profileId}", UUID.randomUUID())
+					.then().statusCode(403);
+		}
+	}
 }
