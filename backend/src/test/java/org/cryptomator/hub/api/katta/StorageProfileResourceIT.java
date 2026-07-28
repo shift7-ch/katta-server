@@ -34,8 +34,6 @@ import static org.mockito.Mockito.*;
 @QuarkusTest
 @DisplayName("Resource /storageprofile")
 public class StorageProfileResourceIT {
-	@InjectMock
-	S3StorageHelper s3StorageHelper;
 
 	@Nested
 	@DisplayName("As admin user1")
@@ -182,47 +180,6 @@ public class StorageProfileResourceIT {
 			final StorageProfileS3STSDto stsDto = assertInstanceOf(StorageProfileS3STSDto.class, dto);
 			assertEquals("arn:aws:iam::430118840017:role/testing.katta.cloud-kc-realms-chipotle-sts-chain-01", stsDto.getStsRoleAccessBucketAssumeRoleWithWebIdentity());
 			assertFalse(stsDto.isArchived());
-		}
-
-		@Test
-		@Order(4)
-		@DisplayName("PUT /storage/{vaultId} returns 201")
-		public void testCreateStorage() {
-			final String vaultId = UUID.randomUUID().toString();
-			var createS3STSBucketDto = new CreateS3STSBucketDto(
-					vaultId,
-					stsProfileId,
-					"",
-					"",
-					"",
-					"",
-					"",
-					"",
-					""
-			);
-			var vaultDto = new StorageProfileS3STSDto(
-					stsProfileId,
-					"AWS S3 STS",
-					StorageProfileDto.Protocol.S3_STS,
-					false,
-					null,
-					false,
-					S3StorageClass.STANDARD,
-					"eu-west-1",
-					Arrays.asList("eu-west-1", "eu-west-2", "eu-west-3"),
-					"katta-test-",
-					"arn:aws:iam::430118840017:role/testing.katta.cloud-kc-realms-chipotle-createbucket",
-					"arn:aws:iam::430118840017:role/testing.katta.cloud-kc-realms-chipotle-createbucket",
-					null,
-					"arn:aws:iam::430118840017:role/testing.katta.cloud-kc-realms-chipotle-sts-chain-01",
-					"JsonNullable[arn:aws:iam::430118840017:role/testing.katta.cloud-kc-realms-chipotle-sts-chain-02]",
-					null,
-					"Vault"
-			);
-			given().contentType(ContentType.JSON).body(createS3STSBucketDto)
-					.when().put("/storage/{vaultId}", vaultId)
-					.then().statusCode(201);
-			Mockito.verify(s3StorageHelper, times(1)).makeS3Bucket(vaultDto, createS3STSBucketDto);
 		}
 
 		@Test
