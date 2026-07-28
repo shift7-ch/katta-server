@@ -33,7 +33,6 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.cryptomator.hub.api.katta.KattaConfig;
@@ -105,6 +104,7 @@ public class VaultResource {
 	private final JsonWebToken jwt;
 	private final LicenseHolder license;
 	private final VaultUnlockMetrics vaultUnlockMetrics;
+	private final HttpServerRequest request; // @RequestScoped bean, injected as a client proxy resolving against the current request
 	private final VaultMembersJoinedBroadcaster vaultMembersJoinedBroadcaster;
 	private final Event<VaultMembersJoined> vaultMembersJoinedEvent;
 
@@ -112,12 +112,9 @@ public class VaultResource {
 	private final KattaConfig kattaConfig;
 	private final KeycloakCryptomatorVaultsHelper keycloakCryptomatorVaultsHelper;
 	// \ end katta extension
-
-	@Context
-	HttpServerRequest request;
-
 	@Inject
-	VaultResource(EventLogger eventLogger, AccessToken.Repository accessTokenRepo, Device.Repository deviceRepo, Group.Repository groupRepo, User.Repository userRepo, Authority.Repository authorityRepo, EffectiveVaultAccess.Repository effectiveVaultAccessRepo, LegacyAccessToken.Repository legacyAccessTokenRepo, Vault.Repository vaultRepo, VaultAccess.Repository vaultAccessRepo, JsonWebToken jwt, LicenseHolder license, VaultUnlockMetrics vaultUnlockMetrics, VaultMembersJoinedBroadcaster vaultMembersJoinedBroadcaster, Event<VaultMembersJoined> vaultMembersJoinedEvent, KattaConfig kattaConfig, KeycloakCryptomatorVaultsHelper keycloakCryptomatorVaultsHelper) {
+	@SuppressWarnings("deprecation")
+	VaultResource(EventLogger eventLogger, AccessToken.Repository accessTokenRepo, Device.Repository deviceRepo, Group.Repository groupRepo, User.Repository userRepo, Authority.Repository authorityRepo, EffectiveVaultAccess.Repository effectiveVaultAccessRepo, LegacyAccessToken.Repository legacyAccessTokenRepo, Vault.Repository vaultRepo, VaultAccess.Repository vaultAccessRepo, JsonWebToken jwt, LicenseHolder license, VaultUnlockMetrics vaultUnlockMetrics, HttpServerRequest request, VaultMembersJoinedBroadcaster vaultMembersJoinedBroadcaster, Event<VaultMembersJoined> vaultMembersJoinedEvent, KattaConfig kattaConfig, KeycloakCryptomatorVaultsHelper keycloakCryptomatorVaultsHelper) {
 		this.eventLogger = eventLogger;
 		this.accessTokenRepo = accessTokenRepo;
 		this.deviceRepo = deviceRepo;
@@ -131,6 +128,7 @@ public class VaultResource {
 		this.jwt = jwt;
 		this.license = license;
 		this.vaultUnlockMetrics = vaultUnlockMetrics;
+		this.request = request;
 		this.vaultMembersJoinedBroadcaster = vaultMembersJoinedBroadcaster;
 		this.vaultMembersJoinedEvent = vaultMembersJoinedEvent;
 		this.kattaConfig = kattaConfig;
