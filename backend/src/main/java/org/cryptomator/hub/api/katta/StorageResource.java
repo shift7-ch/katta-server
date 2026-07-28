@@ -42,22 +42,7 @@ public class StorageResource {
 	private static final Logger log = Logger.getLogger(StorageResource.class);
 
 	@Inject
-	KattaConfig kattaConfig;
-
-	@Inject
-	KeycloakCryptomatorVaultsHelper keycloakCryptomatorVaultsHelper;
-
-	@Inject
 	JsonWebToken jwt;
-
-	@Inject
-	Vault.Repository vaultRepo;
-
-	@Inject
-	User.Repository userRepo;
-
-	@Inject
-	Group.Repository groupRepo;
 
 	@RestClient
 	KeycloakTokenExchangeApi tokenExchangeApi;
