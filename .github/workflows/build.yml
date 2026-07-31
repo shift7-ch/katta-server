@@ -34,21 +34,6 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'pnpm'
           cache-dependency-path: frontend/pnpm-lock.yaml
-      # / katta start addition
-      - uses: actions/setup-java@v5
-        with:
-          distribution: 'temurin'
-          java-version: ${{ env.JAVA_VERSION }}
-          cache: 'maven'
-      - name: Generate openapi.json
-        working-directory: backend
-        run: >
-          mvn -B clean compile quarkus:build -P generate-openapi-json
-      - name: Check openapi.json
-        working-directory: backend
-        run: >
-          cat ../frontend/src/openapi/openapi.json
-      # \ katta end addition
       - name: pnpm install
         working-directory: frontend
         run: pnpm install --frozen-lockfile

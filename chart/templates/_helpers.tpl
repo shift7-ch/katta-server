@@ -249,42 +249,6 @@ Auto-generated secrets below:
 {{- end -}}
 {{- end -}}
 
-{{- define "katta-server.resolvedMinioProfileId.S3STATIC" -}}
-{{- if hasKey .Values "_resolvedMinioProfileId.S3STATIC" -}}
-{{- index .Values "_resolvedMinioProfileId.S3STATIC" -}}
-{{- else if .Values.storageProfileSeed.static.profileId -}}
-{{- $_ := set .Values "_resolvedMinioProfileId.S3STATIC" .Values.storageProfileSeed.static.profileId -}}
-{{- index .Values "_resolvedMinioProfileId.S3STATIC" -}}
-{{- else -}}
-{{- $cmName := print (include "cryptomator-hub.fullname" .) "-storageprofile-seed-state" -}}
-{{- $existing := lookup "v1" "ConfigMap" .Release.Namespace $cmName -}}
-{{- if and $existing (hasKey $existing.data "profileId") -}}
-{{- $_ := set .Values "_resolvedMinioProfileId.S3STATIC" (index $existing.data "profileId") -}}
-{{- else -}}
-{{- $_ := set .Values "_resolvedMinioProfileId.S3STATIC" (uuidv4) -}}
-{{- end -}}
-{{- index .Values "_resolvedMinioProfileId.S3STATIC" -}}
-{{- end -}}
-{{- end -}}
-
-{{- define "katta-server.resolvedMinioProfileId.S3STS" -}}
-{{- if hasKey .Values "_resolvedMinioProfileId.S3STS" -}}
-{{- index .Values "_resolvedMinioProfileId.S3STS" -}}
-{{- else if .Values.storageProfileSeed.sts.profileId -}}
-{{- $_ := set .Values "_resolvedMinioProfileId.S3STS" .Values.storageProfileSeed.sts.profileId -}}
-{{- index .Values "_resolvedMinioProfileId.S3STS" -}}
-{{- else -}}
-{{- $cmName := print (include "cryptomator-hub.fullname" .) "-storageprofile-seed-state" -}}
-{{- $existing := lookup "v1" "ConfigMap" .Release.Namespace $cmName -}}
-{{- if and $existing (hasKey $existing.data "stsProfileId") -}}
-{{- $_ := set .Values "_resolvedMinioProfileId.S3STS" (index $existing.data "stsProfileId") -}}
-{{- else -}}
-{{- $_ := set .Values "_resolvedMinioProfileId.S3STS" (uuidv4) -}}
-{{- end -}}
-{{- index .Values "_resolvedMinioProfileId.S3STS" -}}
-{{- end -}}
-{{- end -}}
-
 {{/*
 
 OIDC discovery URL handed to MinIO. Defaults to the in-cluster Keycloak Service URL —

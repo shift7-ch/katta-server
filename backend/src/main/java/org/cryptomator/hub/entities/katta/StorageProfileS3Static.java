@@ -1,14 +1,20 @@
 package org.cryptomator.hub.entities.katta;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.util.List;
 
 @Entity
 @Table(name = "storage_profile_s3_static")
-public class StorageProfileS3Static extends StorageProfile {// TODO make sealed?
+@DiscriminatorValue("S3STATIC")
+public class StorageProfileS3Static extends StorageProfile {
 
 	//======================================================================
 	// (1) STS and permanent:
@@ -16,48 +22,24 @@ public class StorageProfileS3Static extends StorageProfile {// TODO make sealed?
 	// - template upload (STS and permanent)
 	// - client profile (STS and permanent)
 	//======================================================================
-	@Column
-	public String scheme;
+	@Column(name = "endpoint")
+	public String endpoint;
 
-	@Column
-	public String hostname;
+	@Column(name = "path_style_access_enabled", nullable = false)
+	public Boolean pathStyleAccessEnabled = false;
 
-	@Column
-	public Integer port;
+	@Column(name = "storage_class", columnDefinition = "storage_class", nullable = false)
+	@Enumerated(EnumType.STRING)
+	@JdbcTypeCode(SqlTypes.NAMED_ENUM)
+	public S3StorageClass storageClass = S3StorageClass.STANDARD;
 
-	@Column
-	public Boolean withPathStyleAccessEnabled = false;
-
-	@Column
-	public String storageClass = "STANDARD";
-
-	//======================================================================
-	// (2) STS only: bucket creation (only relevant for Desktop client)
-	//======================================================================
-	@Column
+	// bucket creation parameters, relevant for both permanent and STS profiles (desktop client creates buckets in either case)
+	@Column(name = "region")
 	public String region;
 
-	@Column
+	@Column(name = "regions")
 	public List<String> regions;
 
-	@Column
+	@Column(name = "bucket_prefix", nullable = false)
 	public String bucketPrefix;
-
-	@Column
-	public String stsRoleCreateBucketClient;
-
-	@Column
-	public String stsRoleCreateBucketHub;
-
-	@Column
-	public String stsEndpoint = null;
-
-	@Column
-	public Boolean bucketVersioning = true;
-
-	@Column
-	public Boolean bucketAcceleration = true;
-
-	@Column
-	public String bucketEncryption;
 }

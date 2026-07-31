@@ -282,30 +282,44 @@ export type ConfigDto = {
   uuid: string;
 };
 
-export type StorageProfileDto = {
+export type StorageProtocol = 'S3STATIC' | 'S3STS';
+
+export type S3StorageClass = 'STANDARD' | 'INTELLIGENT_TIERING' | 'STANDARD_IA' | 'ONEZONE_IA' | 'REDUCED_REDUNDANCY' | 'GLACIER' | 'GLACIER_IR' | 'DEEP_ARCHIVE';
+
+export type StorageProfileS3StaticDto = {
+  protocol: 'S3STATIC';
   id: string;
   name: string;
-  protocol: string;
+  archived: boolean;
+  endpoint?: string;
+  pathStyleAccessEnabled?: boolean;
+  storageClass: S3StorageClass;
+  region: string;
+  regions: string[];
+  bucketPrefix: string;
+};
+
+export type StorageProfileS3STSDto = {
+  protocol: 'S3STS';
+  id: string;
+  name: string;
+  archived: boolean;
+  endpoint?: string;
+  pathStyleAccessEnabled?: boolean;
+  storageClass: S3StorageClass;
+  region: string;
+  regions: string[];
   bucketPrefix: string;
   stsRoleCreateBucketClient: string;
   stsRoleCreateBucketHub: string;
-  stsEndpoint: string;
-  bucketVersioning: string;
-  bucketAcceleration: string;
-  bucketEncryption: string;
-  region: string;
-  regions: string[];
-  withPathStyleAccessEnabled: boolean;
-  storageClass: string;
-  scheme: string;
-  hostname: string;
-  port: number;
+  stsEndpoint?: string;
   stsRoleAccessBucketAssumeRoleWithWebIdentity: string;
-  stsRoleAccessBucketAssumeRoleTaggedSession: string;
-  stsDurationSeconds: number;
+  stsRoleAccessBucketAssumeRoleTaggedSession?: string;
+  stsDurationSeconds?: number;
   stsSessionTag: string;
-  archived: boolean;
 };
+
+export type StorageProfileDto = StorageProfileS3StaticDto | StorageProfileS3STSDto;
 
 export type VaultMetadataJWEBackendDto = {
   provider: string;
@@ -856,6 +870,18 @@ class StorageProfileService {
   public async getSingle(storageprofileId: string): Promise<StorageProfileDto> {
     return axiosAuth.get<StorageProfileDto>(`/storageprofile/${storageprofileId}`)
       .then(response => response.data);
+  }
+
+  public async create(dto: StorageProfileDto): Promise<StorageProfileDto> {
+    return axiosAuth.post<StorageProfileDto>('/storageprofile/', dto)
+      .then(response => response.data)
+      .catch(error => rethrowAndConvertIfExpected(error, 400, 403, 409));
+  }
+
+  public async setArchived(storageprofileId: string, archived: boolean): Promise<void> {
+    const params = new URLSearchParams({ archived: String(archived) });
+    await axiosAuth.put(`/storageprofile/${storageprofileId}`, params, { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } })
+      .catch(error => rethrowAndConvertIfExpected(error, 403, 404));
   }
 
 }

@@ -234,9 +234,10 @@ minio:
 # minio.enabled=true.
 storageProfileSeed:
   hubReadyTimeoutSeconds: 300
+  # Profile ids are assigned by the Hub server on creation; the seed Job is idempotent
+  # by profile NAME (it skips seeding when a profile with the same name already exists).
   static:
     enabled: true
-    profileId: "" # if blank, generated on first install and remembered via a ConfigMap
     profileName: "Bundled MinIO"
     bucketPrefix: "katta-"
   # Additionally seed an S3STS profile that exchanges the user's Keycloak token for
@@ -245,7 +246,6 @@ storageProfileSeed:
   # is discovered at Job runtime via `mc admin idp openid info` — no hardcoding needed.
   sts:
     enabled: false
-    profileId: "" # if blank, generated on first install and remembered via a ConfigMap
     profileName: "Bundled MinIO (STS)"
     bucketPrefix: "katta-sts-"
     sessionTag: "Vault" # AWS-only; MinIO ignores. Default per the DTO.

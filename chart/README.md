@@ -58,7 +58,7 @@ Once both commands are running:
 | MinIO console: <http://minio.local.katta.cloud:9090> | `minioadmin` / `minioadmin` |
 | MinIO S3 API: <http://s3.local.katta.cloud:9090> | (used by the seeded storage profile) |
 
-A post-install Helm hook Job (`<release>-storageprofile-seed`) registers an `S3STATIC` storage profile named "Bundled MinIO" pointing at `http://s3.local.katta.cloud:9090`, so vault creation works end-to-end immediately after install. Re-runs are idempotent (the seed Job treats HTTP 409 as success).
+A post-install Helm hook Job (`<release>-storageprofile-seed`) registers an `S3STATIC` storage profile named "Bundled MinIO" pointing at `http://s3.local.katta.cloud:9090`, so vault creation works end-to-end immediately after install. Re-runs are idempotent (the seed Job skips profiles whose name already exists).
 
 **How in-cluster DNS works in demo mode:** the same hostnames the browser uses need to resolve inside the cluster too (MinIO has to fetch Keycloak's OIDC discovery URL, and the issuer it sees must match the browser-facing one). The chart's demo profile sets `coredns.patch.enabled=true`, which runs a post-install hook Job that adds a release-scoped `# BEGIN katta:<release>` / `# END katta:<release>` stanza to `kube-system/coredns`'s Corefile, rewriting `*.local.katta.cloud` queries to the chart's port-translation proxy Service. A matching `pre-delete` Job removes the stanza on `helm uninstall`. CoreDNS's `reload` plugin picks up the change within ~30 s; the apply Job sleeps 45 s as a settling buffer before the storage-profile seed Job runs.
 
@@ -110,16 +110,14 @@ When `minio.enabled=true` and either `storageProfileSeed.static.enabled=true` or
 
 1. Waits for the Hub `/q/health/ready` endpoint to return 200.
 2. Obtains an admin access token via Keycloak `client_credentials` (using the `cryptomatorhub-system` service account).
-3. POSTs a `S3STATIC` storage profile pointing at the bundled MinIO service to `/api/storageprofile/s3static`.
-4. Treats both `201 Created` and `409 Conflict` as success, so re-runs are idempotent.
-
-The profile UUID is generated on first install and persisted in a `<release>-storageprofile-seed-state` ConfigMap, so subsequent upgrades reuse the same row.
+3. POSTs a `S3STATIC` storage profile pointing at the bundled MinIO service to the polymorphic `/api/storageprofile/` endpoint (dispatching on the `protocol` discriminator).
+4. Skips seeding any profile whose name already exists on the Hub, so re-runs are idempotent. Profile UUIDs are assigned by the server on creation.
 
 ### MinIO ingress exposure
 
 MinIO is exposed via ingress only for the hostnames you explicitly configure:
 
-- Set `urls.s3.public` to expose the **S3 API**. This **must be a dedicated host served at the root** (e.g. `https://s3.example.com`), **not** a subpath. S3 path-style addressing ignores any base path — clients address buckets at the host root (`<host>/<bucket>/<key>`) — and the seeded storage profile stores only scheme/host/port, so a subpath would be silently dropped and the client's root requests would 404 at the ingress (surfacing as a misleading CORS error). The chart **fails fast** if `urls.s3.public` contains a path. This address is baked into the seeded storage profile, so it must resolve for both the Hub pod and external clients.
+- Set `urls.s3.public` to expose the **S3 API**. This **must be a dedicated host served at the root** (e.g. `https://s3.example.com`), **not** a subpath. S3 path-style addressing ignores any base path — clients address buckets at the host root (`<host>/<bucket>/<key>`) — so a subpath in the seeded profile's endpoint URL would be silently dropped and the client's root requests would 404 at the ingress (surfacing as a misleading CORS error). The chart **fails fast** if `urls.s3.public` contains a path. This address is baked into the seeded storage profile, so it must resolve for both the Hub pod and external clients.
 - Set `urls.minio.public` to expose the **web console**. Unlike the S3 API, the console *may* be served under a subpath (e.g. `https://minio.example.com/minio`); the chart applies the same strip-prefix routing as Hub/Keycloak and sets `MINIO_BROWSER_REDIRECT_URL` so the console emits correctly-prefixed asset/redirect URLs.
 
 Leave either blank and that ingress isn't created — the corresponding service is then reachable only in-cluster (or via `kubectl port-forward svc/<release>-service-minio 9001:9001` for the console). The demo serves the S3 API at `http://s3.local.katta.cloud:9090` (its own root host) and the console at `http://minio.local.katta.cloud:9090`.
