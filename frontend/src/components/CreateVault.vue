@@ -281,6 +281,10 @@
                   <p v-else-if="(onCreateError instanceof StorageProfileError )">
                     {{ t('CreateVaultS3.error.invalidStorageProfileConfiguration', '') }}: {{ onCreateError.message }}
                   </p>
+                  <template v-else-if="(onCreateError instanceof StorageBackendError)">
+                    <p>{{ onCreateError.message }}</p>
+                    <pre v-if="onCreateError.codeHint" class="mt-2 text-left text-xs text-gray-900 max-h-64 overflow-auto whitespace-pre-wrap break-words bg-white rounded p-2 ring-1 ring-inset ring-gray-200">{{ onCreateError.codeHint }}</pre>
+                  </template>
                   <!-- // \ end katta extension -->
                   <!-- // / start katta modification -->
                   <p v-else-if="(onCreateError instanceof DecodeUvfRecoveryKeyError || onCreateError instanceof DecodeVf8RecoveryKeyError)">
@@ -619,7 +623,7 @@ import {
 import { ChevronUpDownIcon } from '@heroicons/vue/24/outline';
 import { ArrowTopRightOnSquareIcon } from '@heroicons/vue/24/solid';
 import { STSClient,AssumeRoleWithWebIdentityCommand } from '@aws-sdk/client-sts';
-import { S3Client, PutObjectCommand, ListObjectsV2Command, GetBucketLocationCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, ListObjectsV2Command, GetBucketLocationCommand, S3ServiceException } from '@aws-sdk/client-s3';
 import authPromise from '../common/auth';
 import { AxiosError } from 'axios';
 import { base64urlnopad } from '@scure/base';
@@ -744,11 +748,10 @@ const automaticAccessGrant = ref<boolean>(true);
 const onOpenBookmarkError = ref<Error | null>(null);
 const onUploadTemplateError = ref<Error | null>(null);
 
-class ErrorWithCodeHint extends Error {
+class StorageBackendError extends Error {
 
-  constructor(public message: string, public codehint: string) {
+  constructor(message: string, public codeHint?: string) {
     super(message);
-    this.codehint = codehint;
   }
 
 }
@@ -953,32 +956,17 @@ async function validateVaultDetails() {
         const responseListObjects = await client.send(commandListObjects);
         console.log(responseListObjects);
         if (responseListObjects.KeyCount != 0){
-          onCreateError.value = new Error(t('CreateVaultS3.error.bucketNotEmpty'));
+          onCreateError.value = new StorageBackendError(t('CreateVaultS3.error.bucketNotEmpty'));
           return;
         }
       } catch (error) {
         console.log(error);
         // TODO review can we improve whether this is a CORS problem? FF message is "NetworkError when attempting to fetch resource", Safari "Load failed".
         if (error instanceof TypeError){
-          onCreateError.value = new ErrorWithCodeHint(error.message + '. ' + t('CreateVaultS3.error.invalidCORS'), `
-          aws s3api put-bucket-cors --endpoint-url ${endpoint} --bucket ${effectiveBucketName.value} --cors-configuration file://cors.json
-
-          cors.json:
-          {
-            "CORSRules": [
-              {
-                "AllowedHeaders": ["*"],
-                "AllowedMethods": ["GET", "PUT"],
-                "AllowedOrigins": ["${document.baseURI}"],
-                "ExposeHeaders": ["ETag"],
-                "MaxAgeSeconds": 3600
-              }
-            ]
-          }
-          `);
+          onCreateError.value = new StorageBackendError(t('CreateVaultS3.error.invalidCORS', [error.message]), corsConfigurationHint(endpoint, effectiveBucketName.value));
         } else {
-          console.error('Uploading template failed.', error);
-          onUploadTemplateError.value = error instanceof Error ? error : new Error('Unknown Error');
+          console.error('Checking the bucket failed.', error);
+          onCreateError.value = new StorageBackendError(bucketAccessErrorMessage(error));
         }
         return;
       }
@@ -1003,6 +991,42 @@ function isS3ErrorWithRegion(error: unknown): error is { Code: string; Region: s
     && 'Region' in error
   );
 }
+
+// / start katta extension
+function bucketAccessErrorMessage(error: unknown): string {
+  // The AWS SDK exposes the S3 error code as the exception's name, for both modeled and unmodeled errors.
+  switch (error instanceof S3ServiceException ? error.name : undefined) {
+    case 'InvalidAccessKeyId':
+      return t('CreateVaultS3.error.invalidAccessKeyId');
+    case 'SignatureDoesNotMatch':
+      return t('CreateVaultS3.error.signatureDoesNotMatch');
+    case 'NoSuchBucket':
+      return t('CreateVaultS3.error.noSuchBucket');
+    case 'AccessDenied':
+      return t('CreateVaultS3.error.accessDenied');
+    default:
+      return t('CreateVaultS3.error.bucketAccessFailed', [error instanceof Error ? error.message : String(error)]);
+  }
+}
+
+function corsConfigurationHint(endpoint: string, bucket: string): string {
+  // S3 matches AllowedOrigins against the browser's Origin header, which carries no path.
+  return `aws s3api put-bucket-cors --endpoint-url ${endpoint} --bucket ${bucket} --cors-configuration file://cors.json
+
+cors.json:
+{
+  "CORSRules": [
+    {
+      "AllowedHeaders": ["*"],
+      "AllowedMethods": ["GET", "PUT"],
+      "AllowedOrigins": ["${location.origin}"],
+      "ExposeHeaders": ["ETag"],
+      "MaxAgeSeconds": 3600
+    }
+  ]
+}`;
+}
+// \ end katta extension
 
 function validateAutomaticAccessGrant() {
   onCreateError.value = undefined;

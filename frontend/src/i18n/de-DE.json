@@ -342,6 +342,12 @@
   "CreateVaultS3.success.description": "Katta auf dem Computer benützen, um den Tresor zu öffnen.",
   "CreateVaultS3.success.open": "Tresore in Katta öffnen",
   "CreateVaultS3.error.uploadTemplateFailed": "Hochladen Tresorvorlage nach S3-Bucket fehlgeschlagen.",
+  "CreateVaultS3.error.invalidAccessKeyId": "Der Benutzername ist diesem Speicherbereich nicht bekannt. Prüfe den Benutzernamen und versuche es erneut.",
+  "CreateVaultS3.error.signatureDoesNotMatch": "Das Passwort passt nicht zum Benutzernamen. Prüfe das Passwort und versuche es erneut.",
+  "CreateVaultS3.error.noSuchBucket": "Der Bucket existiert in diesem Speicherbereich nicht. Prüfe den Bucket-Namen und versuche es erneut.",
+  "CreateVaultS3.error.accessDenied": "Der Benutzername darf nicht auf diesen Bucket zugreifen. Prüfe die Bucket-Berechtigungen und versuche es erneut.",
+  "CreateVaultS3.error.bucketAccessFailed": "Auf den Bucket konnte nicht zugegriffen werden: {0}",
+  "CreateVaultS3.error.invalidCORS": "{0}. Prüfe die CORS-Einstellungen des Buckets.",
 
 
   "nav.profile.storageprofiles": "Admin Tresor-Speicherbereiche",
