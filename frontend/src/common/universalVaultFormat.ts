@@ -32,7 +32,7 @@ type VaultMetadataJWEAutomaticAccessGrantDto = {
    * - `1`: direct trust (an existing member has signed the new member's key directly)
    * - `>= 2`: transitive trust (a chain of up to N signatures)
    */
-  maxWotDepth: number
+  trustThreshold: number
 };
 
 type UvfAccessTokenPayload = AccessTokenPayload & {
