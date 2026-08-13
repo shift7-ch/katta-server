@@ -722,8 +722,8 @@ public class VaultResource {
 	public Response createOrUpdate(
 			@PathParam("vaultId") UUID vaultId, @Valid @NotNull VaultDto vaultDto
 			// / start katta extension
-			, @QueryParam("minio") Boolean minio
-			, @QueryParam("aws") Boolean aws
+			, @Nullable @QueryParam("minio") Boolean minio
+			, @Nullable @QueryParam("aws") Boolean aws
 			// \ end katta extension
 	) {
 		User currentUser = userRepo.findById(jwt.getSubject());

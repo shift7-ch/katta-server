@@ -10,6 +10,7 @@ import org.cryptomator.hub.entities.katta.StorageProfileS3STS;
 import org.cryptomator.hub.entities.katta.StorageProfileS3Static;
 import org.eclipse.microprofile.openapi.annotations.media.DiscriminatorMapping;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.jspecify.annotations.Nullable;
 
 import java.util.UUID;
 
@@ -40,14 +41,14 @@ public abstract sealed class StorageProfileDto permits StorageProfileS3StaticDto
 	}
 
 	// id is assigned by the server on creation; clients must not supply it (any supplied value is ignored).
-	private final UUID id;
+	private final @Nullable UUID id;
 	@NotNull
 	private final String name;
 	@NotNull
 	private final Protocol protocol;
 	private final boolean archived;
 
-	protected StorageProfileDto(UUID id, String name, Protocol protocol, boolean archived) {
+	protected StorageProfileDto(@Nullable UUID id, String name, Protocol protocol, boolean archived) {
 		this.id = id;
 		this.name = name;
 		this.protocol = protocol;
@@ -56,7 +57,7 @@ public abstract sealed class StorageProfileDto permits StorageProfileS3StaticDto
 
 	@JsonProperty("id")
 	@Schema(description = "Technical identifier for a storage profile, assigned by the server on creation (read-only). Clients use this as vendor in profile and provider in vault bookmark.", readOnly = true)
-	public UUID getId() {
+	public @Nullable UUID getId() {
 		return id;
 	}
 

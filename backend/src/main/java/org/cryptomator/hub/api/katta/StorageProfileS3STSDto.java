@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotNull;
 import org.cryptomator.hub.entities.katta.S3StorageClass;
 import org.cryptomator.hub.entities.katta.StorageProfileS3STS;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.Objects;
@@ -22,25 +23,25 @@ public final class StorageProfileS3STSDto extends StorageProfileS3StaticDto {
 	private final String stsRoleCreateBucketClient;
 	@NotNull
 	private final String stsRoleCreateBucketHub;
-	private final String stsEndpoint;
+	private final @Nullable String stsEndpoint;
 
 	//----------------------------------------------------------------------
 	// (3b) STS client profile custom properties
 	//----------------------------------------------------------------------
 	@NotNull
 	private final String stsRoleAccessBucketAssumeRoleWithWebIdentity;
-	private final String stsRoleAccessBucketAssumeRoleTaggedSession;
-	private final Integer stsDurationSeconds;
+	private final @Nullable String stsRoleAccessBucketAssumeRoleTaggedSession;
+	private final @Nullable Integer stsDurationSeconds;
 	@NotNull
 	private final String stsSessionTag;
 
 	@JsonCreator
 	public StorageProfileS3STSDto(
-			@JsonProperty("id") UUID id,
+			@JsonProperty("id") @Nullable UUID id,
 			@JsonProperty("name") String name,
 			@JsonProperty("protocol") Protocol protocol,
 			@JsonProperty("archived") boolean archived,
-			@JsonProperty("endpoint") String endpoint,
+			@JsonProperty("endpoint") @Nullable String endpoint,
 			@JsonProperty("pathStyleAccessEnabled") boolean pathStyleAccessEnabled,
 			@JsonProperty("storageClass") S3StorageClass storageClass,
 			@JsonProperty("region") String region,
@@ -48,10 +49,10 @@ public final class StorageProfileS3STSDto extends StorageProfileS3StaticDto {
 			@JsonProperty("bucketPrefix") String bucketPrefix,
 			@JsonProperty("stsRoleCreateBucketClient") String stsRoleCreateBucketClient,
 			@JsonProperty("stsRoleCreateBucketHub") String stsRoleCreateBucketHub,
-			@JsonProperty("stsEndpoint") String stsEndpoint,
+			@JsonProperty("stsEndpoint") @Nullable String stsEndpoint,
 			@JsonProperty("stsRoleAccessBucketAssumeRoleWithWebIdentity") String stsRoleAccessBucketAssumeRoleWithWebIdentity,
-			@JsonProperty("stsRoleAccessBucketAssumeRoleTaggedSession") String stsRoleAccessBucketAssumeRoleTaggedSession,
-			@JsonProperty("stsDurationSeconds") Integer stsDurationSeconds,
+			@JsonProperty("stsRoleAccessBucketAssumeRoleTaggedSession") @Nullable String stsRoleAccessBucketAssumeRoleTaggedSession,
+			@JsonProperty("stsDurationSeconds") @Nullable Integer stsDurationSeconds,
 			@JsonProperty("stsSessionTag") String stsSessionTag) {
 		super(id, name, protocol, archived, endpoint, pathStyleAccessEnabled, storageClass, region, regions, bucketPrefix);
 		this.stsRoleCreateBucketClient = stsRoleCreateBucketClient;
@@ -77,7 +78,7 @@ public final class StorageProfileS3STSDto extends StorageProfileS3StaticDto {
 
 	@JsonProperty("stsEndpoint")
 	@Schema(description = "STS endpoint to use for AssumeRoleWithWebIdentity and AssumeRole for getting a temporary access token passed to the storage. Defaults to AWS SDK default.", nullable = true)
-	public String getStsEndpoint() {
+	public @Nullable String getStsEndpoint() {
 		return stsEndpoint;
 	}
 
@@ -89,13 +90,13 @@ public final class StorageProfileS3STSDto extends StorageProfileS3StaticDto {
 
 	@JsonProperty("stsRoleAccessBucketAssumeRoleTaggedSession")
 	@Schema(description = "roleArn to assume for STS AssumeRole in role chaining (AWS only, not MinIO)", examples = "arn:aws:iam::930717317329:role/katta_chain_02", nullable = true)
-	public String getStsRoleAccessBucketAssumeRoleTaggedSession() {
+	public @Nullable String getStsRoleAccessBucketAssumeRoleTaggedSession() {
 		return stsRoleAccessBucketAssumeRoleTaggedSession;
 	}
 
 	@JsonProperty("stsDurationSeconds")
 	@Schema(description = "Token lifetime for STS tokens assumed. Defaults to AWS/MinIO defaults", nullable = true)
-	public Integer getStsDurationSeconds() {
+	public @Nullable Integer getStsDurationSeconds() {
 		return stsDurationSeconds;
 	}
 

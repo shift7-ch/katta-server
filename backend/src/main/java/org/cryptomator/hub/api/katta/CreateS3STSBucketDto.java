@@ -1,6 +1,7 @@
 package org.cryptomator.hub.api.katta;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.jspecify.annotations.Nullable;
 
 import java.util.UUID;
 
@@ -22,8 +23,22 @@ public record CreateS3STSBucketDto(
 		@JsonProperty("sessionToken")
 		String sessionToken,
 		@JsonProperty("region")
-		String region
+		@Nullable String region
 ) {
 
+	@Override
+	public String toString() {
+		return "CreateS3STSBucketDto{" +
+				"vaultId='" + vaultId + '\'' +
+				", storageConfigId=" + storageConfigId +
+				", vaultUvf='" + vaultUvf + '\'' +
+				", dirUvf='" + dirUvf + '\'' +
+				", rootDirHash='" + rootDirHash + '\'' +
+				", sessionToken='" + sessionToken + '\'' +
+				", region='" + region + '\'' +
+				", awsAccessKey=***" +
+				", awsSecretKey=***" +
+				'}';
+	}
 }
 
