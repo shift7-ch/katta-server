@@ -47,9 +47,7 @@ public class S3StorageHelper {
                             .pathStyleAccessEnabled(storageConfig.isPathStyleAccessEnabled())
                             .build());
         }
-        if (region != null) {
-            s3Builder = s3Builder.region(Region.of(region));
-        }
+        s3Builder = s3Builder.region(Region.of(region));
         try (final S3Client s3 = s3Builder.build()) {
             try {
                 s3.createBucket(CreateBucketRequest.builder()
