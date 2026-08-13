@@ -35,11 +35,11 @@ public class StorageProfileS3Static extends StorageProfile {
 	public S3StorageClass storageClass = S3StorageClass.STANDARD;
 
 	// bucket creation parameters, relevant for both permanent and STS profiles (desktop client creates buckets in either case)
-	@Column(name = "region")
-	public @Nullable String region;
+	@Column(name = "region", nullable = false)
+	public String region = "us-east-1";
 
-	@Column(name = "regions")
-	public @Nullable List<String> regions;
+	@Column(name = "regions", nullable = false)
+	public List<String> regions = List.of();
 
 	@Column(name = "bucket_prefix", nullable = false)
 	public String bucketPrefix;

@@ -35,6 +35,6 @@ public class StorageProfileS3STS extends StorageProfileS3Static {
 	@Column(name = "sts_duration_seconds")
 	public @Nullable Integer stsDurationSeconds;
 
-	@Column(name = "sts_session_tag")
-	public @Nullable String stsSessionTag;
+	@Column(name = "sts_session_tag", nullable = false)
+	public String stsSessionTag = "Vault";
 }

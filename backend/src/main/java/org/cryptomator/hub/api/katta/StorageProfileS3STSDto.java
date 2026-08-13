@@ -116,7 +116,7 @@ public final class StorageProfileS3STSDto extends StorageProfileS3StaticDto {
 				entity.pathStyleAccessEnabled,
 				entity.storageClass,
 				entity.region,
-				entity.regions == null ? List.of() : entity.regions,
+				entity.regions,
 				entity.bucketPrefix,
 				entity.stsRoleCreateBucketClient,
 				entity.stsRoleCreateBucketHub,

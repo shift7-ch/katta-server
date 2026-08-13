@@ -81,7 +81,7 @@ public sealed class StorageProfileS3StaticDto extends StorageProfileDto permits 
 	}
 
 	@JsonProperty("regions")
-	@Schema(description = "List of selectable regions in the frontend/client to create bucket in. Defaults to full list from AWS SDK.", required = true)
+	@Schema(description = "List of selectable regions in the frontend/client to create bucket in.", required = true)
 	public List<String> getRegions() {
 		return regions;
 	}
@@ -93,7 +93,7 @@ public sealed class StorageProfileS3StaticDto extends StorageProfileDto permits 
 	}
 
 	static StorageProfileS3StaticDto fromEntity(StorageProfileS3Static entity) {
-		return new StorageProfileS3StaticDto(entity.id, entity.name, Protocol.S3_STATIC, entity.archived, entity.endpoint, entity.pathStyleAccessEnabled, entity.storageClass, entity.region, entity.regions == null ? List.of() : entity.regions, entity.bucketPrefix);
+		return new StorageProfileS3StaticDto(entity.id, entity.name, Protocol.S3_STATIC, entity.archived, entity.endpoint, entity.pathStyleAccessEnabled, entity.storageClass, entity.region, entity.regions, entity.bucketPrefix);
 	}
 
 	@Override
