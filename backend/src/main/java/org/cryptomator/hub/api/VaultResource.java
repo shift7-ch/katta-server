@@ -713,8 +713,8 @@ public class VaultResource {
 	@Operation(summary = "creates or updates a vault",
 			description = "Creates or updates a vault with the given vault id. The creationTime in the vaultDto is always ignored. The archived field is always ignored (use the dedicated endpoint). On creation, the current server time is used. On update, only the name and description fields are considered.")
 	// / start katta extension
-	@Parameter(name = "minio", in = ParameterIn.QUERY, description = "whether configuration for STS MinIO needs to be synched to Keycloak (defaults to false)")
-	@Parameter(name = "aws", in = ParameterIn.QUERY, description = "whether configuration for STS MinIO needs to be synched to AWS (defaults to false)")
+	@Parameter(name = "minio", in = ParameterIn.QUERY, description = "controls the MinIO STS protocol mapper in Keycloak: true creates/updates it, false deletes it, unset leaves it untouched")
+	@Parameter(name = "aws", in = ParameterIn.QUERY, description = "controls the AWS STS protocol mapper in Keycloak: true creates/updates it, false deletes it, unset leaves it untouched")
 	// \ end katta extension
 	@APIResponse(responseCode = "200", description = "existing vault updated")
 	@APIResponse(responseCode = "201", description = "new vault created")

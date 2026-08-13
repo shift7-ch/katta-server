@@ -56,7 +56,7 @@ public abstract sealed class StorageProfileDto permits StorageProfileS3StaticDto
 	}
 
 	@JsonProperty("id")
-	@Schema(description = "Technical identifier for a storage profile, assigned by the server on creation (read-only). Clients use this as vendor in profile and provider in vault bookmark.", readOnly = true)
+	@Schema(description = "Technical identifier for a storage profile, assigned by the server on creation (read-only). Clients use this as vendor in profile and provider in vault bookmark.", required = true, readOnly = true)
 	public @Nullable UUID getId() {
 		return id;
 	}
