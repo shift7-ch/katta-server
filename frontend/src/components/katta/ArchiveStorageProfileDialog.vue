@@ -58,7 +58,7 @@ const { t } = useI18n({ useScope: 'global' });
 
 const open = ref(false);
 const processing = ref(false);
-const onArchiveError = ref<Error | null>();
+const onArchiveError = ref<Error>();
 
 const props = defineProps<{
   profile: StorageProfileDto
@@ -72,12 +72,12 @@ const emit = defineEmits<{
 defineExpose({ show });
 
 function show() {
-  onArchiveError.value = null;
+  onArchiveError.value = undefined;
   open.value = true;
 }
 
 async function archive() {
-  onArchiveError.value = null;
+  onArchiveError.value = undefined;
   processing.value = true;
   try {
     await backend.storageprofiles.setArchived(props.profile.id, true);
