@@ -684,7 +684,12 @@
   "CreateVaultS3.error.missingSecretKey": "Enter the password and re-try.",
   "CreateVaultS3.error.missingBucket": "Enter the bucket name and re-try.",
   "CreateVaultS3.error.bucketNotEmpty": "Bucket not empty, cannot upload template. Empty the bucket manually and re-try.",
-  "CreateVaultS3.error.invalidCORS": "Check your bucket CORS settings.",
+  "CreateVaultS3.error.invalidAccessKeyId": "The username is not known to this storage location. Check the username and re-try.",
+  "CreateVaultS3.error.signatureDoesNotMatch": "The password does not match the username. Check the password and re-try.",
+  "CreateVaultS3.error.noSuchBucket": "The bucket does not exist at this storage location. Check the bucket name and re-try.",
+  "CreateVaultS3.error.accessDenied": "The username is not allowed to access this bucket. Check the bucket permissions and re-try.",
+  "CreateVaultS3.error.bucketAccessFailed": "The bucket could not be accessed: {0}",
+  "CreateVaultS3.error.invalidCORS": "{0}. Check your bucket CORS settings.",
 
   "nav.profile.storageprofiles": "Admin Storage Locations",
   "storageProfileList.title": "Storage Locations",
