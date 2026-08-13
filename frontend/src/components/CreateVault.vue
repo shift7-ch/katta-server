@@ -623,11 +623,11 @@ import {
 import { ChevronUpDownIcon } from '@heroicons/vue/24/outline';
 import { ArrowTopRightOnSquareIcon } from '@heroicons/vue/24/solid';
 import { STSClient,AssumeRoleWithWebIdentityCommand } from '@aws-sdk/client-sts';
-import { S3Client, PutObjectCommand, ListObjectsV2Command, GetBucketLocationCommand, S3ServiceException } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, ListObjectsV2Command, ListObjectsV2CommandOutput, GetBucketLocationCommand, S3ServiceException } from '@aws-sdk/client-s3';
 import authPromise from '../common/auth';
 import { AxiosError } from 'axios';
 import { base64urlnopad } from '@scure/base';
-import { isAwsHostname } from '../../src/common/katta';
+import { isAwsHostname } from '../common/katta';
 // \ end katta extension
 
 enum State {
@@ -955,7 +955,7 @@ async function validateVaultDetails() {
         });
         const responseListObjects = await client.send(commandListObjects);
         console.log(responseListObjects);
-        if (responseListObjects.KeyCount != 0){
+        if (!isBucketEmpty(responseListObjects)){
           onCreateError.value = new StorageBackendError(t('CreateVaultS3.error.bucketNotEmpty'));
           return;
         }
@@ -1007,6 +1007,12 @@ function bucketAccessErrorMessage(error: unknown): string {
     default:
       return t('CreateVaultS3.error.bucketAccessFailed', [error instanceof Error ? error.message : String(error)]);
   }
+}
+
+// KeyCount is optional and omitted by some S3-compatible backends, so Contents is the primary signal.
+// KeyCount is still checked so a response asserting a non-zero count is never treated as an empty bucket.
+function isBucketEmpty(response: ListObjectsV2CommandOutput): boolean {
+  return (response.Contents?.length ?? 0) === 0 && (response.KeyCount ?? 0) === 0;
 }
 
 function corsConfigurationHint(endpoint: string, bucket: string): string {
@@ -1406,8 +1412,8 @@ async function uploadVaultTemplate() {
     });
     const responseListObjects = await client.send(commandListObjects);
     console.log(responseListObjects);
-    if (responseListObjects.KeyCount != 0){
-      throw new Error('Bucket not empty, cannot upload template. Empty the bucket manually and re-try.');
+    if (!isBucketEmpty(responseListObjects)){
+      throw new Error(t('CreateVaultS3.error.bucketNotEmpty'));
     }
     if (!uvfVault.value){
       throw new Error('Invalid state');
