@@ -25,12 +25,12 @@ CREATE TABLE "storage_profile_s3_static"
 	"storage_class" storage_class NOT NULL,
 
 	-- bucket creation (desktop client), relevant for both permanent and STS profiles
-	"region"    VARCHAR,
-	"regions"   text[],
+	"region"    VARCHAR NOT NULL DEFAULT 'us-east-1',
+	"regions"   text[] NOT NULL DEFAULT '{}',
 	"bucket_prefix" VARCHAR NOT NULL,
 
 	CONSTRAINT "STORAGE_PROFILE_S3_STATIC_PK" PRIMARY KEY ("id"),
-	CONSTRAINT "STORAGE_PROFILE_S3_STATIC_FK" FOREIGN KEY ("id") REFERENCES "storage_profile" ("id") ON DELETE CASCADE
+	CONSTRAINT "STORAGE_PROFILE_S3_STATIC_FK" FOREIGN KEY ("id") REFERENCES "storage_profile" ("id") ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 CREATE TABLE "storage_profile_s3_sts"
@@ -46,8 +46,8 @@ CREATE TABLE "storage_profile_s3_sts"
 	"sts_role_access_bucket_assume_role_with_web_identity" VARCHAR NOT NULL,
 	"sts_role_access_bucket_assume_role_tagged_session"   VARCHAR,
 	"sts_duration_seconds" INT4,
-	"sts_session_tag"      VARCHAR,
+	"sts_session_tag"      VARCHAR NOT NULL DEFAULT 'Vault',
 
 	CONSTRAINT "STORAGE_PROFILE_S3_STS_PK" PRIMARY KEY ("id"),
-	CONSTRAINT "STORAGE_PROFILE_S3_STS_FK" FOREIGN KEY ("id") REFERENCES "storage_profile_s3_static" ("id") ON DELETE CASCADE
+	CONSTRAINT "STORAGE_PROFILE_S3_STS_FK" FOREIGN KEY ("id") REFERENCES "storage_profile_s3_static" ("id") ON DELETE CASCADE ON UPDATE CASCADE
 );

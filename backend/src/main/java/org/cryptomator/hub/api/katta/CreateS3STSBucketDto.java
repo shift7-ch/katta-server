@@ -1,29 +1,44 @@
 package org.cryptomator.hub.api.katta;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.validation.constraints.NotNull;
 
 import java.util.UUID;
 
 public record CreateS3STSBucketDto(
 		@JsonProperty("vaultId")
-		String vaultId,
+		@NotNull String vaultId,
 		@JsonProperty("storageConfigId")
-		UUID storageConfigId,
+		@NotNull UUID storageConfigId,
 		@JsonProperty("vaultUvf")
-		String vaultUvf,
+		@NotNull String vaultUvf,
 		@JsonProperty("dirUvf")
-		String dirUvf,
+		@NotNull String dirUvf,
 		@JsonProperty("rootDirHash")
-		String rootDirHash,
+		@NotNull String rootDirHash,
 		@JsonProperty("awsAccessKey")
-		String awsAccessKey,
+		@NotNull String awsAccessKey,
 		@JsonProperty("awsSecretKey")
-		String awsSecretKey,
+		@NotNull String awsSecretKey,
 		@JsonProperty("sessionToken")
-		String sessionToken,
+		@NotNull String sessionToken,
 		@JsonProperty("region")
-		String region
+		@NotNull String region
 ) {
 
+	@Override
+	public String toString() {
+		return "CreateS3STSBucketDto{" +
+				"vaultId='" + vaultId + '\'' +
+				", storageConfigId=" + storageConfigId +
+				", vaultUvf='" + vaultUvf + '\'' +
+				", dirUvf='" + dirUvf + '\'' +
+				", rootDirHash='" + rootDirHash + '\'' +
+				", sessionToken='" + sessionToken + '\'' +
+				", region='" + region + '\'' +
+				", awsAccessKey=***" +
+				", awsSecretKey=***" +
+				'}';
+	}
 }
 

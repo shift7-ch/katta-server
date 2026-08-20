@@ -736,7 +736,7 @@ const selectedRegion = ref<string>();
 const regions = ref<string[]>([]);
 const backends = ref<StorageProfileDto[]>([]);
 const storageProfilesLoaded = ref(false);
-const onFetchError = ref<Error | null>(null);
+const onFetchError = ref<Error>();
 const vaultAccessKeyId = ref('');
 const vaultSecretKey = ref('');
 const vaultBucketName = ref('');
@@ -745,8 +745,8 @@ const vaultBucketName = ref('');
 const bucketPrefix = computed(() => selectedStorageProfile.value?.bucketPrefix ?? '');
 const effectiveBucketName = computed(() => bucketPrefix.value + vaultBucketName.value);
 const automaticAccessGrant = ref<boolean>(true);
-const onOpenBookmarkError = ref<Error | null>(null);
-const onUploadTemplateError = ref<Error | null>(null);
+const onOpenBookmarkError = ref<Error>();
+const onUploadTemplateError = ref<Error>();
 
 class StorageBackendError extends Error {
 
@@ -1341,7 +1341,7 @@ async function downloadVaultTemplate() {
 // / start katta extension
 import { openInKatta } from '../common/deeplink';
 function openBookmark() {
-  onOpenBookmarkError.value = null;
+  onOpenBookmarkError.value = undefined;
   try {
     openInKatta();
   } catch (error) {
@@ -1351,7 +1351,7 @@ function openBookmark() {
 }
 
 async function fetchStorageProfiles() {
-  onFetchError.value = null;
+  onFetchError.value = undefined;
   storageProfilesLoaded.value = false;
   try {
     backends.value = await backend.storageprofiles.get(false);
@@ -1389,7 +1389,7 @@ function endpointHostname(endpoint: string | undefined): string | undefined {
 }
 
 async function uploadVaultTemplate() {
-  onUploadTemplateError.value = null;
+  onUploadTemplateError.value = undefined;
   try {
     const storageProfile = selectedStorageProfile.value;
     if (storageProfile === undefined) {

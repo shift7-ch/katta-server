@@ -8,6 +8,7 @@ import org.cryptomator.hub.entities.Vault;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.ClientWebApplicationException;
+import org.jspecify.annotations.Nullable;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientScopeResource;
@@ -35,7 +36,8 @@ public class KeycloakCryptomatorVaultsHelper {
 	@ConfigProperty(name = "hub.keycloak.realm")
 	protected String keycloakRealm;
 
-	public void keycloakPrepareVault(final String clientId, final String vaultId, final Boolean minio, final Boolean aws) {
+	// minio/aws are tri-state: true creates/updates the protocol mapper, false deletes it, null leaves it untouched
+	public void keycloakPrepareVault(final String clientId, final String vaultId, final @Nullable Boolean minio, final @Nullable Boolean aws) {
 		keycloakPrepareVault(clientId, vaultId, getKeycloak(), keycloakRealm, minio, aws);
 	}
 
@@ -77,7 +79,7 @@ public class KeycloakCryptomatorVaultsHelper {
 		}
 	}
 
-	protected static void keycloakPrepareVault(final String clientId, final String vaultId, final Keycloak keycloak, final String keycloakRealm, final Boolean minio, final Boolean aws) {
+	protected static void keycloakPrepareVault(final String clientId, final String vaultId, final Keycloak keycloak, final String keycloakRealm, final @Nullable Boolean minio, final @Nullable Boolean aws) {
 		// https://www.keycloak.org/docs-api/21.1.1/rest-api
 		final RealmResource realm = keycloak.realm(keycloakRealm);
 

@@ -487,12 +487,14 @@ class VaultService {
 
   public async createOrUpdateVault(vault: VaultDto
     // / start katta extension
-    , aws: boolean | null = null
-    , minio: boolean | null = null
+    , aws?: boolean
+    , minio?: boolean
     // \ end katta extension
   ): Promise<VaultDto> {
     // / start katta modification
-    return axiosAuth.put(`/vaults/${vault.id}?aws=${aws}&minio=${minio}` , vault)
+    // aws/minio are tri-state: axios omits undefined params, which the backend reads as "leave the protocol mapper untouched".
+    // (String interpolation would send the literal "null"/"undefined", which the backend parses as false = delete the mapper.)
+    return axiosAuth.put(`/vaults/${vault.id}`, vault, { params: { aws, minio } })
     // \ end katta modification
       .then(response => response.data)
       .catch((error) => rethrowAndConvertIfExpected(error, 402, 404));

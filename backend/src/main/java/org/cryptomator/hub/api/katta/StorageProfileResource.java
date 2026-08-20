@@ -1,6 +1,5 @@
 package org.cryptomator.hub.api.katta;
 
-import jakarta.annotation.Nullable;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -24,6 +23,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.hibernate.exception.ConstraintViolationException;
+import org.jspecify.annotations.Nullable;
 
 import java.net.URI;
 import java.util.List;
@@ -95,7 +95,7 @@ public class StorageProfileResource {
 	@Operation(summary = "set the archived state of a storage profile", description = "Archives (archived=true) or unarchives (archived=false) the storage profile. While archived, no new vaults can be created for this profile.")
 	@APIResponse(responseCode = "204", description = "archived state updated")
 	@APIResponse(responseCode = "403", description = "not an admin")
-	public Response archive(@PathParam("profileId") UUID profileId, @NotNull @FormParam("archived") final boolean archived) {
+	public Response archive(@PathParam("profileId") UUID profileId, @NotNull @FormParam("archived") final Boolean archived) {
 		final StorageProfile entity = storageProfileRepo.findByIdOptional(profileId).orElseThrow(NotFoundException::new);
 		storageProfileRepo.persistAndFlush(entity.setArchived(archived));
 		return Response.status(Response.Status.NO_CONTENT).build();

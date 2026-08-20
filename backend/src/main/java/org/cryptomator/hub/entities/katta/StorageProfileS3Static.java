@@ -8,6 +8,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
@@ -23,10 +24,10 @@ public class StorageProfileS3Static extends StorageProfile {
 	// - client profile (STS and permanent)
 	//======================================================================
 	@Column(name = "endpoint")
-	public String endpoint;
+	public @Nullable String endpoint;
 
 	@Column(name = "path_style_access_enabled", nullable = false)
-	public Boolean pathStyleAccessEnabled = false;
+	public boolean pathStyleAccessEnabled = false;
 
 	@Column(name = "storage_class", columnDefinition = "storage_class", nullable = false)
 	@Enumerated(EnumType.STRING)
@@ -34,11 +35,11 @@ public class StorageProfileS3Static extends StorageProfile {
 	public S3StorageClass storageClass = S3StorageClass.STANDARD;
 
 	// bucket creation parameters, relevant for both permanent and STS profiles (desktop client creates buckets in either case)
-	@Column(name = "region")
-	public String region;
+	@Column(name = "region", nullable = false)
+	public String region = "us-east-1";
 
-	@Column(name = "regions")
-	public List<String> regions;
+	@Column(name = "regions", nullable = false)
+	public List<String> regions = List.of();
 
 	@Column(name = "bucket_prefix", nullable = false)
 	public String bucketPrefix;

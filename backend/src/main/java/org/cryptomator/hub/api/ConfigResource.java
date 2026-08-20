@@ -118,10 +118,10 @@ public class ConfigResource {
 							@JsonProperty("licenseApiUrl") @NotNull String licenseApiUrl,
 							@JsonProperty("licenseSetupRequired") boolean licenseSetupRequired
                             // / start katta extension
-            , @JsonProperty("keycloakClientIdCryptomatorVaults") String keycloakClientIdCryptomatorVaults
-            , @JsonProperty("uuid") String uuid
-            , @JsonProperty("desktopDownloadUrlMac") String desktopDownloadUrlMac
-            , @JsonProperty("desktopDownloadUrlWin") String desktopDownloadUrlWin
+            , @JsonProperty("keycloakClientIdCryptomatorVaults") @NotNull String keycloakClientIdCryptomatorVaults
+            , @JsonProperty("uuid") @NotNull String uuid
+            , @JsonProperty("desktopDownloadUrlMac") @NotNull String desktopDownloadUrlMac
+            , @JsonProperty("desktopDownloadUrlWin") @NotNull String desktopDownloadUrlWin
                             // \ end katta extension
     ) {}
 

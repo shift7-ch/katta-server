@@ -147,7 +147,7 @@ const { t } = useI18n({ useScope: 'global' });
 
 const open = ref(false);
 const processing = ref(false);
-const onSubmitError = ref<Error | null>();
+const onSubmitError = ref<Error>();
 
 const protocols: StorageProtocol[] = ['S3STATIC', 'S3STS'];
 const storageClasses: S3StorageClass[] = ['STANDARD', 'INTELLIGENT_TIERING', 'STANDARD_IA', 'ONEZONE_IA', 'REDUCED_REDUNDANCY', 'GLACIER', 'GLACIER_IR', 'DEEP_ARCHIVE'];
@@ -164,7 +164,7 @@ type FormState = {
   stsEndpoint: string;
   stsRoleAccessBucketAssumeRoleWithWebIdentity: string;
   stsRoleAccessBucketAssumeRoleTaggedSession: string;
-  stsDurationSeconds: number | null;
+  stsDurationSeconds: number | undefined;
   stsSessionTag: string;
 };
 
@@ -192,7 +192,7 @@ function emptyState(): FormState {
     stsEndpoint: '',
     stsRoleAccessBucketAssumeRoleWithWebIdentity: '',
     stsRoleAccessBucketAssumeRoleTaggedSession: '',
-    stsDurationSeconds: null,
+    stsDurationSeconds: undefined,
     stsSessionTag: 'Vault'
   };
 }
@@ -201,7 +201,7 @@ function show() {
   protocol.value = 'S3STATIC';
   state.value = emptyState();
   regionsCsv.value = '';
-  onSubmitError.value = null;
+  onSubmitError.value = undefined;
   processing.value = false;
   open.value = true;
 }
@@ -271,13 +271,13 @@ function buildS3STSDto(endpoint: string | undefined): StorageProfileS3STSDto {
     stsEndpoint: undefinedIfBlank(state.value.stsEndpoint),
     stsRoleAccessBucketAssumeRoleWithWebIdentity: state.value.stsRoleAccessBucketAssumeRoleWithWebIdentity,
     stsRoleAccessBucketAssumeRoleTaggedSession: undefinedIfBlank(state.value.stsRoleAccessBucketAssumeRoleTaggedSession),
-    stsDurationSeconds: state.value.stsDurationSeconds ?? undefined,
+    stsDurationSeconds: state.value.stsDurationSeconds,
     stsSessionTag: state.value.stsSessionTag
   };
 }
 
 async function submit() {
-  onSubmitError.value = null;
+  onSubmitError.value = undefined;
   processing.value = true;
   try {
     const endpoint = validatedEndpoint(state.value.endpoint);

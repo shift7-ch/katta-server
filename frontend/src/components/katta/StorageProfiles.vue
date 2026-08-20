@@ -79,7 +79,7 @@
     <p class="mt-1 text-sm text-gray-500">{{ t('storageProfileList.filter.result.empty.description') }}</p>
   </div>
 
-  <SlideOver v-if="selectedStorageprofile != null" ref="StorageProfileDetailsSlideOver" :title="selectedStorageprofile.name" @close="selectedStorageprofile = null">
+  <SlideOver v-if="selectedStorageprofile != null" ref="StorageProfileDetailsSlideOver" :title="selectedStorageprofile.name" @close="selectedStorageprofile = undefined">
     <StorageProfileDetails :storageprofile-id="selectedStorageprofile.id" @storageprofile-updated="v => onSelectedStorageprofileUpdate(v)" />
   </SlideOver>
 
@@ -100,10 +100,10 @@ import StorageProfileDetails from './StorageProfileDetails.vue';
 const { t } = useI18n({ useScope: 'global' });
 
 const StorageProfileDetailsSlideOver = ref<typeof SlideOver>();
-const onFetchError = ref<Error | null>();
+const onFetchError = ref<Error>();
 
 const storageprofiles = ref<StorageProfileDto[]>();
-const selectedStorageprofile = ref<StorageProfileDto | null>(null);
+const selectedStorageprofile = ref<StorageProfileDto>();
 
 const isAdmin = ref<boolean>();
 
@@ -131,7 +131,7 @@ const filteredStorageprofiles = computed(() => {
 onMounted(fetchData);
 
 async function fetchData() {
-  onFetchError.value = null;
+  onFetchError.value = undefined;
   try {
     isAdmin.value = (await auth).hasRole('admin');
     storageprofiles.value = (await backend.storageprofiles.get(undefined));

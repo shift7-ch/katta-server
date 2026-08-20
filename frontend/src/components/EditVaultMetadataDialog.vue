@@ -115,7 +115,7 @@ async function updateVaultMetadata() {
     }
     const dto = { ...props.vault };
     dto.description = vaultDescription.value;
-    const updatedVault = await backend.vaults.createOrUpdateVault(dto, null, null);
+    const updatedVault = await backend.vaults.createOrUpdateVault(dto);
     emit('updated', updatedVault);
     open.value = false;
   } catch (error) {

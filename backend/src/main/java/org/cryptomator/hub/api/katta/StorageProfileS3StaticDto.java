@@ -7,6 +7,7 @@ import org.cryptomator.hub.entities.katta.S3StorageClass;
 import org.cryptomator.hub.entities.katta.StorageProfileS3Static;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.hibernate.validator.constraints.URL;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.Objects;
@@ -23,7 +24,7 @@ public sealed class StorageProfileS3StaticDto extends StorageProfileDto permits 
 	//======================================================================
 
 	@URL
-	private final String endpoint;
+	private final @Nullable String endpoint;
 	private final boolean pathStyleAccessEnabled;
 	@NotNull
 	private final S3StorageClass storageClass;
@@ -36,11 +37,11 @@ public sealed class StorageProfileS3StaticDto extends StorageProfileDto permits 
 
 	@JsonCreator
 	public StorageProfileS3StaticDto(
-			@JsonProperty("id") UUID id,
+			@JsonProperty("id") @Nullable UUID id,
 			@JsonProperty("name") String name,
 			@JsonProperty("protocol") Protocol protocol,
 			@JsonProperty("archived") boolean archived,
-			@JsonProperty("endpoint") String endpoint,
+			@JsonProperty("endpoint") @Nullable String endpoint,
 			@JsonProperty("pathStyleAccessEnabled") boolean pathStyleAccessEnabled,
 			@JsonProperty("storageClass") S3StorageClass storageClass,
 			@JsonProperty("region") String region,
@@ -57,7 +58,7 @@ public sealed class StorageProfileS3StaticDto extends StorageProfileDto permits 
 
 	@JsonProperty("endpoint")
 	@Schema(description = "Full S3 endpoint URL for template upload/bucket creation. If unset, defaults to AWS SDK defaults.", examples = "https://s3-us-gov-west-1.amazonaws.com", nullable = true)
-	public String getEndpoint() {
+	public @Nullable String getEndpoint() {
 		return endpoint;
 	}
 
@@ -80,7 +81,7 @@ public sealed class StorageProfileS3StaticDto extends StorageProfileDto permits 
 	}
 
 	@JsonProperty("regions")
-	@Schema(description = "List of selectable regions in the frontend/client to create bucket in. Defaults to full list from AWS SDK.", required = true)
+	@Schema(description = "List of selectable regions in the frontend/client to create bucket in.", required = true)
 	public List<String> getRegions() {
 		return regions;
 	}
@@ -92,7 +93,7 @@ public sealed class StorageProfileS3StaticDto extends StorageProfileDto permits 
 	}
 
 	static StorageProfileS3StaticDto fromEntity(StorageProfileS3Static entity) {
-		return new StorageProfileS3StaticDto(entity.id, entity.name, Protocol.S3_STATIC, entity.archived, entity.endpoint, entity.pathStyleAccessEnabled, entity.storageClass, entity.region, entity.regions == null ? List.of() : entity.regions, entity.bucketPrefix);
+		return new StorageProfileS3StaticDto(entity.id, entity.name, Protocol.S3_STATIC, entity.archived, entity.endpoint, entity.pathStyleAccessEnabled, entity.storageClass, entity.region, entity.regions, entity.bucketPrefix);
 	}
 
 	@Override

@@ -4,6 +4,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
+import org.jspecify.annotations.Nullable;
 
 @Entity
 @Table(name = "storage_profile_s3_sts")
@@ -20,7 +21,7 @@ public class StorageProfileS3STS extends StorageProfileS3Static {
 	public String stsRoleCreateBucketHub;
 
 	@Column(name = "sts_endpoint")
-	public String stsEndpoint = null;
+	public @Nullable String stsEndpoint;
 
 	//----------------------------------------------------------------------
 	// (3b) STS client profile custom properties
@@ -29,11 +30,11 @@ public class StorageProfileS3STS extends StorageProfileS3Static {
 	public String stsRoleAccessBucketAssumeRoleWithWebIdentity;
 
 	@Column(name = "sts_role_access_bucket_assume_role_tagged_session")
-	public String stsRoleAccessBucketAssumeRoleTaggedSession;
+	public @Nullable String stsRoleAccessBucketAssumeRoleTaggedSession;
 
 	@Column(name = "sts_duration_seconds")
-	public Integer stsDurationSeconds = null;
+	public @Nullable Integer stsDurationSeconds;
 
-	@Column(name = "sts_session_tag")
-	public String stsSessionTag;
+	@Column(name = "sts_session_tag", nullable = false)
+	public String stsSessionTag = "Vault";
 }

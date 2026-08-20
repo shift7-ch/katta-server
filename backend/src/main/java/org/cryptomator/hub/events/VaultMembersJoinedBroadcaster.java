@@ -3,6 +3,7 @@ package org.cryptomator.hub.events;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.event.TransactionPhase;
+import org.jspecify.annotations.Nullable;
 
 import java.time.Duration;
 import java.util.Set;
@@ -23,7 +24,7 @@ import java.util.concurrent.TimeoutException;
 @ApplicationScoped
 public class VaultMembersJoinedBroadcaster {
 
-	private final Set<CompletableFuture<Void>> waiters = ConcurrentHashMap.newKeySet();
+	private final Set<CompletableFuture<@Nullable Void>> waiters = ConcurrentHashMap.newKeySet();
 
 	void onMembersJoined(@Observes(during = TransactionPhase.AFTER_SUCCESS) VaultMembersJoined event) {
 		for (var w : waiters) {
@@ -35,12 +36,12 @@ public class VaultMembersJoinedBroadcaster {
 	 * @return a {@link Ticket} that wakes on the next {@link VaultMembersJoined} fired after this call. Must be closed.
 	 */
 	public Ticket subscribe() {
-		var future = new CompletableFuture<Void>();
+		var future = new CompletableFuture<@Nullable Void>();
 		waiters.add(future);
 		return new Ticket(future, () -> waiters.remove(future));
 	}
 
-	public record Ticket(CompletableFuture<Void> future, Runnable cleanup) implements AutoCloseable {
+	public record Ticket(CompletableFuture<@Nullable Void> future, Runnable cleanup) implements AutoCloseable {
 
 		/**
 		 * Blocks the calling (virtual) thread until either an event fires or the timeout elapses. Swallows

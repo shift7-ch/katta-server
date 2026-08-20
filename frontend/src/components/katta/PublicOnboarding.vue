@@ -101,14 +101,14 @@ const downloadAvailable = macUrl.length > 0 || winUrl.length > 0;
 const primaryOS = resolvePrimaryOS();
 const alternateOS = primaryOS === 'mac' && winUrl.length > 0 ? 'win'
   : primaryOS === 'win' && macUrl.length > 0 ? 'mac'
-    : null;
+    : undefined;
 const primaryHref = primaryOS === 'mac' ? macUrl : winUrl;
 const primaryLabelKey = `onboarding.download.${primaryOS}`;
 const alternateHref = alternateOS === 'mac' ? macUrl : winUrl;
 const alternateLabelKey = alternateOS === 'mac' ? 'onboarding.download.alternateMac' : 'onboarding.download.alternateWin';
 
 // Lead with the detected platform's build when its URL is configured, otherwise the single configured platform; both configured but no match falls through to two equal buttons.
-function resolvePrimaryOS(): 'mac' | 'win' | null {
+function resolvePrimaryOS(): 'mac' | 'win' | undefined {
   const detectedOS = detectOS();
   if (detectedOS === 'mac' && macUrl.length > 0) {
     return 'mac';
@@ -122,7 +122,7 @@ function resolvePrimaryOS(): 'mac' | 'win' | null {
   if (winUrl.length > 0 && macUrl.length === 0) {
     return 'win';
   }
-  return null;
+  return undefined;
 }
 
 function openBookmark() {
