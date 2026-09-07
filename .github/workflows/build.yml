@@ -272,6 +272,7 @@ jobs:
           docker buildx imagetools create
           --tag "ghcr.io/shift7-ch/katta-server:${{ steps.version.outputs.app_version }}"
           --tag "ghcr.io/shift7-ch/katta-server:${{ steps.version.outputs.short_sha }}"
+          ${{ github.ref_name == github.event.repository.default_branch && '--tag "ghcr.io/shift7-ch/katta-server:latest"' || '' }}
           "ghcr.io/shift7-ch/katta-server@${{ needs.build-native-image.outputs.digest_amd64 }}"
           "ghcr.io/shift7-ch/katta-server@${{ needs.build-native-image.outputs.digest_arm64 }}"
       - name: Retrieve Multi-Arch Digest
