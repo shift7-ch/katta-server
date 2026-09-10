@@ -693,8 +693,6 @@
 
   "nav.profile.storageprofiles": "Admin Storage Locations",
   "storageProfileList.title": "Storage Locations",
-  "storageProfileList.setup.title": "Katta web setup",
-  "storageProfileList.setup.description": "Katta web setup admin documentation",
   "storageProfileList.search.placeholder": "Search…",
   "storageProfileList.empty.title": "No storage locations",
   "storageProfileList.empty.description": "No storage locations",

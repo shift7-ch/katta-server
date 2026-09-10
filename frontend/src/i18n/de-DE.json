@@ -353,8 +353,6 @@
 
   "nav.profile.storageprofiles": "Admin Tresor-Speicherbereiche",
   "storageProfileList.title": "Tresor-Speicherbereiche",
-  "storageProfileList.setup.title": "Katta web setup",
-  "storageProfileList.setup.description": "Katta web setup admin documentation",
   "storageProfileList.search.placeholder": "Suche…",
   "storageProfileList.empty.title": "Keine Tresor-Speicherbereiche",
   "storageProfileList.empty.description": "Keine Tresor-Speicherbereiche",
