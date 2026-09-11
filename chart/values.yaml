@@ -89,7 +89,16 @@ hub:
   config:
     keycloakRealm: cryptomator
     keycloakSyncerPeriod: 5m
+    # Replaces the whole Content-Security-Policy header when set, discarding the sources
+    # the chart derives from urls.kc.public and urls.s3.public.
     contentSecurityPolicy: ""
+    # Extra connect-src sources appended to the derived Content-Security-Policy. Required for
+    # every S3 and STS endpoint the browser talks to directly, i.e. the endpoints of the storage
+    # profiles, unless they are already covered by urls.s3.public. Entries are CSP source
+    # expressions used verbatim, so host wildcards are allowed. Ignored when
+    # contentSecurityPolicy is set. Example:
+    #   additionalConnectSrc: [ "https://*.amazonaws.com", "https://*.wasabisys.com" ]
+    additionalConnectSrc: []
   metrics:
     # Hub ships metrics, traces and logs via OpenTelemetry / OTLP.
     enabled: false
