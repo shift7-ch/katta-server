@@ -69,7 +69,7 @@
 </template>
 
 <script setup lang="ts">
-import { ChevronRightIcon, LinkIcon, PlusIcon } from '@heroicons/vue/24/solid';
+import { ChevronRightIcon, PlusIcon } from '@heroicons/vue/24/solid';
 import { computed, nextTick, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import auth from '../../common/auth';
