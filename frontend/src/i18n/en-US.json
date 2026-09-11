@@ -709,7 +709,7 @@
   "storageprofile.stsRoleCreateBucketHub": "create-bucket Role ARN (Katta Web)",
   "storageprofile.stsEndpoint": "STS Endpoint",
   "storageprofile.storageClass": "Storage Class",
-  "storageprofile.region": "Role ARN für STS AssumeRoleWithWebIdentity (AWS and MinIO)",
+  "storageprofile.region": "Region",
   "storageprofile.regions": "Regions",
   "storageprofile.stsRoleAccessBucketAssumeRoleWithWebIdentity": "Role ARN for STS AssumeRoleWithWebIdentity (AWS and MinIO)",
   "storageprofile.stsRoleAccessBucketAssumeRoleTaggedSession": "Role ARN to assume for STS AssumeRole in role chaining (AWS)",
