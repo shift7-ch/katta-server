@@ -36,13 +36,21 @@ data:
   {{- /* Whole Content-Security-Policy header is assembled here and set via the env-var form of `quarkus.http.header."Content-Security-Policy".value`, overriding the image's application.properties default at runtime (no image rebuild). The browser must reach Keycloak's OIDC endpoints; when Keycloak is on a different origin than Hub (subdomain routing) that origin must be in connect-src. Origin only (scheme://host:port); a CSP source with a path would match only that exact path. */}}
   {{- $additionalConnectSrc := regexReplaceAll "^(https?://[^/]+).*" (required "urls.kc.public must be set" .Values.urls.kc.public) "${1}" }}
   {{- /* / katta start addition */}}
+  {{- /* Katta license API plus AWS S3/STS endpoints, mirroring the image default in application.properties. */}}
   {{- $additionalConnectSrc = printf "%s %s" $additionalConnectSrc "api.katta.cloud" }}
   {{- if and .Values.minio.enabled .Values.urls.s3.public }}
   {{- /* The SPA uploads/downloads encrypted blobs straight to the S3 endpoint from the browser, so its origin must be in connect-src. */}}
   {{- $additionalConnectSrc = printf "%s %s" $additionalConnectSrc (regexReplaceAll "^(https?://[^/]+).*" .Values.urls.s3.public "${1}") }}
   {{- end }}
+  {{- /* Storage profiles the browser talks to directly (S3 and STS endpoints of external providers)
+         are not known to the chart, so their sources are configured explicitly. Entries are CSP
+         source expressions and are used verbatim, which allows host wildcards such as
+         `https://*.wasabisys.com` covering both path-style and virtual-hosted-style requests. */}}
+  {{- range .Values.hub.config.additionalConnectSrc | default list }}
+  {{- $additionalConnectSrc = printf "%s %s" $additionalConnectSrc . }}
+  {{- end }}
   {{- /* \ katta end addition */}}
-  {{- $csp := .Values.hub.config.contentSecurityPolicy | default (printf "default-src 'self'; connect-src 'self' api.cryptomator.org %s; object-src 'none'; child-src 'self'; img-src * data:; frame-ancestors 'none'" $additionalConnectSrc) }}
+  {{- $csp := .Values.hub.config.contentSecurityPolicy | default (printf "default-src 'self'; connect-src 'self' %s; object-src 'none'; child-src 'self'; img-src * data:; frame-ancestors 'none'" $additionalConnectSrc) }}
   QUARKUS_HTTP_HEADER__CONTENT_SECURITY_POLICY__VALUE: {{ $csp | quote }}
   QUARKUS_MANAGEMENT_ENABLED: "true"
   QUARKUS_MANAGEMENT_HOST: "0.0.0.0"

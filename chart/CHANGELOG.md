@@ -27,9 +27,16 @@
   to the backend via `HUB_KEYCLOAK_OIDC_CRYPTOMATOR_VAULTS_CLIENT_SECRET`.
 - `values-demo.yaml` enabling the full local stack (Hub + Keycloak + Postgres + MinIO +
   seed Job) with fixed demo passwords.
+- `hub.config.additionalConnectSrc`, a list of extra `connect-src` sources appended to the
+  chart's Content-Security-Policy. Required for the S3 and STS endpoints of storage profiles
+  the browser talks to directly, which the chart cannot derive. Entries are CSP source
+  expressions used verbatim, so host wildcards such as `https://*.wasabisys.com` are allowed.
+  Ignored when `hub.config.contentSecurityPolicy` replaces the whole header.
 
 ### Changed
 
+- Default Content-Security-Policy aligned with the image default in `application.properties`:
+  `api.cryptomator.org` dropped from `connect-src`, `api.katta.cloud` added.
 - Default images now point to `ghcr.io/shift7-ch/katta-server` and
   `ghcr.io/shift7-ch/keycloak:26.5.7` (was `ghcr.io/cryptomator/hub` and
   `ghcr.io/cryptomator/keycloak:26.5.3`).
