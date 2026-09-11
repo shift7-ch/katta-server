@@ -1,0 +1,63 @@
+{{- if eq (include "katta-server.proxyEnabled" .) "true" }}
+{{- $name := printf "%s-ingress-proxy" (include "cryptomator-hub.fullname" .) -}}
+{{- $port := include "katta-server.proxyPort" . | int -}}
+{{- $podIPs := include "katta-server.ingressControllerPodIPs" . | fromJsonArray -}}
+# Port-translation proxy for public URLs served on a non-default port.
+#
+# The ingress controller listens on its native port 80 cluster-internally, but
+# urls.*.public typically advertise a non-standard port (e.g. 9090) so external clients
+# don't need privileged ports. This Service makes the same `<host>:<port>` URL work
+# inside the cluster too: it accepts traffic on :{port} and forwards it to the nginx
+# ingress controller pods on port 80 — same destination external clients reach via
+# `kubectl port-forward`, so the same URL works from both sides.
+#
+# DNS resolution of the public hostname to this Service's ClusterIP is handled
+# separately by templates/coredns-patch.yaml (CoreDNS rewrite plugin), not by per-pod
+# hostAliases.
+#
+# Selectorless Service + EndpointSlice pattern: kube-proxy DNATs `:{port}` directly to
+# the ingress controller's POD IPs on port 80. We deliberately do NOT target the
+# controller's Service ClusterIP — kube-proxy in iptables mode can't chain a second
+# DNAT, so a packet that's already been NAT'd once to another Service IP gets stuck.
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "cryptomator-hub.labels" . | nindent 4 }}
+    app.kubernetes.io/component: ingress-proxy
+spec:
+  type: ClusterIP
+  {{- with .Values.ingress.proxy.clusterIP }}
+  clusterIP: {{ . | quote }}
+  {{- end }}
+  ports:
+    - name: http
+      port: {{ $port }}
+      targetPort: 80
+      protocol: TCP
+---
+apiVersion: discovery.k8s.io/v1
+kind: EndpointSlice
+metadata:
+  name: {{ $name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "cryptomator-hub.labels" . | nindent 4 }}
+    app.kubernetes.io/component: ingress-proxy
+    # Required for the EndpointSlice to be associated with the Service above.
+    kubernetes.io/service-name: {{ $name }}
+addressType: IPv4
+endpoints:
+  {{- range $ip := $podIPs }}
+  - addresses:
+      - {{ $ip | quote }}
+    conditions:
+      ready: true
+  {{- end }}
+ports:
+  - name: http
+    protocol: TCP
+    port: 80
+{{- end }}

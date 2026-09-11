@@ -1,5 +1,5 @@
 import { base64 } from '@scure/base';
-import AxiosStatic, { AxiosError, AxiosHeaders, AxiosRequestConfig, AxiosResponse } from 'axios';
+import AxiosStatic, { AxiosHeaders, AxiosRequestConfig, AxiosResponse } from 'axios';
 import { JdenticonConfig, toSvg } from 'jdenticon';
 import authPromise from './auth';
 import { backendBaseURL } from './config';
@@ -34,10 +34,6 @@ axiosAuth.interceptors.request.use(async request => {
   }
 });
 
-export function isAxiosError(error: unknown): error is AxiosError {
-  return AxiosStatic.isAxiosError(error);
-}
-
 // #region DTOs
 
 export type VaultDto = {
@@ -48,16 +44,21 @@ export type VaultDto = {
   archived: boolean;
   requiredEmergencyKeyShares: number;
   emergencyKeyShares: Record<string, string>; // <memberId, encryptedKeyShare>
-  
+
   // Legacy properties ("Vault Admin Password"):
   masterkey?: string;
   iterations?: number;
   salt?: string;
   authPublicKey?: string;
   authPrivateKey?: string;
+
   uvfMetadataFile?: string;
   uvfKeySet?: string;
 };
+
+export function isUvfVault(v: VaultDto): v is VaultDto & { uvfMetadataFile: string; uvfKeySet: string } {
+  return typeof v.uvfMetadataFile === 'string' && typeof v.uvfKeySet === 'string';
+}
 
 export type DeviceDto = {
   id: string;
@@ -84,6 +85,11 @@ export type AccessGrant = {
   token: string
 };
 
+/**
+ * Map from vault id to the user ids on that vault who do not yet have a per-user access token.
+ */
+export type PendingAccessGrants = Record<string, string[]>;
+
 export type UserDto = {
   type: 'USER';
   id: string;
@@ -92,7 +98,6 @@ export type UserDto = {
   email?: string;
   firstName?: string;
   lastName?: string;
-  realmRoles: RealmRole[];
   enabled: boolean;
   language?: string;
   devices: DeviceDto[];
@@ -113,6 +118,7 @@ export type UserDtoWithDetails = UserDto & {
   groups: GroupDto[];
   devices: DeviceDto[];
   legacyDevices: DeviceDto[];
+  realmRoles: RealmRole[];
 };
 
 /**
@@ -147,11 +153,13 @@ export type TrustDto = {
   signatureChain: string[]
 };
 
-export type CreateUserDto = Pick<UserDto, 'name' | 'email' | 'firstName' | 'lastName' | 'pictureUrl' | 'realmRoles'> & {
+export type CreateUserDto = Pick<UserDto, 'name' | 'email' | 'firstName' | 'lastName' | 'pictureUrl'> & {
+  realmRoles: RealmRole[];
   password: string;
 };
 
-export type UpdateUserDto = Pick<UserDto, 'email' | 'firstName' | 'lastName' | 'pictureUrl' | 'realmRoles'> & {
+export type UpdateUserDto = Pick<UserDto, 'email' | 'firstName' | 'lastName' | 'pictureUrl'> & {
+  realmRoles: RealmRole[];
   password?: string;
 };
 
@@ -192,7 +200,10 @@ export type SettingsDto = {
   defaultMinMembers: number,
   allowChoosingEmergencyCouncil: boolean,
   emergencyCouncilMemberIds: string[],
-  enableEmergencyAccess: boolean
+  enableEmergencyAccess: boolean,
+  enableAutomaticAccessGrant: boolean,
+  automaticAccessGrantTrustThreshold: number,
+  allowAutomaticAccessGrantOverride: boolean
 };
 
 export type RecoveryProcessSetNewOwner = {
@@ -233,19 +244,102 @@ export class LicenseUserInfoDto {
   constructor(
     public licensedSeats: number,
     public usedSeats: number,
-    public expiresAt: Date | null) {
+    public expiresAt: Date | undefined,
+    public gracePeriodEndsAt: Date | undefined) {
   }
 
-  public isExpired(): boolean {
-    const now = new Date();
-    return now > (this.expiresAt ?? now); //if expired is null, the license cannot expire
+  public isExpired(mode?: 'allowGracePeriod'): boolean {
+    const deadline = mode === 'allowGracePeriod' ? this.gracePeriodEndsAt : this.expiresAt;
+    return deadline !== undefined && new Date() > deadline; // no deadline means no expiration date, i.e. the license cannot expire
   }
 
   public isExceeded(): boolean {
     return this.licensedSeats == 0 || this.usedSeats > this.licensedSeats;
   }
 
+  public isViolated(): boolean {
+    return this.isExpired('allowGracePeriod') || this.isExceeded();
+  }
+
 }
+// / start katta extension
+export type StorageDto = {
+  vaultId: string;
+  storageConfigId: string;
+  vaultUvf: string;
+  dirUvf: string;
+  rootDirHash: string;
+  awsAccessKey: string;
+  awsSecretKey: string;
+  sessionToken: string;
+  region: string;
+};
+
+export type ConfigDto = {
+  keycloakUrl: string;
+  keycloakRealm: string;
+  keycloakClientIdHub: string;
+  keycloakClientIdCryptomator: string;
+  keycloakAuthEndpoint: string;
+  keycloakTokenEndpoint: string;
+  serverTime: string;
+  apiLevel: number;
+  uuid: string;
+};
+
+export type StorageProtocol = 'S3STATIC' | 'S3STS';
+
+export type S3StorageClass = 'STANDARD' | 'INTELLIGENT_TIERING' | 'STANDARD_IA' | 'ONEZONE_IA' | 'REDUCED_REDUNDANCY' | 'GLACIER' | 'GLACIER_IR' | 'DEEP_ARCHIVE';
+
+export type StorageProfileS3StaticDto = {
+  protocol: 'S3STATIC';
+  id: string;
+  name: string;
+  archived: boolean;
+  endpoint?: string;
+  pathStyleAccessEnabled?: boolean;
+  storageClass: S3StorageClass;
+  region: string;
+  regions: string[];
+  bucketPrefix: string;
+};
+
+export type StorageProfileS3STSDto = {
+  protocol: 'S3STS';
+  id: string;
+  name: string;
+  archived: boolean;
+  endpoint?: string;
+  pathStyleAccessEnabled?: boolean;
+  storageClass: S3StorageClass;
+  region: string;
+  regions: string[];
+  bucketPrefix: string;
+  stsRoleCreateBucketClient: string;
+  stsRoleCreateBucketHub: string;
+  stsEndpoint?: string;
+  stsRoleAccessBucketAssumeRoleWithWebIdentity: string;
+  stsRoleAccessBucketAssumeRoleTaggedSession?: string;
+  stsDurationSeconds?: number;
+  stsSessionTag: string;
+};
+
+export type StorageProfileDto = StorageProfileS3StaticDto | StorageProfileS3STSDto;
+
+export type VaultMetadataJWEBackendDto = {
+  provider: string;
+
+  bucket: string;
+  nickname: string;
+
+  region: string;
+
+  username?: string;
+  password?: string;
+};
+// \ end katta extension
+
+/* Services */
 
 export interface VaultIdHeader extends JWTHeader {
   vaultId: string;
@@ -354,19 +448,32 @@ class VaultService {
 
   public async addUser(vaultId: string, userId: string, role?: VaultRole): Promise<AxiosResponse<void>> {
     const queryParams = role ? { role: role } : {};
-    return axiosAuth.put(`/vaults/${vaultId}/users/${userId}`, null, { params: queryParams })
+    return axiosAuth.put(`/vaults/${vaultId}/users/${userId}`, undefined, { params: queryParams })
       .catch((error) => rethrowAndConvertIfExpected(error, 402, 404, 409));
   }
 
   public async addGroup(vaultId: string, groupId: string, role?: VaultRole): Promise<AxiosResponse<void>> {
     const queryParams = role ? { role: role } : {};
-    return axiosAuth.put(`/vaults/${vaultId}/groups/${groupId}`, null, { params: queryParams })
+    return axiosAuth.put(`/vaults/${vaultId}/groups/${groupId}`, undefined, { params: queryParams })
       .catch((error) => rethrowAndConvertIfExpected(error, 402, 404, 409));
   }
 
   public async getUsersRequiringAccessGrant(vaultId: string, addFallbackPictures: boolean = true): Promise<(MemberDto & UserDto)[]> {
     const users = await axiosAuth.get<(MemberDto & UserDto)[]>(`/vaults/${vaultId}/users-requiring-access-grant`).then(response => response.data).catch(err => rethrowAndConvertIfExpected(err, 403));
     return addFallbackPictures ? users.map(fillInMissingPicture) : users;
+  }
+
+  /**
+   * Long-polling endpoint used by the automatic access grant flow. Returns pending grants as a map from vault id to
+   * the user ids on that vault whose access tokens are missing (limited to vaults the caller is a member of). Blocks
+   * up to `waitSeconds` if there are no pending grants at call time; returns an empty map on timeout. Best effort —
+   * clients should poll on a coarse cadence too.
+   */
+  public async listPendingAccessGrants(waitSeconds = 25): Promise<PendingAccessGrants> {
+    return axiosAuth.get<PendingAccessGrants>('/vaults/users-requiring-access-grant', {
+      params: { wait: waitSeconds },
+      timeout: (waitSeconds + 10) * 1000
+    }).then(response => response.data);
   }
 
   public async setArchived(vaultId: string, archived: boolean): Promise<VaultDto> {
@@ -378,8 +485,17 @@ class VaultService {
       .catch((error) => rethrowAndConvertIfExpected(error, 402, 403, 404));
   }
 
-  public async createOrUpdateVault(vault: VaultDto): Promise<VaultDto> {
-    return axiosAuth.put(`/vaults/${vault.id}`, vault)
+  public async createOrUpdateVault(vault: VaultDto
+    // / start katta extension
+    , aws?: boolean
+    , minio?: boolean
+    // \ end katta extension
+  ): Promise<VaultDto> {
+    // / start katta modification
+    // aws/minio are tri-state: axios omits undefined params, which the backend reads as "leave the protocol mapper untouched".
+    // (String interpolation would send the literal "null"/"undefined", which the backend parses as false = delete the mapper.)
+    return axiosAuth.put(`/vaults/${vault.id}`, vault, { params: { aws, minio } })
+    // \ end katta modification
       .then(response => response.data)
       .catch((error) => rethrowAndConvertIfExpected(error, 402, 404));
   }
@@ -408,6 +524,20 @@ class VaultService {
     }, {});
     await axiosAuth.post(`/vaults/${vaultId}/access-tokens`, body)
       .catch((error) => rethrowAndConvertIfExpected(error, 402, 403, 404, 409));
+  }
+
+  /**
+   * Grants access via the automatic access grant flow. Recorded in the audit log with the automatic flag set. Callable
+   * by any vault member (not just owners); the backend only accepts tokens for users already awaiting an access grant
+   * on this vault. Used by the automatic access grant agent; manual grants by owners should use {@link grantAccess}.
+   */
+  public async autoGrantAccess(vaultId: string, ...grants: AccessGrant[]) {
+    const body = grants.reduce<Record<string, string>>((accumulator, curr) => {
+      accumulator[curr.userId] = curr.token;
+      return accumulator;
+    }, {});
+    await axiosAuth.post(`/vaults/${vaultId}/access-tokens/auto`, body)
+      .catch((error) => rethrowAndConvertIfExpected(error, 400, 403, 404));
   }
 
   public async removeAuthority(vaultId: string, authorityId: string) {
@@ -478,12 +608,14 @@ class GroupService {
   }
 
   public async createGroup(dto: CreateGroupDto, addFallbackPictures: boolean = true): Promise<GroupDto> {
-    const group = await axiosAuth.post<GroupDto>('/groups/', dto).then(response => response.data);
+    const group = await axiosAuth.post<GroupDto>('/groups/', dto).then(response => response.data)
+      .catch((error) => rethrowAndConvertIfExpected(error, 409));
     return addFallbackPictures ? fillInMissingPicture(group) : group;
   }
 
   public async updateGroup(groupId: string, dto: UpdateGroupDto, addFallbackPictures: boolean = true): Promise<GroupDto> {
-    const group = await axiosAuth.put<GroupDto>(`/groups/${groupId}`, dto).then(response => response.data).catch((error) => rethrowAndConvertIfExpected(error, 404));
+    const group = await axiosAuth.put<GroupDto>(`/groups/${groupId}`, dto).then(response => response.data)
+      .catch((error) => rethrowAndConvertIfExpected(error, 404, 409));
     return addFallbackPictures ? fillInMissingPicture(group) : group;
   }
 
@@ -514,11 +646,10 @@ class UserService {
     return axiosAuth.put('/users/me', dto);
   }
 
-  public async me(withDevices: boolean = false, withLastAccess: boolean = false, addFallbackPictures: boolean = true): Promise<UserDto> {
+  public async me(withDevices: boolean = false, addFallbackPictures: boolean = true): Promise<UserDto> {
     const user = await axiosAuth.get<UserDto>('/users/me', {
       params: {
-        withDevices: withDevices,
-        withLastAccess: withLastAccess
+        withDevices: withDevices
       }
     }).then(response => response.data);
     return addFallbackPictures ? fillInMissingPicture(user) : user;
@@ -532,7 +663,7 @@ class UserService {
   public async removeUser(userId: string): Promise<void> {
     return axiosAuth.delete(`/users/${userId}`)
       .then(() => { })
-      .catch((error) => rethrowAndConvertIfExpected(error, 404));
+      .catch((error) => rethrowAndConvertIfExpected(error, 403, 404));
   }
 
   public async resetMe(): Promise<void> {
@@ -545,7 +676,8 @@ class UserService {
   }
 
   public async createUser(dto: CreateUserDto, addFallbackPictures: boolean = true): Promise<UserDto> {
-    const user = await axiosAuth.post<UserDto>('/users/', dto).then(response => response.data);
+    const user = await axiosAuth.post<UserDto>('/users/', dto).then(response => response.data)
+      .catch((error) => rethrowAndConvertIfExpected(error, 409));
     return addFallbackPictures ? fillInMissingPicture(user) : user;
   }
 
@@ -562,11 +694,13 @@ class UserService {
   }
 
   public async setUserEnabled(userId: string, enabled: boolean): Promise<void> {
-    await axiosAuth.put(`/users/${userId}/enabled`, String(enabled), { headers: { 'Content-Type': 'text/plain' } });
+    await axiosAuth.put(`/users/${userId}/enabled`, String(enabled), { headers: { 'Content-Type': 'text/plain' } })
+      .catch((error) => rethrowAndConvertIfExpected(error, 403, 404));
   }
 
   public async updateUser(userId: string, dto: UpdateUserDto, addFallbackPictures: boolean = true): Promise<UserDto> {
-    const user = await axiosAuth.put<UserDto>(`/users/${userId}`, dto).then(response => response.data).catch((error) => rethrowAndConvertIfExpected(error, 404));
+    const user = await axiosAuth.put<UserDto>(`/users/${userId}`, dto).then(response => response.data)
+      .catch((error) => rethrowAndConvertIfExpected(error, 403, 404, 409));
     return addFallbackPictures ? fillInMissingPicture(user) : user;
   }
 
@@ -633,7 +767,8 @@ class BillingService {
   }
 
   public async setToken(token: string): Promise<void> {
-    return axiosAuth.put('/billing/token', token, { headers: { 'Content-Type': 'text/plain' } });
+    await axiosAuth.put('/billing/token', token, { headers: { 'Content-Type': 'text/plain' } })
+      .catch((error) => rethrowAndConvertIfExpected(error, 400));
   }
 
 }
@@ -642,12 +777,25 @@ class LicenseService {
 
   public async getUserInfo(): Promise<LicenseUserInfoDto> {
     return axiosAuth.get('/license/user-info').then(response => {
-      return new LicenseUserInfoDto(response.data.licensedSeats, response.data.usedSeats, response.data.expiresAt ? new Date(response.data.expiresAt) : null);
+      const expiresAt = response.data.expiresAt ? new Date(response.data.expiresAt) : undefined;
+      const gracePeriodEndsAt = response.data.gracePeriodEndsAt ? new Date(response.data.gracePeriodEndsAt) : undefined;
+      return new LicenseUserInfoDto(response.data.licensedSeats, response.data.usedSeats, expiresAt, gracePeriodEndsAt);
     });
   }
 
-  public async refresh(): Promise<void> {
-    return axiosAuth.post('/license/refresh');
+  public async installTrial(hubId: string, licenseKey: string): Promise<void> {
+    return axiosAuth.put('/license/trial', { hubId: hubId, licenseKey: licenseKey })
+      .then(() => { })
+      .catch((error) => rethrowAndConvertIfExpected(error, 409));
+  }
+
+  public async refresh(session?: string): Promise<void> {
+    if (session) {
+      const params = new URLSearchParams({ session: session });
+      return axiosAuth.post('/license/refresh', params, { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } });
+    } else {
+      return axiosAuth.post('/license/refresh');
+    }
   }
 
 }
@@ -709,6 +857,54 @@ class EmergencyAccessService {
 
 }
 
+// / start katta extension
+class StorageService {
+
+  public async put(vaultId: string, dto: StorageDto): Promise<void> {
+    return axiosAuth.put(`/storage/${vaultId}/`, dto);
+  }
+
+}
+class StorageProfileService {
+
+  public async get(archived?: boolean): Promise<StorageProfileDto[]> {
+    let query = '';
+    if (archived !== undefined){
+      query = `?archived=${archived}`;
+    }
+    return axiosAuth.get<StorageProfileDto[]>(`/storageprofile${query}`)
+      .then(response => response.data);
+  }
+
+  public async getSingle(storageprofileId: string): Promise<StorageProfileDto> {
+    return axiosAuth.get<StorageProfileDto>(`/storageprofile/${storageprofileId}`)
+      .then(response => response.data);
+  }
+
+  public async create(dto: StorageProfileDto): Promise<StorageProfileDto> {
+    return axiosAuth.post<StorageProfileDto>('/storageprofile/', dto)
+      .then(response => response.data)
+      .catch(error => rethrowAndConvertIfExpected(error, 400, 403, 409));
+  }
+
+  public async setArchived(storageprofileId: string, archived: boolean): Promise<void> {
+    const params = new URLSearchParams({ archived: String(archived) });
+    await axiosAuth.put(`/storageprofile/${storageprofileId}`, params, { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } })
+      .catch(error => rethrowAndConvertIfExpected(error, 403, 404));
+  }
+
+}
+export const axiosUnAuth = AxiosStatic.create(axiosBaseCfg);
+class ConfigService {
+
+  public async config(): Promise<ConfigDto> {
+    return axiosUnAuth.get('/config')
+      .then(response => response.data);
+  }
+
+}
+// \ end katta extension
+
 /**
  * Note: Each service can thrown an {@link UnauthorizedError} when the access token is expired!
  */
@@ -724,6 +920,12 @@ const services = {
   settings: new SettingsService(),
   groups: new GroupService(),
   emergencyAccess: new EmergencyAccessService(),
+
+  // / start katta extension
+  storage: new StorageService(),
+  storageprofiles: new StorageProfileService(),
+  config: new ConfigService(),
+  // \ end katta extension
 };
 
 export default services;
@@ -731,8 +933,10 @@ export default services;
 // #endregion Services
 // #region Error handling
 
-function convertExpectedToBackendError(status: number): BackendError {
+function convertExpectedToBackendError(status: number, errorMessage?: string): BackendError {
   switch (status) {
+    case 400:
+      return new BadRequestError(errorMessage);
     case 402:
       return new PaymentRequiredError();
     case 403:
@@ -746,20 +950,34 @@ function convertExpectedToBackendError(status: number): BackendError {
   }
 }
 
-/**
- * Rethrows the error object or, if 'error' is an response with an expected http status code, it is converted to an BackendError and then rethrown.
- * @param error A thrown object
- * @param expectedStatusCodes The expected http status codes of the backend call
- */
 export function rethrowAndConvertIfExpected(error: unknown, ...expectedStatusCodes: number[]): never {
-  if (AxiosStatic.isAxiosError(error) && error.response != null && expectedStatusCodes.includes(error.response.status)) {
-    throw convertExpectedToBackendError(error.response.status);
-  } else {
-    throw error;
+  if (AxiosStatic.isAxiosError(error) && error.response && expectedStatusCodes.includes(error.response.status)) {
+    throw convertExpectedToBackendError(error.response.status, typeof error.response.data === 'string' ? error.response.data : undefined);
   }
+  throw error;
+}
+
+export function asError(error: unknown): Error {
+  if (AxiosStatic.isAxiosError(error) && error.response) {
+    if (error.response.status === 404) {
+      return new NotFoundError();
+    }
+  }
+  if (error instanceof Error) {
+    return error;
+  }
+  return new Error('Unknown Error');
 }
 
 export class BackendError extends Error { }
+
+export class BadRequestError extends BackendError {
+
+  constructor(message?: string) {
+    super(message ?? 'Bad request');
+  }
+
+}
 
 export class UnauthorizedError extends BackendError {
 

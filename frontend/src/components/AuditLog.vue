@@ -1,6 +1,6 @@
 <template>
-  <ContentBanner v-if="cfg.entitlements.showTrialHint" type="info" :title="t('trial.enterpriseFeature.title')" class="mb-12">
-    {{ t('trial.enterpriseFeature.description') }} <!-- TODO: link to feature comparison? -->
+  <ContentBanner v-if="cfg.entitlements.showTrialHint" type="info" :title="t('trial.paidFeature.title')" class="mb-12">
+    {{ t('trial.paidFeature.description') }} <!-- TODO: link to feature comparison? -->
   </ContentBanner>
 
   <div v-if="state == State.Loading">
@@ -170,6 +170,7 @@
                   <AuditLogDetailsEmergencyAccessRecoveryCompleted v-else-if="auditEvent.type == 'EMERGENCY_ACCESS_RECOVERY_COMPLETED'" :event="auditEvent" />
                   <AuditLogDetailsEmergencyAccessRecoveryAborted v-else-if="auditEvent.type == 'EMERGENCY_ACCESS_RECOVERY_ABORTED'" :event="auditEvent" />
                   <AuditLogDetailsSettingWotUpdate v-else-if="auditEvent.type == 'SETTING_WOT_UPDATE'" :event="auditEvent" />
+                  <AuditLogDetailsSettingAutoGrantUpdate v-else-if="auditEvent.type == 'SETTING_AUTO_GRANT_UPDATE'" :event="auditEvent" />
                   <AuditLogDetailsSignedWotId v-else-if="auditEvent.type == 'SIGN_WOT_ID'" :event="auditEvent" />
                   <AuditLogDetailsUserAccountReset v-else-if="auditEvent.type == 'USER_ACCOUNT_RESET'" :event="auditEvent" />
                   <AuditLogUserKeysChange v-else-if="auditEvent.type == 'USER_KEYS_CHANGE'" :event="auditEvent" />
@@ -246,6 +247,7 @@ import AuditLogDetailsEmergencyAccessRecoveryApproved from './AuditLogDetailsEme
 import AuditLogDetailsEmergencyAccessRecoveryCompleted from './AuditLogDetailsEmergencyAccessRecoveryCompleted.vue';
 import AuditLogDetailsEmergencyAccessRecoveryAborted from './AuditLogDetailsEmergencyAccessRecoveryAborted.vue';
 import AuditLogDetailsSettingWotUpdate from './AuditLogDetailsSettingWotUpdate.vue';
+import AuditLogDetailsSettingAutoGrantUpdate from './AuditLogDetailsSettingAutoGrantUpdate.vue';
 import AuditLogDetailsSignedWotId from './AuditLogDetailsSignedWotId.vue';
 import AuditLogDetailsUserAccountReset from './AuditLogDetailsUserAccountReset.vue';
 import AuditLogDetailsVaultAccessGrant from './AuditLogDetailsVaultAccessGrant.vue';
@@ -285,12 +287,12 @@ const filterIsReset = computed(() =>
   && endDateFilter.value == endDate.value.toISOString().split('T')[0]
   && selectedEventTypes.value.length == 0
 );
-const startDateFilterIsValid = computed(() => validateDateFilterValue(startDateFilter.value) != null);
+const startDateFilterIsValid = computed(() => validateDateFilterValue(startDateFilter.value) !== undefined);
 const endDateFilterIsValid = computed(() => {
   const endDate = validateDateFilterValue(endDateFilter.value);
-  if (endDate == null) {
+  if (endDate === undefined) {
     return false;
-  } else if (endDate != null && startDateFilterIsValid.value) {
+  } else if (startDateFilterIsValid.value) {
     const startDate = new Date(startDateFilter.value);
     return startDate <= endDate;
   } else {
@@ -325,6 +327,7 @@ const eventTypeOptions = Object.fromEntries(
     EMERGENCY_ACCESS_RECOVERY_COMPLETED: t('auditLog.details.emergencyaccess.recoveryCompleted'),
     EMERGENCY_ACCESS_RECOVERY_ABORTED: t('auditLog.details.emergencyaccess.recoveryAborted'),
     SETTING_WOT_UPDATE: t('auditLog.details.setting.wot.update'),
+    SETTING_AUTO_GRANT_UPDATE: t('auditLog.details.setting.autoGrant.update'),
     SIGN_WOT_ID: t('auditLog.details.wot.signedIdentity'),
     USER_ACCOUNT_RESET: t('auditLog.details.user.account.reset'),
     USER_KEYS_CHANGE: t('auditLog.details.user.keys.change'),
@@ -421,13 +424,13 @@ function endOfDate(date: Date): Date {
   return date;
 }
 
-function validateDateFilterValue(dateFilterValue: string): Date | null {
+function validateDateFilterValue(dateFilterValue: string): Date | undefined {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(dateFilterValue)) {
-    return null;
+    return undefined;
   }
   const date = new Date(dateFilterValue);
   if (Number.isNaN(date.getTime())) {
-    return null;
+    return undefined;
   } else {
     return date;
   }

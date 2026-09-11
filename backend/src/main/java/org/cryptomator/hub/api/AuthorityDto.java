@@ -5,7 +5,23 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.cryptomator.hub.entities.Authority;
 import org.cryptomator.hub.entities.Group;
 import org.cryptomator.hub.entities.User;
+import org.eclipse.microprofile.openapi.annotations.media.DiscriminatorMapping;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.jspecify.annotations.Nullable;
 
+// / start katta extension
+// TODO review: backport @Schema upstream?
+@Schema(
+		title = "Authority",
+		oneOf = { UserDto.class, GroupDto.class, MemberDto.class },
+		discriminatorMapping = {
+				@DiscriminatorMapping( value = "USER", schema = UserDto.class ),
+				@DiscriminatorMapping( value = "GROUP", schema = GroupDto.class ),
+				@DiscriminatorMapping( value = "MEMBER", schema = MemberDto.class )
+		},
+		discriminatorProperty = "type"
+)
+// \ end katta extension
 @JsonInclude(JsonInclude.Include.NON_NULL)
 abstract sealed class AuthorityDto permits UserDto, GroupDto, MemberDto {
 
@@ -23,9 +39,9 @@ abstract sealed class AuthorityDto permits UserDto, GroupDto, MemberDto {
 	public final String name;
 
 	@JsonProperty("pictureUrl")
-	public final String pictureUrl;
+	public final @Nullable String pictureUrl;
 
-	protected AuthorityDto(String id, Type type, String name, String pictureUrl) {
+	protected AuthorityDto(String id, Type type, String name, @Nullable String pictureUrl) {
 		this.id = id;
 		this.type = type;
 		this.name = name;

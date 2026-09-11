@@ -103,7 +103,7 @@
                     </div>
 
                     <div v-else-if="!recoveryProcess">
-                      <!-- every other phase should have a non-null recovery process -->
+                      <!-- every other phase should have a recovery process -->
                       Internal error: No recovery process available. <!-- no need to localize this. -->
                     </div>
 
@@ -188,7 +188,7 @@
 
               <div class="bg-gray-50 rounded-b-lg px-4 py-3 sm:px-6 sm:flex">
                 <!-- ABORT -->
-                <template v-if="phase !== 'start' && isMeInProcessCouncil && !showSuccess">
+                <template v-if="phase !== 'start' && (isMeInProcessCouncil || isMeInCouncil) && !showSuccess">
                   <button
                     class=" text-sm text-red-600 hover:underline sm:mr-auto focus:outline-none focus:underline rounded"
                     @click.stop="requestCancel()"
@@ -309,6 +309,10 @@ const processCouncilIds = computed(() =>
 
 const isMeInProcessCouncil = computed(() =>
   processCouncilIds.value.includes(props.me.id)
+);
+
+const isMeInCouncil = computed(() =>
+  Object.keys(props.vault.emergencyKeyShares ?? {}).includes(props.me.id)
 );
 
 const canSeeApprove = computed(() =>
@@ -463,7 +467,7 @@ async function searchUsers(query: string): Promise<AuthorityDto[]> {
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 
-const abortDialog = ref<InstanceType<typeof ProcessAbortDialog> | null>(null);
+const abortDialog = ref<InstanceType<typeof ProcessAbortDialog>>();
 const wantAbort = ref(false);
 
 function requestCancel() {

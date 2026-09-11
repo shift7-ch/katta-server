@@ -94,8 +94,9 @@
       </div>
     </form>
   </div>
-
-  <div v-else-if="state == State.EnterVaultDetails">
+  <!-- // / start katta modification -->
+  <div v-else-if="state == State.EnterVaultDetails && backends.length > 0 && (selectedStorageProfile?.protocol === 'S3STATIC' || regions.length > 0)">
+    <!-- // \ end katta modification -->
     <BreadcrumbNav :crumbs="[ { label: t('vaultList.title'), to: '/app/vaults' }, { label: t('createVault.enterVaultDetails.title') } ]" />
     <VaultCreationProgress :state="State.EnterVaultDetails" :steps="getCurrentStates" class="flex justify-center mb-4" />
     <form ref="form" class="space-y-6" novalidate @submit.prevent="validateVaultDetails()">
@@ -116,9 +117,9 @@
           <div class="mt-6 px-4 space-y-6">
             <div>
               <label for="vaultName" class="block text-sm font-medium text-gray-700 text-left">{{ t('createVault.enterVaultDetails.vaultName') }}</label>
-              <input id="vaultName" v-model="vault.name" :disabled="processing" type="text" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-xs sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200" :class="{ 'invalid:border-red-300 invalid:text-red-900 focus:invalid:ring-red-500 focus:invalid:border-red-500': onCreateError instanceof FormValidationFailedError }" pattern="^(?! )([^\x5C\x2F:*?\x22<>\x7C])+(?<![ \x2E])$" required />
+              <input id="vaultName" v-model="vaultName" :disabled="processing" type="text" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-xs sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200" :class="{ 'invalid:border-red-300 invalid:text-red-900 focus:invalid:ring-red-500 focus:invalid:border-red-500': onCreateError instanceof FormValidationFailedError }" pattern="^(?! )([^\\\/:*?&quot;<>\|])+(?<![ \.])$" required />
               <p v-if="(onCreateError instanceof FormValidationFailedError)" class="text-sm text-red-900 text-left mt-2">
-                {{ t('createVault.error.illegalVaultName') }} \, /, :, *, ?, ", &lt;, >, |
+                {{ t('createVault.error.illegalVaultName') }} \, /, :, *, ?, ", &lt;, &gt;, |
               </p>
             </div>
 
@@ -127,8 +128,146 @@
                 {{ t('createVault.enterVaultDetails.vaultDescription') }}
                 <span class="text-xs text-gray-500">({{ t('common.optional') }})</span>
               </label>
-              <input id="vaultDescription" v-model="vault.description" :disabled="processing" type="text" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-xs sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200" />
+              <input id="vaultDescription" v-model="vaultDescription" :disabled="processing" type="text" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-xs sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200" :class="{ 'invalid:border-red-300 invalid:text-red-900 focus:invalid:ring-red-500 focus:invalid:border-red-500': onCreateError instanceof FormValidationFailedError }" pattern="[^*<>&quot;]*" />
+              <p v-if="(onCreateError instanceof FormValidationFailedError)" class="text-sm text-red-900 text-left mt-2">
+                {{ t('createVault.error.illegalVaultDescription') }} *, &lt;, &gt;, "
+              </p>
             </div>
+
+            <!-- / start katta extension -->
+            <div class="col-span-6 sm:col-span-3">
+              <label for="vaultName" class="block text-sm font-medium text-gray-700">{{ t('CreateVaultS3.enterVaultDetails.storage') }}</label>
+              <Listbox
+                v-model="selectedStorageProfile"
+                as="div"
+                class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200"
+                @update:model-value="value => { setRegionsOnSelectStorage(value);}"
+              >
+                <ListboxButton class="relative w-full cursor-default rounded-lg bg-white py-2 pl-3 pr-10 text-left shadow-md focus:outline-none focus-visible:border-indigo-500 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 focus-visible:ring-offset-2 focus-visible:ring-offset-orange-300 sm:text-sm">
+                  <span class="block truncate text-sm font-medium text-gray-700">{{ selectedStorageProfile ? selectedStorageProfile.name : '' }}</span>
+                  <span
+                    class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2"
+                  >
+                    <ChevronUpDownIcon
+                      class="h-5 w-5 text-gray-400"
+                      aria-hidden="true"
+                    />
+                  </span>
+                </ListboxButton>
+
+                <div class="col-span-6 sm:col-span-4">
+                  <ListboxOptions
+                    class="relative mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm"
+                  >
+                    <ListboxOption
+                      v-for="storageProfile in backends"
+                      v-slot="{ active, selected }"
+                      :key="storageProfile.name"
+                      :value="storageProfile"
+                      as="template"
+                    >
+                      <li
+                        :class="[
+                          active ? 'bg-emerald-100 text-emerald-900' : 'text-gray-900',
+                          'relative cursor-default select-none py-2 pl-10 pr-4',
+                        ]"
+                      >
+                        <span
+                          :class="[
+                            selected ? 'font-medium' : 'font-normal',
+                            'block truncate col-span-6 sm:col-span-4',
+                          ]"
+                        >{{ storageProfile.name }}</span>
+                        <span
+                          v-if="selected"
+                          class="absolute inset-y-0 left-0 flex items-center pl-3 text-amber-600"
+                        >
+                          <CheckIcon class="h-5 w-5" aria-hidden="true" />
+                        </span>
+                      </li>
+                    </ListboxOption>
+                  </ListboxOptions>
+                </div>
+              </Listbox>
+            </div>
+            <br />
+            <div v-if="selectedStorageProfile?.protocol === 'S3STS'" class="col-span-6 sm:col-span-3">
+              <label for="vaultName" class="block text-sm font-medium text-gray-700">{{ t('CreateVaultS3.enterVaultDetails.region') }}</label>
+              <Listbox v-model="selectedRegion" as="div" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200">
+                <ListboxButton class="relative w-full cursor-default rounded-lg bg-white py-2 pl-3 pr-10 text-left shadow-md focus:outline-none focus-visible:border-indigo-500 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 focus-visible:ring-offset-2 focus-visible:ring-offset-orange-300 sm:text-sm">
+                  <span class="block truncate text-sm font-medium text-gray-700">{{ selectedRegion }}</span>
+                  <span
+                    class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2"
+                  >
+                    <ChevronUpDownIcon
+                      class="h-5 w-5 text-gray-400"
+                      aria-hidden="true"
+                    />
+                  </span>
+                </ListboxButton>
+
+                <div class="col-span-6 sm:col-span-4">
+                  <ListboxOptions
+                    class="relative mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm"
+                  >
+                    <ListboxOption
+                      v-for="region in regions"
+                      v-slot="{ active, selected }"
+                      :key="region"
+                      :value="region"
+                      as="template"
+                    >
+                      <li
+                        :class="[
+                          active ? 'bg-emerald-100 text-emerald-900' : 'text-gray-900',
+                          'relative cursor-default select-none py-2 pl-10 pr-4',
+                        ]"
+                      >
+                        <span
+                          :class="[
+                            selected ? 'font-medium' : 'font-normal',
+                            'block truncate col-span-6 sm:col-span-4',
+                          ]"
+                        >{{ region }}</span>
+                        <span
+                          v-if="selected"
+                          class="absolute inset-y-0 left-0 flex items-center pl-3 text-amber-600"
+                        >
+                          <CheckIcon class="h-5 w-5" aria-hidden="true" />
+                        </span>
+                      </li>
+                    </ListboxOption>
+                  </ListboxOptions>
+                </div>
+              </Listbox>
+            </div>
+            <div v-if="selectedStorageProfile?.protocol === 'S3STATIC'" class="col-span-6 sm:col-span-4">
+              <label for="vaultAccessKeyId" class="block text-sm font-medium text-gray-700">
+                {{ t('CreateVaultS3.enterVaultDetails.vaultPermanentAccessKeyId') }}
+              </label>
+              <input id="vaultAccessKeyId" v-model="vaultAccessKeyId" :disabled="processing" type="text" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200" :class="{ 'invalid:border-red-300 invalid:text-red-900 focus:invalid:ring-red-500 focus:invalid:border-red-500': onCreateError instanceof FormValidationFailedError }" />
+            </div>
+            <div v-if="selectedStorageProfile?.protocol === 'S3STATIC'" class="col-span-6 sm:col-span-4">
+              <label for="vaultSecretKey" class="block text-sm font-medium text-gray-700">
+                {{ t('CreateVaultS3.enterVaultDetails.vaultPermanentSecretKey') }}
+              </label>
+              <input id="vaultSecretKey" v-model="vaultSecretKey" :disabled="processing" type="text" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200" :class="{ 'invalid:border-red-300 invalid:text-red-900 focus:invalid:ring-red-500 focus:invalid:border-red-500': onCreateError instanceof FormValidationFailedError }" />
+            </div>
+            <div v-if="selectedStorageProfile?.protocol === 'S3STATIC'" class="col-span-6 sm:col-span-4">
+              <label for="vaultBucketName" class="block text-sm font-medium text-gray-700">
+                {{ t('CreateVaultS3.enterVaultDetails.vaultPermanentBucketName') }}
+              </label>
+              <div class="mt-1 flex rounded-md shadow-sm">
+                <span v-if="bucketPrefix" class="inline-flex items-center rounded-l-md border border-r-0 border-gray-300 bg-gray-50 px-3 text-gray-500 sm:text-sm">{{ bucketPrefix }}</span>
+                <input id="vaultBucketName" v-model="vaultBucketName" :disabled="processing" type="text" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 disabled:bg-gray-200" :class="[bucketPrefix ? 'rounded-none rounded-r-md' : 'rounded-md', { 'invalid:border-red-300 invalid:text-red-900 focus:invalid:ring-red-500 focus:invalid:border-red-500': onCreateError instanceof FormValidationFailedError }]" required />
+              </div>
+            </div>
+            <br />
+            <div class="col-span-6 sm:col-span-3">
+              <label for="automaticAccessGrant" class="block text-sm font-medium text-gray-700">{{ t('CreateVaultS3.enterVaultDetails.automaticAccessGrant') }}</label>
+              <input id="automaticAccessGrant" v-model="automaticAccessGrant" name="automaticAccessGrant" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" />
+            </div>
+            <!-- \ end katta extension -->
           </div>
 
           <div class="bg-gray-50 mt-4 px-4 py-3 sm:px-6">
@@ -136,10 +275,21 @@
               <div class="text-sm text-red-900 text-right sm:flex-1 sm:min-w-0">
                 <template v-if="onCreateError">
                   <p v-if="(onCreateError instanceof FormValidationFailedError)">
-                    {{ t('createVault.error.formValidationFailed','') }} 
+                    {{ t('createVault.error.formValidationFailed','') }}
                   </p>
-                  <p v-if="(onRecoverError instanceof DecodeUvfRecoveryKeyError || onRecoverError instanceof DecodeVf8RecoveryKeyError)">
-                    {{ t('createVault.error.invalidRecoveryKey','') }} 
+                  <!-- // / start katta extension -->
+                  <p v-else-if="(onCreateError instanceof StorageProfileError )">
+                    {{ t('CreateVaultS3.error.invalidStorageProfileConfiguration', '') }}: {{ onCreateError.message }}
+                  </p>
+                  <template v-else-if="(onCreateError instanceof StorageBackendError)">
+                    <p>{{ onCreateError.message }}</p>
+                    <pre v-if="onCreateError.codeHint" class="mt-2 text-left text-xs text-gray-900 max-h-64 overflow-auto whitespace-pre-wrap break-words bg-white rounded p-2 ring-1 ring-inset ring-gray-200">{{ onCreateError.codeHint }}</pre>
+                  </template>
+                  <!-- // \ end katta extension -->
+                  <!-- // / start katta modification -->
+                  <p v-else-if="(onCreateError instanceof DecodeUvfRecoveryKeyError || onCreateError instanceof DecodeVf8RecoveryKeyError)">
+                    <!-- // \  end katta modification -->
+                    {{ t('createVault.error.invalidRecoveryKey','') }}
                   </p>
                   <p v-else>
                     {{ t('common.unexpectedError', [onCreateError.message]) }}
@@ -153,6 +303,68 @@
                   class="inline-flex justify-center rounded-md border border-transparent bg-primary px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-primary-d1 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-primary sm:text-sm disabled:opacity-50 disabled:hover:bg-primary disabled:cursor-not-allowed"
                 >
                   {{ t('common.next') }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <div v-else-if="state == State.DefineAutomaticAccessGrant">
+    <BreadcrumbNav :crumbs="[ { label: t('vaultList.title'), to: '/app/vaults' }, { label: t('createVault.enterVaultDetails.title') } ]" />
+    <VaultCreationProgress :state="state" :steps="getCurrentStates" class="flex justify-center mb-4" />
+    <form @submit.prevent="validateAutomaticAccessGrant()">
+      <div class="flex justify-center">
+        <div class="bg-white shadow-sm rounded-lg sm:w-full sm:max-w-lg">
+          <div class="mx-auto mt-5 flex items-center justify-center h-12 w-12 rounded-full bg-emerald-100">
+            <UserPlusIcon class="h-6 w-6 text-emerald-600" aria-hidden="true" />
+          </div>
+          <div class="mt-3 mb-3 px-4 sm:mt-5">
+            <h3 class="text-lg leading-6 font-medium text-gray-900 text-center">
+              {{ t('createVault.automaticAccessGrant.title') }}
+            </h3>
+            <p class="mt-2 text-sm text-gray-500 text-center">
+              {{ t('createVault.automaticAccessGrant.description') }}
+            </p>
+            <div class="mt-5 space-y-4 text-left">
+              <div class="flex items-center">
+                <input id="vaultAutoGrantEnabled" v-model="vaultAutoGrantEnabled" :disabled="processing" type="checkbox" class="h-4 w-4 rounded-sm border-gray-300 text-primary focus:ring-primary" />
+                <label for="vaultAutoGrantEnabled" class="ml-2 block text-sm text-gray-700">{{ t('createVault.automaticAccessGrant.enabled.label') }}</label>
+              </div>
+              <div v-if="vaultAutoGrantEnabled">
+                <label for="vaultAutoGrantTrustThreshold" class="block text-sm font-medium text-gray-700">{{ t('createVault.automaticAccessGrant.trustThreshold.label') }}</label>
+                <input id="vaultAutoGrantTrustThreshold" v-model="vaultAutoGrantTrustThreshold" :disabled="processing" type="number" min="-1" max="9" step="1" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-xs sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200" />
+                <p class="mt-1 text-xs text-gray-500">{{ t('createVault.automaticAccessGrant.trustThreshold.help') }}</p>
+                <p v-if="Number(vaultAutoGrantTrustThreshold) === -1" class="mt-1 inline-flex items-start text-xs text-yellow-700">
+                  <ExclamationTriangleIcon class="shrink-0 text-yellow-500 mr-1 h-4 w-4" aria-hidden="true" />
+                  {{ t('createVault.automaticAccessGrant.trustThreshold.disabledWarning') }}
+                </p>
+              </div>
+            </div>
+          </div>
+          <div class="bg-gray-50 mt-4 px-4 py-3 sm:px-6 rounded-b-lg">
+            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center sm:space-x-4">
+              <div class="text-sm text-red-900 sm:flex-1 sm:min-w-0">
+                <template v-if="onCreateError">
+                  <p>{{ t('common.unexpectedError', [onCreateError.message]) }}</p>
+                </template>
+              </div>
+              <div class="flex flex-col-reverse sm:flex-row-reverse sm:space-x-reverse sm:space-x-3 shrink-0 mt-4 sm:mt-0">
+                <button
+                  type="submit"
+                  :disabled="processing"
+                  class="inline-flex justify-center rounded-md border border-transparent bg-primary px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-primary-d1 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-primary sm:text-sm disabled:opacity-50 disabled:hover:bg-primary disabled:cursor-not-allowed"
+                >
+                  {{ t('common.next') }}
+                </button>
+                <button
+                  type="button"
+                  class="mt-3 sm:mt-0 inline-flex justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-base font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-primary sm:text-sm"
+                  @click="goToPreviousState()"
+                >
+                  {{ t('common.previous') }}
                 </button>
               </div>
             </div>
@@ -204,7 +416,7 @@
                 <button
                   type="button"
                   class="mt-3 sm:mt-0 inline-flex justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-base font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-primary sm:text-sm"
-                  @click="backToEnterVaultDetails()" 
+                  @click="goToPreviousState()"
                 >
                   {{ t('common.previous') }}
                 </button>
@@ -299,7 +511,7 @@
                 <button
                   type="button"
                   class="mt-3 sm:mt-0 inline-flex justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-base font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-primary sm:text-sm"
-                  @click="backToDefineEmergencyAccess()" 
+                  @click="goToPreviousState()"
                 >
                   {{ t('common.previous') }}
                 </button>
@@ -325,7 +537,9 @@
           </h3>
           <div class="mt-2">
             <p class="text-sm text-gray-500">
-              {{ t('createVault.success.description') }}
+              <!-- / start katta modification -->
+              {{ t('CreateVaultS3.success.description') }}
+              <!-- \ end katta modification -->
             </p>
           </div>
         </div>
@@ -343,6 +557,18 @@
           </p>
           <!-- TODO: not beautiful-->
         </div>
+        <!-- / start katta modification -->
+        <div class="mt-5 sm:mt-6">
+          <button type="button" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-d1 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary" @click="openBookmark()">
+            <ArrowTopRightOnSquareIcon class="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
+            {{ t('CreateVaultS3.success.open') }}
+          </button>
+          <p v-if="onOpenBookmarkError != null " class="text-sm text-red-900 mr-4">{{ t('CreateVaultS3.error.openBookmarkFailed', [onOpenBookmarkError.message]) }}</p> <!-- TODO: not beautiful-->
+        </div>
+        <div class="mt-5 sm:mt-6">
+          <p v-if="onUploadTemplateError != null " class="text-sm text-red-900 mr-4">{{ t('CreateVaultS3.error.uploadTemplateFailed') }}{{ onUploadTemplateError.message == null ? '' : ': ' + onUploadTemplateError.message }}</p> <!-- TODO: not beautiful-->
+        </div>
+        <!-- \ end katta modification -->
         <div class="mt-2">
           <router-link to="/app/vaults" class="text-sm text-gray-500">
             {{ t('createVault.success.return') }}
@@ -351,11 +577,27 @@
       </div>
     </div>
   </div>
+  <!-- // / start katta modification -->
+  <div v-else-if="state == State.EnterVaultDetails && !storageProfilesLoaded">
+    {{ t('common.loading') }}
+  </div>
+  <div v-else-if="state == State.EnterVaultDetails && onFetchError != null">
+    <BreadcrumbNav :crumbs="[ { label: t('vaultList.title'), to: '/app/vaults' }, { label: t('createVault.enterVaultDetails.title') } ]" />
+    <FetchError :error="onFetchError" :retry="fetchStorageProfiles" />
+  </div>
+  <div v-else-if="state == State.EnterVaultDetails && (backends.length == 0 || (selectedStorageProfile?.protocol === 'S3STS' && regions.length == 0))">
+    <BreadcrumbNav :crumbs="[ { label: t('vaultList.title'), to: '/app/vaults' }, { label: t('createVault.enterVaultDetails.title') } ]" />
+    <div class="mt-3 text-center">
+      <ExclamationTriangleIcon class="mx-auto h-12 w-12 text-gray-400" aria-hidden="true" />
+      <h3 class="mt-2 text-sm font-medium text-gray-900">{{ t('CreateVaultS3.error.noStorageProfileAvailable') }}</h3>
+    </div>
+  </div>
+  <!-- // \ end katta modification -->
 </template>
 
 <script setup lang="ts">
-import { ClipboardIcon, XCircleIcon, ArrowDownTrayIcon } from '@heroicons/vue/20/solid';
-import { ArrowPathIcon, ArrowUpOnSquareIcon, CheckIcon, DocumentCheckIcon, KeyIcon, PlusIcon } from '@heroicons/vue/24/outline';
+import { ClipboardIcon, XCircleIcon, ArrowDownTrayIcon, ExclamationTriangleIcon } from '@heroicons/vue/20/solid';
+import { ArrowPathIcon, ArrowUpOnSquareIcon, CheckIcon, DocumentCheckIcon, KeyIcon, PlusIcon, UserPlusIcon } from '@heroicons/vue/24/outline';
 import { saveAs } from 'file-saver';
 import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -369,11 +611,30 @@ import BreadcrumbNav from './BreadcrumbNav.vue';
 import EmergencyAccessSetup from './emergencyaccess/EmergencyAccessSetup.vue';
 import VaultCreationProgress from './VaultCreationProgress.vue';
 import { DecodeVf8RecoveryKeyError, VaultFormat8 } from '../common/vaultFormat8';
+// / start katta extension
+import FetchError from './FetchError.vue';
+import { StorageProfileDto } from '../common/backend';
+import {
+  Listbox,
+  ListboxButton,
+  ListboxOptions,
+  ListboxOption,
+} from '@headlessui/vue';
+import { ChevronUpDownIcon } from '@heroicons/vue/24/outline';
+import { ArrowTopRightOnSquareIcon } from '@heroicons/vue/24/solid';
+import { STSClient,AssumeRoleWithWebIdentityCommand } from '@aws-sdk/client-sts';
+import { S3Client, PutObjectCommand, ListObjectsV2Command, ListObjectsV2CommandOutput, GetBucketLocationCommand, S3ServiceException } from '@aws-sdk/client-s3';
+import authPromise from '../common/auth';
+import { AxiosError } from 'axios';
+import { base64urlnopad } from '@scure/base';
+import { isAwsHostname } from '../common/katta';
+// \ end katta extension
 
 enum State {
   Initial,
   EnterRecoveryKey,
   EnterVaultDetails,
+  DefineAutomaticAccessGrant,
   DefineEmergencyAccess,
   ShowRecoveryKey,
   Finished
@@ -450,6 +711,9 @@ const vault = ref<VaultDto>({
   requiredEmergencyKeyShares: 0,
   emergencyKeyShares: {}
 });
+// Per-vault override of the global "Automatic Access Grant" defaults; these values are applied when building the vault metadata payload.
+const vaultAutoGrantEnabled = ref<boolean>(false);
+const vaultAutoGrantTrustThreshold = ref<number>(0);
 const copiedRecoveryKey = ref(false);
 const debouncedCopyFinish = debounce(() => copiedRecoveryKey.value = false, 2000);
 const confirmRecoveryKey = ref(false);
@@ -466,6 +730,32 @@ const props = defineProps<{
   recover: boolean
 }>();
 
+// / start katta extension
+const selectedStorageProfile = ref<StorageProfileDto>();
+const selectedRegion = ref<string>();
+const regions = ref<string[]>([]);
+const backends = ref<StorageProfileDto[]>([]);
+const storageProfilesLoaded = ref(false);
+const onFetchError = ref<Error>();
+const vaultAccessKeyId = ref('');
+const vaultSecretKey = ref('');
+const vaultBucketName = ref('');
+// Admin-configured prefix for the selected profile (empty if none). The actual bucket name is this prefix
+// followed by the user-provided suffix, so the prefix amends (never replaces) the entered name.
+const bucketPrefix = computed(() => selectedStorageProfile.value?.bucketPrefix ?? '');
+const effectiveBucketName = computed(() => bucketPrefix.value + vaultBucketName.value);
+const automaticAccessGrant = ref<boolean>(true);
+const onOpenBookmarkError = ref<Error>();
+const onUploadTemplateError = ref<Error>();
+
+class StorageBackendError extends Error {
+
+  constructor(message: string, public codeHint?: string) {
+    super(message);
+  }
+
+}
+// \ end katta extension
 onMounted(initialize);
 const licenseStatus = ref<LicenseUserInfoDto>();
 
@@ -484,13 +774,18 @@ async function initialize() {
         recoveryKeyStr.value = await vaultFormat8.value.createRecoveryKey();
         break;
       case VaultType.UniversalVaultFormat:
-        uvfVault.value = await UniversalVaultFormat.create({ enabled: false, maxWotDepth: settings.value.wotMaxDepth });
+        uvfVault.value = await UniversalVaultFormat.create({ enabled: settings.value.enableAutomaticAccessGrant, trustThreshold: settings.value.automaticAccessGrantTrustThreshold }, { provider: '', bucket: '', nickname: '', region: '' });
         recoveryKeyStr.value = await uvfVault.value.recoveryKey.createRecoveryKey();
         break;
     }
+    vaultAutoGrantEnabled.value = settings.value.enableAutomaticAccessGrant;
+    vaultAutoGrantTrustThreshold.value = settings.value.automaticAccessGrantTrustThreshold;
     state.value = State.EnterVaultDetails;
   }
   licenseStatus.value = await backend.license.getUserInfo();
+  // / start katta extension
+  await fetchStorageProfiles();
+  // \ end katta extension
 }
 
 async function handleDragEnterAndOver (event: DragEvent){
@@ -508,25 +803,25 @@ async function handleDragLeave() {
 async function handleDrop(event: DragEvent) {
   onUploadError.value = undefined;
   isDraggingOver.value = false;
-  let file: File | null = null;
+  let file: File | undefined;
   if (event.dataTransfer?.items && event.dataTransfer.items.length >= 1) {
     //new DataTransferItemList API
     const item = event.dataTransfer.items[0];
     if (item.kind == 'file') {
-      file = item.getAsFile();
+      file = item.getAsFile() ?? undefined;
     }
   } else {
-    file = event.dataTransfer?.files[0] ?? null;
+    file = event.dataTransfer?.files[0];
   }
   validateAndSetMetadataFile(file);
 }
 
 async function handleUpload(event: Event) {
   onUploadError.value = undefined;
-  validateAndSetMetadataFile(fileUpload.value?.files?.item(0) ?? null);
+  validateAndSetMetadataFile(fileUpload.value?.files?.item(0) ?? undefined);
 }
 
-async function validateAndSetMetadataFile(file: File | null) {
+async function validateAndSetMetadataFile(file: File | undefined) {
   try {
     if (!file) {
       throw new NoFileError();
@@ -552,22 +847,16 @@ async function validateRecoveryKey() {
   await recoverVault();
 }
 
+const autoGrantOverrideAvailable = computed(() => !!settings.value?.enableAutomaticAccessGrant && !!settings.value?.allowAutomaticAccessGrantOverride);
+const emergencyAccessAvailable = computed(() => !isCommunityLicense.value && !!settings.value?.enableEmergencyAccess);
+
 const getCurrentStates = computed(() => {
-  return isCommunityLicense.value || !settings.value?.enableEmergencyAccess ? communityCreateStates : allCreateStates;
+  const steps: State[] = [State.EnterVaultDetails];
+  if (autoGrantOverrideAvailable.value) steps.push(State.DefineAutomaticAccessGrant);
+  if (emergencyAccessAvailable.value) steps.push(State.DefineEmergencyAccess);
+  steps.push(State.ShowRecoveryKey, State.Finished);
+  return steps;
 });
-
-const allCreateStates = [
-  State.EnterVaultDetails,
-  State.DefineEmergencyAccess,
-  State.ShowRecoveryKey,
-  State.Finished,
-];
-
-const communityCreateStates = [
-  State.EnterVaultDetails,
-  State.ShowRecoveryKey,
-  State.Finished,
-];
 
 async function recoverVault() {
   onRecoverError.value = undefined;
@@ -593,14 +882,161 @@ async function validateVaultDetails() {
     onCreateError.value = new FormValidationFailedError();
     return;
   }
+  // / start katta extension
+  const storageProfile = selectedStorageProfile.value;
+  if (storageProfile === undefined) {
+    onCreateError.value = new StorageProfileError(t('CreateVaultS3.error.noStorageProfileSelected'));
+    return;
+  } else if (storageProfile.protocol === 'S3STS') {
+    if (!selectedRegion.value){
+      onCreateError.value = new StorageProfileError(t('CreateVaultS3.error.noRegionSelected'));
+      return;
+    }
+  } else if (storageProfile.protocol === 'S3STATIC') {
+    if (!vaultAccessKeyId.value){
+      onCreateError.value = new StorageProfileError(t('CreateVaultS3.error.missingAccessKey'));
+      return;
+    }
+    if (!vaultSecretKey.value){
+      onCreateError.value = new StorageProfileError(t('CreateVaultS3.error.missingSecretKey'));
+      return;
+    }
+    if (!vaultBucketName.value){
+      onCreateError.value = new StorageProfileError(t('CreateVaultS3.error.missingBucket'));
+      return;
+    }
+    const endpoint = storageProfile.endpoint ?? 'https://s3.amazonaws.com';
+    if (isAwsHostname(endpointHostname(endpoint))) {
+      try {
+        const headBucketClient = new S3Client({
+          // https://github.com/aws/aws-sdk-js/issues/462 us-east-1 seems to have special behaviour
+          region: 'us-west-2', // must not be empty, despite documentation saying optional (SDK rejects before even sending out request)
+          endpoint: 'https://s3.amazonaws.com',
+          credentials: {
+            accessKeyId: vaultAccessKeyId.value,
+            secretAccessKey: vaultSecretKey.value
+          }
+        });
+
+        const command = new GetBucketLocationCommand({
+          Bucket: effectiveBucketName.value
+        });
+        try {
+          const response = await headBucketClient.send(command);
+          console.log(response);
+        }
+        catch (error) {
+          console.log(error);
+          // https://stackoverflow.com/questions/47668509/the-authorization-header-is-malformed-the-region-us-east-1-is-wrong-expectin
+          if (isS3ErrorWithRegion(error) && error.Code == 'AuthorizationHeaderMalformed' && error.Region != undefined) {
+            selectedRegion.value = error.Region;
+          }
+          else {
+            if (selectedRegion.value === undefined) { // MinIO returns undefined
+              selectedRegion.value = 'us-east-1'; // must not be empty, despite documentation saying optional (SDK rejects before even sending out request)
+            }
+          }
+        }
+        console.log(`GetBucketLocation returned region ${selectedRegion.value}`);
+
+        const client = new S3Client({
+          region: selectedRegion.value,
+          endpoint: endpoint,
+          forcePathStyle: storageProfile.pathStyleAccessEnabled,
+          credentials:{
+            accessKeyId: vaultAccessKeyId.value,
+            secretAccessKey: vaultSecretKey.value
+          }
+        });
+        // N.B. there seems to be no API to check write permissions without actually writing.
+        const commandListObjects = new ListObjectsV2Command({
+          Bucket: effectiveBucketName.value,
+          MaxKeys: 1,
+        });
+        const responseListObjects = await client.send(commandListObjects);
+        console.log(responseListObjects);
+        if (!isBucketEmpty(responseListObjects)){
+          onCreateError.value = new StorageBackendError(t('CreateVaultS3.error.bucketNotEmpty'));
+          return;
+        }
+      } catch (error) {
+        console.log(error);
+        // TODO review can we improve whether this is a CORS problem? FF message is "NetworkError when attempting to fetch resource", Safari "Load failed".
+        if (error instanceof TypeError){
+          onCreateError.value = new StorageBackendError(t('CreateVaultS3.error.invalidCORS', [error.message]), corsConfigurationHint(endpoint, effectiveBucketName.value));
+        } else {
+          console.error('Checking the bucket failed.', error);
+          onCreateError.value = new StorageBackendError(bucketAccessErrorMessage(error));
+        }
+        return;
+      }
+      console.log(`GetBucketLocation returned region ${selectedRegion.value}`);
+    }
+  } else {
+    // we assume CORS settings are set correctly by admins
+  }
+  // \ end katta extension
   if (props.recover) {
     await createVault();
   } else {
-    if (!isCommunityLicense.value && settings.value?.enableEmergencyAccess)
-      state.value = State.DefineEmergencyAccess;
-    else
-      state.value = State.ShowRecoveryKey;
+    goToNextState();
   }
+}
+
+function isS3ErrorWithRegion(error: unknown): error is { Code: string; Region: string } {
+  return (
+    error != null
+    && typeof error === 'object'
+    && 'Code' in error
+    && 'Region' in error
+  );
+}
+
+// / start katta extension
+function bucketAccessErrorMessage(error: unknown): string {
+  // The AWS SDK exposes the S3 error code as the exception's name, for both modeled and unmodeled errors.
+  switch (error instanceof S3ServiceException ? error.name : undefined) {
+    case 'InvalidAccessKeyId':
+      return t('CreateVaultS3.error.invalidAccessKeyId');
+    case 'SignatureDoesNotMatch':
+      return t('CreateVaultS3.error.signatureDoesNotMatch');
+    case 'NoSuchBucket':
+      return t('CreateVaultS3.error.noSuchBucket');
+    case 'AccessDenied':
+      return t('CreateVaultS3.error.accessDenied');
+    default:
+      return t('CreateVaultS3.error.bucketAccessFailed', [error instanceof Error ? error.message : String(error)]);
+  }
+}
+
+// KeyCount is optional and omitted by some S3-compatible backends, so Contents is the primary signal.
+// KeyCount is still checked so a response asserting a non-zero count is never treated as an empty bucket.
+function isBucketEmpty(response: ListObjectsV2CommandOutput): boolean {
+  return (response.Contents?.length ?? 0) === 0 && (response.KeyCount ?? 0) === 0;
+}
+
+function corsConfigurationHint(endpoint: string, bucket: string): string {
+  // S3 matches AllowedOrigins against the browser's Origin header, which carries no path.
+  return `aws s3api put-bucket-cors --endpoint-url ${endpoint} --bucket ${bucket} --cors-configuration file://cors.json
+
+cors.json:
+{
+  "CORSRules": [
+    {
+      "AllowedHeaders": ["*"],
+      "AllowedMethods": ["GET", "PUT"],
+      "AllowedOrigins": ["${location.origin}"],
+      "ExposeHeaders": ["ETag"],
+      "MaxAgeSeconds": 3600
+    }
+  ]
+}`;
+}
+// \ end katta extension
+
+function validateAutomaticAccessGrant() {
+  onCreateError.value = undefined;
+  goToNextState();
 }
 
 async function validateVaultEmergencyAccess() {
@@ -609,7 +1045,7 @@ async function validateVaultEmergencyAccess() {
     onCreateError.value = new Error('Invalid state.');
     return;
   }
-  
+
   processing.value = true;
   try {
     let recoveryKeyProducer: RecoveryKeyProducing;
@@ -644,26 +1080,47 @@ async function validateVaultEmergencyAccess() {
   }
 }
 
-function backToEnterVaultDetails(){
-  state.value = State.EnterVaultDetails;
+function goToNextState() {
+  const steps = getCurrentStates.value;
+  const idx = steps.indexOf(state.value);
+  if (idx >= 0 && idx < steps.length - 1) {
+    state.value = steps[idx + 1];
+  }
 }
 
-function backToDefineEmergencyAccess(){
-  if (isCommunityLicense.value || !settings.value?.enableEmergencyAccess)
-    state.value = State.EnterVaultDetails;
-  else
-    state.value = State.DefineEmergencyAccess;
+function goToPreviousState() {
+  const steps = getCurrentStates.value;
+  const idx = steps.indexOf(state.value);
+  if (idx > 0) {
+    state.value = steps[idx - 1];
+  }
 }
 
 async function createVault() {
   onCreateError.value = undefined;
   try {
     processing.value = true;
+    // / start katta modification
+    // Upstream passes vaultName/vaultDescription straight to createOrUpdateVault; our DTO-based call sends the
+    // vault object, so the form refs must be copied into it before it is used (metadata nickname, template zip name, PUT body).
+    vault.value.name = vaultName.value.trim();
+    vault.value.description = vaultDescription.value?.trim();
+    // \ end katta modification
     const owner = await userdata.me;
     if (!owner.setupCode) {
       throw new Error('User not set up');
     }
     const ownerGrant: AccessGrant = { userId: owner.id, token: '' };
+
+    // / start katta extension
+    // Region is user-selected only for S3STS profiles; a static profile — especially a non-AWS/MinIO
+    // endpoint that never runs the GetBucketLocation lookup — may carry none, so default it here before
+    // the region guards below would otherwise reject it as "Invalid state" despite passing validation.
+    if (selectedStorageProfile.value?.protocol === 'S3STATIC' && !selectedRegion.value) {
+      selectedRegion.value = 'us-east-1';
+    }
+    // \ end katta extension
+
     switch (vaultType.value) {
       case VaultType.VaultFormat8: {
         if (!vaultFormat8.value) {
@@ -676,19 +1133,181 @@ async function createVault() {
         if (!uvfVault.value) {
           throw new Error('Invalid state');
         }
+        // / start katta extension
+        if (!uvfVault.value) {
+          throw new Error('Invalid state');
+        }
+        const storageProfile = selectedStorageProfile.value;
+        if (storageProfile === undefined) {
+          throw new Error('Invalid state');
+        }
+        if (storageProfile.protocol === 'S3STS' && !selectedRegion.value) {
+          throw new Error('Invalid state');
+        }
+
+        uvfVault.value.metadata.backend.provider = storageProfile.id;
+        uvfVault.value.metadata.backend.nickname = vault.value.name;
+        // S3STATIC has no region on the profile; fall back to us-east-1 (AWS SDK rejects empty).
+        uvfVault.value.metadata.backend.region = selectedRegion.value ?? 'us-east-1';
+        uvfVault.value.metadata.automaticAccessGrant.enabled = automaticAccessGrant.value;
+        if (storageProfile.protocol === 'S3STS') {
+          uvfVault.value.metadata.backend.bucket = storageProfile.bucketPrefix + vault.value.id;
+        } else if (storageProfile.protocol === 'S3STATIC') {
+          uvfVault.value.metadata.backend.username = vaultAccessKeyId.value;
+          uvfVault.value.metadata.backend.password = vaultSecretKey.value;
+          uvfVault.value.metadata.backend.bucket = vaultBucketName.value;
+        } else {
+          throw new Error('Unsupported backend protocol');
+        }
+        // \ end katta extension
+
         ownerGrant.token = await uvfVault.value.encryptForUser(await userdata.ecdhPublicKey, true);
+        if (!props.recover) {
+          // Apply the (possibly per-vault-overridden) automatic access grant policy now that the override step is done.
+          // On recovery the existing vault's policy must be preserved, so we leave the recovered metadata untouched.
+          uvfVault.value.metadata.automaticAccessGrant = { enabled: vaultAutoGrantEnabled.value, trustThreshold: Number(vaultAutoGrantTrustThreshold.value) };
+        }
         const recoveryPublicKey = await uvfVault.value.recoveryKey.serializePublicKey();
         vault.value.uvfMetadataFile = await uvfVault.value.createMetadataFile(absBackendBaseURL, vault.value);
         vault.value.uvfKeySet = `{"keys": [${recoveryPublicKey}]}`;
         break;
       }
     }
-    await backend.vaults.createOrUpdateVault(vault.value);
+    // / start katta extension
+    if (!uvfVault.value) {
+      throw new Error('Invalid state');
+    }
+    const storageProfile = selectedStorageProfile.value;
+    if (storageProfile === undefined) {
+      throw new Error('Invalid state');
+    }
+    // Decision 2024-02-01 upload vault template/create bucket before creating vault in hub and uploading JWE. This is the most delicate operation. No further rollback for now.
+    if (storageProfile.protocol === 'S3STATIC'){
+      await uploadVaultTemplate();
+    } else if (storageProfile.protocol === 'S3STS') {
+      if (!selectedRegion.value) {
+        throw new Error('Invalid state');
+      }
+      // N.B. the access tokens for cryptomator and cryptomator hub clients do only have realm roles added to them, but not client roles.
+      //      We use client roles for vaults shared with a user. So this setup prevents access tokens from growing with new vaults.
+      const token = await authPromise.then(auth => auth.bearerToken());
+
+      // https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/clients/client-sts/classes/stsclient.html
+
+      const stsClient = new STSClient({
+        region: selectedRegion.value,
+        endpoint: storageProfile.stsEndpoint
+      });
+
+      // https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/clients/client-sts/classes/assumerolewithwebidentitycommand.html
+      // https://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRoleWithWebIdentity.html
+      // N.B. almost zero trust: add inline policy to pass only credentials allowing for creating the specified bucket in the backend
+      const assumeRoleWithWebIdentityArgs = {
+        // Required. The OAuth 2.0 access token or OpenID Connect ID token that is provided by the
+        // identity provider.
+        WebIdentityToken: token,
+        RoleSessionName: vault.value.id,
+        // Valid Range: Minimum value of 900. Maximum value of 43200.
+        DurationSeconds: 900,
+        Policy: `{
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Action": [
+                "s3:CreateBucket",
+                "s3:GetBucketPolicy"
+              ],
+              "Resource": "arn:aws:s3:::{}"
+            },
+            {
+              "Effect": "Allow",
+              "Action": [
+                "s3:PutObject"
+              ],
+              "Resource": [
+                "arn:aws:s3:::{}/*.uvf",
+                "arn:aws:s3:::{}/*/"
+              ]
+            }
+          ]
+        }`.replaceAll('{}', uvfVault.value.metadata.backend.bucket),
+        // Required. ARN of the role that the caller is assuming.
+        RoleArn: storageProfile.stsRoleCreateBucketHub
+      };
+
+      const { Credentials } = await stsClient.send(new AssumeRoleWithWebIdentityCommand(assumeRoleWithWebIdentityArgs));
+
+      if (!Credentials) {
+        throw new Error('Invalid state: Could not assume role with web identity.');
+      }
+      if (!Credentials.AccessKeyId) {
+        throw new Error('Invalid state: Missing AccessKeyId.');
+      }
+      if (!Credentials.SecretAccessKey) {
+        throw new Error('Invalid state: Missing SecretAccessKey.');
+      }
+      if (!Credentials.SessionToken) {
+        throw new Error('Invalid state: Missing SessionToken.');
+      }
+
+      const rootDirId = await uvfVault.value.computeRootDirId();
+      const rootDirHash = await uvfVault.value.computeRootDirIdHash(rootDirId);
+      if (!rootDirHash) {
+        throw new Error('Invalid state: rootDirHash missing.');
+      }
+      if (!vault.value?.uvfMetadataFile) {
+        throw new Error('Invalid state: uvfMetadataFile missing.');
+      }
+      const dirFile = await uvfVault.value.encryptFile(rootDirId, uvfVault.value.metadata.initialSeedId);
+      await backend.storage.put(vault.value.id, {
+        vaultId: vault.value.id,
+        storageConfigId: storageProfile.id,
+        vaultUvf: vault.value.uvfMetadataFile,
+        dirUvf: base64urlnopad.encode(dirFile),
+        rootDirHash: rootDirHash,
+        // https://github.com/awslabs/smithy-typescript/blob/697310da9aec949034f92598f5cefc2cc162ef4d/packages/types/src/identity/awsCredentialIdentity.ts#L24
+        awsAccessKey: Credentials.AccessKeyId,
+        awsSecretKey: Credentials.SecretAccessKey,
+        sessionToken: Credentials.SessionToken,
+        region: selectedRegion.value
+
+      });
+    }
+    // \ end katta extension
+    const hostname = endpointHostname(storageProfile.endpoint);
+    const minio = (storageProfile.protocol === 'S3STS') && hostname !== undefined && !isAwsHostname(hostname);
+    const aws = (storageProfile.protocol === 'S3STS') && (hostname === undefined || isAwsHostname(hostname));
+
+    await backend.vaults.createOrUpdateVault(vault.value, aws, minio);
     await backend.vaults.grantAccess(vault.value.id, ownerGrant);
     state.value = State.Finished;
   } catch (error) {
     console.error('Creating vault failed.', error);
-    onCreateError.value = error instanceof Error ? error : new Error('Unknown reason');
+
+    // / start katta extension
+    if (typeof(error) === 'string'){
+      onCreateError.value = new Error(error);
+    } else if ((error instanceof AxiosError)){
+      var msg = error.message;
+      if (error.response?.statusText){
+        msg += ` (${error.response?.statusText}).`;
+      } else {
+        msg += '.';
+      }
+      if (error.response?.status === 409){
+        msg += ` Details: Bucket ${uvfVault.value?.metadata.backend.bucket} already exists or no permission to list.`;
+      } else if (error.response?.data.details){
+        msg += ` Details: ${error.response.data.details}.`;
+      }
+      onCreateError.value = new Error(msg);
+    }
+    else if (error instanceof Error){
+      onCreateError.value = error;
+    } else {
+      onCreateError.value = new Error('Unknown reason');
+    }
+    // \ end katta extension
   } finally {
     processing.value = false;
   }
@@ -718,4 +1337,124 @@ async function downloadVaultTemplate() {
     onDownloadTemplateError.value = error instanceof Error ? error : new Error('Unknown reason');
   }
 }
+
+// / start katta extension
+import { openInKatta } from '../common/deeplink';
+function openBookmark() {
+  onOpenBookmarkError.value = undefined;
+  try {
+    openInKatta();
+  } catch (error) {
+    console.error('Opening bookmark from browser failed.', error);
+    onOpenBookmarkError.value = error instanceof Error ? error : new Error('Unknown Error');
+  }
+}
+
+async function fetchStorageProfiles() {
+  onFetchError.value = undefined;
+  storageProfilesLoaded.value = false;
+  try {
+    backends.value = await backend.storageprofiles.get(false);
+    if (backends.value.length > 0) {
+      selectedStorageProfile.value = backends.value[0];
+      setRegionsOnSelectStorage(selectedStorageProfile.value);
+    }
+  } catch (error) {
+    console.error('Retrieving storage profiles failed.', error);
+    onFetchError.value = error instanceof Error ? error : new Error('Unknown Error');
+  } finally {
+    storageProfilesLoaded.value = true;
+  }
+}
+
+function setRegionsOnSelectStorage(storage: StorageProfileDto) {
+  if (storage.protocol === 'S3STS') {
+    console.log('selected storage ' + storage.name);
+    regions.value = storage.regions;
+    console.log('   available regions: ' + storage.regions);
+    selectedRegion.value = storage.region;
+    console.log('   default region: ' + storage.region);
+  }
+}
+
+function endpointHostname(endpoint: undefined): undefined;
+function endpointHostname(endpoint: string): string;
+function endpointHostname(endpoint: string | undefined): string | undefined;
+function endpointHostname(endpoint: string | undefined): string | undefined {
+  if (endpoint === undefined) {
+    return undefined;
+  } else {
+    return new URL(endpoint).hostname;
+  }
+}
+
+async function uploadVaultTemplate() {
+  onUploadTemplateError.value = undefined;
+  try {
+    const storageProfile = selectedStorageProfile.value;
+    if (storageProfile === undefined) {
+      throw new Error('Invalid state.');
+    }
+    const client = new S3Client({
+      // AWS SDK requires a non-empty region even when an explicit endpoint is set; non-AWS
+      // providers (Scaleway, MinIO) typically ignore it. Default to us-east-1 if unknown.
+      region: selectedRegion.value ?? 'us-east-1',
+      endpoint: storageProfile.endpoint,
+      forcePathStyle: storageProfile.pathStyleAccessEnabled,
+      credentials:{
+        accessKeyId: vaultAccessKeyId.value,
+        secretAccessKey: vaultSecretKey.value
+      }
+    });
+    const commandListObjects = new ListObjectsV2Command({
+      Bucket: effectiveBucketName.value,
+      MaxKeys: 1,
+    });
+    const responseListObjects = await client.send(commandListObjects);
+    console.log(responseListObjects);
+    if (!isBucketEmpty(responseListObjects)){
+      throw new Error(t('CreateVaultS3.error.bucketNotEmpty'));
+    }
+    if (!uvfVault.value){
+      throw new Error('Invalid state');
+    }
+
+    const rootDirHash = await uvfVault.value.computeRootDirIdHash(await uvfVault.value.computeRootDirId());
+    console.log(rootDirHash);
+
+    if (!rootDirHash) {
+      throw new Error('Invalid state: rootDirHash missing.');
+    }
+
+    const commandPutVaultCryptomator = new PutObjectCommand({
+      Bucket: effectiveBucketName.value,
+      Key: 'vault.uvf',
+      Body: vault.value.uvfMetadataFile
+    });
+    console.log(commandPutVaultCryptomator);
+    const responsePutVaultCryptomator = await client.send(commandPutVaultCryptomator);
+    console.log(responsePutVaultCryptomator);
+
+    const commandPutDFolder = new PutObjectCommand({
+      Bucket: effectiveBucketName.value,
+      Key: `d/${rootDirHash.substring(0, 2)}/${rootDirHash.substring(2)}/`,
+      Body: '',
+    });
+    console.log(commandPutDFolder);
+    const responsePutDFolder = await client.send(commandPutDFolder);
+    console.log(responsePutDFolder);
+  } catch (error) {
+    console.error('Uploading vault template failed.', error);
+    onUploadTemplateError.value = error instanceof Error ? error : new Error('Unknown reason');
+  }
+}
+class StorageProfileError extends Error {
+
+  constructor(s: string) {
+    super(s);
+  }
+
+}
+// \ end katta extension
+
 </script>

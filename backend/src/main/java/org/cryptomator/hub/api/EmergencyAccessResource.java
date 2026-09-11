@@ -20,12 +20,10 @@ import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.cryptomator.hub.entities.EmergencyRecoveryProcess;
 import org.cryptomator.hub.entities.RecoveredEmergencyKeyShares;
-import org.cryptomator.hub.entities.Vault;
 import org.cryptomator.hub.entities.events.EventLogger;
 import org.cryptomator.hub.util.RawJson;
 import org.cryptomator.hub.validation.ValidJWE;
@@ -33,6 +31,7 @@ import org.cryptomator.hub.validation.ValidJWS;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.Map;
@@ -42,23 +41,20 @@ import java.util.stream.Collectors;
 @Path("/emergency-access")
 public class EmergencyAccessResource {
 
-	@Inject
-	EmergencyRecoveryProcess.Repository recoverProcessRepo;
+	private final EmergencyRecoveryProcess.Repository recoverProcessRepo;
+	private final RecoveredEmergencyKeyShares.Repository recoveredKeySharesRepo;
+	private final JsonWebToken jwt;
+	private final EventLogger eventLogger;
+	private final HttpServerRequest request; // @RequestScoped bean, injected as a client proxy resolving against the current request
 
 	@Inject
-	RecoveredEmergencyKeyShares.Repository recoveredKeySharesRepo;
-
-	@Inject
-	Vault.Repository vaultRepo;
-
-	@Inject
-	JsonWebToken jwt;
-
-	@Context
-	HttpServerRequest request;
-
-	@Inject
-	EventLogger eventLogger;
+	EmergencyAccessResource(EmergencyRecoveryProcess.Repository recoverProcessRepo, RecoveredEmergencyKeyShares.Repository recoveredKeySharesRepo, JsonWebToken jwt, EventLogger eventLogger, HttpServerRequest request) {
+		this.recoverProcessRepo = recoverProcessRepo;
+		this.recoveredKeySharesRepo = recoveredKeySharesRepo;
+		this.jwt = jwt;
+		this.eventLogger = eventLogger;
+		this.request = request;
+	}
 
 	@PUT
 	@Path("/{processId}")
@@ -136,8 +132,8 @@ public class EmergencyAccessResource {
 	@Path("/{processId}/complete")
 	@RolesAllowed("user")
 	@Operation(summary = "completes an existing recovery process")
-	@APIResponse(responseCode = "204")
-	@APIResponse(responseCode = "404")
+	@APIResponse(responseCode = "204", description = "existing recovery process completed")
+	@APIResponse(responseCode = "404", description = "existing recovery process not found")
 	@Transactional
 	public Response complete(@PathParam("processId") UUID processId) {
 		var currentUserId = jwt.getSubject();
@@ -154,8 +150,8 @@ public class EmergencyAccessResource {
 	@Path("/{processId}/abort")
 	@RolesAllowed("user")
 	@Operation(summary = "aborts an existing recovery process")
-	@APIResponse(responseCode = "204")
-	@APIResponse(responseCode = "404")
+	@APIResponse(responseCode = "204", description = "existing recovery process aborted")
+	@APIResponse(responseCode = "404", description = "existing recovery process not found")
 	@Transactional
 	public Response abort(@PathParam("processId") UUID processId) {
 		var currentUserId = jwt.getSubject();
@@ -195,7 +191,7 @@ public class EmergencyAccessResource {
 			@JsonProperty("id") @NotNull UUID id,
 			@JsonProperty("vaultId") @NotNull UUID vaultId,
 			@JsonProperty("type") @NotNull EmergencyRecoveryProcess.Type type,
-			@JsonProperty("details") @RawJson String details,
+			@JsonProperty("details") @RawJson @Nullable String details,
 			@JsonProperty("requiredKeyShares") @Min(2) int requiredKeyShares,
 			@JsonProperty("processPublicKey") @NotNull String processPublicKey,
 			@JsonProperty("recoveredKeyShares") @NotEmpty Map<String, RecoveredKeyShareDto> recoveredKeyShares) {
@@ -216,7 +212,7 @@ public class EmergencyAccessResource {
 
 	@JsonInclude(JsonInclude.Include.NON_NULL)
 	public record RecoveredKeyShareDto(@JsonProperty("processPrivateKey") @ValidJWE String processPrivateKey, @JsonProperty("unrecoveredKeyShare") @ValidJWE String unrecoveredKeyShare,
-									   @JsonProperty("recoveredKeyShare") @ValidJWE String recoveredKeyShare, @JsonProperty("signedProcessInfo") @ValidJWS String signedProcessInfo) {
+									   @JsonProperty("recoveredKeyShare") @ValidJWE @Nullable String recoveredKeyShare, @JsonProperty("signedProcessInfo") @ValidJWS @Nullable String signedProcessInfo) {
 
 		public static RecoveredKeyShareDto fromEntity(RecoveredEmergencyKeyShares entity) {
 			return new RecoveredKeyShareDto(entity.getProcessPrivateKey(), entity.getUnrecoveredKeyShare(), entity.getRecoveredKeyShare(), entity.getSignedProcessInfo());

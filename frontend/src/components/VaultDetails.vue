@@ -18,6 +18,10 @@
       </div>
     </div>
 
+    <!-- / start katta extension -->
+    <p v-if="showVaultIDs && (vault.id.length > 0)" class="truncate text-sm text-gray-500 mt-2">{{ vault.id }}</p>
+    <!-- \ end katta extension -->
+
     <div>
       <h3 class="font-medium text-gray-900">{{ t('vaultDetails.description.header') }}</h3>
       <div class="mt-2 flex items-center justify-between">
@@ -164,9 +168,13 @@
       <!-- vault is archived -->
       <div v-else-if="vault.archived" class="mt-2 flex flex-col gap-2">
         <!-- downloadTemplate button -->
+        <!-- / start katta modification -->
+        <!--
         <button v-if="vaultRole == 'OWNER'" type="button" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-xs text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-primary" @click="showDownloadVaultTemplateDialog()">
           {{ t('vaultDetails.actions.downloadVaultTemplate') }}
         </button>
+        -->
+        <!-- \ end katta modification -->
         <!-- displayRecoveryKey button (Vault Format 8 only) -->
         <button v-if="vaultRole == 'OWNER' && vaultFormat8" type="button" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-xs text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-primary" @click="showDisplayRecoveryKeyDialog()">
           {{ t('vaultDetails.actions.displayRecoveryKey') }}
@@ -195,9 +203,13 @@
           {{ t('vaultDetails.actions.editVaultMetadata') }}
         </button>
         <!-- downloadTemplate button -->
+        <!-- / start katta modification -->
+        <!--
         <button v-if="vaultRole == 'OWNER'" type="button" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-xs text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-primary" @click="showDownloadVaultTemplateDialog()">
           {{ t('vaultDetails.actions.downloadVaultTemplate') }}
         </button>
+        -->
+        <!-- \ end katta modification -->
         <!-- displayRecoveryKey button -->
         <button v-if="vaultRole == 'OWNER' && (vaultFormat8 || uvfVault?.recoveryKey.privateKey)" type="button" class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-xs text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-primary" @click="showDisplayRecoveryKeyDialog()">
           {{ t('vaultDetails.actions.displayRecoveryKey') }}
@@ -257,6 +269,7 @@ import { JWT, JWTHeader } from '../common/jwt';
 import { UniversalVaultFormat } from '../common/universalVaultFormat';
 import userdata from '../common/userdata';
 import { VaultFormat8 } from '../common/vaultFormat8';
+import { unwrapVaultKeys } from '../common/vaultKeys';
 import ArchiveVaultDialog from './ArchiveVaultDialog.vue';
 import ClaimVaultOwnershipDialog from './ClaimVaultOwnershipDialog.vue';
 import DisplayRecoveryKeyDialog from './DisplayRecoveryKeyDialog.vue';
@@ -268,6 +281,10 @@ import RecoverVaultDialog from './RecoverVaultDialog.vue';
 import SearchInputGroup from './SearchInputGroup.vue';
 import TrustDetails from './TrustDetails.vue';
 import GrantEmergencyAccessDialog from './emergencyaccess/GrantEmergencyAccessDialog.vue';
+
+// / start katta extension
+import { showVaultIDs } from '../common/settings';
+// \ end katta extension
 
 const { t, d } = useI18n({ useScope: 'global' });
 
@@ -321,7 +338,7 @@ const grantEmergencyAccessDialog = ref<typeof GrantEmergencyAccessDialog>();
 const vaultRecoveryRequired = ref<boolean>(false);
 
 const isLegacyVault = computed(() => vault.value?.authPublicKey !== undefined);
-const licenseViolated = computed(() => license.value?.isExpired() || license.value?.isExceeded());
+const licenseViolated = computed(() => license.value?.isViolated() ?? false);
 
 const emergencyKeyShareAuthorities = ref<Record<string, AuthorityDto>>({});
 
@@ -364,12 +381,11 @@ async function fetchOwnerData() {
     await refreshTrusts();
     membersRequiringAccessGrant.value = await backend.vaults.getUsersRequiringAccessGrant(props.vaultId);
     vaultRecoveryRequired.value = false;
-    const deviceId = await (await userdata.browserKeys)?.id();
-    const accessToken = await backend.vaults.accessToken(props.vaultId, deviceId, true);
-    if (vault.value.uvfMetadataFile) {
-      uvfVault.value = await loadUvfMetadata(accessToken);
-    } else {
-      vaultFormat8.value = await loadVaultFormat8Keys(accessToken);
+    const vaultKeys = await unwrapVaultKeys(vault.value);
+    if (vaultKeys instanceof UniversalVaultFormat) {
+      uvfVault.value = vaultKeys;
+    } else if (vaultKeys instanceof VaultFormat8) {
+      vaultFormat8.value = vaultKeys;
     }
   } catch (error) {
     if (error instanceof ForbiddenError) {
@@ -397,19 +413,6 @@ const councilMemberCount = computed(() =>
 const requiredGreaterThanMembers = computed(() =>
   (vault.value?.requiredEmergencyKeyShares ?? 0) > councilMemberCount.value
 );
-
-async function loadVaultFormat8Keys(vaultKeyJwe: string): Promise<VaultFormat8> {
-  const userKeys = await userdata.decryptUserKeysWithBrowser();
-  return VaultFormat8.decryptWithUserKey(vaultKeyJwe, userKeys);
-}
-
-async function loadUvfMetadata(accessToken: string): Promise<UniversalVaultFormat> {
-  if (!vault.value || !vault.value.uvfMetadataFile) {
-    throw new Error('Vault not initialized.');
-  }
-  const userKeys = await userdata.decryptUserKeysWithBrowser();
-  return UniversalVaultFormat.decrypt(vault.value, accessToken, userKeys);
-}
 
 async function provedOwnership(keys: VaultFormat8, ownerKeyPair: CryptoKeyPair) {
   if (!me.value) {
@@ -504,10 +507,12 @@ function showEditVaultMetadataDialog() {
   nextTick(() => editVaultMetadataDialog.value?.show());
 }
 
-function showDownloadVaultTemplateDialog() {
-  downloadingVaultTemplate.value = true;
-  nextTick(() => downloadVaultTemplateDialog.value?.show());
-}
+// / start katta modification
+//function showDownloadVaultTemplateDialog() {
+//  downloadingVaultTemplate.value = true;
+//  nextTick(() => downloadVaultTemplateDialog.value?.show());
+//}
+// \ end katta modification -->
 
 function showDisplayRecoveryKeyDialog() {
   displayingRecoveryKey.value = true;

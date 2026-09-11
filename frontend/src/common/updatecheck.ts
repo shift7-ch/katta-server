@@ -13,11 +13,11 @@ class UpdatesService {
     const config = {
       headers: {
         'Content-Type': 'application/json',
-        'Cryptomator-Hub-Version': localVersion,
-        'Cryptomator-Hub-Instance': 'TODO' //for future uses
+        'Katta-Version': localVersion,
+        'Katta-Instance': 'TODO' //for future uses
       }
     };
-    return axios.get('https://api.cryptomator.org/hub/latest-version.json', config)
+    return axios.get('https://api.katta.cloud/server/latest-version.json', config)
       .then(response => response.data)
       .catch(error => {
         console.error(error);

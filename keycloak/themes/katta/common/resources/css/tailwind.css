@@ -1,0 +1,104 @@
+@import 'tailwindcss';
+
+@plugin '@tailwindcss/forms';
+
+@source '../../../login/theme.properties';
+
+@theme {
+  --font-*: initial;
+  --font-headline: 'Roboto Slab', ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif;
+  --font-body: 'Open Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+
+  --color-current: currentColor;
+  --color-primary: oklch(53.3% 0.094 282.3);
+  --color-primary-light: oklch(60.5% 0.083 281.8);
+
+  --background-image-paper: url('../img/bg-paper.png');
+  --background-image-logo: url('../img/logo.png');
+}
+
+/*
+  The default border color has changed to `currentColor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentColor);
+  }
+}
+
+@layer base {
+  a:not([type='button']) {
+    @apply text-primary;
+  }
+  a:not([type='button']):hover {
+    @apply underline;
+  }
+  hr {
+    @apply my-6;
+  }
+  ol {
+    @apply list-decimal pl-5 mb-6;
+  }
+  ol > li {
+    @apply text-sm font-medium text-gray-700;
+  }
+  ol > li:not(:last-child) {
+    @apply mb-2;
+  }
+  li > *:not(:last-child) {
+    @apply mb-2;
+  }
+  li > br {
+    @apply hidden;
+  }
+  input[type='checkbox'] {
+    @apply h-4 w-4 rounded-sm border-gray-300 text-primary focus:ring-primary;
+  }
+  input[type='radio'] {
+    @apply h-4 w-4 border-gray-300 text-primary focus:ring-primary;
+  }
+}
+
+#kc-terms-text > p {
+  @apply mb-6;
+}
+
+#reset-login {
+  @apply font-body text-sm ml-1;
+}
+
+#reset-login > div {
+  @apply inline-block relative;
+}
+
+#reset-login > div:hover > span {
+  @apply block;
+}
+
+#reset-login > div > span {
+  @apply hidden absolute z-50;
+  @apply rounded-sm shadow-md bg-white p-2;
+  @apply transform -translate-x-1/2 left-1/2;
+  @apply whitespace-nowrap text-gray-700 text-xs;
+}
+
+#try-another-way {
+  @apply block text-center mt-3;
+}
+
+#kc-webauthn-authenticator {
+  @apply pointer-events-none;
+}
+
+#kc-webauthn-authenticator-label {
+  @apply text-gray-900;
+}

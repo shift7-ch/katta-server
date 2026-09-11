@@ -42,8 +42,8 @@
                     {{ t('common.cancel') }}
                   </button>
                 </div>
-                <p v-if="onDeleteGroupError != null" class="text-sm text-red-900 px-4 sm:px-6 text-right bg-red-50">
-                  {{ t('common.unexpectedError', [onDeleteGroupError.message]) }}
+                <p v-if="onDeleteGroupError" class="text-sm text-red-900 px-4 sm:px-6 text-right bg-red-50">
+                  {{ t('group.member.remove.error.failed') }}
                 </p>
               </form>
             </DialogPanel>
@@ -64,7 +64,7 @@ import backend, { AuthorityDto } from '../../common/backend';
 const { t } = useI18n({ useScope: 'global' });
 
 const open = ref(false);
-const onDeleteGroupError = ref<Error | null>(null);
+const onDeleteGroupError = ref<Error>();
 
 const props = defineProps<{
   member: AuthorityDto;
@@ -95,14 +95,14 @@ function show() {
 }
 
 async function removeMember() {
-  onDeleteGroupError.value = null;
+  onDeleteGroupError.value = undefined;
   try {
     await backend.groups.removeMember(props.groupId, props.member.id);
     emit('delete', props.member.id);
     open.value = false;
   } catch (error) {
     console.error('Removing member failed.', error);
-    onDeleteGroupError.value = error instanceof Error ? error : new Error('Unknown Error');
+    onDeleteGroupError.value = error instanceof Error ? error : new Error('Unknown reason');
   }
 }
 </script>

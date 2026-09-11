@@ -8,7 +8,7 @@
     </div>
   </div>
 
-  <LicenseAlert v-if="isLicenseViolated && licenseStatus" :is-admin="isAdmin" :license-status="licenseStatus" />
+  <LicenseAlert v-if="licenseStatus" :is-admin="isAdmin" :license-status="licenseStatus" />
 
   <ContentBanner v-if="anyUserHasLegacyDevices" type="warning" :title="t('legacyDeviceBanner.title')" class="mb-4">
     {{ t('legacyDeviceBanner.admin.description') }}
@@ -91,6 +91,9 @@
                 <div v-if="vault.archived" class="inline-flex items-center rounded-md bg-yellow-400/10 px-2 py-1 text-xs font-medium text-yellow-500 ring-1 ring-inset ring-yellow-400/20">{{ t('vaultList.badge.archived') }}</div>
               </div>
               <p v-if="vault.description && vault.description.length > 0" class="truncate text-sm text-gray-500 mt-2">{{ vault.description }}</p>
+              <!-- / start katta extension -->
+              <p v-if="showVaultIDs && (vault.id.length > 0)" class="truncate text-sm text-gray-500 mt-2">{{ vault.id }}</p>
+              <!-- \ end katta extension -->
             </div>
             <div v-if="ownedVaults?.some(ownedVault => ownedVault.id == vault.id) && !isCommunityLicense && settings?.enableEmergencyAccess">
               <EmergencyBadge
@@ -180,13 +183,7 @@ const canCreateVaults = ref<boolean>(false);
 const hasLegacyDevices = ref<boolean>(false);
 const anyUserHasLegacyDevices = ref<boolean>(false);
 const licenseStatus = ref<LicenseUserInfoDto>();
-const isLicenseViolated = computed(() => {
-  if (licenseStatus.value) {
-    return licenseStatus.value.isExceeded() || licenseStatus.value.isExpired();
-  } else {
-    return false;
-  }
-});
+const isLicenseViolated = computed(() => licenseStatus.value?.isViolated() ?? false);
 
 const isCommunityLicense = computed(() => {
   return !licenseStatus.value?.expiresAt;
@@ -271,4 +268,8 @@ async function onSelectedVaultUpdate(vault: VaultDto) {
 async function licenseUpdated(license: LicenseUserInfoDto) {
   licenseStatus.value = license;
 }
+
+// / start katta extension
+import { showVaultIDs } from '../common/settings';
+// \ end katta extension
 </script>

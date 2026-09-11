@@ -15,7 +15,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.cryptomator.hub.entities.EffectiveVaultAccess;
-import org.cryptomator.hub.entities.Settings;
+import org.cryptomator.hub.filters.AvailableDuringSetup;
 import org.cryptomator.hub.license.LicenseHolder;
 import org.cryptomator.hub.validation.ValidJWS;
 import org.eclipse.microprofile.openapi.annotations.Operation;
@@ -27,16 +27,19 @@ import java.time.Instant;
 @Path("/billing")
 public class BillingResource {
 
+	private final LicenseHolder licenseHolder;
+	private final EffectiveVaultAccess.Repository effectiveVaultAccessRepo;
+
 	@Inject
-	LicenseHolder licenseHolder;
-	@Inject
-	EffectiveVaultAccess.Repository effectiveVaultAccessRepo;
-	@Inject
-	Settings.Repository settingsRepo;
+	BillingResource(LicenseHolder licenseHolder, EffectiveVaultAccess.Repository effectiveVaultAccessRepo) {
+		this.licenseHolder = licenseHolder;
+		this.effectiveVaultAccessRepo = effectiveVaultAccessRepo;
+	}
 
 	@GET
 	@Path("/")
 	@RolesAllowed("admin")
+	@AvailableDuringSetup
 	@Produces(MediaType.APPLICATION_JSON)
 	@Transactional
 	@Operation(summary = "get the billing information")
@@ -52,6 +55,7 @@ public class BillingResource {
 	@PUT
 	@Path("/token")
 	@RolesAllowed("admin")
+	@AvailableDuringSetup
 	@Consumes(MediaType.TEXT_PLAIN)
 	@Operation(summary = "set the token")
 	@APIResponse(responseCode = "204", description = "token set")
@@ -62,7 +66,7 @@ public class BillingResource {
 			licenseHolder.set(token);
 			return Response.status(Response.Status.NO_CONTENT).build();
 		} catch (JWTVerificationException e) {
-			return Response.status(Response.Status.BAD_REQUEST).build();
+			return Response.status(Response.Status.BAD_REQUEST).entity(e.getMessage()).type(MediaType.TEXT_PLAIN).build();
 		}
 	}
 

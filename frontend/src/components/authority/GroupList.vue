@@ -2,7 +2,7 @@
   <div v-if="loading" class="text-center p-8 text-gray-500 text-sm">
     {{ t('common.loading') }}
   </div>
-  <div v-else-if="onFetchError == null">
+  <div v-else-if="!onFetchError">
     <div class="flex flex-col">
       <h2 class="text-2xl font-bold leading-9 text-gray-900 sm:text-3xl sm:truncate mb-4">
         {{ t('groups.title') }}
@@ -148,7 +148,7 @@
   </div>
 
   <!-- Delete Dialog -->
-  <GroupDeleteDialog v-if="deletingGroup != null" ref="deleteGroupDialog" :group="deletingGroup" @close="deletingGroup = null" @delete="onGroupDeleted" />
+  <GroupDeleteDialog v-if="deletingGroup" ref="deleteGroupDialog" :group="deletingGroup" @close="deletingGroup = undefined" @delete="onGroupDeleted" />
 </template>
 
 <script setup lang="ts">
@@ -157,7 +157,7 @@ import { EllipsisVerticalIcon } from '@heroicons/vue/20/solid';
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
-import backend, { GroupDto } from '../../common/backend';
+import backend, { asError, GroupDto } from '../../common/backend';
 import FetchError from '../FetchError.vue';
 import GroupDeleteDialog from './GroupDeleteDialog.vue';
 
@@ -168,9 +168,9 @@ const { t } = useI18n({ useScope: 'global' });
 
 const groups = ref<GroupDto[]>([]);
 const loading = ref(true);
-const onFetchError = ref<Error | null>(null);
+const onFetchError = ref<Error>();
 const deleteGroupDialog = ref<typeof GroupDeleteDialog>();
-const deletingGroup = ref<GroupDto | null>(null);
+const deletingGroup = ref<GroupDto>();
 const query = ref('');
 const currentPage = ref(0);
 const pageSize = 20;
@@ -182,7 +182,7 @@ function showDeleteGroupDialog(group: GroupDto) {
 
 function onGroupDeleted(deletedGroupId: string) {
   groups.value = groups.value.filter(g => g.id !== deletedGroupId);
-  deletingGroup.value = null;
+  deletingGroup.value = undefined;
 }
 
 function showCreateGroup() {
@@ -200,11 +200,11 @@ watch(() => route.path, (newPath) => {
 });
 
 async function fetchData() {
-  onFetchError.value = null;
+  onFetchError.value = undefined;
   try {
     groups.value = await backend.groups.listAll();
   } catch (error) {
-    onFetchError.value = error instanceof Error ? error : new Error('Unknown Error');
+    onFetchError.value = asError(error);
   } finally {
     loading.value = false;
   }

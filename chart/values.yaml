@@ -1,0 +1,252 @@
+urls:
+  hub:
+    public: ""
+  kc:
+    public: ""
+    clusterInternal: ""
+    authServerUrl: ""
+    tokenIssuer: ""
+  minio:
+    public: "" # only honored when minio.enabled=true; if blank, the console is not exposed via ingress
+  s3:
+    public: "" # only honored when minio.enabled=true; address stored in the seeded storage profile (S3 API, NOT the console)
+  billing:
+    public: ""
+
+notes:
+  useColor: true
+
+secrets:
+  # When true, all chart-managed Secrets are annotated `helm.sh/resource-policy: keep` so they survive `helm uninstall`.
+  # Convenient for development (passwords stay stable across reinstalls) but a security risk in production
+  keepOnUninstall: false
+
+ingress:
+  # supported: nginx, traefik
+  controller: ""
+  className: ""
+  annotations: {}
+  tls:
+    enabled: false
+    secretName: ""
+  # In-cluster Service of the ingress controller. The chart looks up its `Endpoints`
+  # resource at render time to discover the controller's pod IPs, which are used by
+  # the chart-managed port-translation proxy (see ingress.proxy below).
+  controllerService:
+    name: ""
+    namespace: ""
+  # Port-translation proxy. The ingress controller serves on port 80 cluster-internally,
+  # but urls.*.public often specify a non-standard port (e.g. 9090) so external clients
+  # don't need privileged ports. To make the same URL+port work inside pods, the chart
+  # creates a selectorless Service+EndpointSlice in this namespace that routes traffic
+  # from the public URL's port to the ingress controller on port 80.
+  #
+  # Auto-enabled whenever any urls.*.public uses a non-default port (≠80/443) AND the
+  # ingress controller's pod IPs are discoverable (via .Values.ingress.controllerService).
+  # In-cluster DNS for the public hostnames is handled separately by coredns.patch below.
+  # clusterIP can be pinned for reproducibility, but the chart no longer requires it: with
+  # CoreDNS rewriting `<host> → <proxy>.<ns>.svc.cluster.local`, the right IP is resolved
+  # at query time regardless of whether the Service was created seconds ago.
+  proxy:
+    clusterIP: ""
+
+# KATTA ADDITION:
+#
+# Patch the cluster's CoreDNS ConfigMap so in-cluster pods can resolve the chart's
+# public hostnames (urls.*.public) to the port-translation proxy Service. Demo-only:
+# requires cluster-admin (or scoped RBAC the chart provisions) and a cluster running
+# CoreDNS with the default `reload` plugin enabled (kind/minikube/k3d all qualify).
+# Not suitable for shared or managed production clusters where mutating kube-system
+# isn't allowed.
+#
+# When enabled, the chart adds a release-scoped `# BEGIN katta:<release>` / `# END
+# katta:<release>` block to coredns's Corefile via a post-install/post-upgrade hook
+# Job, and removes it again via a pre-delete hook Job. Each chart release manages
+# its own stanza so multiple releases in the same cluster co-exist cleanly.
+coredns:
+  patch:
+    enabled: false
+    namespace: kube-system       # where the coredns ConfigMap lives
+    image:
+      repository: alpine/k8s
+      tag: "1.31.0"              # bundles kubectl + yq + awk
+
+hub:
+  replicas: 1
+  imagePullPolicy: IfNotPresent
+  image:
+    tag: "" # defaults to chart appVersion
+  service:
+    type: ClusterIP
+    port: 8080
+    managementPort: 9000
+  resources:
+    requests:
+      cpu: 50m
+      memory: 16Mi
+    limits:
+      memory: 256Mi
+  config:
+    keycloakRealm: cryptomator
+    keycloakSyncerPeriod: 5m
+    contentSecurityPolicy: ""
+  metrics:
+    # Hub ships metrics, traces and logs via OpenTelemetry / OTLP.
+    enabled: false
+    endpoint: "https://otel-collector:443"
+    protocol: "http/protobuf"
+    # Extra resource attributes merged into the defaults (service.name, service.version).
+    # Example: { deployment.environment: production, team: platform }
+    resourceAttributes: {}
+    otlp: # Optional Basic Authentication for OTLP endpoint
+      username: ""
+      password: ""
+  oidc:
+    clientId: cryptomatorhub
+  database:
+    jdbcUrl: ""
+    name: hub
+    username: hub
+    password: ""
+  admin:
+    username: admin
+    password: ""
+    passwordTemporary: true
+  secrets:
+    create: true
+    systemClientSecret: "" # optional; auto-generated when chart manages Hub secret
+    cryptomatorvaultsClientSecret: "" # optional; auto-generated when chart manages Hub secret
+    initialId: ""
+    initialLicense: ""
+  license:
+    chain:
+      requiredCn: ""
+    managedApi:
+      username: ""
+      password: ""
+    apiUrl: ""
+
+keycloak:
+  enabled: true
+  replicas: 1
+  imagePullPolicy: IfNotPresent
+  image:
+    tag: ""
+  service:
+    type: ClusterIP
+    httpPort: 8080
+    managementPort: 9000
+  resources:
+    requests:
+      cpu: 200m
+      memory: 128Mi
+    limits:
+      memory: 640Mi
+  admin:
+    username: admin
+    password: ""
+  config:
+    proxyHeaders: xforwarded
+  database:
+    jdbcUrl: ""
+    name: keycloak
+    username: keycloak
+    password: ""
+  realmBootstrap:
+    realmId: ""
+
+postgres:
+  enabled: true
+  imagePullPolicy: IfNotPresent
+  image:
+    tag: ""
+  service:
+    type: ClusterIP
+    port: 5432
+  storage:
+    size: 10Gi
+    storageClassName: ""
+    accessMode: ReadWriteOnce
+  resources:
+    requests:
+      cpu: 200m
+      memory: 32Mi
+    limits:
+      memory: 256Mi
+  auth:
+    adminUsername: postgres
+    adminPassword: ""
+
+# KATTA ADDITION:
+#
+# Bundled MinIO (off by default). When enabled, the storageProfileSeed Job will
+# auto-register a matching S3STATIC profile in the Hub database.
+minio:
+  enabled: false
+  # Image repository is fixed (quay.io/minio/minio); the tag is shared by the MinIO
+  # StatefulSet and the storage-profile seed Job's setup container, so they always run
+  # the exact same MinIO/mc build. Defaults to a version-pinned release (not :latest).
+  image:
+    tag: ""
+  imagePullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    apiPort: 9000
+    consolePort: 9001
+  storage:
+    size: 10Gi
+    storageClassName: ""
+    accessMode: ReadWriteOnce
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+  auth:
+    rootUser: minioadmin
+    rootPassword: "" # auto-generated if blank
+  # OpenID Connect integration. When enabled, the seed Job runs `mc idp openid add`
+  # against MinIO at install time to register three named OIDC providers (one per
+  # Keycloak client) and `mc admin policy create` to install the two Katta policies.
+  #
+  # Why three providers (not one configured via MINIO_IDENTITY_OPENID_* env vars):
+  # MinIO checks JWTs with `azp == ClientID` strictly, so each Keycloak client that
+  # MinIO is supposed to accept needs its own provider with that client_id. Tokens
+  # issued for `cryptomatorhub` (SPA), `cryptomator` (desktop app), and
+  # `cryptomatorvaults` (per-vault, post-exchange) each get a matching MinIO provider.
+  openid:
+    enabled: false
+    # OIDC discovery URL MinIO uses to validate Keycloak-issued tokens. When blank,
+    # defaults to the IN-CLUSTER Keycloak Service URL — mirrors the same public/local
+    # split the Hub uses (HUB_KEYCLOAK_PUBLIC_URL vs HUB_KEYCLOAK_LOCAL_URL). With
+    # KC_HOSTNAME_BACKCHANNEL_DYNAMIC=true on Keycloak, the discovery doc fetched via
+    # the in-cluster URL still carries the public KC_HOSTNAME as `issuer` (matching
+    # the `iss` claim Keycloak puts in real tokens), while `jwks_uri` adapts to the
+    # request host so MinIO can fetch JWKS in-cluster without going through ingress.
+    configUrl: ""
+
+# KATTA ADDITION:
+#
+# Seeds an S3STATIC profile (and optionally an S3STS profile) pointing at the bundled
+# MinIO via a post-install/post-upgrade Helm hook Job. Only takes effect when
+# minio.enabled=true.
+storageProfileSeed:
+  hubReadyTimeoutSeconds: 300
+  # Profile ids are assigned by the Hub server on creation; the seed Job is idempotent
+  # by profile NAME (it skips seeding when a profile with the same name already exists).
+  static:
+    enabled: true
+    profileName: "Bundled MinIO"
+    bucketPrefix: "katta-"
+  # Additionally seed an S3STS profile that exchanges the user's Keycloak token for
+  # short-lived MinIO STS credentials via AssumeRoleWithWebIdentity. Requires
+  # minio.openid.enabled=true (MinIO has to know how to validate the JWT). The role ARN
+  # is discovered at Job runtime via `mc admin idp openid info` — no hardcoding needed.
+  sts:
+    enabled: false
+    profileName: "Bundled MinIO (STS)"
+    bucketPrefix: "katta-sts-"
+    sessionTag: "Vault" # AWS-only; MinIO ignores. Default per the DTO.
+    durationSeconds: "" # MinIO's default if blank

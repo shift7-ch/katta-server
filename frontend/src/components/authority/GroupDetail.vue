@@ -69,7 +69,7 @@ import { EllipsisVerticalIcon } from '@heroicons/vue/20/solid';
 import { nextTick, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
-import backend, { AuthorityDto, GroupDto, GroupDtoWithDetails } from '../../common/backend';
+import backend, { asError, AuthorityDto, GroupDto, GroupDtoWithDetails } from '../../common/backend';
 import BreadcrumbNav from '../BreadcrumbNav.vue';
 import FetchError from '../FetchError.vue';
 import GroupDeleteDialog from './GroupDeleteDialog.vue';
@@ -115,16 +115,16 @@ function onMembersSaved(newMembers: AuthorityDto[]) {
 }
 
 const loading = ref(true);
-const fetchError = ref<Error | null>(null);
+const fetchError = ref<Error>();
 
 async function fetchGroup() {
   loading.value = true;
-  fetchError.value = null;
+  fetchError.value = undefined;
   try {
     group.value = await backend.groups.getGroup(props.id);
   } catch (error) {
     console.error('Failed to fetch group:', error);
-    fetchError.value = error instanceof Error ? error : new Error('Unknown error');
+    fetchError.value = asError(error);
   } finally {
     loading.value = false;
   }

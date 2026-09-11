@@ -4,16 +4,23 @@
 
 UPDATE "settings"
 SET "hub_id" = '42',
-	"license_key"  = 'eyJhbGciOiJFUzUxMiJ9.eyJqdGkiOiI0MiIsImlhdCI6MTY0ODA0OTM2MCwiaXNzIjoiU2t5bWF0aWMiLCJhdWQiOiJDcnlwdG9tYXRvciBIdWIiLCJzdWIiOiJodWJAY3J5cHRvbWF0b3Iub3JnIiwic2VhdHMiOjUsImV4cCI6MjUzNDAyMjE0NDAwLCJyZWZyZXNoVXJsIjoiaHR0cDovL2xvY2FsaG9zdDo4Nzg3L2h1Yi9zdWJzY3JpcHRpb24_aHViX2lkPTQyIn0.AHPY1r-KmULaNTFTYrGUZrFZny2zouW9BcICBhs_bD_juv_evnOpbwbZAYZC7k8dx0s_94eBF82stgjW9HbBj4wnAHQohMCMK8Gq4b8TyJqBWPnk36KIK40V7qMv9hyrJG5aTfI3Q2D7fAnKCUxwO2v8t6lA4g89acJBbGipHh_2HhD7',
+	-- valid x5c-signed test license (jti 42, 5 seats, exp 3000-01-01), issued by "Hub License Issuer CA (Test)" (see %test.hub.license.chain.required-cn), rooted in the production License Root CA
+	"license_key"  = 'eyJ4NWMiOlsiTUlJQ0FUQ0NBYk9nQXdJQkFnSVVSc1ZlYUM5cDI5amhKelB4TXExSk13MVR6UWN3QlFZREsyVndNRDh4Q3pBSkJnTlZCQVlUQWtSRk1SWXdGQVlEVlFRS0RBMVRhM2x0WVhScFl5QkhiV0pJTVJnd0ZnWURWUVFEREE5TWFXTmxibk5sSUZKdmIzUWdRMEV3SGhjTk1qWXdOekE1TURnMU9USTVXaGNOTXpZd056QTJNRGcxT1RJNVdqQk1NUXN3Q1FZRFZRUUdFd0pFUlRFV01CUUdBMVVFQ2d3TlUydDViV0YwYVdNZ1IyMWlTREVsTUNNR0ExVUVBd3djU0hWaUlFeHBZMlZ1YzJVZ1NYTnpkV1Z5SUVOQklDaFVaWE4wS1RDQm16QVFCZ2NxaGtqT1BRSUJCZ1VyZ1FRQUl3T0JoZ0FFQVJOQlc5QjZIZ3EzQzRKd1FvbXNJTEhlU0lLN0c3TXBpR1M5Qm45bFluVDBEYmNBQ3RPUCtGVWFEaWhUQnZERHhaTUxxNDNjbXdIaFp2SmUwY0VVZk5iekFMZ0R6UmtneWtCWEpCNTFkcVlEYUtcL0JWMXMxVnRUY0lSa1wvOWxqdEY2a2txcE1lVWYwUDd2U0hYWGFNMlwvT3R2SmZXN2lKRXpycjN6MHRtWEg3UHpLSFRvMEl3UURBZEJnTlZIUTRFRmdRVW1idlI4KytmZ3B5OGV5SVZ6NGlcL0ljemRMd2t3SHdZRFZSMGpCQmd3Rm9BVWFFcFNIU01LMXJiQmZQR3RTVjBnR29IZ0hQY3dCUVlESzJWd0EwRUFNU3hlS2tpRHBpUkVnNmtFTkw5MUhSdUNsWHNCMWZ1MjlIYW5BYVVTSVd0Ynh3cnE5MnJPbE1BazRZejhtTEh5VzhVNTJtRllKRWZ5WkR5UXlQVDBDdz09Il0sImFsZyI6IkVTNTEyIn0.eyJhdWQiOiJDcnlwdG9tYXRvciBIdWIiLCJzdWIiOiJodWJAZXhhbXBsZS5jb20iLCJyZWZyZXNoVXJsIjoiaHR0cDpcL1wvbG9jYWxob3N0OjgwODFcL1wvaHViXC9yZWZyZXNoIiwia2lkIjoiRV9rU2xTOG5tR0wza0oxeHl6UG5TdG1fdVl1NndRX1h4VFFoN2h6T0k2USIsIm9yZy5jcnlwdG9tYXRvci5odWIuZW50aXRsZW1lbnRzIjp7InNlYXRzIjo1LCJzaG93VHJpYWxIaW50IjpmYWxzZSwiYXVkaXRMb2dSZXRlbnRpb25EYXlzIjowLCJlbWVyZ2VuY3lBY2Nlc3NFbmFibGVkIjpmYWxzZSwia2V5Y2xvYWtBY2Nlc3NFbmFibGVkIjp0cnVlfSwiaXNzIjoiaHR0cDpcL1wvbG9jYWxob3N0OjgwODFcLyIsImV4cCI6MzI1MDM2ODAwMDAsImlhdCI6MTc4MzU4ODY0NCwic2VhdHMiOjUsImp0aSI6IjQyIn0.AZrb7lULe-bvea6LyFsTq7dZZBozgXuqEnr8M5nua-3KyM6gZw_hygBVkmAZw-u4NMlG8u0GEpKlK9rmLUPOpF36AaTa3h9WCQIzmiqn30Rm_zRd9T3WrmWXjkmWKnv7YpfufZI_zT-lpcKGasGm1w3YVWu_nSa9gQd_0Pm1r3QSQWTX',
 	"default_required_emergency_key_shares" = 2,
     "default_min_members" = 3,
 	"allow_choosing_emergency_council" = FALSE,
-    "enable_emergency_access" = FALSE
+    "enable_emergency_access" = FALSE,
+	"enable_automatic_access_grant" = FALSE,
+	"automatic_access_grant_trust_threshold" = 0,
+	"allow_automatic_access_grant_override" = FALSE
 WHERE "id" = 0;
 
 INSERT INTO "authority" ("id", "type", "name")
 VALUES
 	('user1', 'USER', 'User Name 1'),
+	-- / katta start addition (ITs going through to Keycloak as well use alice user; user repo must contain the currentUser, alice in this in this case)
+	('alice', 'USER', 'Alice for ITs accessing Keycloak'),
+	-- \ katta end addition
 	('user2', 'USER', 'User Name 2'),
 	('group1', 'GROUP', 'Group Name 1'),
     ('group2', 'GROUP', 'Group Name 2');
@@ -21,6 +28,9 @@ VALUES
 INSERT INTO "user_details" ("id", "ecdh_publickey", "ecdsa_publickey", "privatekeys", "setupcode")
 VALUES
 	('user1', 'ecdh_public1', 'ecdsa_public1', 'private1', 'setup1'),
+	-- / katta start addition
+	('alice', NULL, NULL, NULL, NULL),
+	-- \ katta end addition
 	('user2', NULL, NULL, NULL, NULL);
 
 INSERT INTO "group_details" ("id")
@@ -64,17 +74,18 @@ VALUES
 	('7E57C0DE-0000-4000-8000-000100002222', 'group2', 'OWNER'),
 	('7E57C0DE-0000-4000-8000-000100002222', 'group1', 'MEMBER');
 
-INSERT INTO "device" ("id", "owner_id", "name", "type", "publickey", "creation_time", "user_privatekeys")
+INSERT INTO "device" ("id", "owner_id", "name", "type", "publickey", "creation_time", "user_privatekeys", "last_access_time", "last_ip_address")
 VALUES
-	('device1', 'user1', 'Computer 1', 'DESKTOP', 'publickey1', '2020-02-20 20:20:20', 'jwe.jwe.jwe.user1.device1'),
-	('device2', 'user2', 'Computer 2', 'DESKTOP', 'publickey2', '2020-02-20 20:20:20', 'jwe.jwe.jwe.user2.device2'),
-	('device3', 'user1', 'Computer 3', 'DESKTOP', 'publickey3', '2020-02-20 20:20:20', 'jwe.jwe.jwe.user1.device3');
+	('device1', 'user1', 'Computer 1', 'DESKTOP', 'publickey1', '2020-02-20 20:20:20', 'jwe.jwe.jwe.user1.device1', '2020-02-20T20:20:24.242Z', '1.2.3.4'),
+	('device2', 'user2', 'Computer 2', 'DESKTOP', 'publickey2', '2020-02-20 20:20:20', 'jwe.jwe.jwe.user2.device2', NULL, NULL),
+	('device3', 'user1', 'Computer 3', 'DESKTOP', 'publickey3', '2020-02-20 20:20:20', 'jwe.jwe.jwe.user1.device3', NULL, NULL);
 
 INSERT INTO "access_token" ("user_id", "vault_id", "vault_masterkey")
 VALUES
 	('user1', '7E57C0DE-0000-4000-8000-000100001111', 'jwe.jwe.jwe.vault1.user1'), -- direct access
 	('user2', '7E57C0DE-0000-4000-8000-000100001111', 'jwe.jwe.jwe.vault1.user2'), -- direct access
-	('user1', '7E57C0DE-0000-4000-8000-000100002222', 'jwe.jwe.jwe.vault2.user1'); -- access via group1
+	('user1', '7E57C0DE-0000-4000-8000-000100002222', 'jwe.jwe.jwe.vault2.user1'), -- access via group1
+	('user1', '7E57C0DE-0000-4000-8000-00010000AAAA', 'jwe.jwe.jwe.vaultAAA.user1'); -- direct access to archived vault
 
 -- DEPRECATED:
 INSERT INTO "device_legacy" ("id", "owner_id", "name", "type", "publickey", "creation_time")

@@ -4,6 +4,9 @@ import { VaultDto } from './backend';
 import { AccessTokenPayload, AccessTokenProducing, JsonWebKeySet, OtherVaultMember, RecoveryKeyProducing, UserKeys, VaultTemplateProducing, getJwkThumbprintStr } from './crypto';
 import { JWE, JWEHeader, JsonJWE, Recipient } from './jwe';
 import { CRC32, UTF8, wordEncoder } from './util';
+// / start katta extension
+import { VaultMetadataJWEBackendDto } from './backend';
+// \ end katta extension
 
 type MetadataPayload = {
   fileFormat: 'AES-256-GCM-32k';
@@ -14,11 +17,22 @@ type MetadataPayload = {
   kdf: 'HKDF-SHA512';
   kdfSalt: string;
   'org.cryptomator.automaticAccessGrant': VaultMetadataJWEAutomaticAccessGrantDto;
+  // / start katta extension
+  'cloud.katta.storage': VaultMetadataJWEBackendDto;
+  // \ end katta extension
 };
 
 type VaultMetadataJWEAutomaticAccessGrantDto = {
   enabled: boolean,
-  maxWotDepth: number
+  /**
+   * Maximum Web of Trust distance (number of signatures in the trust chain from an existing vault member to a new
+   * member) up to which access may be granted automatically:
+   * - `-1`: trust check disabled — grant regardless of any WoT relationship
+   * - `0`: self-signed identities only (no practical use case)
+   * - `1`: direct trust (an existing member has signed the new member's key directly)
+   * - `>= 2`: transitive trust (a chain of up to N signatures)
+   */
+  trustThreshold: number
 };
 
 type UvfAccessTokenPayload = AccessTokenPayload & {
@@ -230,7 +244,10 @@ export class DecodeUvfRecoveryKeyError extends Error {
 export class VaultMetadata {
 
   private constructor(
-    readonly automaticAccessGrant: VaultMetadataJWEAutomaticAccessGrantDto,
+    public automaticAccessGrant: VaultMetadataJWEAutomaticAccessGrantDto,
+    // / start katta extension
+    readonly backend: VaultMetadataJWEBackendDto,
+    // \ end katta extension
     readonly seeds: Map<number, Uint8Array<ArrayBuffer>>,
     readonly initialSeedId: number,
     readonly latestSeedId: number,
@@ -248,7 +265,11 @@ export class VaultMetadata {
    * @param automaticAccessGrant Configuration instructing the client how to automatically deal with permission requests
    * @returns new vault
    */
-  public static async create(automaticAccessGrant: VaultMetadataJWEAutomaticAccessGrantDto): Promise<VaultMetadata> {
+  public static async create(automaticAccessGrant: VaultMetadataJWEAutomaticAccessGrantDto
+    // / start katta extension
+    , backend: VaultMetadataJWEBackendDto
+    // \ end katta extension
+  ): Promise<VaultMetadata> {
     const initialSeedId = new Uint8Array(4);
     const initialSeedValue = new Uint8Array(32);
     const kdfSalt = new Uint8Array(32);
@@ -258,7 +279,11 @@ export class VaultMetadata {
     const initialSeedNo = new DataView(initialSeedId.buffer).getInt32(0, false);
     const seeds: Map<number, Uint8Array<ArrayBuffer>> = new Map<number, Uint8Array<ArrayBuffer>>();
     seeds.set(initialSeedNo, initialSeedValue);
-    return new VaultMetadata(automaticAccessGrant, seeds, initialSeedNo, initialSeedNo, kdfSalt);
+    return new VaultMetadata(automaticAccessGrant,
+      // / start katta extension
+      backend,
+      // \ end katta extension
+      seeds, initialSeedNo, initialSeedNo, kdfSalt);
   }
 
   public get initialSeed(): Uint8Array<ArrayBuffer> {
@@ -315,6 +340,9 @@ export class VaultMetadata {
     const kdfSalt = base64urlnopad.decode(payload['kdfSalt']) as Uint8Array<ArrayBuffer>;
     return new VaultMetadata(
       payload['org.cryptomator.automaticAccessGrant'],
+      // / start katta extension
+      payload['cloud.katta.storage'],
+      // \ start katta extension
       seeds,
       initialSeedId,
       latestSeedId,
@@ -361,6 +389,9 @@ export class VaultMetadata {
       kdf: 'HKDF-SHA512',
       kdfSalt: base64urlnopad.encode(this.kdfSalt),
       'org.cryptomator.automaticAccessGrant': this.automaticAccessGrant
+      // / start katta extension
+      ,'cloud.katta.storage': this.backend
+      // \ end katta extension
     };
   }
 
@@ -375,8 +406,16 @@ export class UniversalVaultFormat implements AccessTokenProducing, VaultTemplate
 
   private constructor(readonly metadata: VaultMetadata, readonly memberKey: MemberKey, readonly recoveryKey: RecoveryKey) { }
 
-  public static async create(automaticAccessGrant: VaultMetadataJWEAutomaticAccessGrantDto): Promise<UniversalVaultFormat> {
-    const metadata = await VaultMetadata.create(automaticAccessGrant);
+  public static async create(automaticAccessGrant: VaultMetadataJWEAutomaticAccessGrantDto
+    // / start katta extension
+    , backend: VaultMetadataJWEBackendDto
+    // \ end katta extension
+  ): Promise<UniversalVaultFormat> {
+    const metadata = await VaultMetadata.create(automaticAccessGrant
+      // / start katta extension
+      ,backend
+      // \ end katta extension
+    );
     const memberKey = await MemberKey.create();
     const recoveryKey = await RecoveryKey.create();
     return new UniversalVaultFormat(metadata, memberKey, recoveryKey);

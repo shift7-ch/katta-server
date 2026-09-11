@@ -15,7 +15,7 @@
                 <div class="flex flex-col p-1 mt-4">
                   <SearchInputGroup :action-title="t('common.add')" :place-holder="t('user.addGroups.searchLabel')" :on-search="searchGroup" @action="addGroup" />
                   <p v-if="onAddGroupError" class="mt-1 text-sm text-red-900 text-right">
-                    {{ t('common.unexpectedError', [onAddGroupError.message]) }}
+                    {{ t('user.addGroups.error.failed') }}
                   </p>
                 </div>
 
@@ -64,7 +64,7 @@ import { useI18n } from 'vue-i18n';
 import SearchInputGroup from '../SearchInputGroup.vue';
 import backend, { GroupDto } from '../../common/backend';
 
-const scrollContainer = ref<HTMLElement | null>(null);
+const scrollContainer = ref<HTMLElement>();
 
 const props = defineProps<{ groups: GroupDto[]; userId: string }>();
 const emit = defineEmits<{ saved: [added: GroupDto[]] }>();
@@ -72,7 +72,7 @@ const emit = defineEmits<{ saved: [added: GroupDto[]] }>();
 const { t } = useI18n({ useScope: 'global' });
 const open = ref(false);
 const newGroups = ref<GroupDto[]>([]);
-const onAddGroupError = ref<Error | null>(null);
+const onAddGroupError = ref<Error>();
 
 const selectedCount = computed(() => newGroups.value.length);
 const sortedNewGroups = computed(() => [...newGroups.value].reverse());
@@ -128,7 +128,7 @@ function removeTempGroup(id: string) {
 }
 
 async function onSubmit() {
-  onAddGroupError.value = null;
+  onAddGroupError.value = undefined;
 
   try {
     for (const group of newGroups.value) {
@@ -139,12 +139,13 @@ async function onSubmit() {
     open.value = false;
   } catch (error) {
     console.error('Adding user to groups failed:', error);
-    onAddGroupError.value = error instanceof Error ? error : new Error('Unknown Error');
+    onAddGroupError.value = error instanceof Error ? error : new Error('Unknown reason');
   }
 }
 
 function show() {
   newGroups.value = [];
+  onAddGroupError.value = undefined;
   open.value = true;
 }
 

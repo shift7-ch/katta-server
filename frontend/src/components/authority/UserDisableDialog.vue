@@ -42,8 +42,8 @@
                     {{ t('common.cancel') }}
                   </button>
                 </div>
-                <p v-if="onDisableUserError != null" class="text-sm text-red-900 px-4 sm:px-6 text-right bg-red-50">
-                  {{ t('common.unexpectedError', [onDisableUserError.message]) }}
+                <p v-if="onDisableUserError" class="text-sm text-red-900 px-4 sm:px-6 text-right bg-red-50">
+                  {{ t('disableUserDialog.error.failed') }}
                 </p>
               </form>
             </DialogPanel>
@@ -64,7 +64,7 @@ import backend, { UserDto } from '../../common/backend';
 const { t } = useI18n({ useScope: 'global' });
 
 const open = ref(false);
-const onDisableUserError = ref<Error | null>(null);
+const onDisableUserError = ref<Error>();
 
 const props = defineProps<{
   user: UserDto;
@@ -90,7 +90,7 @@ function show() {
 }
 
 async function disableUser() {
-  onDisableUserError.value = null;
+  onDisableUserError.value = undefined;
 
   try {
     await backend.users.setUserEnabled(props.user.id, false);
@@ -99,7 +99,7 @@ async function disableUser() {
     open.value = false;
   } catch (error) {
     console.error('Disabling user failed.', error);
-    onDisableUserError.value = error instanceof Error ? error : new Error('Unknown Error');
+    onDisableUserError.value = error instanceof Error ? error : new Error('Unknown reason');
   }
 }
 </script>

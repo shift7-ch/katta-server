@@ -1,0 +1,40 @@
+package org.cryptomator.hub.entities.katta;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.DiscriminatorValue;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+import org.jspecify.annotations.Nullable;
+
+@Entity
+@Table(name = "storage_profile_s3_sts")
+@DiscriminatorValue("S3STS")
+public class StorageProfileS3STS extends StorageProfileS3Static {
+
+	//======================================================================
+	// (2) STS only: bucket creation (only relevant for Desktop client)
+	//======================================================================
+	@Column(name = "sts_role_create_bucket_client", nullable = false)
+	public String stsRoleCreateBucketClient;
+
+	@Column(name = "sts_role_create_bucket_hub", nullable = false)
+	public String stsRoleCreateBucketHub;
+
+	@Column(name = "sts_endpoint")
+	public @Nullable String stsEndpoint;
+
+	//----------------------------------------------------------------------
+	// (3b) STS client profile custom properties
+	//----------------------------------------------------------------------
+	@Column(name = "sts_role_access_bucket_assume_role_with_web_identity", nullable = false)
+	public String stsRoleAccessBucketAssumeRoleWithWebIdentity;
+
+	@Column(name = "sts_role_access_bucket_assume_role_tagged_session")
+	public @Nullable String stsRoleAccessBucketAssumeRoleTaggedSession;
+
+	@Column(name = "sts_duration_seconds")
+	public @Nullable Integer stsDurationSeconds;
+
+	@Column(name = "sts_session_tag", nullable = false)
+	public String stsSessionTag = "Vault";
+}

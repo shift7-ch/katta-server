@@ -1,4 +1,4 @@
-# Cryptomator Frontend
+# Katta Frontend
 
 This project uses Vue 3 + Typescript + Vite.
 

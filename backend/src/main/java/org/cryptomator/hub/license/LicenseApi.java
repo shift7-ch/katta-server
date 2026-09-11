@@ -9,14 +9,18 @@ import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
+import org.eclipse.microprofile.rest.client.annotation.RegisterProvider;
 import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.Base64;
+import java.util.UUID;
 
 @RegisterRestClient(configKey = "license-api")
+@RegisterProvider(ExceptionMapper.class)
 public interface LicenseApi {
 
 	@GET
@@ -30,16 +34,15 @@ public interface LicenseApi {
 	Solution generatePresolvedChallenge(@HeaderParam("Authorization") String authHeader);
 
 	@POST
-	@Path("/hub/trial")
-	@Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-	@Produces(MediaType.APPLICATION_JSON)
-	TrialLicenseResponse generateTrialLicense(@FormParam("captcha") String captcha);
-
-	@POST
 	@Path("/hub/refresh")
 	@Consumes(MediaType.APPLICATION_FORM_URLENCODED)
 	@Produces(MediaType.TEXT_PLAIN)
 	String refreshLicense(@FormParam("token") String licenseKey, @FormParam("captcha") String captcha);
+
+	@GET
+	@Path("/hub")
+	@Produces(MediaType.TEXT_PLAIN)
+	String getLicense(@QueryParam("session") UUID sessionId);
 
 	record Challenge(@JsonProperty("algorithm") String algorithm,
 					 @JsonProperty("challenge") String challenge,
@@ -68,10 +71,5 @@ public interface LicenseApi {
 			}
 		}
 	}
-
-	record TrialLicenseResponse(@JsonProperty("hubId") String hubId,
-								@JsonProperty("licenseKey") String licenseKey) {
-	}
-
 
 }

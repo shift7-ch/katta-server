@@ -1,10 +1,12 @@
 package org.cryptomator.hub.api;
 
 import io.quarkus.test.InjectMock;
+import io.quarkus.test.junit.QuarkusMock;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.security.TestSecurity;
 import io.quarkus.test.security.oidc.Claim;
 import io.quarkus.test.security.oidc.OidcSecurity;
+import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -13,6 +15,7 @@ import org.cryptomator.hub.entities.Group;
 import org.cryptomator.hub.entities.User;
 import org.cryptomator.hub.entities.Vault;
 import org.cryptomator.hub.entities.VaultAccess;
+import org.cryptomator.hub.katta.KeycloakCryptomatorVaultsHelper;
 import org.cryptomator.hub.license.HubLicenseEntitlements;
 import org.cryptomator.hub.license.LicenseHolder;
 import org.junit.jupiter.api.AfterAll;
@@ -67,6 +70,14 @@ class ExceedingLicenseLimitsIT {
 
 	public ExceedingLicenseLimitsIT(VaultResourceIT vaultResourceIT) {
 		this.vaultResourceIT = vaultResourceIT;
+	}
+
+	@BeforeAll
+	static void beforeAll() {
+		RestAssured.enableLoggingOfRequestAndResponseIfValidationFails();
+		// https://quarkus.io/guides/getting-started-testing#quarkus_mock
+		VaultResourceIT.KeycloakCryptomatorVaultsHelperMock mock = Mockito.mock(VaultResourceIT.KeycloakCryptomatorVaultsHelperMock.class);
+		QuarkusMock.installMockForType(mock, KeycloakCryptomatorVaultsHelper.class);
 	}
 
 	@BeforeAll

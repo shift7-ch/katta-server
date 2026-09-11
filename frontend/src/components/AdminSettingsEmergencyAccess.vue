@@ -36,10 +36,12 @@
             v-model="enableEmergencyAccess"
             type="checkbox"
             class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+            aria-describedby="enableEmergencyAccessDescription"
           />
           <label for="enableEmergencyAccess" class="ml-2 text-sm text-gray-500">
             {{ t('admin.emergencyAccess.enabled.help') }}
           </label>
+          <span id="enableEmergencyAccessDescription" class="hidden">{{ t('admin.emergencyAccess.enabled.help') }}</span>
         </div>
       </div>
 
@@ -64,7 +66,9 @@
             <input
               id="requiredKeyShares"
               v-model.number="requiredShares"
-              type="number" min="2" max="255"
+              type="number"
+              min="2"
+              max="255"
               :disabled="!enableEmergencyAccess"
               class="rounded-md border-gray-300 shadow-sm sm:text-sm focus:ring-primary focus:border-primary text-left w-full disabled:cursor-not-allowed disabled:bg-gray-200"
               :class="{ 'border-red-300 text-red-900 focus:ring-red-500 focus:border-red-500': defaultRequiredEmergencyKeySharesError || defaultRequiredEmergencyKeySharesToHighError instanceof FormValidationFailedError}"
@@ -83,7 +87,6 @@
         <div class="mt-1 md:mt-0 lg:col-span-3 md:col-span-4">
           <div class="relative">
             <MultiUserSelectInputGroup
-              v-if="enableEmergencyAccess"
               input-id="searchKeyholder"
               :selected-users="selectedUsers"
               :on-search="searchCouncilMembers"
@@ -93,13 +96,6 @@
               :placeholder="t('common.search.placeholder')"
               @action="selectUser"
               @remove="removeUser"
-            />
-            <MultiUserSelectInputGroup
-              v-else
-              :selected-users="selectedUsers"
-              :on-search="async () => []"
-              :input-visible="enableEmergencyAccess"
-              :disable-action="true"
             />
             <p class="mt-2 text-sm text-gray-500">{{ t('admin.emergencyAccess.keyholders.help') }}</p>
           </div>
@@ -111,13 +107,13 @@
         <span class="col-span-2"></span>
         <div class="mt-1 md:mt-0 lg:col-span-3 md:col-span-4 flex items-center h-9.5">
           <input
-            id="allow"
+            id="allowChoosingCouncil"
             v-model="allowChoosing"
             :disabled="!enableEmergencyAccess"
             type="checkbox"
-            class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+            class="peer h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded disabled:cursor-not-allowed disabled:opacity-50"
           />
-          <label for="allow" class="ml-2 text-sm text-gray-500">
+          <label for="allowChoosingCouncil" class="ml-2 text-sm text-gray-500 peer-disabled:cursor-not-allowed peer-disabled:opacity-50">
             {{ t('admin.emergencyAccess.allowChoosing.label') }}
             <label v-if="allowChoosing" for="minMembers"> {{ t('admin.emergencyAccess.allowChoosing.atLeast') }}</label>
           </label>
@@ -307,29 +303,29 @@ function removeUser(u: UserDto) {
 }
 
 const requiredKeySharesValidationText = computed(() => {
-  if (defaultRequiredEmergencyKeySharesToHighError.value != null) return t('admin.emergencyAccess.validation.maxValue', [255]);
-  else if (defaultRequiredEmergencyKeySharesLessThenTwoError.value != null) return t('admin.emergencyAccess.validation.minValue', [2]);
+  if (defaultRequiredEmergencyKeySharesToHighError.value) return t('admin.emergencyAccess.validation.maxValue', [255]);
+  else if (defaultRequiredEmergencyKeySharesLessThenTwoError.value) return t('admin.emergencyAccess.validation.minValue', [2]);
   return '';
 });
 
 const requiredMinMembersValidationText = computed(() => {
-  if (defaultMinMembersToHighError.value != null) return t('admin.emergencyAccess.validation.maxValue', [255]);
-  else if (defaultMinMembersLessThenTwoError.value != null) return t('admin.emergencyAccess.validation.minValue', [2]);
-  else if (defaultMinMembersLowerThenRequiredEmergencyKeySharesError.value != null) return t('admin.emergencyAccess.validation.minMembersAtLeastRequiredShares');
+  if (defaultMinMembersToHighError.value) return t('admin.emergencyAccess.validation.maxValue', [255]);
+  else if (defaultMinMembersLessThenTwoError.value) return t('admin.emergencyAccess.validation.minValue', [2]);
+  else if (defaultMinMembersLowerThenRequiredEmergencyKeySharesError.value) return t('admin.emergencyAccess.validation.minMembersAtLeastRequiredShares');
   return '';
 });
 
-const onSaveErrorRecovery = ref<Error | null>(null);
+const onSaveErrorRecovery = ref<Error>();
 
-const defaultRequiredEmergencyKeySharesLessThenTwoError = ref<Error | null>(null);
-const defaultRequiredEmergencyKeySharesToHighError = ref<Error | null>(null);
-const defaultRequiredEmergencyKeySharesError = ref<Error | null>(null);
+const defaultRequiredEmergencyKeySharesLessThenTwoError = ref<Error>();
+const defaultRequiredEmergencyKeySharesToHighError = ref<Error>();
+const defaultRequiredEmergencyKeySharesError = ref<Error>();
 
-const defaultMinMembersLessThenTwoError = ref<Error | null>(null);
-const defaultMinMembersToHighError = ref<Error | null>(null);
-const defaultMinMembersLowerThenRequiredEmergencyKeySharesError = ref<Error | null>(null);
+const defaultMinMembersLessThenTwoError = ref<Error>();
+const defaultMinMembersToHighError = ref<Error>();
+const defaultMinMembersLowerThenRequiredEmergencyKeySharesError = ref<Error>();
 
-const selectedMembersError = ref<Error | null>(null);
+const selectedMembersError = ref<Error>();
 
 watch([selectedUsers, requiredShares], ([users, shares]) => {
   noRedundancy.value = !!shares && users.length === shares;
@@ -340,8 +336,8 @@ watch([requiredShares], ([r]) => {
   isKeySplittingInvalid.value = false;
   isMinMembersKeySplittingInvalid.value = false;
 
-  defaultRequiredEmergencyKeySharesLessThenTwoError.value = null;
-  defaultRequiredEmergencyKeySharesToHighError.value = null;
+  defaultRequiredEmergencyKeySharesLessThenTwoError.value = undefined;
+  defaultRequiredEmergencyKeySharesToHighError.value = undefined;
 
   if (r! >= 255 || r! < 2){
     isKeySplittingInvalid.value = true;
@@ -351,16 +347,16 @@ watch([requiredShares], ([r]) => {
 });
 
 function validateRecoverySettings(): boolean {
-  defaultRequiredEmergencyKeySharesError.value = null;
-  selectedMembersError.value = null;
-  onSaveErrorRecovery.value = null;
-  defaultRequiredEmergencyKeySharesLessThenTwoError.value = null;
-  defaultRequiredEmergencyKeySharesToHighError.value = null;
-  defaultMinMembersLessThenTwoError.value = null;
-  defaultMinMembersToHighError.value = null;
-  defaultMinMembersLowerThenRequiredEmergencyKeySharesError.value = null;
+  defaultRequiredEmergencyKeySharesError.value = undefined;
+  selectedMembersError.value = undefined;
+  onSaveErrorRecovery.value = undefined;
+  defaultRequiredEmergencyKeySharesLessThenTwoError.value = undefined;
+  defaultRequiredEmergencyKeySharesToHighError.value = undefined;
+  defaultMinMembersLessThenTwoError.value = undefined;
+  defaultMinMembersToHighError.value = undefined;
+  defaultMinMembersLowerThenRequiredEmergencyKeySharesError.value = undefined;
   
-  if (requiredShares.value == null || minMembers.value == null) {
+  if (requiredShares.value === undefined || minMembers.value === undefined) {
     onSaveErrorRecovery.value = new Error('Missing input');
     return false;
   }
@@ -431,16 +427,16 @@ function reset() {
   initialCouncilMembers.value = [...initialEmergencyAccessSettings.value.selectedUsers];
   enableEmergencyAccess.value = initialEmergencyAccessSettings.value.enableEmergencyAccess;
   addedCouncilMembers.value = [];
-  defaultRequiredEmergencyKeySharesError.value = null;
-  selectedMembersError.value = null;
-  onSaveErrorRecovery.value = null;
+  defaultRequiredEmergencyKeySharesError.value = undefined;
+  selectedMembersError.value = undefined;
+  onSaveErrorRecovery.value = undefined;
 }
 
 watch(() => [selectedUsers.value.map(u => u.id).join(','), minMembers.value, requiredShares.value],
   () => { 
-    selectedMembersError.value = null; 
-    defaultRequiredEmergencyKeySharesError.value = null; 
-    defaultMinMembersLowerThenRequiredEmergencyKeySharesError.value = null;
+    selectedMembersError.value = undefined;
+    defaultRequiredEmergencyKeySharesError.value = undefined;
+    defaultMinMembersLowerThenRequiredEmergencyKeySharesError.value = undefined;
   });
 onMounted(async () => {
   await fetchEmergencyAccess();

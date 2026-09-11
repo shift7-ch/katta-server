@@ -16,7 +16,7 @@
         <div class="flex justify-center">
           <div class="bg-white px-4 py-5 shadow-sm sm:rounded-lg sm:p-6 text-center sm:w-full sm:max-w-lg">
             <div class="flex justify-center">
-              <img src="/logo.svg" class="h-12" alt="Logo" aria-hidden="true" />
+              <img src="/logo.png" class="h-16" alt="Katta Logo" aria-hidden="true" />
             </div>
             <div class="mt-3 sm:mt-5">
               <h3 class="text-lg leading-6 font-medium text-gray-900">
@@ -111,7 +111,7 @@
         <div class="flex flex-col items-center">
           <div class="bg-white px-4 py-5 shadow-sm sm:rounded-lg sm:p-6 text-center sm:w-full sm:max-w-lg">
             <div class="flex justify-center">
-              <img src="/logo.svg" class="h-12" alt="Logo" aria-hidden="true" />
+              <img src="/logo.png" class="h-16" alt="Katta Logo" aria-hidden="true" />
             </div>
             <div class="mt-3 sm:mt-5">
               <h3 class="text-lg leading-6 font-medium text-gray-900">
@@ -147,7 +147,7 @@
       </form>
 
       <i18n-t keypath="initialSetup.recoverUserKey.lostAccountKey" scope="global" tag="p" class="mt-10 text-center text-sm text-gray-500">
-        <a tabindex="0" class="font-medium leading-6 text-red-600 hover:text-red-900" @click="showResetUserAccountDialog()">
+        <a tabindex="0" class="font-medium leading-6 text-red-600 hover:text-red-900 cursor-pointer" @click="showResetUserAccountDialog()">
           {{ t('initialSetup.recoverUserKey.lostAccountKey.resetUserAccount') }}
         </a>
       </i18n-t>
@@ -157,7 +157,7 @@
       <div class="flex flex-col items-center">
         <div class="bg-white px-4 py-5 shadow-sm sm:rounded-lg sm:p-6 text-center sm:w-full sm:max-w-lg">
           <div class="flex justify-center">
-            <img src="/logo.svg" class="h-12" alt="Logo" aria-hidden="true" />
+            <img src="/logo.png" class="h-16" alt="Katta Logo" aria-hidden="true" />
           </div>
           <div class="mt-3 sm:mt-5">
             <h3 class="text-lg leading-6 font-medium text-gray-900">

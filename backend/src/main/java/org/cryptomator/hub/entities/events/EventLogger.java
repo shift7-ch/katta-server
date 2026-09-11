@@ -11,8 +11,12 @@ import java.util.UUID;
 @ApplicationScoped
 public class EventLogger {
 
+	private final AuditEvent.Repository auditEventRepository;
+
 	@Inject
-	AuditEvent.Repository auditEventRepository;
+	EventLogger(AuditEvent.Repository auditEventRepository) {
+		this.auditEventRepository = auditEventRepository;
+	}
 
 	public void logVaultCreated(String createdBy, UUID vaultId, String vaultName, String vaultDescription) {
 		var event = new VaultCreatedEvent();
@@ -35,7 +39,7 @@ public class EventLogger {
 		auditEventRepository.persist(event);
 	}
 
-	public void logDeviceRegisted(String registeredBy, String deviceId, String deviceName, Device.Type deviceType) {
+	public void logDeviceRegistered(String registeredBy, String deviceId, String deviceName, Device.Type deviceType) {
 		var event = new DeviceRegisteredEvent();
 		event.setTimestamp(Instant.now());
 		event.setRegisteredBy(registeredBy);
@@ -75,18 +79,19 @@ public class EventLogger {
 		auditEventRepository.persist(event);
 	}
 
-	public void logVaultAccessGranted(String grantedBy, UUID vaultId, String authorityId) {
+	public void logVaultAccessGranted(String grantedBy, UUID vaultId, String authorityId, boolean automatic) {
 		var event = new VaultAccessGrantedEvent();
 		event.setTimestamp(Instant.now());
 		event.setGrantedBy(grantedBy);
 		event.setVaultId(vaultId);
 		event.setAuthorityId(authorityId);
+		event.setAutomatic(automatic);
 		auditEventRepository.persist(event);
 	}
 
-	public void logVaultKeyRetrieved(String retrievedBy, UUID vaultId, VaultKeyRetrievedEvent.Result result, String ipAddress, String deviceId) {
+	public void logVaultKeyRetrieved(Instant timestamp, String retrievedBy, UUID vaultId, VaultKeyRetrievedEvent.Result result, String ipAddress, String deviceId) {
 		var event = new VaultKeyRetrievedEvent();
-		event.setTimestamp(Instant.now());
+		event.setTimestamp(timestamp);
 		event.setRetrievedBy(retrievedBy);
 		event.setVaultId(vaultId);
 		event.setResult(result);
@@ -130,6 +135,16 @@ public class EventLogger {
 		event.setWotIdVerifyLen(wotIdVerifyLen);
 		event.setWotMaxDepth(wotMaxDepth);
 		event.setUpdatedBy(updatedBy);
+		auditEventRepository.persist(event);
+	}
+
+	public void logAutoGrantSettingUpdated(String updatedBy, boolean enabled, int trustThreshold, boolean allowOverride) {
+		var event = new SettingAutoGrantUpdateEvent();
+		event.setTimestamp(Instant.now());
+		event.setUpdatedBy(updatedBy);
+		event.setEnabled(enabled);
+		event.setTrustThreshold(trustThreshold);
+		event.setAllowOverride(allowOverride);
 		auditEventRepository.persist(event);
 	}
 

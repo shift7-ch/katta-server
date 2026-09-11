@@ -39,8 +39,8 @@
                     {{ t('common.cancel') }}
                   </button>
                 </div>
-                <p v-if="onDeleteGroupError != null" class="text-sm text-red-900 px-4 sm:px-6 text-right bg-red-50">
-                  {{ t('common.unexpectedError', [onDeleteGroupError.message]) }}
+                <p v-if="onDeleteGroupError" class="text-sm text-red-900 px-4 sm:px-6 text-right bg-red-50">
+                  {{ t('deleteGroupDialog.error.failed') }}
                 </p>
               </form>
             </DialogPanel>
@@ -57,11 +57,11 @@ import { ExclamationTriangleIcon } from '@heroicons/vue/24/outline';
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import backend, { GroupDto } from '../../common/backend';
-  
+
 const { t } = useI18n({ useScope: 'global' });
-  
+
 const open = ref(false);
-const onDeleteGroupError = ref<Error | null>(null);
+const onDeleteGroupError = ref<Error>();
   
 const props = defineProps<{
   group: GroupDto;
@@ -81,14 +81,14 @@ function show() {
 }
 
 async function deleteGroup() {
-  onDeleteGroupError.value = null;
+  onDeleteGroupError.value = undefined;
   try {
     await backend.groups.removeGroup(props.group.id);
     emit('delete', props.group.id);
     open.value = false;
   } catch (error) {
     console.error('Deleting group failed.', error);
-    onDeleteGroupError.value = error instanceof Error ? error : new Error('Unknown Error');
+    onDeleteGroupError.value = error instanceof Error ? error : new Error('Unknown reason');
   }
 }
 </script>
