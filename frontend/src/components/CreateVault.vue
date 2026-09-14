@@ -543,20 +543,6 @@
             </p>
           </div>
         </div>
-        <div class="mt-5 sm:mt-6">
-          <button
-            type="button"
-            class="inline-flex items-center px-4 py-2 border border-transparent shadow-xs text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-d1 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-primary"
-            @click="downloadVaultTemplate()"
-          >
-            <ArrowDownTrayIcon class="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
-            {{ t('createVault.success.download') }}
-          </button>
-          <p v-if="onDownloadTemplateError" class="text-sm text-red-900 mr-4">
-            {{ t('createVault.error.downloadTemplateFailed', [onDownloadTemplateError.message]) }}
-          </p>
-          <!-- TODO: not beautiful-->
-        </div>
         <!-- / start katta modification -->
         <div class="mt-5 sm:mt-6">
           <button type="button" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-d1 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary" @click="openBookmark()">
@@ -565,15 +551,12 @@
           </button>
           <p v-if="onOpenBookmarkError != null " class="text-sm text-red-900 mr-4">{{ t('CreateVaultS3.error.openBookmarkFailed', [onOpenBookmarkError.message]) }}</p> <!-- TODO: not beautiful-->
         </div>
-        <div class="mt-5 sm:mt-6">
-          <p v-if="onUploadTemplateError != null " class="text-sm text-red-900 mr-4">{{ t('CreateVaultS3.error.uploadTemplateFailed') }}{{ onUploadTemplateError.message == null ? '' : ': ' + onUploadTemplateError.message }}</p> <!-- TODO: not beautiful-->
-        </div>
-        <!-- \ end katta modification -->
         <div class="mt-2">
-          <router-link to="/app/vaults" class="text-sm text-gray-500">
+          <router-link to="/app/vaults" class="rounded text-sm text-primary underline underline-offset-4 hover:text-primary-d1 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary">
             {{ t('createVault.success.return') }}
           </router-link>
         </div>
+        <!-- \ end katta modification -->
       </div>
     </div>
   </div>
@@ -596,14 +579,17 @@
 </template>
 
 <script setup lang="ts">
-import { ClipboardIcon, XCircleIcon, ArrowDownTrayIcon, ExclamationTriangleIcon } from '@heroicons/vue/20/solid';
+// / start katta modification
+import { ClipboardIcon, XCircleIcon, ExclamationTriangleIcon } from '@heroicons/vue/20/solid';
+// \ end katta modification
 import { ArrowPathIcon, ArrowUpOnSquareIcon, CheckIcon, DocumentCheckIcon, KeyIcon, PlusIcon, UserPlusIcon } from '@heroicons/vue/24/outline';
-import { saveAs } from 'file-saver';
 import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import backend, { AccessGrant, LicenseUserInfoDto, PaymentRequiredError, SettingsDto, VaultDto } from '../common/backend';
 import { absBackendBaseURL } from '../common/config';
-import { RecoveryKeyProducing, VaultTemplateProducing } from '../common/crypto';
+// / start katta modification
+import { RecoveryKeyProducing } from '../common/crypto';
+// \ end katta modification
 import { DecodeUvfRecoveryKeyError, UniversalVaultFormat } from '../common/universalVaultFormat';
 import userdata from '../common/userdata';
 import { debounce } from '../common/util';
@@ -655,14 +641,6 @@ class FormValidationFailedError extends Error {
 
 }
 
-class EmptyVaultTemplateError extends Error {
-
-  constructor() {
-    super('Vault template is empty.');
-  }
-
-}
-
 class NoFileError extends Error {
 
   constructor() {
@@ -694,7 +672,6 @@ const fileUpload = ref<HTMLInputElement>();
 
 const onCreateError = ref<Error>();
 const onRecoverError = ref<Error>();
-const onDownloadTemplateError = ref<Error>();
 const onUploadError = ref<Error>();
 
 const state = ref(State.Initial);
@@ -746,7 +723,6 @@ const bucketPrefix = computed(() => selectedStorageProfile.value?.bucketPrefix ?
 const effectiveBucketName = computed(() => bucketPrefix.value + vaultBucketName.value);
 const automaticAccessGrant = ref<boolean>(true);
 const onOpenBookmarkError = ref<Error>();
-const onUploadTemplateError = ref<Error>();
 
 class StorageBackendError extends Error {
 
@@ -1319,25 +1295,6 @@ async function copyRecoveryKey() {
   debouncedCopyFinish();
 }
 
-async function downloadVaultTemplate() {
-  if (!vaultFormat8.value && !uvfVault.value) {
-    throw new Error('Invalid state');
-  }
-  onDownloadTemplateError.value = undefined;
-  try {
-    const templateProducer: VaultTemplateProducing = vaultFormat8.value || uvfVault.value!;
-    const blob = await templateProducer.exportTemplate(absBackendBaseURL, vault.value);
-    if (blob != null) {
-      saveAs(blob, `${vault.value.name}.zip`);
-    } else {
-      throw new EmptyVaultTemplateError();
-    }
-  } catch (error) {
-    console.error('Exporting vault template failed.', error);
-    onDownloadTemplateError.value = error instanceof Error ? error : new Error('Unknown reason');
-  }
-}
-
 // / start katta extension
 import { openInKatta } from '../common/deeplink';
 function openBookmark() {
@@ -1389,65 +1346,60 @@ function endpointHostname(endpoint: string | undefined): string | undefined {
 }
 
 async function uploadVaultTemplate() {
-  onUploadTemplateError.value = undefined;
-  try {
-    const storageProfile = selectedStorageProfile.value;
-    if (storageProfile === undefined) {
-      throw new Error('Invalid state.');
-    }
-    const client = new S3Client({
-      // AWS SDK requires a non-empty region even when an explicit endpoint is set; non-AWS
-      // providers (Scaleway, MinIO) typically ignore it. Default to us-east-1 if unknown.
-      region: selectedRegion.value ?? 'us-east-1',
-      endpoint: storageProfile.endpoint,
-      forcePathStyle: storageProfile.pathStyleAccessEnabled,
-      credentials:{
-        accessKeyId: vaultAccessKeyId.value,
-        secretAccessKey: vaultSecretKey.value
-      }
-    });
-    const commandListObjects = new ListObjectsV2Command({
-      Bucket: effectiveBucketName.value,
-      MaxKeys: 1,
-    });
-    const responseListObjects = await client.send(commandListObjects);
-    console.log(responseListObjects);
-    if (!isBucketEmpty(responseListObjects)){
-      throw new Error(t('CreateVaultS3.error.bucketNotEmpty'));
-    }
-    if (!uvfVault.value){
-      throw new Error('Invalid state');
-    }
-
-    const rootDirHash = await uvfVault.value.computeRootDirIdHash(await uvfVault.value.computeRootDirId());
-    console.log(rootDirHash);
-
-    if (!rootDirHash) {
-      throw new Error('Invalid state: rootDirHash missing.');
-    }
-
-    const commandPutVaultCryptomator = new PutObjectCommand({
-      Bucket: effectiveBucketName.value,
-      Key: 'vault.uvf',
-      Body: vault.value.uvfMetadataFile
-    });
-    console.log(commandPutVaultCryptomator);
-    const responsePutVaultCryptomator = await client.send(commandPutVaultCryptomator);
-    console.log(responsePutVaultCryptomator);
-
-    const commandPutDFolder = new PutObjectCommand({
-      Bucket: effectiveBucketName.value,
-      Key: `d/${rootDirHash.substring(0, 2)}/${rootDirHash.substring(2)}/`,
-      Body: '',
-    });
-    console.log(commandPutDFolder);
-    const responsePutDFolder = await client.send(commandPutDFolder);
-    console.log(responsePutDFolder);
-  } catch (error) {
-    console.error('Uploading vault template failed.', error);
-    onUploadTemplateError.value = error instanceof Error ? error : new Error('Unknown reason');
+  const storageProfile = selectedStorageProfile.value;
+  if (storageProfile === undefined) {
+    throw new Error('Invalid state.');
   }
+  const client = new S3Client({
+    // AWS SDK requires a non-empty region even when an explicit endpoint is set; non-AWS
+    // providers (Scaleway, MinIO) typically ignore it. Default to us-east-1 if unknown.
+    region: selectedRegion.value ?? 'us-east-1',
+    endpoint: storageProfile.endpoint,
+    forcePathStyle: storageProfile.pathStyleAccessEnabled,
+    credentials:{
+      accessKeyId: vaultAccessKeyId.value,
+      secretAccessKey: vaultSecretKey.value
+    }
+  });
+  const commandListObjects = new ListObjectsV2Command({
+    Bucket: effectiveBucketName.value,
+    MaxKeys: 1,
+  });
+  const responseListObjects = await client.send(commandListObjects);
+  console.log(responseListObjects);
+  if (!isBucketEmpty(responseListObjects)){
+    throw new Error(t('CreateVaultS3.error.bucketNotEmpty'));
+  }
+  if (!uvfVault.value){
+    throw new Error('Invalid state');
+  }
+
+  const rootDirHash = await uvfVault.value.computeRootDirIdHash(await uvfVault.value.computeRootDirId());
+  console.log(rootDirHash);
+
+  if (!rootDirHash) {
+    throw new Error('Invalid state: rootDirHash missing.');
+  }
+
+  const commandPutVaultCryptomator = new PutObjectCommand({
+    Bucket: effectiveBucketName.value,
+    Key: 'vault.uvf',
+    Body: vault.value.uvfMetadataFile
+  });
+  console.log(commandPutVaultCryptomator);
+  const responsePutVaultCryptomator = await client.send(commandPutVaultCryptomator);
+  console.log(responsePutVaultCryptomator);
+
+  const commandPutDFolder = new PutObjectCommand({
+    Bucket: effectiveBucketName.value,
+    Key: `d/${rootDirHash.substring(0, 2)}/${rootDirHash.substring(2)}/`,
+    Body: '',
+  });
+  console.log(commandPutDFolder);
+  const responsePutDFolder = await client.send(commandPutDFolder);
+  console.log(responsePutDFolder);
 }
+
 class StorageProfileError extends Error {
 
   constructor(s: string) {
