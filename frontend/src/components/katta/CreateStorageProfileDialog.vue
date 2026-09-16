@@ -22,7 +22,7 @@
                     <div class="col-span-6 sm:col-span-3">
                       <label for="protocol" class="block text-sm font-medium text-gray-700">{{ t('storageprofile.protocol') }} <span class="text-red-600">*</span></label>
                       <select id="protocol" v-model="protocol" :disabled="processing" class="mt-1 block w-full rounded-md border-gray-300 shadow-xs focus:ring-primary focus:border-primary sm:text-sm disabled:bg-gray-200">
-                        <option v-for="p in protocols" :key="p" :value="p">{{ p }}</option>
+                        <option v-for="p in protocols" :key="p" :value="p">{{ t(`storageprofile.protocol.${p}`) }}</option>
                       </select>
                     </div>
 
@@ -48,7 +48,7 @@
                     <div class="col-span-6 sm:col-span-3">
                       <label for="storageClass" class="block text-sm font-medium text-gray-700">{{ t('storageprofile.storageClass') }} <span class="text-red-600">*</span></label>
                       <select id="storageClass" v-model="state.storageClass" :disabled="processing" class="mt-1 block w-full rounded-md border-gray-300 shadow-xs focus:ring-primary focus:border-primary sm:text-sm disabled:bg-gray-200">
-                        <option v-for="c in storageClasses" :key="c" :value="c">{{ c }}</option>
+                        <option v-for="c in storageClasses" :key="c" :value="c">{{ t(`storageprofile.storageClass.${c}`) }}</option>
                       </select>
                     </div>
 
