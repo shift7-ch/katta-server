@@ -2,7 +2,7 @@
 
 # Katta: transform your S3 storage into a secure, team-friendly workspace with client-side encryption
 
-Katta bring zero-config storage management and zero-knowledge key management for teams and organizations.
+Katta brings zero-config storage management and zero-knowledge key management to teams and organizations.
 
 It easily integrates into your existing identity management incl. OpenID Connect, SAML, and LDAP.
 As usual, your favorite cloud service remains your free choice [^1].
