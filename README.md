@@ -1,6 +1,6 @@
 [![CI Build](https://github.com/shift7-ch/katta-server/actions/workflows/build.yml/badge.svg)](https://github.com/shift7-ch/katta-server/actions/workflows/build.yml)
 
-# Katta: the secure and easy way to work in teams
+# Katta: transform your S3 storage into a secure, team-friendly workspace with client-side encryption
 
 Katta bring zero-config storage management and zero-knowledge key management for teams and organizations.
 
