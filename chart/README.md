@@ -5,7 +5,7 @@ Helm chart for [Katta Server](https://github.com/shift7-ch/katta-server), a down
 This chart deploys:
 
 - Katta Server (the "Hub" backend, required)
-- Keycloak (optional, enabled by default) — uses the Katta-customized image with the token-exchange SPI
+- Keycloak (optional, enabled by default) — uses the Katta-customized image with the Katta theme; the realm is configured for Keycloak's Standard Token Exchange (V2)
 - PostgreSQL (optional, enabled by default)
 - MinIO (optional, disabled by default — see [Bundled MinIO](#bundled-minio-for-evaluation))
 
