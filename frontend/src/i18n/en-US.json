@@ -690,7 +690,9 @@
   "CreateVaultS3.error.noSuchBucket": "The bucket does not exist at this storage location. Check the bucket name and re-try.",
   "CreateVaultS3.error.accessDenied": "The username is not allowed to access this bucket. Check the bucket permissions and re-try.",
   "CreateVaultS3.error.bucketAccessFailed": "The bucket could not be accessed: {0}",
-  "CreateVaultS3.error.invalidCORS": "{0}. Check your bucket CORS settings.",
+  "CreateVaultS3.error.storageConnectionFailed": "Cannot connect to the storage location. Check your network connection and the bucket CORS settings, then re-try. The browser console shows the exact reason.",
+  "CreateVaultS3.error.blockedByContentSecurityPolicy": "The Content Security Policy of this Katta Server blocks the connection to {0}. Add the storage location to connect-src and re-try.",
+  "CreateVaultS3.error.showCorsConfiguration": "Show CORS configuration",
 
   "nav.profile.storageprofiles": "Storage Locations",
   "storageProfileList.title": "Storage Locations",
