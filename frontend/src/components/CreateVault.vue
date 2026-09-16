@@ -261,6 +261,7 @@
                 <span v-if="bucketPrefix" class="inline-flex items-center rounded-l-md border border-r-0 border-gray-300 bg-gray-50 px-3 text-gray-500 sm:text-sm">{{ bucketPrefix }}</span>
                 <input id="vaultBucketName" v-model="vaultBucketName" :disabled="processing" type="text" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-sm sm:text-sm border-gray-300 disabled:bg-gray-200" :class="[bucketPrefix ? 'rounded-none rounded-r-md' : 'rounded-md', { 'invalid:border-red-300 invalid:text-red-900 focus:invalid:ring-red-500 focus:invalid:border-red-500': onCreateError instanceof FormValidationFailedError }]" required />
               </div>
+              <p v-if="bucketPrefix" class="mt-1 text-xs text-gray-500">{{ t('CreateVaultS3.enterVaultDetails.vaultPermanentBucketName.help', [bucketPrefix]) }}</p>
             </div>
             <br />
             <div class="col-span-6 sm:col-span-3">
@@ -1131,7 +1132,7 @@ async function createVault() {
         } else if (storageProfile.protocol === 'S3STATIC') {
           uvfVault.value.metadata.backend.username = vaultAccessKeyId.value;
           uvfVault.value.metadata.backend.password = vaultSecretKey.value;
-          uvfVault.value.metadata.backend.bucket = vaultBucketName.value;
+          uvfVault.value.metadata.backend.bucket = effectiveBucketName.value;
         } else {
           throw new Error('Unsupported backend protocol');
         }
