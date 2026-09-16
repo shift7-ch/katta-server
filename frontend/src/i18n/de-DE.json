@@ -349,9 +349,10 @@
   "CreateVaultS3.error.noSuchBucket": "Der Bucket existiert in diesem Speicherbereich nicht. Prüfe den Bucket-Namen und versuche es erneut.",
   "CreateVaultS3.error.accessDenied": "Der Benutzername darf nicht auf diesen Bucket zugreifen. Prüfe die Bucket-Berechtigungen und versuche es erneut.",
   "CreateVaultS3.error.bucketAccessFailed": "Auf den Bucket konnte nicht zugegriffen werden: {0}",
-  "CreateVaultS3.error.storageConnectionFailed": "Keine Verbindung zum Speicherort möglich. Prüfe deine Netzwerkverbindung und die CORS-Einstellungen des Buckets und versuche es erneut. Die Browser-Konsole zeigt den genauen Grund.",
-  "CreateVaultS3.error.blockedByContentSecurityPolicy": "Die Content Security Policy dieses Katta-Servers blockiert die Verbindung zu {0}. Füge den Speicherort zu connect-src hinzu und versuche es erneut.",
-  "CreateVaultS3.error.showCorsConfiguration": "CORS-Konfiguration anzeigen",
+  "CreateVaultS3.error.storageConnectionFailed": "Dein Browser kann keine Verbindung zum Bucket herstellen. Prüfe deine Netzwerkverbindung, den Speicher-Endpunkt und die CORS-Einstellungen des Buckets und versuche es erneut. Details findest du in der Browser-Konsole.",
+  "CreateVaultS3.error.blockedByContentSecurityPolicy": "Die Content Security Policy dieses Katta-Servers blockiert Verbindungen zu {0}. Ein Serveradministrator muss diese Adresse in connect-src freigeben. Lade danach die Seite neu und beginne erneut (du erhältst einen neuen Wiederherstellungsschlüssel).",
+  "CreateVaultS3.error.showCorsSetupCommand": "Befehl zur CORS-Einrichtung anzeigen",
+  "CreateVaultS3.error.troubleshootingGuide": "Hilfe zur Fehlerbehebung",
 
 
   "nav.profile.storageprofiles": "Speicherbereiche",

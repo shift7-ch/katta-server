@@ -272,12 +272,17 @@
               <div class="flex">
                 <XCircleIcon class="h-5 w-5 shrink-0 text-red-400" aria-hidden="true" />
                 <div class="ml-3 min-w-0 flex-1 text-sm text-red-700">
-                  <p v-if="blockedStorageOrigin">{{ t('CreateVaultS3.error.blockedByContentSecurityPolicy', [blockedStorageOrigin]) }}</p>
-                  <template v-else>
-                    <p>{{ onCreateError.message }}</p>
-                    <details v-if="onCreateError.codeHint" class="mt-2">
-                      <summary class="cursor-pointer font-medium hover:text-red-800">{{ t('CreateVaultS3.error.showCorsConfiguration') }}</summary>
-                      <pre class="mt-2 max-h-64 overflow-auto whitespace-pre-wrap break-words rounded-md bg-white p-3 text-xs text-gray-900 ring-1 ring-inset ring-red-200">{{ onCreateError.codeHint }}</pre>
+                  <p>{{ blockedStorageOrigin ? t('CreateVaultS3.error.blockedByContentSecurityPolicy', [blockedStorageOrigin]) : onCreateError.message }}</p>
+                  <template v-if="(onCreateError instanceof StorageConnectionError)">
+                    <p class="mt-2">
+                      <a :href="storageTroubleshootingUrl" target="_blank" rel="noopener" class="inline-flex items-center font-medium underline hover:text-red-800">
+                        {{ t('CreateVaultS3.error.troubleshootingGuide') }}
+                        <ArrowTopRightOnSquareIcon class="ml-1 h-4 w-4 shrink-0" aria-hidden="true" />
+                      </a>
+                    </p>
+                    <details v-if="!blockedStorageOrigin && onCreateError.codeHint" class="mt-2">
+                      <summary class="cursor-pointer font-medium hover:text-red-800">{{ t('CreateVaultS3.error.showCorsSetupCommand') }}</summary>
+                      <pre class="mt-2 overflow-x-auto whitespace-pre rounded-md bg-white p-3 text-xs text-gray-900 ring-1 ring-inset ring-red-200">{{ onCreateError.codeHint }}</pre>
                       <div class="mt-2 flex justify-end">
                         <button type="button" class="inline-flex items-center whitespace-nowrap rounded-full bg-white py-1.5 pr-3 pl-2 text-sm font-medium text-gray-900 ring-1 ring-inset ring-red-200 hover:bg-red-100" @click="copyCodeHint(onCreateError.codeHint)">
                           <ClipboardIcon class="h-5 w-5 shrink-0 text-gray-300" aria-hidden="true" />
@@ -512,12 +517,17 @@
               <div class="flex">
                 <XCircleIcon class="h-5 w-5 shrink-0 text-red-400" aria-hidden="true" />
                 <div class="ml-3 min-w-0 flex-1 text-sm text-red-700">
-                  <p v-if="blockedStorageOrigin">{{ t('CreateVaultS3.error.blockedByContentSecurityPolicy', [blockedStorageOrigin]) }}</p>
-                  <template v-else>
-                    <p>{{ onCreateError.message }}</p>
-                    <details v-if="onCreateError.codeHint" class="mt-2">
-                      <summary class="cursor-pointer font-medium hover:text-red-800">{{ t('CreateVaultS3.error.showCorsConfiguration') }}</summary>
-                      <pre class="mt-2 max-h-64 overflow-auto whitespace-pre-wrap break-words rounded-md bg-white p-3 text-xs text-gray-900 ring-1 ring-inset ring-red-200">{{ onCreateError.codeHint }}</pre>
+                  <p>{{ blockedStorageOrigin ? t('CreateVaultS3.error.blockedByContentSecurityPolicy', [blockedStorageOrigin]) : onCreateError.message }}</p>
+                  <template v-if="(onCreateError instanceof StorageConnectionError)">
+                    <p class="mt-2">
+                      <a :href="storageTroubleshootingUrl" target="_blank" rel="noopener" class="inline-flex items-center font-medium underline hover:text-red-800">
+                        {{ t('CreateVaultS3.error.troubleshootingGuide') }}
+                        <ArrowTopRightOnSquareIcon class="ml-1 h-4 w-4 shrink-0" aria-hidden="true" />
+                      </a>
+                    </p>
+                    <details v-if="!blockedStorageOrigin && onCreateError.codeHint" class="mt-2">
+                      <summary class="cursor-pointer font-medium hover:text-red-800">{{ t('CreateVaultS3.error.showCorsSetupCommand') }}</summary>
+                      <pre class="mt-2 overflow-x-auto whitespace-pre rounded-md bg-white p-3 text-xs text-gray-900 ring-1 ring-inset ring-red-200">{{ onCreateError.codeHint }}</pre>
                       <div class="mt-2 flex justify-end">
                         <button type="button" class="inline-flex items-center whitespace-nowrap rounded-full bg-white py-1.5 pr-3 pl-2 text-sm font-medium text-gray-900 ring-1 ring-inset ring-red-200 hover:bg-red-100" @click="copyCodeHint(onCreateError.codeHint)">
                           <ClipboardIcon class="h-5 w-5 shrink-0 text-gray-300" aria-hidden="true" />
@@ -786,6 +796,8 @@ class StorageConnectionError extends StorageBackendError {
 
 }
 
+const storageTroubleshootingUrl = 'https://docs.katta.cloud/self-hosting-guide/troubleshooting/#vault-creation-from-katta-web-fails-in-static-storage-access-mode';
+
 // A document's Content Security Policy cannot change without a reload, so recorded violations stay valid for the component lifetime.
 const blockedConnectionOrigins = ref<string[]>([]);
 const blockedStorageOrigin = computed(() => {
@@ -1046,7 +1058,7 @@ function toStorageBackendError(error: unknown, endpoint: string | undefined): St
   }
   // Browsers report CSP, CORS, and network failures as the same indistinguishable TypeError.
   if (error instanceof TypeError) {
-    return new StorageConnectionError(endpoint, corsConfigurationHint(endpoint ?? 'https://s3.amazonaws.com', effectiveBucketName.value));
+    return new StorageConnectionError(endpoint, corsConfigurationHint(endpoint, effectiveBucketName.value));
   }
   return new StorageBackendError(bucketAccessErrorMessage(error));
 }
@@ -1082,22 +1094,22 @@ function isBucketEmpty(response: ListObjectsV2CommandOutput): boolean {
   return (response.Contents?.length ?? 0) === 0 && (response.KeyCount ?? 0) === 0;
 }
 
-function corsConfigurationHint(endpoint: string, bucket: string): string {
+function corsConfigurationHint(endpoint: string | undefined, bucket: string): string {
+  const endpointOption = endpoint === undefined ? '' : `\n  --endpoint-url ${endpoint} \\`;
   // S3 matches AllowedOrigins against the browser's Origin header, which carries no path.
-  return `aws s3api put-bucket-cors --endpoint-url ${endpoint} --bucket ${bucket} --cors-configuration file://cors.json
-
-cors.json:
-{
-  "CORSRules": [
-    {
-      "AllowedHeaders": ["*"],
-      "AllowedMethods": ["GET", "PUT"],
-      "AllowedOrigins": ["${location.origin}"],
-      "ExposeHeaders": ["ETag"],
-      "MaxAgeSeconds": 3600
-    }
-  ]
-}`;
+  return `aws s3api put-bucket-cors \\${endpointOption}
+  --bucket ${bucket} \\
+  --cors-configuration '{
+    "CORSRules": [
+      {
+        "AllowedOrigins": ["${location.origin}"],
+        "AllowedMethods": ["GET", "PUT", "POST", "DELETE", "HEAD"],
+        "AllowedHeaders": ["*"],
+        "ExposeHeaders": ["ETag", "x-amz-request-id", "x-amz-id-2", "x-amz-version-id"],
+        "MaxAgeSeconds": 3600
+      }
+    ]
+  }'`;
 }
 
 const copiedCodeHint = ref(false);
