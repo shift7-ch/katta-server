@@ -780,7 +780,7 @@ class StorageBackendError extends Error {
 
 class StorageConnectionError extends StorageBackendError {
 
-  constructor(public endpoint: string, codeHint: string) {
+  constructor(public endpoint: string | undefined, codeHint: string) {
     super(t('CreateVaultS3.error.storageConnectionFailed'), codeHint);
   }
 
@@ -1014,7 +1014,7 @@ async function validateVaultDetails() {
         }
       } catch (error) {
         console.error('Checking the bucket failed.', error);
-        onCreateError.value = toStorageBackendError(error, endpoint);
+        onCreateError.value = toStorageBackendError(error, storageProfile.endpoint);
         return;
       }
       console.log(`GetBucketLocation returned region ${selectedRegion.value}`);
@@ -1040,20 +1040,24 @@ function isS3ErrorWithRegion(error: unknown): error is { Code: string; Region: s
 }
 
 // / start katta extension
-function toStorageBackendError(error: unknown, endpoint: string): StorageBackendError {
+function toStorageBackendError(error: unknown, endpoint: string | undefined): StorageBackendError {
   if (error instanceof StorageBackendError) {
     return error;
   }
   // Browsers report CSP, CORS, and network failures as the same indistinguishable TypeError.
   if (error instanceof TypeError) {
-    return new StorageConnectionError(endpoint, corsConfigurationHint(endpoint, effectiveBucketName.value));
+    return new StorageConnectionError(endpoint, corsConfigurationHint(endpoint ?? 'https://s3.amazonaws.com', effectiveBucketName.value));
   }
   return new StorageBackendError(bucketAccessErrorMessage(error));
 }
 
-function isStorageHostname(hostname: string, endpoint: string): boolean {
+function isStorageHostname(hostname: string, endpoint: string | undefined): boolean {
+  // Without a configured endpoint, the AWS SDK picks a regional host itself.
+  if (endpoint === undefined) {
+    return isAwsHostname(hostname);
+  }
   const endpointHost = endpointHostname(endpoint);
-  return isAwsHostname(endpointHost) ? isAwsHostname(hostname) : hostname === endpointHost || hostname.endsWith(`.${endpointHost}`);
+  return hostname === endpointHost || hostname.endsWith(`.${endpointHost}`);
 }
 
 function bucketAccessErrorMessage(error: unknown): string {
@@ -1497,7 +1501,7 @@ async function uploadVaultTemplate() {
     const responsePutDFolder = await client.send(commandPutDFolder);
     console.log(responsePutDFolder);
   } catch (error) {
-    throw toStorageBackendError(error, storageProfile.endpoint ?? 'https://s3.amazonaws.com');
+    throw toStorageBackendError(error, storageProfile.endpoint);
   }
 }
 
