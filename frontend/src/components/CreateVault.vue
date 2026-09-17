@@ -268,13 +268,41 @@
               <label for="automaticAccessGrant" class="block text-sm font-medium text-gray-700">{{ t('CreateVaultS3.enterVaultDetails.automaticAccessGrant') }}</label>
               <input id="automaticAccessGrant" v-model="automaticAccessGrant" name="automaticAccessGrant" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary" />
             </div>
+            <div v-if="(onCreateError instanceof StorageBackendError)" class="rounded-md bg-red-50 p-4 text-left">
+              <div class="flex">
+                <XCircleIcon class="h-5 w-5 shrink-0 text-red-400" aria-hidden="true" />
+                <div class="ml-3 min-w-0 flex-1 text-sm text-red-700">
+                  <p>{{ blockedStorageOrigin ? t('CreateVaultS3.error.blockedByContentSecurityPolicy', [blockedStorageOrigin]) : onCreateError.message }}</p>
+                  <template v-if="(onCreateError instanceof StorageConnectionError)">
+                    <p class="mt-2">
+                      <a :href="storageTroubleshootingUrl" target="_blank" rel="noopener" class="inline-flex items-center font-medium underline hover:text-red-800">
+                        {{ t('CreateVaultS3.error.troubleshootingGuide') }}
+                        <ArrowTopRightOnSquareIcon class="ml-1 h-4 w-4 shrink-0" aria-hidden="true" />
+                      </a>
+                    </p>
+                    <details v-if="!blockedStorageOrigin && onCreateError.codeHint" class="mt-2">
+                      <summary class="cursor-pointer font-medium hover:text-red-800">{{ t('CreateVaultS3.error.showCorsSetupCommand') }}</summary>
+                      <pre class="mt-2 overflow-x-auto whitespace-pre rounded-md bg-white p-3 text-xs text-gray-900 ring-1 ring-inset ring-red-200">{{ onCreateError.codeHint }}</pre>
+                      <div class="mt-2 flex justify-end">
+                        <button type="button" class="inline-flex items-center whitespace-nowrap rounded-full bg-white py-1.5 pr-3 pl-2 text-sm font-medium text-gray-900 ring-1 ring-inset ring-red-200 hover:bg-red-100" @click="copyCodeHint(onCreateError.codeHint)">
+                          <ClipboardIcon class="h-5 w-5 shrink-0 text-gray-300" aria-hidden="true" />
+                          <span class="ml-2">{{ copiedCodeHint ? t('common.copied') : t('common.copy') }}</span>
+                        </button>
+                      </div>
+                    </details>
+                  </template>
+                </div>
+              </div>
+            </div>
             <!-- \ end katta extension -->
           </div>
 
           <div class="bg-gray-50 mt-4 px-4 py-3 sm:px-6">
             <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center sm:space-x-4">
               <div class="text-sm text-red-900 text-right sm:flex-1 sm:min-w-0">
-                <template v-if="onCreateError">
+                <!-- // / start katta modification -->
+                <template v-if="onCreateError && !(onCreateError instanceof StorageBackendError)">
+                  <!-- // \ end katta modification -->
                   <p v-if="(onCreateError instanceof FormValidationFailedError)">
                     {{ t('createVault.error.formValidationFailed','') }}
                   </p>
@@ -282,10 +310,6 @@
                   <p v-else-if="(onCreateError instanceof StorageProfileError )">
                     {{ t('CreateVaultS3.error.invalidStorageProfileConfiguration', '') }}: {{ onCreateError.message }}
                   </p>
-                  <template v-else-if="(onCreateError instanceof StorageBackendError)">
-                    <p>{{ onCreateError.message }}</p>
-                    <pre v-if="onCreateError.codeHint" class="mt-2 text-left text-xs text-gray-900 max-h-64 overflow-auto whitespace-pre-wrap break-words bg-white rounded p-2 ring-1 ring-inset ring-gray-200">{{ onCreateError.codeHint }}</pre>
-                  </template>
                   <!-- // \ end katta extension -->
                   <!-- // / start katta modification -->
                   <p v-else-if="(onCreateError instanceof DecodeUvfRecoveryKeyError || onCreateError instanceof DecodeVf8RecoveryKeyError)">
@@ -488,11 +512,41 @@
                 <label for="confirmRecoveryKey" class="font-medium text-gray-700">{{ t('createVault.showRecoveryKey.confirmRecoveryKey') }}</label>
               </div>
             </div>
+            <!-- // / start katta extension -->
+            <div v-if="(onCreateError instanceof StorageBackendError)" class="mt-5 sm:mt-6 rounded-md bg-red-50 p-4 text-left">
+              <div class="flex">
+                <XCircleIcon class="h-5 w-5 shrink-0 text-red-400" aria-hidden="true" />
+                <div class="ml-3 min-w-0 flex-1 text-sm text-red-700">
+                  <p>{{ blockedStorageOrigin ? t('CreateVaultS3.error.blockedByContentSecurityPolicy', [blockedStorageOrigin]) : onCreateError.message }}</p>
+                  <template v-if="(onCreateError instanceof StorageConnectionError)">
+                    <p class="mt-2">
+                      <a :href="storageTroubleshootingUrl" target="_blank" rel="noopener" class="inline-flex items-center font-medium underline hover:text-red-800">
+                        {{ t('CreateVaultS3.error.troubleshootingGuide') }}
+                        <ArrowTopRightOnSquareIcon class="ml-1 h-4 w-4 shrink-0" aria-hidden="true" />
+                      </a>
+                    </p>
+                    <details v-if="!blockedStorageOrigin && onCreateError.codeHint" class="mt-2">
+                      <summary class="cursor-pointer font-medium hover:text-red-800">{{ t('CreateVaultS3.error.showCorsSetupCommand') }}</summary>
+                      <pre class="mt-2 overflow-x-auto whitespace-pre rounded-md bg-white p-3 text-xs text-gray-900 ring-1 ring-inset ring-red-200">{{ onCreateError.codeHint }}</pre>
+                      <div class="mt-2 flex justify-end">
+                        <button type="button" class="inline-flex items-center whitespace-nowrap rounded-full bg-white py-1.5 pr-3 pl-2 text-sm font-medium text-gray-900 ring-1 ring-inset ring-red-200 hover:bg-red-100" @click="copyCodeHint(onCreateError.codeHint)">
+                          <ClipboardIcon class="h-5 w-5 shrink-0 text-gray-300" aria-hidden="true" />
+                          <span class="ml-2">{{ copiedCodeHint ? t('common.copied') : t('common.copy') }}</span>
+                        </button>
+                      </div>
+                    </details>
+                  </template>
+                </div>
+              </div>
+            </div>
+            <!-- // \ end katta extension -->
           </div>
           <div class="bg-gray-50 mt-4 px-4 py-3 sm:px-6">
             <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center sm:space-x-4">
               <div class="text-sm text-red-900 sm:flex-1 sm:min-w-0">
-                <template v-if="onCreateError">
+                <!-- // / start katta modification -->
+                <template v-if="onCreateError && !(onCreateError instanceof StorageBackendError)">
+                  <!-- // \ end katta modification -->
                   <p v-if="!(onCreateError instanceof PaymentRequiredError)">
                     {{ t('common.unexpectedError', [onCreateError.message]) }}
                   </p>
@@ -615,6 +669,7 @@ import authPromise from '../common/auth';
 import { AxiosError } from 'axios';
 import { base64urlnopad } from '@scure/base';
 import { isAwsHostname } from '../common/katta';
+import { onBeforeUnmount } from 'vue';
 // \ end katta extension
 
 enum State {
@@ -732,6 +787,39 @@ class StorageBackendError extends Error {
   }
 
 }
+
+class StorageConnectionError extends StorageBackendError {
+
+  constructor(public endpoint: string | undefined, codeHint: string) {
+    super(t('CreateVaultS3.error.storageConnectionFailed'), codeHint);
+  }
+
+}
+
+const storageTroubleshootingUrl = 'https://docs.katta.cloud/self-hosting-guide/troubleshooting/#vault-creation-from-katta-web-fails-in-static-storage-access-mode';
+
+// A document's Content Security Policy cannot change without a reload, so recorded violations stay valid for the component lifetime.
+const blockedConnectionOrigins = ref<string[]>([]);
+const blockedStorageOrigin = computed(() => {
+  const error = onCreateError.value;
+  if (!(error instanceof StorageConnectionError)) {
+    return undefined;
+  }
+  return blockedConnectionOrigins.value.find(origin => isStorageHostname(new URL(origin).hostname, error.endpoint));
+});
+
+function recordBlockedConnection(event: SecurityPolicyViolationEvent) {
+  if (event.disposition !== 'enforce' || event.effectiveDirective !== 'connect-src') {
+    return;
+  }
+  const origin = new URL(event.blockedURI).origin;
+  if (!blockedConnectionOrigins.value.includes(origin)) {
+    blockedConnectionOrigins.value.push(origin);
+  }
+}
+
+onMounted(() => document.addEventListener('securitypolicyviolation', recordBlockedConnection));
+onBeforeUnmount(() => document.removeEventListener('securitypolicyviolation', recordBlockedConnection));
 // \ end katta extension
 onMounted(initialize);
 const licenseStatus = ref<LicenseUserInfoDto>();
@@ -937,14 +1025,8 @@ async function validateVaultDetails() {
           return;
         }
       } catch (error) {
-        console.log(error);
-        // TODO review can we improve whether this is a CORS problem? FF message is "NetworkError when attempting to fetch resource", Safari "Load failed".
-        if (error instanceof TypeError){
-          onCreateError.value = new StorageBackendError(t('CreateVaultS3.error.invalidCORS', [error.message]), corsConfigurationHint(endpoint, effectiveBucketName.value));
-        } else {
-          console.error('Checking the bucket failed.', error);
-          onCreateError.value = new StorageBackendError(bucketAccessErrorMessage(error));
-        }
+        console.error('Checking the bucket failed.', error);
+        onCreateError.value = toStorageBackendError(error, storageProfile.endpoint);
         return;
       }
       console.log(`GetBucketLocation returned region ${selectedRegion.value}`);
@@ -970,6 +1052,26 @@ function isS3ErrorWithRegion(error: unknown): error is { Code: string; Region: s
 }
 
 // / start katta extension
+function toStorageBackendError(error: unknown, endpoint: string | undefined): StorageBackendError {
+  if (error instanceof StorageBackendError) {
+    return error;
+  }
+  // Browsers report CSP, CORS, and network failures as the same indistinguishable TypeError.
+  if (error instanceof TypeError) {
+    return new StorageConnectionError(endpoint, corsConfigurationHint(endpoint, effectiveBucketName.value));
+  }
+  return new StorageBackendError(bucketAccessErrorMessage(error));
+}
+
+function isStorageHostname(hostname: string, endpoint: string | undefined): boolean {
+  // Without a configured endpoint, the AWS SDK picks a regional host itself.
+  if (endpoint === undefined) {
+    return isAwsHostname(hostname);
+  }
+  const endpointHost = endpointHostname(endpoint);
+  return hostname === endpointHost || hostname.endsWith(`.${endpointHost}`);
+}
+
 function bucketAccessErrorMessage(error: unknown): string {
   // The AWS SDK exposes the S3 error code as the exception's name, for both modeled and unmodeled errors.
   switch (error instanceof S3ServiceException ? error.name : undefined) {
@@ -992,22 +1094,31 @@ function isBucketEmpty(response: ListObjectsV2CommandOutput): boolean {
   return (response.Contents?.length ?? 0) === 0 && (response.KeyCount ?? 0) === 0;
 }
 
-function corsConfigurationHint(endpoint: string, bucket: string): string {
+function corsConfigurationHint(endpoint: string | undefined, bucket: string): string {
+  const endpointOption = endpoint === undefined ? '' : `\n  --endpoint-url ${endpoint} \\`;
   // S3 matches AllowedOrigins against the browser's Origin header, which carries no path.
-  return `aws s3api put-bucket-cors --endpoint-url ${endpoint} --bucket ${bucket} --cors-configuration file://cors.json
+  return `aws s3api put-bucket-cors \\${endpointOption}
+  --bucket ${bucket} \\
+  --cors-configuration '{
+    "CORSRules": [
+      {
+        "AllowedOrigins": ["${location.origin}"],
+        "AllowedMethods": ["GET", "PUT", "POST", "DELETE", "HEAD"],
+        "AllowedHeaders": ["*"],
+        "ExposeHeaders": ["ETag", "x-amz-request-id", "x-amz-id-2", "x-amz-version-id"],
+        "MaxAgeSeconds": 3600
+      }
+    ]
+  }'`;
+}
 
-cors.json:
-{
-  "CORSRules": [
-    {
-      "AllowedHeaders": ["*"],
-      "AllowedMethods": ["GET", "PUT"],
-      "AllowedOrigins": ["${location.origin}"],
-      "ExposeHeaders": ["ETag"],
-      "MaxAgeSeconds": 3600
-    }
-  ]
-}`;
+const copiedCodeHint = ref(false);
+const debouncedCopyCodeHintFinish = debounce(() => copiedCodeHint.value = false, 2000);
+
+async function copyCodeHint(codeHint: string) {
+  await navigator.clipboard.writeText(codeHint);
+  copiedCodeHint.value = true;
+  debouncedCopyCodeHintFinish();
 }
 // \ end katta extension
 
@@ -1362,15 +1473,6 @@ async function uploadVaultTemplate() {
       secretAccessKey: vaultSecretKey.value
     }
   });
-  const commandListObjects = new ListObjectsV2Command({
-    Bucket: effectiveBucketName.value,
-    MaxKeys: 1,
-  });
-  const responseListObjects = await client.send(commandListObjects);
-  console.log(responseListObjects);
-  if (!isBucketEmpty(responseListObjects)){
-    throw new Error(t('CreateVaultS3.error.bucketNotEmpty'));
-  }
   if (!uvfVault.value){
     throw new Error('Invalid state');
   }
@@ -1382,23 +1484,37 @@ async function uploadVaultTemplate() {
     throw new Error('Invalid state: rootDirHash missing.');
   }
 
-  const commandPutVaultCryptomator = new PutObjectCommand({
-    Bucket: effectiveBucketName.value,
-    Key: 'vault.uvf',
-    Body: vault.value.uvfMetadataFile
-  });
-  console.log(commandPutVaultCryptomator);
-  const responsePutVaultCryptomator = await client.send(commandPutVaultCryptomator);
-  console.log(responsePutVaultCryptomator);
+  try {
+    const commandListObjects = new ListObjectsV2Command({
+      Bucket: effectiveBucketName.value,
+      MaxKeys: 1,
+    });
+    const responseListObjects = await client.send(commandListObjects);
+    console.log(responseListObjects);
+    if (!isBucketEmpty(responseListObjects)){
+      throw new StorageBackendError(t('CreateVaultS3.error.bucketNotEmpty'));
+    }
 
-  const commandPutDFolder = new PutObjectCommand({
-    Bucket: effectiveBucketName.value,
-    Key: `d/${rootDirHash.substring(0, 2)}/${rootDirHash.substring(2)}/`,
-    Body: '',
-  });
-  console.log(commandPutDFolder);
-  const responsePutDFolder = await client.send(commandPutDFolder);
-  console.log(responsePutDFolder);
+    const commandPutVaultCryptomator = new PutObjectCommand({
+      Bucket: effectiveBucketName.value,
+      Key: 'vault.uvf',
+      Body: vault.value.uvfMetadataFile
+    });
+    console.log(commandPutVaultCryptomator);
+    const responsePutVaultCryptomator = await client.send(commandPutVaultCryptomator);
+    console.log(responsePutVaultCryptomator);
+
+    const commandPutDFolder = new PutObjectCommand({
+      Bucket: effectiveBucketName.value,
+      Key: `d/${rootDirHash.substring(0, 2)}/${rootDirHash.substring(2)}/`,
+      Body: '',
+    });
+    console.log(commandPutDFolder);
+    const responsePutDFolder = await client.send(commandPutDFolder);
+    console.log(responsePutDFolder);
+  } catch (error) {
+    throw toStorageBackendError(error, storageProfile.endpoint);
+  }
 }
 
 class StorageProfileError extends Error {
