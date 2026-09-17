@@ -32,7 +32,7 @@
             <div class="min-w-0 flex-1">
               <div class="flex items-center gap-3">
                 <p class="truncate text-sm font-medium text-primary">{{ storageprofile.name }}</p>
-                <span class="text-xs text-gray-400">{{ storageprofile.protocol }}</span>
+                <span class="text-xs text-gray-400">{{ t(`storageprofile.protocol.${storageprofile.protocol}`) }}</span>
                 <div v-if="storageprofile.archived" class="inline-flex items-center rounded-md bg-yellow-400/10 px-2 py-1 text-xs font-medium text-yellow-500 ring-1 ring-inset ring-yellow-400/20">{{ t('storageProfileList.badge.archived') }}</div>
               </div>
             </div>
