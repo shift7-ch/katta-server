@@ -27,6 +27,9 @@
   to the backend via `HUB_KEYCLOAK_OIDC_CRYPTOMATOR_VAULTS_CLIENT_SECRET`.
 - `values-demo.yaml` enabling the full local stack (Hub + Keycloak + Postgres + MinIO +
   seed Job) with fixed demo passwords.
+- `hub.admin.email`, `hub.admin.firstName` and `hub.admin.lastName` for the realm admin user
+  (defaults `admin@localhost`, `Admin`, `Admin`). Keycloak's default user profile requires
+  them, so without them the first login fails with "Account is not fully set up".
 
 ### Changed
 

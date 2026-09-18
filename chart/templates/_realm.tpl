@@ -45,6 +45,15 @@
   "users": [
     {
       "username": {{ .Values.hub.admin.username | quote }},
+      {{- with .Values.hub.admin.email }}
+      "email": {{ . | quote }},
+      {{- end }}
+      {{- with .Values.hub.admin.firstName }}
+      "firstName": {{ . | quote }},
+      {{- end }}
+      {{- with .Values.hub.admin.lastName }}
+      "lastName": {{ . | quote }},
+      {{- end }}
       "enabled": true,
       "credentials": [
         {

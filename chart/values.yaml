@@ -112,6 +112,11 @@ hub:
     username: admin
     password: ""
     passwordTemporary: true
+    # Keycloak's default user profile requires email, first and last name; if one is blank,
+    # the first login is interrupted with "Account is not fully set up" and password grants fail.
+    email: admin@localhost
+    firstName: Admin
+    lastName: Admin
   secrets:
     create: true
     systemClientSecret: "" # optional; auto-generated when chart manages Hub secret
