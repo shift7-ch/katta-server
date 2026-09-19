@@ -30,6 +30,11 @@
 - `hub.admin.email`, `hub.admin.firstName` and `hub.admin.lastName` for the realm admin user
   (defaults `admin@localhost`, `Admin`, `Admin`). Keycloak's default user profile requires
   them, so without them the first login fails with "Account is not fully set up".
+- `hub.config.additionalConnectSrc`, a list of extra `connect-src` sources appended to the
+  chart's Content-Security-Policy. Required for the S3 and STS endpoints of storage profiles
+  the browser talks to directly, which the chart cannot derive. Entries are CSP source
+  expressions used verbatim, so host wildcards such as `https://*.wasabisys.com` are allowed.
+  Ignored when `hub.config.contentSecurityPolicy` replaces the whole header.
 
 ### Changed
 
