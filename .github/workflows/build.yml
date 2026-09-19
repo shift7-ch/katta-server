@@ -227,9 +227,6 @@ jobs:
     name: Build and Push Multi-Arch Image
     needs: build-native-image
     runs-on: ubuntu-latest
-    outputs:
-      app_version: ${{ steps.version.outputs.app_version }}
-      chart_version: ${{ steps.version.outputs.chart_version }}
     permissions:
       contents: read # Required for checkout
       id-token: write # Required for the attestations step
@@ -253,14 +250,11 @@ jobs:
               exit 1
             fi
             app_version="$version"
-            chart_version="$version"
           else
             app_version="$short_sha"
-            chart_version="0.0.0-${short_sha}"
           fi
           echo "short_sha=${short_sha}" >> "$GITHUB_OUTPUT"
           echo "app_version=${app_version}" >> "$GITHUB_OUTPUT"
-          echo "chart_version=${chart_version}" >> "$GITHUB_OUTPUT"
       - name: Login to GHCR
         uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
         with:
@@ -304,18 +298,3 @@ jobs:
         run: >
           mvn -B clean verify
 # \ katta end addition
-
-  publish-helm-chart:
-    name: Publish Helm Chart
-    needs: multi-arch-image
-    uses: ./.github/workflows/helm-chart.yml
-    with:
-      appVersion: ${{ needs.multi-arch-image.outputs.app_version }}
-      version: ${{ needs.multi-arch-image.outputs.chart_version }}
-    permissions:
-      contents: read
-      id-token: write
-      attestations: write
-      artifact-metadata: write
-      packages: write
-    secrets: inherit

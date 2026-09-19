@@ -1,7 +1,0 @@
-.DS_Store
-.git/
-.github/
-*.swp
-*.tmp
-# Keep environment/example overrides out of the published chart artifact:
-values-*.yaml

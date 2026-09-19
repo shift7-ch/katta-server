@@ -33,4 +33,6 @@ in [its README file](keycloak/README.md). We use [token-exchange-standard:v2](ht
 
 See [Katta Documentation &rarr; Setup Katta Server](https://github.com/shift7-ch/katta-docs/blob/main/SETUP_KATTA_SERVER.md).
 
+The Helm chart to deploy Katta Server on Kubernetes is maintained in [katta-helm](https://github.com/shift7-ch/katta-helm).
+
 
