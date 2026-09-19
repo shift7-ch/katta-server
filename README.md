@@ -1,36 +1,39 @@
+# Katta Server
+
 [![CI Build](https://github.com/shift7-ch/katta-server/actions/workflows/build.yml/badge.svg)](https://github.com/shift7-ch/katta-server/actions/workflows/build.yml)
 
-# Katta: the secure and easy way to work in teams
+> [Katta](https://katta.cloud/): transform your S3 storage into a secure, team-friendly workspace with client-side encryption.
 
-Katta bring zero-config storage management and zero-knowledge key management for teams and organizations.
+Easily integrates into your S3 storage and existing identity management, including OpenID Connect, SAML, and LDAP.
 
-It easily integrates into your existing identity management incl. OpenID Connect, SAML, and LDAP.
-As usual, your favorite cloud service remains your free choice [^1].
+## Components
 
-[^1]: Currently, we support AWS S3 and MinIO S3.
+Katta Server consists of the following components.
 
-Katta consists of Katta Server and Katta Client:
+### Web Frontend
 
-* Katta Client is based on [Mountain Duck](https://mountainduck.io/),
-* Katta Server is based on [Cryptomator Hub](https://github.com/cryptomator/hub/).
+During development, run Vite from the `frontend` directory as explained in [its README file](frontend/README.md).
 
-Katta Server consists of these components:
+### Web Backend
 
-## Web Frontend
+During development, run Quarkus from the `backend` directory as explained in [its README file](backend/README.md).
 
-During development, run vite from the `frontend` dir as explained in [its README file](frontend/README.md).
+### Custom Keycloak Image
 
-## Web Backend
+We add a custom Katta theme to the base Keycloak image, as explained in [its README file](keycloak/README.md).
+Katta relies on Keycloak's [Standard Token Exchange (V2)](https://www.keycloak.org/securing-apps/token-exchange#_standard-token-exchange)
+as per [RFC 8693](https://www.rfc-editor.org/rfc/rfc8693.html) to obtain vault-specific tokens for STS/S3 calls. The `keycloak`
+module contains integration tests verifying this setup.
 
-During development, run Quarkus from the `backend` dir as explained in [its README file](backend/README.md).:
+## Setup
 
-## Custom Keycloak Image
+See [Katta Documentation &rarr; Self-Hosting Guide
+ &rarr; Deployment](https://docs.katta.cloud/self-hosting-guide/deployment/).
 
-We add custom theme to the base keycloak image, as explained
-in [its README file](keycloak/README.md). We use [token-exchange-standard:v2](https://www.keycloak.org/securing-apps/token-exchange) as per [RFC 8693](https://www.rfc-editor.org/rfc/rfc8693.html).
+## Changelog
 
-# Setup
+See [CHANGELOG.md](CHANGELOG.md).
 
-See [Katta Documentation &rarr; Setup Katta Server](https://github.com/shift7-ch/katta-docs/blob/main/SETUP_KATTA_SERVER.md).
+## License
 
-
+This project is licensed under the [GNU Affero General Public License v3.0](LICENSE.txt).
