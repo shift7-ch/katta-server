@@ -86,36 +86,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      # / katta addition
-      - id: get_tag
-        name: Get tag
-        working-directory: backend
-        run: |
-          if [[ ! -z "${{ inputs.tag }}" ]]; then
-            TAG="${{ inputs.tag }}"
-          elif [[ ${{ github.ref_type }} == 'tag' ]]; then
-            TAG="${{ github.ref_name }}"
-          # / katta start modification
-          elif [[ ${{ github.ref_name  }} == ${{ github.event.repository.default_branch }} ]]; then
-            TAG=$(./mvnw help:evaluate -Dexpression=project.version -q -DforceStdout)
-          else
-            TAG="commit-${{ github.sha }}"
-          fi
-          # \ katta end modification
-          echo tag=${TAG}
-          echo tag=${TAG} >> "$GITHUB_OUTPUT"
-      - name: Build and push container image (ci)
-        working-directory: backend
-        run: ./mvnw -B clean package -DskipTests
-        env:
-          QUARKUS_JIB_PLATFORMS: linux/amd64,linux/arm64/v8
-          QUARKUS_CONTAINER_IMAGE_TAG: ${{ steps.get_tag.outputs.tag }}-ci
-          QUARKUS_CONTAINER_IMAGE_BUILD: true
-          QUARKUS_CONTAINER_IMAGE_PUSH: true
-          QUARKUS_CONTAINER_IMAGE_REGISTRY: ghcr.io
-          QUARKUS_CONTAINER_IMAGE_USERNAME: ${{ github.actor }}
-          QUARKUS_CONTAINER_IMAGE_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
-      # \ katta addition
 
   build-native-image:
     name: Build and Push ${{ matrix.arch }} Image
