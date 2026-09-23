@@ -31,18 +31,17 @@
                       <input id="profileName" v-model="state.name" :disabled="processing" type="text" required class="mt-1 block w-full rounded-md border-gray-300 shadow-xs focus:ring-primary focus:border-primary sm:text-sm disabled:bg-gray-200" />
                     </div>
 
-                    <!-- (1) Common: S3 endpoint URL, used directly as `endpoint` on the DTO -->
-                    <div class="col-span-6">
-                      <label for="endpoint" class="block text-sm font-medium text-gray-700">{{ t('createStorageProfileDialog.endpoint.label') }}</label>
-                      <input id="endpoint" v-model="state.endpoint" :disabled="processing" type="url" placeholder="https://s3.example.com" class="mt-1 block w-full rounded-md border-gray-300 shadow-xs focus:ring-primary focus:border-primary sm:text-sm disabled:bg-gray-200" />
-                      <p class="mt-1 text-xs text-gray-500">{{ t('createStorageProfileDialog.endpoint.hint') }}</p>
+                    <!-- (1) Common: S3 provider and endpoint URL, used directly as `endpoint` on the DTO -->
+                    <div class="col-span-6 sm:col-span-2">
+                      <label for="provider" class="block text-sm font-medium text-gray-700">{{ t('createStorageProfileDialog.provider.label') }} <span class="text-red-600">*</span></label>
+                      <select id="provider" v-model="provider" :disabled="processing" class="mt-1 block w-full rounded-md border-gray-300 shadow-xs focus:ring-primary focus:border-primary sm:text-sm disabled:bg-gray-200" @change="onProviderChange">
+                        <option v-for="p in providers" :key="p" :value="p">{{ t(`createStorageProfileDialog.provider.${p}`) }}</option>
+                      </select>
                     </div>
-
-                    <div class="col-span-6 sm:col-span-3 flex items-center">
-                      <label class="inline-flex items-center mt-6">
-                        <input v-model="state.pathStyleAccessEnabled" :disabled="processing" type="checkbox" class="h-4 w-4 text-primary border-gray-300 rounded focus:ring-primary" />
-                        <span class="ml-2 text-sm text-gray-700">{{ t('storageprofile.pathStyleAccessEnabled') }}</span>
-                      </label>
+                    <div class="col-span-6 sm:col-span-4">
+                      <label for="endpoint" class="block text-sm font-medium text-gray-700">{{ t('createStorageProfileDialog.endpoint.label') }} <span class="text-red-600">*</span></label>
+                      <input id="endpoint" v-model="state.endpoint" :disabled="processing" :readonly="provider === 'AWS'" type="url" required placeholder="https://s3.example.com" class="mt-1 block w-full rounded-md border-gray-300 shadow-xs focus:ring-primary focus:border-primary sm:text-sm disabled:bg-gray-200 read-only:bg-gray-200" />
+                      <p class="mt-1 text-xs text-gray-500">{{ t('createStorageProfileDialog.endpoint.hint') }}</p>
                     </div>
 
                     <div class="col-span-6 sm:col-span-3">
@@ -155,7 +154,6 @@ const storageClasses: S3StorageClass[] = ['STANDARD', 'INTELLIGENT_TIERING', 'ST
 type FormState = {
   name: string;
   endpoint: string;
-  pathStyleAccessEnabled: boolean;
   storageClass: S3StorageClass;
   region: string;
   bucketPrefix: string;
@@ -168,7 +166,12 @@ type FormState = {
   stsSessionTag: string;
 };
 
+type S3Provider = 'AWS' | 'GENERIC';
+const providers: S3Provider[] = ['AWS', 'GENERIC'];
+const AWS_ENDPOINT = 'https://s3.amazonaws.com';
+
 const protocol = ref<StorageProtocol>('S3STATIC');
+const provider = ref<S3Provider>('GENERIC');
 const state = ref<FormState>(emptyState());
 const regionsCsv = ref('');
 
@@ -183,7 +186,6 @@ function emptyState(): FormState {
   return {
     name: '',
     endpoint: '',
-    pathStyleAccessEnabled: false,
     storageClass: 'STANDARD',
     region: 'us-east-1',
     bucketPrefix: '',
@@ -199,6 +201,7 @@ function emptyState(): FormState {
 
 function show() {
   protocol.value = 'S3STATIC';
+  provider.value = 'GENERIC';
   state.value = emptyState();
   regionsCsv.value = '';
   onSubmitError.value = undefined;
@@ -239,6 +242,19 @@ function validatedEndpoint(input: string): string | undefined {
   return trimmed;
 }
 
+function onProviderChange() {
+  if (provider.value === 'AWS') {
+    state.value.endpoint = AWS_ENDPOINT;
+  } else if (state.value.endpoint === AWS_ENDPOINT) {
+    state.value.endpoint = '';
+  }
+}
+
+// Path style access is not configurable: AWS S3 uses virtual-hosted style, generic S3 requires path style access.
+function pathStyleAccessEnabled(): boolean {
+  return provider.value === 'GENERIC';
+}
+
 function buildS3StaticDto(endpoint: string | undefined): StorageProfileS3StaticDto {
   return {
     id: newId(),
@@ -246,7 +262,7 @@ function buildS3StaticDto(endpoint: string | undefined): StorageProfileS3StaticD
     protocol: 'S3STATIC',
     archived: false,
     endpoint,
-    pathStyleAccessEnabled: state.value.pathStyleAccessEnabled,
+    pathStyleAccessEnabled: pathStyleAccessEnabled(),
     storageClass: state.value.storageClass,
     region: state.value.region,
     regions: parsedRegions(),
@@ -261,7 +277,7 @@ function buildS3STSDto(endpoint: string | undefined): StorageProfileS3STSDto {
     protocol: 'S3STS',
     archived: false,
     endpoint,
-    pathStyleAccessEnabled: state.value.pathStyleAccessEnabled,
+    pathStyleAccessEnabled: pathStyleAccessEnabled(),
     storageClass: state.value.storageClass,
     region: state.value.region,
     regions: parsedRegions(),
@@ -280,7 +296,7 @@ async function submit() {
   onSubmitError.value = undefined;
   processing.value = true;
   try {
-    const endpoint = validatedEndpoint(state.value.endpoint);
+    const endpoint = provider.value === 'AWS' ? AWS_ENDPOINT : validatedEndpoint(state.value.endpoint);
     const dto: StorageProfileDto = protocol.value === 'S3STATIC'
       ? buildS3StaticDto(endpoint)
       : buildS3STSDto(endpoint);
