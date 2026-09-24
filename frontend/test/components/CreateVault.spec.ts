@@ -103,7 +103,6 @@ import CreateVault from '../../src/components/CreateVault.vue';
 import { UniversalVaultFormat } from '../../src/common/universalVaultFormat';
 
 describe('CreateVault.vue - S3STATIC bucket name', () => {
-
   // https://github.com/shift7-ch/katta-server/issues/204
   // The bucket prefix configured on the storage profile is shown as a non-editable badge; the user
   // may only enter the suffix. The resulting bucket name (prefix + suffix) must be what is actually
@@ -208,5 +207,4 @@ describe('CreateVault.vue - S3STATIC bucket name', () => {
     expect(mocks.createOrUpdateVaultMock).toHaveBeenCalledTimes(1);
     expect(mocks.grantAccessMock).toHaveBeenCalledTimes(1);
   });
-
 });

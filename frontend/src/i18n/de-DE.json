@@ -370,7 +370,6 @@
   "storageprofile.protocol.S3STATIC": "Statische Zugangsdaten",
   "storageprofile.protocol.S3STS": "Temporäre Zugangsdaten (STS)",
   "storageprofile.bucketPrefix": "Prefix Bucket Name",
-  "storageprofile.pathStyleAccessEnabled": "Zugriff mit Pfadformat",
   "storageprofile.stsRoleCreateBucketClient": "create-bucket Role ARN (Katta Desktop)",
   "storageprofile.stsRoleCreateBucketHub": "create-bucket Role ARN (Katta Web)",
   "storageprofile.stsEndpoint": "STS Endpunkt",
