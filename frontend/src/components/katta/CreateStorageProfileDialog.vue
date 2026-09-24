@@ -227,13 +227,8 @@ function parsedRegions(): string[] {
 
 class InvalidEndpointError extends Error {}
 
-// Validates the user-entered endpoint URL and returns it as a single string (the DTO stores it
-// as one field). Empty input → undefined.
-function validatedEndpoint(input: string): string | undefined {
+function validatedEndpoint(input: string): string {
   const trimmed = input.trim();
-  if (trimmed === '') {
-    return undefined;
-  }
   try {
     new URL(trimmed);
   } catch {
@@ -250,12 +245,12 @@ function onProviderChange() {
   }
 }
 
-// Path style access is not configurable: AWS S3 uses virtual-hosted style, generic S3 requires path style access.
+// Use path style for generic providers so single-host MinIO works without wildcard DNS.
 function pathStyleAccessEnabled(): boolean {
   return provider.value === 'GENERIC';
 }
 
-function buildS3StaticDto(endpoint: string | undefined): StorageProfileS3StaticDto {
+function buildS3StaticDto(endpoint: string): StorageProfileS3StaticDto {
   return {
     id: newId(),
     name: state.value.name,
@@ -270,7 +265,7 @@ function buildS3StaticDto(endpoint: string | undefined): StorageProfileS3StaticD
   };
 }
 
-function buildS3STSDto(endpoint: string | undefined): StorageProfileS3STSDto {
+function buildS3STSDto(endpoint: string): StorageProfileS3STSDto {
   return {
     id: newId(),
     name: state.value.name,
