@@ -3,6 +3,8 @@ package cloud.katta;
 import static cloud.katta.JWTDecoder.deocdeJWT;
 import dasniko.testcontainers.keycloak.KeycloakContainer;
 import io.restassured.RestAssured;
+
+import static cloud.katta.KattaTokenExchangeIT.currentKeycloakImage;
 import static io.restassured.RestAssured.given;
 import io.restassured.response.ExtractableResponse;
 import org.json.JSONException;
@@ -33,7 +35,7 @@ public class KeycloakSessionAndTokenTimeoutsSandboxIT {
      * @see <a href="https://stackoverflow.com/questions/52040265/how-to-specify-refresh-tokens-lifespan-in-keycloak/54679852#54679852">How to specify refresh tokens lifespan in Keycloak</a>
      */
     @ParameterizedTest
-    @CsvSource({"26.3.3,5", "26.4.1,5"})
+    @CsvSource({"26.3.3,5", "26.4.1,5", currentKeycloakImage})
     public void inspectRefreshWithRespectToSsoSessionMaxLifespan(final String keycloakVersion, final int ssoSessionMaxLifespanSeconds) throws JSONException, InterruptedException {
         RestAssured.useRelaxedHTTPSValidation();
         try (final KeycloakContainer container = new KeycloakContainer(String.format("quay.io/keycloak/keycloak:%s", keycloakVersion))
@@ -123,7 +125,7 @@ public class KeycloakSessionAndTokenTimeoutsSandboxIT {
      * </ul>
      */
     @ParameterizedTest
-    @CsvSource({"26.3.3,5,5", "26.4.1,5,5"})
+    @CsvSource({"26.3.3,5,5", "26.4.1,5,5", currentKeycloakImage})
     public void inspectRefreshWithOfflineAccess(final String keycloakVersion, final int ssoSessionMaxLifespanSeconds) throws JSONException, InterruptedException {
         RestAssured.useRelaxedHTTPSValidation();
         try (final KeycloakContainer container = new KeycloakContainer(String.format("quay.io/keycloak/keycloak:%s", keycloakVersion))
@@ -206,7 +208,7 @@ public class KeycloakSessionAndTokenTimeoutsSandboxIT {
      * Document <a href="https://www.keycloak.org/docs/latest/server_admin/#_offline-access">Keycloak Offline Access</a> with offlineSessionMaxLifespan.
      */
     @ParameterizedTest
-    @CsvSource({"26.3.3,5,5", "26.4.1,5,5"})
+    @CsvSource({"26.3.3,5,5", "26.4.1,5,5", currentKeycloakImage})
     public void inspectRefreshWithOfflineAccessMaxOffline(final String keycloakVersion, final int ssoSessionMaxLifespanSeconds, final int offlineSessionMaxLifespan) throws JSONException, InterruptedException {
         RestAssured.useRelaxedHTTPSValidation();
         try (final KeycloakContainer container = new KeycloakContainer(String.format("quay.io/keycloak/keycloak:%s", keycloakVersion))
