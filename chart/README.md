@@ -69,7 +69,7 @@ A post-install Helm hook Job (`<release>-storageprofile-seed`) registers an `S3S
 
 ### MinIO IdP debugging
 
-````shell
+```shell
 mc alias set helm http://s3.local.katta.cloud:9090 minioadmin minioadmin
 mc idp openid ls helm                                                   a05d2a4c
 ╭──────────────────────────────────────────────────────────────────────────╮
