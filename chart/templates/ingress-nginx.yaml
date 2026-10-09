@@ -99,10 +99,13 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "cryptomator-hub.labels" . | nindent 4 }}
-  {{- with .Values.ingress.annotations }}
   annotations:
+    {{- with include "cryptomator-hub.ingressCertAnnotations" . }}
+    {{- . | nindent 4 }}
+    {{- end }}
+    {{- with .Values.ingress.annotations }}
     {{- toYaml . | nindent 4 }}
-  {{- end }}
+    {{- end }}
 spec:
   {{- if .Values.ingress.className }}
   ingressClassName: {{ .Values.ingress.className }}
@@ -118,11 +121,11 @@ spec:
                 name: {{ include "cryptomator-hub.fullname" . }}-service-minio
                 port:
                   number: {{ .Values.minio.service.apiPort }}
-  {{- if .Values.ingress.tls.enabled }}
+  {{- if $certSecret }}
   tls:
     - hosts:
         - {{ $s3Host | quote }}
-      secretName: {{ .Values.ingress.tls.secretName | required "ingress.tls.secretName must be set when ingress.tls.enabled=true" }}
+      secretName: {{ $certSecret | quote }}
   {{- end }}
 {{- end }}
 {{- if and .Values.minio.enabled .Values.urls.minio.public }}
@@ -137,6 +140,9 @@ metadata:
   labels:
     {{- include "cryptomator-hub.labels" . | nindent 4 }}
   annotations:
+    {{- with include "cryptomator-hub.ingressCertAnnotations" . }}
+    {{- . | nindent 4 }}
+    {{- end }}
     {{- with .Values.ingress.annotations }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
@@ -159,11 +165,11 @@ spec:
                 name: {{ include "cryptomator-hub.fullname" . }}-service-minio
                 port:
                   number: {{ .Values.minio.service.consolePort }}
-  {{- if .Values.ingress.tls.enabled }}
+  {{- if $certSecret }}
   tls:
     - hosts:
         - {{ $minioHost | quote }}
-      secretName: {{ .Values.ingress.tls.secretName | required "ingress.tls.secretName must be set when ingress.tls.enabled=true" }}
+      secretName: {{ $certSecret | quote }}
   {{- end }}
 {{- end }}
 {{- /* \ katta end addition */}}

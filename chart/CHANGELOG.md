@@ -38,6 +38,12 @@
 
 ### Changed
 
+- `values.schema.json` now covers the Katta-only values (`minio`, `storageProfileSeed`,
+  `coredns`, `urls.minio`, `urls.s3`, `ingress.controllerService`, `ingress.proxy`,
+  `hub.config.additionalConnectSrc`, `hub.admin.{email,firstName,lastName}`,
+  `hub.secrets.cryptomatorvaultsClientSecret`); they live in one `definitions.katta` block.
+- The MinIO and S3 Ingresses attach TLS via `ingress.certificate.{secretName,clusterIssuer}`
+  like the Hub and Keycloak Ingresses; the Katta-only `ingress.tls.*` values are gone.
 - Bundled MinIO now uses `docker.io/alpine/minio` (community rebuild of the last MinIO
   community release `RELEASE.2025-10-15T17-29-55Z`, pinned by digest) instead of
   `quay.io/minio/minio`, which is no longer publicly pullable. The storage-profile seed

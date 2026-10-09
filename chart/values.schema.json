@@ -5,6 +5,153 @@
   "type": "object",
   "additionalProperties": false,
   "definitions": {
+    "katta": {
+      "$comment": "/ start katta addition — all Katta-only value schemas live in this single block. The upstream objects below only gain one-line $refs into #/definitions/katta/definitions/* because they declare additionalProperties: false.",
+      "definitions": {
+        "urlsMinio": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "public": { "$ref": "#/definitions/httpUrl" }
+          }
+        },
+        "urlsS3": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "public": { "$ref": "#/definitions/httpUrl" }
+          }
+        },
+        "ingressControllerService": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "name": { "type": "string" },
+            "namespace": { "type": "string" }
+          }
+        },
+        "ingressProxy": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "clusterIP": { "type": "string" }
+          }
+        },
+        "coredns": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "patch": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "enabled": { "type": "boolean" },
+                "namespace": { "type": "string", "minLength": 1 },
+                "image": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "repository": { "type": "string", "minLength": 1 },
+                    "tag": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "hubConfigAdditionalConnectSrc": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "description": "CSP connect-src source expressions appended to the derived Content-Security-Policy"
+        },
+        "hubAdminEmail": { "type": "string" },
+        "hubAdminFirstName": { "type": "string" },
+        "hubAdminLastName": { "type": "string" },
+        "hubSecretsCryptomatorvaultsClientSecret": { "type": "string" },
+        "minio": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "imagePullPolicy": { "$ref": "#/definitions/imagePullPolicy" },
+            "image": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "tag": { "type": "string" }
+              }
+            },
+            "service": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "type": { "$ref": "#/definitions/serviceType" },
+                "apiPort": { "$ref": "#/definitions/port" },
+                "consolePort": { "$ref": "#/definitions/port" }
+              }
+            },
+            "storage": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "size": { "$ref": "#/definitions/quantity" },
+                "storageClassName": { "type": "string" },
+                "accessMode": { "type": "string", "enum": ["ReadWriteOnce", "ReadWriteOncePod", "ReadWriteMany"] }
+              }
+            },
+            "resources": { "$ref": "#/definitions/resources" },
+            "auth": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "rootUser": { "type": "string", "minLength": 1 },
+                "rootPassword": { "type": "string" }
+              }
+            },
+            "openid": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "enabled": { "type": "boolean" },
+                "configUrl": { "$ref": "#/definitions/httpUrl" }
+              }
+            }
+          }
+        },
+        "storageProfileSeed": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "hubReadyTimeoutSeconds": { "type": "integer", "minimum": 1 },
+            "static": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "enabled": { "type": "boolean" },
+                "profileName": { "type": "string", "minLength": 1 },
+                "bucketPrefix": { "type": "string" }
+              }
+            },
+            "sts": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "enabled": { "type": "boolean" },
+                "profileName": { "type": "string", "minLength": 1 },
+                "bucketPrefix": { "type": "string" },
+                "sessionTag": { "type": "string" },
+                "durationSeconds": {
+                  "type": ["string", "integer"],
+                  "pattern": "^[0-9]*$",
+                  "description": "STS session duration in seconds; empty uses MinIO's default"
+                }
+              }
+            }
+          }
+        }
+      },
+      "x-katta-end": "\\ end katta addition"
+    },
     "httpUrl": {
       "type": "string",
       "pattern": "^(https?://[^/?#]+.*)?$",
@@ -56,6 +203,9 @@
     }
   },
   "properties": {
+    "coredns": { "$ref": "#/definitions/katta/definitions/coredns" },
+    "minio": { "$ref": "#/definitions/katta/definitions/minio" },
+    "storageProfileSeed": { "$ref": "#/definitions/katta/definitions/storageProfileSeed" },
     "global": {
       "type": "object",
       "description": "Reserved by Helm; Rancher injects global.cattle.* here",
@@ -67,6 +217,8 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
+        "minio": { "$ref": "#/definitions/katta/definitions/urlsMinio" },
+        "s3": { "$ref": "#/definitions/katta/definitions/urlsS3" },
         "hub": {
           "type": "object",
           "additionalProperties": false,
@@ -111,6 +263,8 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
+        "controllerService": { "$ref": "#/definitions/katta/definitions/ingressControllerService" },
+        "proxy": { "$ref": "#/definitions/katta/definitions/ingressProxy" },
         "controller": {
           "type": "string",
           "enum": ["", "nginx", "traefik"],
@@ -159,6 +313,7 @@
           "type": "object",
           "additionalProperties": false,
           "properties": {
+            "additionalConnectSrc": { "$ref": "#/definitions/katta/definitions/hubConfigAdditionalConnectSrc" },
             "keycloakRealm": { "type": "string", "minLength": 1 },
             "keycloakSyncerPeriod": { "type": "string", "minLength": 1 },
             "contentSecurityPolicy": { "type": "string" }
@@ -203,6 +358,9 @@
           "type": "object",
           "additionalProperties": false,
           "properties": {
+            "email": { "$ref": "#/definitions/katta/definitions/hubAdminEmail" },
+            "firstName": { "$ref": "#/definitions/katta/definitions/hubAdminFirstName" },
+            "lastName": { "$ref": "#/definitions/katta/definitions/hubAdminLastName" },
             "username": { "type": "string", "minLength": 1 },
             "password": { "type": "string" },
             "passwordTemporary": { "type": "boolean" }
@@ -212,6 +370,7 @@
           "type": "object",
           "additionalProperties": false,
           "properties": {
+            "cryptomatorvaultsClientSecret": { "$ref": "#/definitions/katta/definitions/hubSecretsCryptomatorvaultsClientSecret" },
             "create": { "type": "boolean" },
             "systemClientSecret": { "type": "string" },
             "initialId": { "type": "string" },
