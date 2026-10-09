@@ -8,16 +8,6 @@
     </div>
   </div>
 
-  <LicenseAlert v-if="licenseStatus" :is-admin="isAdmin" :license-status="licenseStatus" />
-
-  <ContentBanner v-if="anyUserHasLegacyDevices" type="warning" :title="t('legacyDeviceBanner.title')" class="mb-4">
-    {{ t('legacyDeviceBanner.admin.description') }}
-  </ContentBanner>
-
-  <ContentBanner v-else-if="hasLegacyDevices" type="warning" :title="t('legacyDeviceBanner.title')" class="mb-4">
-    {{ t('legacyDeviceBanner.user.description') }}
-  </ContentBanner>
-
   <h2 class="text-2xl font-bold leading-9 text-gray-900 sm:text-3xl sm:truncate">
     {{ t('vaultList.title') }}
   </h2>
@@ -95,12 +85,12 @@
               <p v-if="showVaultIDs && (vault.id.length > 0)" class="truncate text-sm text-gray-500 mt-2">{{ vault.id }}</p>
               <!-- \ end katta extension -->
             </div>
-            <div v-if="ownedVaults?.some(ownedVault => ownedVault.id == vault.id) && !isCommunityLicense && settings?.enableEmergencyAccess">
+            <div v-if="ownedVaults?.some(ownedVault => ownedVault.id == vault.id) && cfg.entitlements.emergencyAccessEnabled && settings?.enableEmergencyAccess">
               <EmergencyBadge
-                v-if="settings && settings.defaultMinMembers > emergencyAccessMembers(vault).length"
+                v-if="vault.requiredEmergencyKeyShares == 0"
                 type="warning"
-                :title="t('emergencyAccess.badge.insufficientCouncilMembers.title')"
-                :message="t('emergencyAccess.badge.insufficientCouncilMembers.message', [settings.defaultMinMembers])"
+                :title="t('emergencyAccess.badge.notConfigured.title')"
+                :message="t('emergencyAccess.badge.notConfigured.message')"
               />
               <EmergencyBadge
                 v-else-if="vault.requiredEmergencyKeyShares > emergencyAccessMembers(vault).length"
@@ -108,6 +98,13 @@
                 :title="t('emergencyAccess.badge.broken.title')"
                 :message="t('emergencyAccess.badge.broken.message')"
               />
+              <EmergencyBadge
+                v-else-if="settings && settings.defaultMinMembers > emergencyAccessMembers(vault).length"
+                type="warning"
+                :title="t('emergencyAccess.badge.insufficientCouncilMembers.title')"
+                :message="t('emergencyAccess.badge.insufficientCouncilMembers.message', [settings.defaultMinMembers])"
+              />
+
             </div>
             <div class="ml-5 shrink-0">
               <ChevronRightIcon class="h-5 w-5 text-gray-400" aria-hidden="true" />
@@ -142,15 +139,15 @@
 <script setup lang="ts">
 import { Listbox, ListboxButton, ListboxOption, ListboxOptions, Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/vue';
 import { ArrowPathIcon, ChevronDownIcon, PlusIcon } from '@heroicons/vue/20/solid';
-import { CheckIcon, ChevronRightIcon, ChevronUpDownIcon, ExclamationTriangleIcon } from '@heroicons/vue/24/solid';
+import { CheckIcon, ChevronRightIcon, ChevronUpDownIcon } from '@heroicons/vue/24/solid';
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import auth from '../common/auth';
 import backend, { LicenseUserInfoDto, SettingsDto, UserDto, VaultDto, VaultRole } from '../common/backend';
+import config from '../common/config';
+import globalBanners from '../common/globalBanners';
 import userdata from '../common/userdata';
 import FetchError from './FetchError.vue';
-import LicenseAlert from './LicenseAlert.vue';
-import ContentBanner from './ContentBanner.vue';
 import SlideOver from './SlideOver.vue';
 import VaultDetails from './VaultDetails.vue';
 import EmergencyBadge from './emergencyaccess/EmergencyBadge.vue';
@@ -158,6 +155,7 @@ import EmergencyBadge from './emergencyaccess/EmergencyBadge.vue';
 const { t } = useI18n({ useScope: 'global' });
 
 const me = ref<UserDto>();
+const cfg = config.get();
 
 const vaultDetailsSlideOver = ref<typeof SlideOver>();
 const onFetchError = ref<Error>();
@@ -180,16 +178,9 @@ const roleOfSelectedVault = computed<VaultRole | 'NONE'>(() => {
 
 const isAdmin = ref<boolean>(false);
 const canCreateVaults = ref<boolean>(false);
-const hasLegacyDevices = ref<boolean>(false);
-const anyUserHasLegacyDevices = ref<boolean>(false);
-const licenseStatus = ref<LicenseUserInfoDto>();
-const isLicenseViolated = computed(() => licenseStatus.value?.isViolated() ?? false);
+const isLicenseViolated = computed(() => globalBanners.licenseStatus.value?.isViolated() ?? false);
 
-const isCommunityLicense = computed(() => {
-  return !licenseStatus.value?.expiresAt;
-});
-
-const filterOptions = ref< { [key: string]: string } >({
+const filterOptions = ref< {[key: string]: string} >({
   accessibleVaults: t('vaultList.filter.entry.accessibleVaults'),
   ownedVaults: t('vaultList.filter.entry.ownedVaults')
 });
@@ -211,15 +202,12 @@ async function fetchData() {
   try {
     me.value = await userdata.me;
     isAdmin.value = (await auth).hasRole('admin');
-    const meWithLegacy = await userdata.meWithLegacyDevicesAndLastAccess;
-    hasLegacyDevices.value = (meWithLegacy.devices?.length ?? 0) > 0;
     canCreateVaults.value = (await auth).hasRole('create-vaults');
 
     settings.value = await backend.settings.get();
 
     if (isAdmin.value) {
       filterOptions.value['allVaults'] = t('vaultList.filter.entry.allVaults');
-      anyUserHasLegacyDevices.value = await backend.devices.hasLegacyDevices();
     }
     accessibleVaults.value = (await backend.vaults.listAccessible()).filter(v => !v.archived).sort((a, b) => a.name.localeCompare(b.name));
     ownedVaults.value = (await backend.vaults.listAccessible('OWNER')).sort((a, b) => a.name.localeCompare(b.name));
@@ -236,7 +224,6 @@ async function fetchData() {
       default:
         throw new Error('Unknown filter');
     }
-    licenseStatus.value = await backend.license.getUserInfo();
   } catch (error) {
     console.error('Retrieving vault list failed.', error);
     onFetchError.value = error instanceof Error ? error : new Error('Unknown Error');
@@ -266,7 +253,7 @@ async function onSelectedVaultUpdate(vault: VaultDto) {
 }
 
 async function licenseUpdated(license: LicenseUserInfoDto) {
-  licenseStatus.value = license;
+  globalBanners.licenseStatus.value = license;
 }
 
 // / start katta extension

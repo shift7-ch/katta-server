@@ -46,7 +46,7 @@
               @dragleave="handleDragLeave()"
               @drop.prevent="event => handleDrop(event)"
             >
-              <input id="file-upload" ref="fileUpload" name="file-upload" type="file" class="cursor-pointer absolute inset-0 opacity-0" accept=".cryptomator, .uvf" @change="event => handleUpload(event)" />
+              <input id="metadata-file" ref="fileUpload" name="metadata-file" type="file" class="cursor-pointer absolute inset-0 opacity-0" accept=".cryptomator, .uvf" @change="event => handleUpload(event)" />
               <div v-if="(vaultMetadata?.length ?? 0) == 0" class="text-center">
                 <ArrowUpOnSquareIcon class="mx-auto h-12 w-12 text-gray-300" aria-hidden="true" />
                 <p class="mt-2 block text-sm font-semibold text-gray-900">
@@ -117,7 +117,7 @@
           <div class="mt-6 px-4 space-y-6">
             <div>
               <label for="vaultName" class="block text-sm font-medium text-gray-700 text-left">{{ t('createVault.enterVaultDetails.vaultName') }}</label>
-              <input id="vaultName" v-model="vaultName" :disabled="processing" type="text" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-xs sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200" :class="{ 'invalid:border-red-300 invalid:text-red-900 focus:invalid:ring-red-500 focus:invalid:border-red-500': onCreateError instanceof FormValidationFailedError }" pattern="^(?! )([^\\\/:*?&quot;<>\|])+(?<![ \.])$" required />
+              <input id="vaultName" v-model="vault.name" :disabled="processing" type="text" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-xs sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200" :class="{ 'invalid:border-red-300 invalid:text-red-900 focus:invalid:ring-red-500 focus:invalid:border-red-500': onCreateError instanceof FormValidationFailedError }" pattern="^(?! )([^\\\/:*?&quot;<>\|])+(?<![ \.])$" required />
               <p v-if="(onCreateError instanceof FormValidationFailedError)" class="text-sm text-red-900 text-left mt-2">
                 {{ t('createVault.error.illegalVaultName') }} \, /, :, *, ?, ", &lt;, &gt;, |
               </p>
@@ -128,7 +128,7 @@
                 {{ t('createVault.enterVaultDetails.vaultDescription') }}
                 <span class="text-xs text-gray-500">({{ t('common.optional') }})</span>
               </label>
-              <input id="vaultDescription" v-model="vaultDescription" :disabled="processing" type="text" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-xs sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200" :class="{ 'invalid:border-red-300 invalid:text-red-900 focus:invalid:ring-red-500 focus:invalid:border-red-500': onCreateError instanceof FormValidationFailedError }" pattern="[^*<>&quot;]*" />
+              <input id="vaultDescription" v-model="vault.description" :disabled="processing" type="text" class="mt-1 focus:ring-primary focus:border-primary block w-full shadow-xs sm:text-sm border-gray-300 rounded-md disabled:bg-gray-200" :class="{ 'invalid:border-red-300 invalid:text-red-900 focus:invalid:ring-red-500 focus:invalid:border-red-500': onCreateError instanceof FormValidationFailedError }" pattern="[^*<>&quot;]*" />
               <p v-if="(onCreateError instanceof FormValidationFailedError)" class="text-sm text-red-900 text-left mt-2">
                 {{ t('createVault.error.illegalVaultDescription') }} *, &lt;, &gt;, "
               </p>
@@ -311,10 +311,8 @@
                     {{ t('CreateVaultS3.error.invalidStorageProfileConfiguration', '') }}: {{ onCreateError.message }}
                   </p>
                   <!-- // \ end katta extension -->
-                  <!-- // / start katta modification -->
                   <p v-else-if="(onCreateError instanceof DecodeUvfRecoveryKeyError || onCreateError instanceof DecodeVf8RecoveryKeyError)">
-                    <!-- // \  end katta modification -->
-                    {{ t('createVault.error.invalidRecoveryKey','') }}
+                    {{ t('createVault.error.invalidRecoveryKey','') }} 
                   </p>
                   <p v-else>
                     {{ t('common.unexpectedError', [onCreateError.message]) }}
@@ -733,8 +731,6 @@ const onUploadError = ref<Error>();
 const state = ref(State.Initial);
 const processing = ref(false);
 const settings = ref<SettingsDto>();
-const vaultName = ref('');
-const vaultDescription = ref<string | undefined>();
 const vault = ref<VaultDto>({
   id: crypto.randomUUID(),
   name: '',
@@ -760,7 +756,8 @@ const vaultMetadata = ref<string>('');
 const isDraggingOver = ref<boolean>(false);
 
 const props = defineProps<{
-  recover: boolean
+  recover: boolean,
+  uvf?: boolean // create a Universal Vault Format vault instead of the default Vault Format 8
 }>();
 
 // / start katta extension
@@ -833,6 +830,7 @@ async function initialize() {
     state.value = State.EnterRecoveryKey;
   } else {
     settings.value = await backend.settings.get();
+    // vaultType.value = props.uvf ? VaultType.UniversalVaultFormat : VaultType.VaultFormat8; // katta only supports UVF!
     switch (vaultType.value) {
       case VaultType.VaultFormat8:
         vaultFormat8.value = await VaultFormat8.create();
@@ -890,7 +888,7 @@ async function validateAndSetMetadataFile(file: File | undefined) {
   try {
     if (!file) {
       throw new NoFileError();
-    } else if (!file.name.match(/vault\.(cryptomator|uvf)/)) {
+    } else if (!/^vault\.(cryptomator|uvf)$/.test(file.name)) {
       throw new WrongFileNameError();
     } else if (file.size > 8000) {
       throw new FileTooBigError();
@@ -899,6 +897,7 @@ async function validateAndSetMetadataFile(file: File | undefined) {
     vaultType.value = file.name.endsWith('.uvf') ? VaultType.UniversalVaultFormat : VaultType.VaultFormat8;
     vaultMetadata.value = await file.text();
   } catch (error) {
+    vaultMetadata.value = '';
     onUploadError.value = error instanceof Error ? error : new Error('Error reading file as UTF-8 encoded text.');
   }
 }
@@ -1188,12 +1187,6 @@ async function createVault() {
   onCreateError.value = undefined;
   try {
     processing.value = true;
-    // / start katta modification
-    // Upstream passes vaultName/vaultDescription straight to createOrUpdateVault; our DTO-based call sends the
-    // vault object, so the form refs must be copied into it before it is used (metadata nickname, template zip name, PUT body).
-    vault.value.name = vaultName.value.trim();
-    vault.value.description = vaultDescription.value?.trim();
-    // \ end katta modification
     const owner = await userdata.me;
     if (!owner.setupCode) {
       throw new Error('User not set up');

@@ -4,12 +4,19 @@ home: https://github.com/shift7-ch/katta-server
 icon: https://cryptomator.org/img/logo.png
 description: Helm chart for deploying Katta Server (downstream fork of Cryptomator Hub) with optional Keycloak, PostgreSQL and MinIO
 type: application
-version: 0.1.0
-appVersion: "9236f0a"
+version: "1.0.0"
+appVersion: "5601a4f"
 kubeVersion: ">=1.27.0-0"
 sources:
   - https://github.com/shift7-ch/katta-server
 keywords:
   - katta
   - katta-server
-  - cryptomator-hub-fork
+annotations:
+  # Rancher catalog metadata, see https://ranchermanager.docs.rancher.com/how-to-guides/new-user-guides/helm-charts-in-rancher/create-apps
+  catalog.cattle.io/display-name: Katta Server
+  catalog.cattle.io/kube-version: ">=1.27.0-0"
+  catalog.cattle.io/os: linux
+  # sum of the default resource requests of hub + keycloak + postgres (see values.yaml)
+  catalog.cattle.io/requests-cpu: 450m
+  catalog.cattle.io/requests-memory: 640Mi

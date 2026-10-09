@@ -38,6 +38,12 @@
 
 ### Changed
 
+- Bundled MinIO now uses `docker.io/alpine/minio` (community rebuild of the last MinIO
+  community release `RELEASE.2025-10-15T17-29-55Z`, pinned by digest) instead of
+  `quay.io/minio/minio`, which is no longer publicly pullable. The storage-profile seed
+  Job's `setup-minio` init container runs in `alpine/curl` and downloads a pinned,
+  checksum-verified `mc` release from GitHub, since `alpine/minio` ships no `mc`
+  (see https://github.com/shift7-ch/katta-compose/issues/22).
 - Default images now point to `ghcr.io/shift7-ch/katta-server` and
   `ghcr.io/shift7-ch/keycloak:26.5.7` (was `ghcr.io/cryptomator/hub` and
   `ghcr.io/cryptomator/keycloak:26.5.3`).

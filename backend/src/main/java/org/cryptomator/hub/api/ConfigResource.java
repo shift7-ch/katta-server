@@ -23,6 +23,19 @@ import java.util.Optional;
 @AvailableDuringSetup
 public class ConfigResource {
 
+	/**
+	 * Advertised to clients via {@link ConfigDto#apiLevel()} so they can detect the capabilities of this Hub instance.
+	 * <ul>
+	 *     <li>0: initial</li>
+	 *     <li>1: new unlock flow via {@code /devices/{deviceId}} (Hub 1.3.0)</li>
+	 *     <li>2: Hub 1.3.0 sent a response header that was missing before</li>
+	 *     <li>3: HTTP 402 Payment Required on exceeded seats (Hub 1.3.4)</li>
+	 *     <li>4: Hub 1.4.0</li>
+	 *     <li>5: Universal Vault Format: {@code /vaults/{vaultId}/uvf/*}, access tokens may contain a UVF member key</li>
+	 * </ul>
+	 */
+	static final int API_LEVEL = 5;
+
 	private final String keycloakPublicUrl;
 	private final String keycloakRealm;
 	private final String keycloakClientIdHub;
@@ -80,7 +93,7 @@ public class ConfigResource {
 		var authUri = replacePrefix(oidcConfData.getAuthorizationUri(), trimTrailingSlash(internalRealmUrl), publicRealmUri);
 		var tokenUri = replacePrefix(oidcConfData.getTokenUri(), trimTrailingSlash(internalRealmUrl), publicRealmUri);
 
-		return new ConfigDto(keycloakPublicUrl, keycloakRealm, keycloakClientIdHub, keycloakClientIdCryptomator, authUri, tokenUri, Instant.now().truncatedTo(ChronoUnit.MILLIS), 4, license.getEntitlements(), billingUrl, licenseApiUrl, license.isSetupRequired()
+		return new ConfigDto(keycloakPublicUrl, keycloakRealm, keycloakClientIdHub, keycloakClientIdCryptomator, authUri, tokenUri, Instant.now().truncatedTo(ChronoUnit.MILLIS), API_LEVEL, license.getEntitlements(), billingUrl, licenseApiUrl, license.isSetupRequired()
 				// / start katta extension
 				, keycloakClientIdCryptomatorVaults
 				, settingsRepo.get().getHubId()
@@ -88,7 +101,7 @@ public class ConfigResource {
                 , desktopDownloadUrlWin.orElse("")
                 // \ end katta extension
         );
-    }
+	}
 
 	//visible for testing
 	static String replacePrefix(String str, String prefix, String replacement) {

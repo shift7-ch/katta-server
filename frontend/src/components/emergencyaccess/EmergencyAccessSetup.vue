@@ -22,6 +22,7 @@
       :input-visible="allowChoosingCouncil && !readonly"
       :error-message="t('emergencyAccess.validation.minimumMembers', [settings.defaultMinMembers])"
       :has-error="allowChoosingCouncil && hasValidationErrors"
+      :no-results-text="t('emergencyAccess.keyholders.noEligible')"
       @action="addCouncilMember"
       @remove="removeCouncilMember"
     />
@@ -56,7 +57,6 @@ import { useI18n } from 'vue-i18n';
 import backend, { ActivatedUser, SettingsDto, didCompleteSetup } from '../../common/backend';
 import { RecoveryKeyProducing } from '../../common/crypto';
 import { EmergencyAccess } from '../../common/emergencyaccess';
-import { wordEncoder } from '../../common/util';
 import MultiUserSelectInputGroup from '../MultiUserSelectInputGroup.vue';
 import EmergencyScenarioVisualization from './EmergencyScenarioVisualization.vue';
 

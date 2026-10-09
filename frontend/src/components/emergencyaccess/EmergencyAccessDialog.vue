@@ -260,10 +260,10 @@
 <script setup lang="ts">
 import { Dialog, DialogOverlay, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue';
 import { CheckBadgeIcon, ExclamationCircleIcon, InformationCircleIcon } from '@heroicons/vue/20/solid';
-import { PlayIcon, CheckCircleIcon } from '@heroicons/vue/24/solid';
+import { CheckCircleIcon, PlayIcon } from '@heroicons/vue/24/solid';
 import { base64 } from '@scure/base';
 import * as R from 'remeda';
-import { computed, ref, Ref, toRaw, nextTick } from 'vue';
+import { computed, nextTick, ref, Ref, toRaw } from 'vue';
 import { useI18n } from 'vue-i18n';
 import backend, { AccessGrant, ActivatedUser, AuthorityDto, didCompleteSetup, GroupDto, PaymentRequiredError, RecoveredKeyShareDto, RecoveryProcessChangeCouncil, RecoveryProcessDto, RecoveryProcessSetNewOwner, SettingsDto, UserDto, VaultDto, VaultRole } from '../../common/backend';
 import { AccessTokenProducing, asPublicKey, UserKeys } from '../../common/crypto';
@@ -768,13 +768,12 @@ async function completeRecovery() {
 
       await backend.vaults.setMembersWithRole(props.vault.id, membersWithRole);
 
-      const activatedUsersToGrant = (await backend.vaults.getUsersRequiringAccessGrant(props.vault.id) as UserDto[])
-        .filter(didCompleteSetup);
+      const activatedUsersToGrant = (await backend.vaults.getUsersRequiringAccessGrant(props.vault.id)).filter(didCompleteSetup);
 
       const accessGrants: AccessGrant[] = await Promise.all(
         activatedUsersToGrant.map(async u => {
           const publicKey = base64.decode(u.ecdhPublicKey) as Uint8Array<ArrayBuffer>;
-          const jwe = await vaultKeys.encryptForUser(publicKey);
+          const jwe = await vaultKeys.encryptForUser(publicKey, u.vaultRole === 'OWNER');
           return { userId: u.id, token: jwe };
         })
       );

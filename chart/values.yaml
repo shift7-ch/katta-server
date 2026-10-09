@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=values.schema.json
 urls:
   hub:
     public: ""
@@ -26,9 +27,15 @@ ingress:
   controller: ""
   className: ""
   annotations: {}
-  tls:
-    enabled: false
+  # Certificate to attach to both Ingresses (`spec.tls`). Leave both empty when TLS is terminated elsewhere — a cloud load balancer,
+  # the controller's default certificate, or a Traefik ACME resolver on the entrypoint. `urls.*.public` may still be https:// in that
+  # case; Hub and Keycloak honor the X-Forwarded-* headers the controller sets.
+  certificate:
+    # Existing TLS secret in the release namespace. Must cover both hosts (wildcard / SAN cert, or one host with `/hub` + `/kc` paths).
     secretName: ""
+    # cert-manager ClusterIssuer. The chart adds the `cert-manager.io/cluster-issuer` annotation and cert-manager creates the
+    # certificate in `secretName` (defaults to `<release>-tls` when only the issuer is set).
+    clusterIssuer: ""
   # In-cluster Service of the ingress controller. The chart looks up its `Endpoints`
   # resource at render time to discover the controller's pod IPs, which are used by
   # the chart-managed port-translation proxy (see ingress.proxy below).
@@ -80,12 +87,13 @@ hub:
     type: ClusterIP
     port: 8080
     managementPort: 9000
+  # Hub is a GraalVM native binary: no JVM, small footprint, fast start. No CPU limit on purpose (avoids throttling latency spikes).
   resources:
     requests:
-      cpu: 50m
-      memory: 16Mi
+      cpu: 100m
+      memory: 64Mi
     limits:
-      memory: 256Mi
+      memory: 64Mi
   config:
     keycloakRealm: cryptomator
     keycloakSyncerPeriod: 5m
@@ -150,12 +158,15 @@ keycloak:
     type: ClusterIP
     httpPort: 8080
     managementPort: 9000
+  # Keycloak is a JVM; its heap defaults to 70% of the memory limit (JAVA_OPTS_KC_HEAP), the rest is metaspace/native memory.
+  # 1Gi is a sensible floor for small installations; Keycloak's own sizing guide suggests 1250Mi+ for production loads.
+  # No CPU limit on purpose — startup and realm import are CPU-heavy and throttling them trips the startup probe.
   resources:
     requests:
-      cpu: 200m
-      memory: 128Mi
+      cpu: 250m
+      memory: 512Mi
     limits:
-      memory: 640Mi
+      memory: 1Gi
   admin:
     username: admin
     password: ""
@@ -173,7 +184,7 @@ postgres:
   enabled: true
   imagePullPolicy: IfNotPresent
   image:
-    tag: ""
+    tag: "" # defaults to 18-alpine; the volume layout requires postgres >= 18 (PGDATA in /var/lib/postgresql/<major>/docker)
   service:
     type: ClusterIP
     port: 5432
@@ -181,10 +192,11 @@ postgres:
     size: 10Gi
     storageClassName: ""
     accessMode: ReadWriteOnce
+  # Sized for a PostgreSQL that serves only Hub and Keycloak (shared_buffers defaults to 128MB).
   resources:
     requests:
-      cpu: 200m
-      memory: 32Mi
+      cpu: 100m
+      memory: 64Mi
     limits:
       memory: 256Mi
   auth:
@@ -197,9 +209,11 @@ postgres:
 # auto-register a matching S3STATIC profile in the Hub database.
 minio:
   enabled: false
-  # Image repository is fixed (quay.io/minio/minio); the tag is shared by the MinIO
-  # StatefulSet and the storage-profile seed Job's setup container, so they always run
-  # the exact same MinIO/mc build. Defaults to a version-pinned release (not :latest).
+  # Image repository is fixed (docker.io/alpine/minio, a community rebuild of the last
+  # MinIO community release; MinIO no longer publishes images, see
+  # https://github.com/shift7-ch/katta-compose/issues/22). Defaults to a release pinned
+  # by digest (not :latest). The storage-profile seed Job's setup container downloads a
+  # pinned `mc` release from GitHub instead, since alpine/minio ships no `mc`.
   image:
     tag: ""
   imagePullPolicy: IfNotPresent
