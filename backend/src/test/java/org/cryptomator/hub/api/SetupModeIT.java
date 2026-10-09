@@ -93,6 +93,15 @@ class SetupModeIT {
 					.body("licensedSeats", Matchers.is(0));
 		}
 
+		// / start katta
+		@Test
+		@DisplayName("GET /storageprofile returns 200 (seedable before license setup)")
+		void testGetStorageProfiles() {
+			when().get("/storageprofile/")
+					.then().statusCode(200);
+		}
+		// \ end katta
+
 	}
 
 	@Nested

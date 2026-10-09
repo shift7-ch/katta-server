@@ -18,6 +18,7 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.cryptomator.hub.entities.katta.StorageProfile;
+import org.cryptomator.hub.filters.AvailableDuringSetup;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -31,6 +32,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Path("/storageprofile")
+@AvailableDuringSetup // storage profiles are admin-managed configuration without seat impact, so they may be seeded (e.g. by the Helm chart) before a license is installed
 public class StorageProfileResource {
 
 	@Inject
