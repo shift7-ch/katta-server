@@ -184,9 +184,9 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
-			<groupId>io.quarkiverse.minio</groupId>
-			<artifactId>quarkus-minio</artifactId>
-			<version>3.9.1</version>
+			<!-- MinIO container for StorageResourceIT, see MinioTestResourceLifecycleManager -->
+			<groupId>org.testcontainers</groupId>
+			<artifactId>testcontainers</artifactId>
 			<scope>test</scope>
 		</dependency>
 		<dependency>

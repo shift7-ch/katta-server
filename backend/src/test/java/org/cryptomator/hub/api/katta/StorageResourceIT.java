@@ -1,12 +1,13 @@
 package org.cryptomator.hub.api.katta;
 
+import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.security.TestSecurity;
 import io.quarkus.test.security.oidc.Claim;
 import io.quarkus.test.security.oidc.OidcSecurity;
 import io.restassured.http.ContentType;
 import org.cryptomator.hub.entities.katta.S3StorageClass;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.cryptomator.hub.katta.MinioTestResourceLifecycleManager;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
@@ -24,14 +25,14 @@ import java.util.UUID;
 import static io.restassured.RestAssured.given;
 
 /**
- * Exercises {@code PUT /storage/{vaultId}} against a real MinIO instance (Quarkus dev service, see
- * https://docs.quarkiverse.io/quarkus-minio/dev/dev-services.html) instead of the mocked {@code S3StorageHelper}
- * used in {@link StorageProfileResourceIT}. Since {@code makeS3Bucket} signs requests with
- * {@code AwsSessionCredentials}, plain MinIO root credentials are not enough: we first mint real temporary
+ * Exercises {@code PUT /storage/{vaultId}} against a real MinIO instance (started by {@link MinioTestResourceLifecycleManager})
+ * instead of the mocked {@code S3StorageHelper} used in {@link StorageProfileResourceIT}. Since {@code makeS3Bucket} signs
+ * requests with {@code AwsSessionCredentials}, plain MinIO root credentials are not enough: we first mint real temporary
  * credentials via MinIO's STS {@code AssumeRole} action (no OIDC/Keycloak setup required, unlike the
  * {@code AssumeRoleWithWebIdentity} flow used by real clients).
  */
 @QuarkusTest
+@QuarkusTestResource(value = MinioTestResourceLifecycleManager.class, restrictToAnnotatedClass = true)
 @DisplayName("Resource /storage against a real MinIO instance")
 @TestSecurity(user = "Admin User", roles = {"admin", "user"})
 @OidcSecurity(claims = {
@@ -39,22 +40,13 @@ import static io.restassured.RestAssured.given;
 })
 public class StorageResourceIT {
 
-    @ConfigProperty(name = "quarkus.minio.host")
-    String minioHost;
-
-    @ConfigProperty(name = "quarkus.minio.port")
-    int minioPort;
-
-    @ConfigProperty(name = "quarkus.minio.access-key")
-    String minioAccessKey;
-
-    @ConfigProperty(name = "quarkus.minio.secret-key")
-    String minioSecretKey;
+    @MinioTestResourceLifecycleManager.InjectMinio
+    MinioTestResourceLifecycleManager.Minio minio;
 
     @Test
     @DisplayName("PUT /storage/{vaultId} creates a real bucket and uploads the vault template to MinIO")
     public void testCreateStorageAgainstRealMinio() {
-        final String minioEndpoint = "http://%s:%d".formatted(minioHost, minioPort);
+        final String minioEndpoint = minio.endpoint();
         final UUID profileId = createLocalMinioStorageProfile(minioEndpoint);
         final Credentials tempCredentials = assumeMinioRole(minioEndpoint, "katta-storageprofile-minio-it");
 
@@ -79,7 +71,7 @@ public class StorageResourceIT {
     @Test
     @DisplayName("PUT /storage/{vaultId} returns 409 when the same vault's bucket is created twice")
     public void testCreateStorageTwiceReturnsConflict() {
-        final String minioEndpoint = "http://%s:%d".formatted(minioHost, minioPort);
+        final String minioEndpoint = minio.endpoint();
         final UUID profileId = createLocalMinioStorageProfile(minioEndpoint);
         final Credentials tempCredentials = assumeMinioRole(minioEndpoint, "katta-storageprofile-minio-it-conflict");
 
@@ -108,7 +100,7 @@ public class StorageResourceIT {
     @Test
     @DisplayName("PUT /storage/{vaultId} returns 400 when the bucket name is invalid")
     public void testCreateStorageWithInvalidBucketNameReturnsBadRequest() {
-        final String minioEndpoint = "http://%s:%d".formatted(minioHost, minioPort);
+        final String minioEndpoint = minio.endpoint();
         final UUID profileId = createLocalMinioStorageProfile(minioEndpoint);
         final Credentials tempCredentials = assumeMinioRole(minioEndpoint, "katta-storageprofile-minio-it-badrequest");
 
@@ -163,7 +155,7 @@ public class StorageResourceIT {
         try (StsClient sts = StsClient.builder()
                 .endpointOverride(URI.create(minioEndpoint))
                 .region(Region.US_EAST_1)
-                .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(minioAccessKey, minioSecretKey)))
+                .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(minio.accessKey(), minio.secretKey())))
                 .build()) {
             return sts.assumeRole(AssumeRoleRequest.builder()
                     .roleSessionName(roleSessionName)
