@@ -25,7 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Updated Keycloak to 26.7.4
+- Updated Keycloak to 26.7.5
 - Updated to Quarkus 3.39.4
 - Updated frontend dependencies, including Vite 8.3, Vitest 5 and vue-router 5.3
 - Updated translations (#492, #499)
@@ -226,7 +226,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Replace the top navigation bar with a sidebar
-- Updated Keycloak to 26.7.2
+- Updated Keycloak to 26.7.5
 - Updated to Java 25
 - Update Quarkus to 3.33.2.1 LTS
 - Improved browser locale detection (#371)
