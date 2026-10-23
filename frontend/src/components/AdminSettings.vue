@@ -1,5 +1,5 @@
 <template>
-  <div v-if="billing === undefined || version === undefined || wotMaxDepth === undefined || wotIdVerifyLen === undefined || enableAutomaticAccessGrant === undefined || autoGrantTrustThreshold === undefined || allowAutomaticAccessGrantOverride === undefined">
+  <div v-if="billing === undefined || version === undefined || wotMaxDepth === undefined || wotIdVerifyLen === undefined">
     <div v-if="!onFetchError">
       {{ t('common.loading') }}
     </div>
@@ -370,14 +370,6 @@ async function fetchData() {
     initialWebOfTrustSettings.value = {
       wotMaxDepth: wotMaxDepth.value,
       wotIdVerifyLen: wotIdVerifyLen.value
-    };
-    enableAutomaticAccessGrant.value = settings.enableAutomaticAccessGrant;
-    autoGrantTrustThreshold.value = settings.automaticAccessGrantTrustThreshold;
-    allowAutomaticAccessGrantOverride.value = settings.allowAutomaticAccessGrantOverride;
-    initialAutomaticAccessGrantSettings.value = {
-      enableAutomaticAccessGrant: enableAutomaticAccessGrant.value,
-      automaticAccessGrantTrustThreshold: autoGrantTrustThreshold.value,
-      allowAutomaticAccessGrantOverride: allowAutomaticAccessGrantOverride.value
     };
     // awaited last: a failed update check must not prevent the settings above from being initialized
     latestVersion.value = await versionAvailable;
