@@ -88,10 +88,10 @@ mc admin policy info helm katta_access_bucket_policy                    a05d2a4c
 # }
 ```
 
+## Verify Published Chart
 ## Verify Published Chart (Signature + Provenance)
 
-This chart contains an OCI chart signature, which can be verified as follows (assuming chart version `0.1.3`):
-Once both commands are running:
+This chart contains a OCI chart signature, which can be verified as follows (assuming chart version `0.1.3`):
 
 ```bash
 cosign verify \
