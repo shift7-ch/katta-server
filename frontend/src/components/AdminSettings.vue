@@ -1,5 +1,5 @@
 <template>
-  <div v-if="billing === undefined || version === undefined || wotMaxDepth === undefined || wotIdVerifyLen === undefined">
+  <div v-if="billing === undefined || version === undefined || wotMaxDepth === undefined || wotIdVerifyLen === undefined || enableAutomaticAccessGrant === undefined || autoGrantTrustThreshold === undefined || allowAutomaticAccessGrantOverride === undefined">
     <div v-if="!onFetchError">
       {{ t('common.loading') }}
     </div>
@@ -228,6 +228,7 @@
         </form>
       </section>
 
+      <!-- / start katta extension (automatic access grant settings, temporarily removed upstream in cryptomator/hub@cac91628) -->
       <!-- Automatic Access Grant Section -->
       <section class="bg-white px-4 py-5 shadow-sm sm:rounded-lg sm:p-6">
         <h3 class="text-lg font-medium leading-6 text-gray-900">
@@ -308,6 +309,7 @@
           </div>
         </form>
       </section>
+      <!-- \ end katta extension -->
 
       <AdminSettingsEmergencyAccess />
     </div>
@@ -371,6 +373,16 @@ async function fetchData() {
       wotMaxDepth: wotMaxDepth.value,
       wotIdVerifyLen: wotIdVerifyLen.value
     };
+    // / start katta extension (automatic access grant settings, temporarily removed upstream in cryptomator/hub@cac91628)
+    enableAutomaticAccessGrant.value = settings.enableAutomaticAccessGrant;
+    autoGrantTrustThreshold.value = settings.automaticAccessGrantTrustThreshold;
+    allowAutomaticAccessGrantOverride.value = settings.allowAutomaticAccessGrantOverride;
+    initialAutomaticAccessGrantSettings.value = {
+      enableAutomaticAccessGrant: enableAutomaticAccessGrant.value,
+      automaticAccessGrantTrustThreshold: autoGrantTrustThreshold.value,
+      allowAutomaticAccessGrantOverride: allowAutomaticAccessGrantOverride.value
+    };
+    // \ end katta extension
     // awaited last: a failed update check must not prevent the settings above from being initialized
     latestVersion.value = await versionAvailable;
   } catch (error) {
@@ -533,6 +545,7 @@ function resetWebOfTrust() {
 
 // #endregion
 
+// / start katta extension (automatic access grant settings, temporarily removed upstream in cryptomator/hub@cac91628)
 // #region Automatic Access Grant
 
 type AutoGrantSettings = { enableAutomaticAccessGrant: boolean; automaticAccessGrantTrustThreshold: number; allowAutomaticAccessGrantOverride: boolean };
@@ -603,5 +616,6 @@ function resetAutomaticAccessGrant() {
 }
 
 // #endregion
+// \ end katta extension
 
 </script>
