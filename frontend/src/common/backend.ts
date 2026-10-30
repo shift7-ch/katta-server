@@ -464,8 +464,20 @@ class VaultService {
   }
 
   /**
+   * Resolves the users that would require an access grant if the vault's direct members were replaced via {@link setMembersWithRole}. Nothing is persisted.
+   * @param vaultId The vault
+   * @param members The prospective direct members (users and groups) mapped to their role
+   * @returns Users (including resolved group members) that would have access but lack an access token, with their highest prospective role
+   */
+  public async previewEffectiveUsers(vaultId: string, members: Record<string, VaultRole>, addFallbackPictures: boolean = true): Promise<(MemberDto & UserDto)[]> {
+    const users = await axiosAuth.post<(MemberDto & UserDto)[]>(`/vaults/${vaultId}/effective-users/preview`, members).then(response => response.data).catch(err => rethrowAndConvertIfExpected(err, 403, 404));
+    return addFallbackPictures ? users.map(fillInMissingPicture) : users;
+  }
+
+  /**
    * Long-polling endpoint used by the automatic access grant flow. Returns pending grants as a map from vault id to
-   * the user ids on that vault whose access tokens are missing (limited to vaults the caller is a member of). Blocks
+   * the user ids on that vault whose access tokens are missing (limited to vaults the caller is a member of, excluding
+   * vault owners, who need a manual grant). Blocks
    * up to `waitSeconds` if there are no pending grants at call time; returns an empty map on timeout. Best effort —
    * clients should poll on a coarse cadence too.
    */
@@ -528,8 +540,8 @@ class VaultService {
 
   /**
    * Grants access via the automatic access grant flow. Recorded in the audit log with the automatic flag set. Callable
-   * by any vault member (not just owners); the backend only accepts tokens for users already awaiting an access grant
-   * on this vault. Used by the automatic access grant agent; manual grants by owners should use {@link grantAccess}.
+   * by any vault member (not just owners); the backend only accepts tokens for non-owners already awaiting an access
+   * grant on this vault. Used by the automatic access grant agent; manual grants by owners should use {@link grantAccess}.
    */
   public async autoGrantAccess(vaultId: string, ...grants: AccessGrant[]) {
     const body = grants.reduce<Record<string, string>>((accumulator, curr) => {

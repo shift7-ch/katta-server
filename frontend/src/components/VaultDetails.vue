@@ -65,12 +65,12 @@
                     <transition enter-active-class="transition ease-out duration-100" enter-from-class="transform opacity-0 scale-95" enter-to-class="transform opacity-100 scale-100" leave-active-class="transition ease-in duration-75" leave-from-class="transform opacity-100 scale-100" leave-to-class="transform opacity-0 scale-95">
                       <MenuItems class="absolute right-9 top-0 z-10 w-48 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black/5 focus:outline-hidden">
                         <div class="py-1">
-                          <MenuItem v-if="member.vaultRole == 'MEMBER'" v-slot="{ active }" @click="updateMemberRole(member, 'OWNER')">
+                          <MenuItem v-if="member.vaultRole == 'MEMBER'" v-slot="{ active }" @click="requestUpdateMemberRole(member, 'OWNER')">
                             <div :class="[active ? 'bg-gray-100 text-gray-900' : 'text-gray-700', 'cursor-pointer block px-4 py-2 text-sm']">
                               {{ t('vaultDetails.sharedWith.grantOwnership') }}
                             </div>
                           </MenuItem>
-                          <MenuItem v-if="member.vaultRole == 'OWNER'" v-slot="{ active }" @click="updateMemberRole(member, 'MEMBER')">
+                          <MenuItem v-if="member.vaultRole == 'OWNER'" v-slot="{ active }" @click="requestUpdateMemberRole(member, 'MEMBER')">
                             <div :class="[active ? 'bg-gray-100 text-gray-900' : 'text-gray-700', 'cursor-pointer block px-4 py-2 text-sm']">
                               {{ t('vaultDetails.sharedWith.revokeOwnership') }}
                             </div>
@@ -243,22 +243,42 @@
           {{ t('common.unexpectedError', [onReactivateError.message]) }}
         </p>
       </div>
+
+      <p v-if="onClaimOwnershipError" class="text-sm text-red-900 text-right mt-1">
+        {{ t('common.unexpectedError', [onClaimOwnershipError.message]) }}
+      </p>
     </div>
   </div>
 
   <ClaimVaultOwnershipDialog v-if="claimingVaultOwnership && vault" ref="claimVaultOwnershipDialog" :vault="vault" @action="provedOwnership" @close="claimingVaultOwnership = false" />
   <GrantPermissionDialog v-if="grantingPermission && vault && (vaultFormat8 || uvfVault)" ref="grantPermissionDialog" :vault="vault" :users="membersRequiringAccessGrant" :vault-keys="(vaultFormat8 || uvfVault)!" @close="grantingPermission = false" @permission-granted="permissionGranted()" />
+  <ConfirmDialog
+    v-if="pendingRoleUpdate"
+    ref="roleUpdateConfirmDialog"
+    :title="t(pendingRoleUpdate.role === 'OWNER' ? 'vaultDetails.confirmRoleUpdate.grantOwnershipTitle' : 'vaultDetails.confirmRoleUpdate.revokeOwnershipTitle', [pendingRoleUpdate.member.name])"
+    :description="t(pendingRoleUpdate.role === 'OWNER' ? 'vaultDetails.confirmRoleUpdate.grantOwnershipDescription' : 'vaultDetails.confirmRoleUpdate.revokeOwnershipDescription', [pendingRoleUpdate.member.name])"
+    :confirm-label="t(pendingRoleUpdate.role === 'OWNER' ? 'vaultDetails.sharedWith.grantOwnership' : 'vaultDetails.sharedWith.revokeOwnership')"
+    :tone="pendingRoleUpdate.untrusted ? 'danger' : 'neutral'"
+    :icon="pendingRoleUpdate.untrusted ? undefined : KeyIcon"
+    @confirmed="confirmPendingRoleUpdate()"
+    @close="pendingRoleUpdate = undefined"
+  >
+    <UntrustedRecipientsWarning v-if="pendingRoleUpdate.untrusted">
+      <p>{{ t('untrustedRecipientsWarning.untrustedUsers', [pendingRoleUpdate.member.name]) }}</p>
+    </UntrustedRecipientsWarning>
+  </ConfirmDialog>
   <EditVaultMetadataDialog v-if="editingVaultMetadata && vault" ref="editVaultMetadataDialog" :vault="vault" @close="editingVaultMetadata = false" @updated="refreshVault" />
   <DownloadVaultTemplateDialog v-if="downloadingVaultTemplate && vault && (vaultFormat8 || uvfVault)" ref="downloadVaultTemplateDialog" :vault="vault" :vault-keys="(vaultFormat8 || uvfVault)!" @close="downloadingVaultTemplate = false" />
   <DisplayRecoveryKeyDialog v-if="displayingRecoveryKey && vault && (vaultFormat8 || uvfVault?.recoveryKey.privateKey)" ref="displayRecoveryKeyDialog" :vault="vault" @close="displayingRecoveryKey = false" />
   <ArchiveVaultDialog v-if="archivingVault && vault" ref="archiveVaultDialog" :vault="vault" @close="archivingVault = false" @archived="refreshVault" />
-  <RecoverVaultDialog v-if="recoveringVault && vault" ref="recoverVaultDialog" :vault="vault" @close="recoveringVault = false" @recovered="fetchOwnerData()" />
+  <RecoverVaultDialog v-if="recoveringVault && vault" ref="recoverVaultDialog" :vault="vault" @close="recoveringVault = false" @recovered="onClaimOwnershipError = undefined; fetchOwnerData()" />
   <GrantEmergencyAccessDialog v-if="grantingEmergencyAccess && vault && (vaultFormat8 || uvfVault) && settings" ref="grantEmergencyAccessDialog" :vault="vault" :vault-keys="(vaultFormat8 || uvfVault)!" :settings="settings" @close="grantingEmergencyAccess = false" @updated="refreshVault" />
 </template>
 
 <script setup lang="ts">
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/vue';
 import { ArrowPathIcon, EllipsisVerticalIcon, ExclamationTriangleIcon } from '@heroicons/vue/20/solid';
+import { KeyIcon } from '@heroicons/vue/24/outline';
 import { PlusSmallIcon } from '@heroicons/vue/24/solid';
 import { base64 } from '@scure/base';
 import * as R from 'remeda';
@@ -271,8 +291,10 @@ import { UniversalVaultFormat } from '../common/universalVaultFormat';
 import userdata from '../common/userdata';
 import { VaultFormat8 } from '../common/vaultFormat8';
 import { unwrapVaultKeys } from '../common/vaultKeys';
+import wot from '../common/wot';
 import ArchiveVaultDialog from './ArchiveVaultDialog.vue';
 import ClaimVaultOwnershipDialog from './ClaimVaultOwnershipDialog.vue';
+import ConfirmDialog from './ConfirmDialog.vue';
 import DisplayRecoveryKeyDialog from './DisplayRecoveryKeyDialog.vue';
 import DownloadVaultTemplateDialog from './DownloadVaultTemplateDialog.vue';
 import EditVaultMetadataDialog from './EditVaultMetadataDialog.vue';
@@ -281,6 +303,7 @@ import GrantPermissionDialog from './GrantPermissionDialog.vue';
 import RecoverVaultDialog from './RecoverVaultDialog.vue';
 import SearchInputGroup from './SearchInputGroup.vue';
 import TrustDetails from './TrustDetails.vue';
+import UntrustedRecipientsWarning from './UntrustedRecipientsWarning.vue';
 import GrantEmergencyAccessDialog from './emergencyaccess/GrantEmergencyAccessDialog.vue';
 
 // / start katta extension
@@ -308,6 +331,7 @@ const allowRetryFetch = computed(() => onFetchError.value && !(onFetchError.valu
 const onUpdateVaultMembershipError = ref< { [id: string]: Error } >({});
 const onAddUserError = ref<Error>();
 const onReactivateError = ref<Error>();
+const onClaimOwnershipError = ref<Error>();
 
 const cfg = config.get();
 const settings = ref<SettingsDto>();
@@ -331,6 +355,8 @@ const uvfVault = ref<UniversalVaultFormat>();
 const members = ref<Record<string, MemberDto>>({});
 const membersRequiringAccessGrant = ref<(MemberDto & UserDto)[]>([]);
 const trusts = ref<TrustDto[]>([]);
+const pendingRoleUpdate = ref<{ member: MemberDto, role: VaultRole, untrusted: boolean }>();
+const roleUpdateConfirmDialog = ref<typeof ConfirmDialog>();
 const claimVaultOwnershipDialog = ref<typeof ClaimVaultOwnershipDialog>();
 const claimingVaultOwnership = ref(false);
 const me = ref<UserDto>();
@@ -402,6 +428,7 @@ const emergencyAccessMembers = computed(() =>
 );
 
 async function provedOwnership(keys: VaultFormat8, ownerKeyPair: CryptoKeyPair) {
+  onClaimOwnershipError.value = undefined;
   if (!me.value) {
     throw new Error('illegal state.');
   }
@@ -415,6 +442,7 @@ async function provedOwnership(keys: VaultFormat8, ownerKeyPair: CryptoKeyPair) 
     vault.value = await backend.vaults.claimOwnership(props.vaultId, proof);
   } catch (error) {
     console.error('Failed to claim ownership of vault.', error);
+    onClaimOwnershipError.value = error instanceof Error ? error : new Error('Unknown Error');
     return;
   }
 
@@ -427,6 +455,7 @@ async function provedOwnership(keys: VaultFormat8, ownerKeyPair: CryptoKeyPair) 
       console.debug('User already member of this vault.');
     } else {
       console.error('Failed to grant access to self.', error);
+      onClaimOwnershipError.value = error instanceof Error ? error : new Error('Unknown Error');
     }
   }
 
@@ -559,6 +588,20 @@ async function searchAuthority(query: string): Promise<AuthorityDto[]> {
   return (await backend.authorities.search(query, true))
     .filter(authority => !members.value[authority.id])
     .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+async function requestUpdateMemberRole(member: MemberDto, role: VaultRole) {
+  // changing the role of a UVF vault member re-wraps the vault key (and, for owners, the recovery key) to their
+  // current public key, so additionally warn if their identity has not been verified:
+  const untrusted = !!uvfVault.value && member.type == 'USER' && !!member.ecdhPublicKey && await wot.computeTrustLevel(member, trusts.value) === -1;
+  pendingRoleUpdate.value = { member, role, untrusted };
+  nextTick(() => roleUpdateConfirmDialog.value?.show());
+}
+
+async function confirmPendingRoleUpdate() {
+  if (pendingRoleUpdate.value) {
+    await updateMemberRole(pendingRoleUpdate.value.member, pendingRoleUpdate.value.role);
+  }
 }
 
 async function updateMemberRole(member: MemberDto, role: VaultRole) {
