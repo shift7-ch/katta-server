@@ -2,8 +2,8 @@
   <nav class="bg-tertiary2">
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 h-16 flex-1 flex items-center justify-center sm:items-stretch sm:justify-start">
       <div class="shrink-0 flex items-center">
-        <img src="/logo.svg" class="h-8" alt="Logo" />
-        <span class="font-headline font-bold text-white ml-2 pb-px">CRYPTOMATOR HUB</span>
+        <img src="/logo.png" class="h-9" alt="Katta Logo" />
+        <span class="font-headline font-bold text-white ml-2 pb-px">KATTA</span>
       </div>
     </div>
   </nav>
@@ -11,7 +11,7 @@
   <div class="max-w-7xl mx-auto px-4 py-12 sm:px-6 lg:px-8 flex justify-center">
     <div class="bg-white px-4 py-5 shadow-sm sm:rounded-lg sm:p-6 text-center sm:w-full sm:max-w-lg">
       <div class="flex justify-center mb-3 sm:mb-5">
-        <img src="/logo.svg" class="h-12" alt="Logo" aria-hidden="true" />
+        <img src="/logo.png" class="h-16" alt="Katta Logo" aria-hidden="true" />
       </div>
       <h1 class="text-2xl leading-6 font-medium text-gray-900">
         Your account keys were not recognized
@@ -21,7 +21,7 @@
           This browser remembers the keys of your account. The keys the server just delivered are different ones.
         </p>
         <p>
-          There are two possible reasons. Either your account was reset or restored from a backup, in which case the change is expected. Or someone with access to the server is trying to make this browser use keys they control, so that vaults you create or share would be readable by them. Hub stopped before any vault key was used.
+          There are two possible reasons. Either your account was reset or restored from a backup, in which case the change is expected. Or someone with access to the server is trying to make this browser use keys they control, so that vaults you create or share would be readable by them. Katta stopped before any vault key was used.
         </p>
         <p class="font-medium text-gray-700">
           If you did not reset your account and are not aware of a restore, do not continue. Contact your administrator and report what you see on this page.
