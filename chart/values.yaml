@@ -213,8 +213,7 @@ postgres:
 minio:
   enabled: false
   # Image repository is fixed (docker.io/alpine/minio, a community rebuild of the last
-  # MinIO community release; MinIO no longer publishes images, see
-  # https://github.com/shift7-ch/katta-compose/issues/22). Defaults to a release pinned
+  # MinIO community release; MinIO no longer publishes images). Defaults to a release pinned
   # by digest (not :latest). The storage-profile seed Job's setup container downloads a
   # pinned `mc` release from GitHub instead, since alpine/minio ships no `mc`.
   image:
@@ -265,8 +264,14 @@ minio:
 # minio.enabled=true.
 storageProfileSeed:
   hubReadyTimeoutSeconds: 300
-  # Profile ids are assigned by the Hub server on creation; the seed Job is idempotent
-  # by profile NAME (it skips seeding when a profile with the same name already exists).
+  # Image of the Katta Admin CLI used to upload the storage profiles. Must be a -shell
+  # variant: the default image has no shell.
+  image:
+    repository: ghcr.io/shift7-ch/katta-admin-cli
+    tag: "1.0.5-shell"
+    pullPolicy: IfNotPresent
+  # Profile ids are assigned by the Hub server on creation, so the seed Job is idempotent
+  # by profile NAME: it skips a profile whose name already exists and never updates it.
   static:
     enabled: true
     profileName: "Bundled MinIO"
@@ -278,6 +283,5 @@ storageProfileSeed:
   sts:
     enabled: false
     profileName: "Bundled MinIO (STS)"
+    # Also the prefix the MinIO policies restrict bucket creation and access to.
     bucketPrefix: "katta-sts-"
-    sessionTag: "Vault" # AWS-only; MinIO ignores. Default per the DTO.
-    durationSeconds: "" # MinIO's default if blank

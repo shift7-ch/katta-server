@@ -1,15 +1,19 @@
-# Self-contained Cryptomator Hub stack for local testing. Does not reference any other file of this repository:
+# Cryptomator Hub stack for local testing. Uses katta.yaml, minio/ and ../../../chart, so run it from a checkout of this repository:
 #
 #   docker compose up
 #
-# Hub:      http://localhost:8080  (realm user `admin` / `admin`, set a license on first login)
-# Keycloak: http://localhost:8180  (bootstrap admin `admin` / `admin`)
+# Hub:      http://localhost:8280  (realm user `admin` / `admin`, test license with 5 seats)
+# Keycloak: http://localhost:8380  (bootstrap admin `admin` / `admin`)
 #
 # NOT FOR PRODUCTION: well-known passwords, plain HTTP, all services on localhost. See README.md in this directory for details.
 #
 # To change ports or hostnames, update all of these together: the `ports` mappings, `KC_HOSTNAME`, `HUB_KEYCLOAK_PUBLIC_URL`, `QUARKUS_OIDC_TOKEN_ISSUER`,
-# the `connect-src` entry of Hub's Content Security Policy, and the `redirectUris` / `frame-ancestors` of the embedded realm. Note that browsers grant a secure
+# the `connect-src` entry of Hub's Content Security Policy, and in katta.yaml the `urls.*` of `keycloak-realm` and MinIO's `MINIO_API_CORS_ALLOW_ORIGIN`. Note that browsers grant a secure
 # context (required by Hub's client-side crypto) to `localhost` only — any other hostname needs TLS, see ../prod/compose.yaml.
+# / start katta extension
+include:
+  - path: katta.yaml
+# \ end katta extension
 services:
 
   postgres:
@@ -31,7 +35,7 @@ services:
       retries: 12
 
   keycloak:
-    image: ghcr.io/cryptomator/keycloak:26.8.1
+    image: ghcr.io/shift7-ch/keycloak:26.8.1
     command: start --optimized --import-realm
     environment:
       KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
@@ -41,18 +45,23 @@ services:
       KC_BOOTSTRAP_ADMIN_PASSWORD: admin
       KC_HTTP_ENABLED: "true"
       # issuer/discovery URLs advertise the browser-facing origin; Hub's backchannel requests via http://keycloak:8080 still work:
-      KC_HOSTNAME: http://localhost:8180
+      KC_HOSTNAME: http://localhost:8380
       KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
       QUARKUS_TRANSACTION_MANAGER_ENABLE_RECOVERY: "false"
     ports:
-      - "8180:8080"
-    configs:
+      - "8380:8080"  # katta: 8180 is taken by quarkus:dev
+    # / start katta extension
+    volumes:
       # imported on first boot only; `--import-realm` never overwrites an existing realm (run `docker compose down -v` to start over)
-      - source: cryptomator-realm
-        target: /opt/keycloak/data/import/cryptomator-realm.json
+      - keycloak-import:/opt/keycloak/data/import:ro
+    # \ end katta extension
     depends_on:
       postgres:
         condition: service_healthy
+      # / start katta extension
+      keycloak-realm:
+        condition: service_completed_successfully
+      # \ end katta extension
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://localhost:9000/health/ready"]
       interval: 5s
@@ -60,26 +69,32 @@ services:
       retries: 30
 
   hub:
-    image: ghcr.io/cryptomator/hub:2.1.4
+    image: ${KATTA_SERVER_IMAGE:-ghcr.io/shift7-ch/katta-server:latest}
     environment:
       HUB_PUBLIC_ROOT_PATH: /
-      HUB_KEYCLOAK_PUBLIC_URL: http://localhost:8180
+      HUB_KEYCLOAK_PUBLIC_URL: http://localhost:8380
       HUB_KEYCLOAK_LOCAL_URL: http://keycloak:8080
       HUB_KEYCLOAK_REALM: cryptomator
       HUB_KEYCLOAK_SYSTEM_CLIENT_ID: cryptomatorhub-system
       HUB_KEYCLOAK_SYSTEM_CLIENT_SECRET: top-secret
       HUB_KEYCLOAK_SYNCER_PERIOD: 1m
       QUARKUS_OIDC_AUTH_SERVER_URL: http://keycloak:8080/realms/cryptomator
-      QUARKUS_OIDC_TOKEN_ISSUER: http://localhost:8180/realms/cryptomator
+      QUARKUS_OIDC_TOKEN_ISSUER: http://localhost:8380/realms/cryptomator
       QUARKUS_OIDC_CLIENT_ID: cryptomatorhub
       QUARKUS_DATASOURCE_JDBC_URL: jdbc:postgresql://postgres:5432/hub
       QUARKUS_DATASOURCE_USERNAME: hub
       QUARKUS_DATASOURCE_PASSWORD: hub
-      # the image's default CSP only allows same-origin connections, but the SPA must reach Keycloak's OIDC endpoints on localhost:8180:
-      QUARKUS_HTTP_HEADER__CONTENT_SECURITY_POLICY__VALUE: "default-src 'self'; connect-src 'self' api.cryptomator.org localhost:8180; object-src 'none'; child-src 'self'; img-src * data:; frame-ancestors 'none'"
+      # the image's default CSP only allows same-origin connections, but the SPA must reach Keycloak's OIDC endpoints on localhost:8380 and MinIO on minio.localhost:9100:
+      QUARKUS_HTTP_HEADER__CONTENT_SECURITY_POLICY__VALUE: "default-src 'self'; connect-src 'self' api.cryptomator.org api.katta.cloud localhost:8380 minio.localhost:9100; object-src 'none'; child-src 'self'; img-src * data:; frame-ancestors 'none'"
       QUARKUS_OTEL_SDK_DISABLED: "true"
+      # / start katta extension
+      # public test license with 5 seats
+      HUB_INITIAL_ID: "42"
+      HUB_INITIAL_LICENSE: eyJ4NWMiOlsiTUlJQ0FUQ0NBYk9nQXdJQkFnSVVSc1ZlYUM5cDI5amhKelB4TXExSk13MVR6UWN3QlFZREsyVndNRDh4Q3pBSkJnTlZCQVlUQWtSRk1SWXdGQVlEVlFRS0RBMVRhM2x0WVhScFl5QkhiV0pJTVJnd0ZnWURWUVFEREE5TWFXTmxibk5sSUZKdmIzUWdRMEV3SGhjTk1qWXdOekE1TURnMU9USTVXaGNOTXpZd056QTJNRGcxT1RJNVdqQk1NUXN3Q1FZRFZRUUdFd0pFUlRFV01CUUdBMVVFQ2d3TlUydDViV0YwYVdNZ1IyMWlTREVsTUNNR0ExVUVBd3djU0hWaUlFeHBZMlZ1YzJVZ1NYTnpkV1Z5SUVOQklDaFVaWE4wS1RDQm16QVFCZ2NxaGtqT1BRSUJCZ1VyZ1FRQUl3T0JoZ0FFQVJOQlc5QjZIZ3EzQzRKd1FvbXNJTEhlU0lLN0c3TXBpR1M5Qm45bFluVDBEYmNBQ3RPUCtGVWFEaWhUQnZERHhaTUxxNDNjbXdIaFp2SmUwY0VVZk5iekFMZ0R6UmtneWtCWEpCNTFkcVlEYUtcL0JWMXMxVnRUY0lSa1wvOWxqdEY2a2txcE1lVWYwUDd2U0hYWGFNMlwvT3R2SmZXN2lKRXpycjN6MHRtWEg3UHpLSFRvMEl3UURBZEJnTlZIUTRFRmdRVW1idlI4KytmZ3B5OGV5SVZ6NGlcL0ljemRMd2t3SHdZRFZSMGpCQmd3Rm9BVWFFcFNIU01LMXJiQmZQR3RTVjBnR29IZ0hQY3dCUVlESzJWd0EwRUFNU3hlS2tpRHBpUkVnNmtFTkw5MUhSdUNsWHNCMWZ1MjlIYW5BYVVTSVd0Ynh3cnE5MnJPbE1BazRZejhtTEh5VzhVNTJtRllKRWZ5WkR5UXlQVDBDdz09Il0sImFsZyI6IkVTNTEyIn0.eyJhdWQiOiJDcnlwdG9tYXRvciBIdWIiLCJzdWIiOiJodWJAZXhhbXBsZS5jb20iLCJyZWZyZXNoVXJsIjoiaHR0cDpcL1wvbG9jYWxob3N0OjgwODFcL1wvaHViXC9yZWZyZXNoIiwia2lkIjoiRV9rU2xTOG5tR0wza0oxeHl6UG5TdG1fdVl1NndRX1h4VFFoN2h6T0k2USIsIm9yZy5jcnlwdG9tYXRvci5odWIuZW50aXRsZW1lbnRzIjp7InNlYXRzIjo1LCJzaG93VHJpYWxIaW50IjpmYWxzZSwiYXVkaXRMb2dSZXRlbnRpb25EYXlzIjowLCJlbWVyZ2VuY3lBY2Nlc3NFbmFibGVkIjpmYWxzZSwia2V5Y2xvYWtBY2Nlc3NFbmFibGVkIjp0cnVlfSwiaXNzIjoiaHR0cDpcL1wvbG9jYWxob3N0OjgwODFcLyIsImV4cCI6MzI1MDM2ODAwMDAsImlhdCI6MTc4MzU4ODY0NCwic2VhdHMiOjUsImp0aSI6IjQyIn0.AZrb7lULe-bvea6LyFsTq7dZZBozgXuqEnr8M5nua-3KyM6gZw_hygBVkmAZw-u4NMlG8u0GEpKlK9rmLUPOpF36AaTa3h9WCQIzmiqn30Rm_zRd9T3WrmWXjkmWKnv7YpfufZI_zT-lpcKGasGm1w3YVWu_nSa9gQd_0Pm1r3QSQWTX
+      HUB_LICENSE_CHAIN_REQUIRED_CN: Hub License Issuer CA (Test)
+      # \ end katta extension
     ports:
-      - "8080:8080"
+      - "8280:8080"  # katta: 8080 is taken by quarkus:dev
     depends_on:
       postgres:
         condition: service_healthy
@@ -98,169 +113,10 @@ configs:
       CREATE USER keycloak WITH PASSWORD 'keycloak';
       CREATE DATABASE keycloak OWNER keycloak;
 
-  # Minimal realm: realm roles, the three OIDC clients Hub relies on, one Hub admin and the service account used by Hub to sync users/groups.
-  # Mirrors what the Helm chart renders (chart/templates/_realm.tpl); URLs are fixed to the ports published above.
-  cryptomator-realm:
-    content: |
-      {
-        "realm": "cryptomator",
-        "displayName": "Cryptomator Hub",
-        "loginTheme": "cryptomator",
-        "enabled": true,
-        "sslRequired": "external",
-        "defaultRole": {
-          "name": "user",
-          "description": "User"
-        },
-        "roles": {
-          "realm": [
-            {
-              "name": "user",
-              "description": "User",
-              "composite": false
-            },
-            {
-              "name": "create-vaults",
-              "description": "Can create vaults",
-              "composite": false
-            },
-            {
-              "name": "admin",
-              "description": "Administrator",
-              "composite": true,
-              "composites": {
-                "realm": [
-                  "user",
-                  "create-vaults"
-                ],
-                "client": {
-                  "realm-management": [
-                    "realm-admin"
-                  ]
-                }
-              }
-            }
-          ]
-        },
-        "users": [
-          {
-            "username": "admin",
-            "enabled": true,
-            "credentials": [
-              {
-                "type": "password",
-                "value": "admin",
-                "temporary": false
-              }
-            ],
-            "realmRoles": [
-              "admin"
-            ]
-          },
-          {
-            "username": "system",
-            "email": "system@localhost",
-            "enabled": true,
-            "serviceAccountClientId": "cryptomatorhub-system",
-            "clientRoles": {
-              "realm-management": [
-                "realm-admin",
-                "view-system"
-              ]
-            }
-          }
-        ],
-        "scopeMappings": [
-          {
-            "client": "cryptomatorhub",
-            "roles": [
-              "user",
-              "admin"
-            ]
-          }
-        ],
-        "clients": [
-          {
-            "clientId": "cryptomatorhub",
-            "serviceAccountsEnabled": false,
-            "publicClient": true,
-            "name": "Cryptomator Hub",
-            "enabled": true,
-            "redirectUris": [
-              "http://localhost:8080/*"
-            ],
-            "webOrigins": [
-              "+"
-            ],
-            "bearerOnly": false,
-            "frontchannelLogout": false,
-            "protocol": "openid-connect",
-            "attributes": {
-              "pkce.code.challenge.method": "S256"
-            },
-            "protocolMappers": [
-              {
-                "name": "realm roles",
-                "protocol": "openid-connect",
-                "protocolMapper": "oidc-usermodel-realm-role-mapper",
-                "consentRequired": false,
-                "config": {
-                  "access.token.claim": "true",
-                  "claim.name": "realm_access.roles",
-                  "jsonType.label": "String",
-                  "multivalued": "true"
-                }
-              },
-              {
-                "name": "client roles",
-                "protocol": "openid-connect",
-                "protocolMapper": "oidc-usermodel-client-role-mapper",
-                "consentRequired": false,
-                "config": {
-                  "access.token.claim": "true",
-                  "claim.name": "resource_access.$${client_id}.roles",
-                  "jsonType.label": "String",
-                  "multivalued": "true"
-                }
-              }
-            ]
-          },
-          {
-            "clientId": "cryptomator",
-            "serviceAccountsEnabled": false,
-            "publicClient": true,
-            "name": "Cryptomator App",
-            "enabled": true,
-            "redirectUris": [
-              "http://127.0.0.1/*",
-              "org.cryptomator.ios:/hub/auth",
-              "org.cryptomator.android:/hub/auth"
-            ],
-            "webOrigins": [
-              "+"
-            ],
-            "bearerOnly": false,
-            "frontchannelLogout": false,
-            "protocol": "openid-connect",
-            "attributes": {
-              "pkce.code.challenge.method": "S256"
-            }
-          },
-          {
-            "clientId": "cryptomatorhub-system",
-            "serviceAccountsEnabled": true,
-            "publicClient": false,
-            "name": "Cryptomator Hub System",
-            "enabled": true,
-            "clientAuthenticatorType": "client-secret",
-            "secret": "top-secret",
-            "standardFlowEnabled": false
-          }
-        ],
-        "browserSecurityHeaders": {
-          "contentSecurityPolicy": "frame-src 'self'; frame-ancestors 'self' http://localhost:8080; object-src 'none';"
-        }
-      }
+  # / start katta extension
+  # Katta renders the realm from chart/templates/_realm.tpl (`keycloak-realm` service in katta.yaml). Port upstream changes of the
+  # `cryptomator-realm` config to that template.
+  # \ end katta extension
 
 volumes:
   postgres-data:

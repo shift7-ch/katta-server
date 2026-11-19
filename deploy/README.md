@@ -10,3 +10,7 @@ Hub consists of three services: the Hub application itself, [Keycloak](https://w
 | Connect Hub to a Keycloak I already operate | [`helm/existing-keycloak/`](helm/existing-keycloak/README.md) |
 | Develop Hub and run a locally built image against the dev realm | [`compose/dev/`](compose/dev/README.md) |
 | Develop the Helm chart or test a locally built image on Kubernetes | [`helm/dev/`](helm/dev/README.md) |
+| Try Katta with MinIO and ready-made storage profiles | [`compose/demo/`](compose/demo/README.md) |
+| Run Katta locally against a Keycloak that runs elsewhere | [`compose/hybrid/`](compose/hybrid/README.md) |
+| Try Katta with MinIO on a local Kubernetes cluster | [`helm/demo/`](helm/demo/README.md) |
+| Run Katta on AWS (ECS, RDS) with Terraform | [`terraform/aws/`](terraform/aws/README.md) |

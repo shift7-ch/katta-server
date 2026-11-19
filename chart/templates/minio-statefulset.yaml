@@ -29,9 +29,9 @@ spec:
         fsGroup: 1000
       containers:
         - name: minio
-          # MinIO no longer publishes container images (docker.io/minio/minio deleted, quay.io/minio/minio requires auth since 2026-09),
-          # see https://github.com/shift7-ch/katta-compose/issues/22. alpine/minio is a community rebuild of the last community
-          # release, not an official artifact, hence the default is pinned by multi-arch index digest.
+          # MinIO no longer publishes container images (docker.io/minio/minio deleted, quay.io/minio/minio requires auth since 2026-09).
+          # alpine/minio is a community rebuild of the last community release, not an official artifact, hence the default is pinned
+          # by multi-arch index digest. Keep in sync with deploy/compose/local/katta.yaml and the backend's MinioTestResourceLifecycleManager.
           image: "docker.io/alpine/minio:{{ .Values.minio.image.tag | default "RELEASE.2025-10-15T17-29-55Z@sha256:cf23643a6cf9ce159c57643ceb88279e431262282428c9e0bf3a7ef1a97e84b4" }}"
           imagePullPolicy: {{ .Values.minio.imagePullPolicy }}
           args:
@@ -70,7 +70,7 @@ spec:
             # strict `azp == ClientID` check means we need one provider per Keycloak client.
             # The seed Job's `setup-minio` init container runs `mc idp openid add` for
             # `cryptomator`, `cryptomatorhub`, and `cryptomatorvaults` and creates the
-            # `katta_create_bucket_policy` / `katta_access_bucket_policy` policies.
+            # `katta-createbucketpolicy` / `katta-accessbucketpolicy` policies.
           readinessProbe:
             httpGet:
               path: /minio/health/ready
@@ -98,8 +98,9 @@ spec:
   volumeClaimTemplates:
     - metadata:
         name: data
+        # volumeClaimTemplates are immutable, so no labels that change with the chart or app version
         labels:
-          {{- include "cryptomator-hub.labels" . | nindent 10 }}
+          {{- include "cryptomator-hub.selectorLabels" . | nindent 10 }}
           app.kubernetes.io/component: minio
       spec:
         accessModes:

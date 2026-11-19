@@ -1,0 +1,61 @@
+# The local stack (../local/compose.yaml) plus two storage profiles for the bundled MinIO, so vaults can be created right away:
+#
+#   docker compose up --wait
+#
+# NOT FOR PRODUCTION. See README.md in this directory for details.
+include:
+  - path: ../local/compose.yaml
+
+services:
+
+  # Uploads the MinIO storage profiles with the Katta Admin CLI. The -shell variant is needed to pass the access token on to the profile uploads.
+  hub_setup_storage_profile:
+    image: ghcr.io/shift7-ch/katta-admin-cli:1.0.5-shell
+    entrypoint: ["/busybox/sh", "-c"]
+    command:
+      - |
+        set -euo pipefail
+
+        # service account of client cryptomatorhub-system with realm role admin.
+        # A separate assignment, so that set -e catches a failing katta accesstoken.
+        ACCESS_TOKEN=$$(katta accesstoken \
+          --tokenUrl http://keycloak:8080/realms/cryptomator/protocol/openid-connect/token \
+          --clientId cryptomatorhub-system \
+          --clientSecret top-secret)
+
+        # role ARNs of the cryptomator, cryptomatorhub and cryptomatorvaults OIDC providers of MinIO: arn:minio:iam:::role/ + base64url(sha1(client id))
+        katta storageprofile minio sts \
+          --hubUrl http://hub:8080 --accessToken "$$ACCESS_TOKEN" \
+          --name "MinIO S3 STS" \
+          --endpointUrl http://minio.localhost:9100 \
+          --bucketPrefix katta- \
+          --region eu-central-1 \
+          --regions eu-west-1 --regions eu-west-2 --regions eu-west-3 --regions eu-north-1 \
+          --regions eu-south-1 --regions eu-south-2 --regions eu-central-1 --regions eu-central-2 \
+          --stsRoleCreateBucketClient arn:minio:iam:::role/IqZpDC5ahW_DCAvZPZA4ACjEnDE \
+          --stsRoleCreateBucketHub arn:minio:iam:::role/HGKdlY4eFFsXVvJmwlMYMhmbnDE \
+          --stsRoleAccessBucket arn:minio:iam:::role/Hdms6XDZ6oOpuWYI3gu4gmgHN94 \
+          --skipIfExists
+
+        katta storageprofile s3 static \
+          --hubUrl http://hub:8080 --accessToken "$$ACCESS_TOKEN" \
+          --name "MinIO S3 static" \
+          --endpointUrl http://minio.localhost:9100 \
+          --bucketPrefix katta- \
+          --region eu-central-1 \
+          --skipIfExists
+    depends_on:
+      minio_setup:
+        condition: service_completed_successfully
+      hub:
+        condition: service_healthy
+
+  # `docker compose up --wait` fails when a service exits that no other service waits for with service_completed_successfully,
+  # so this one waits for hub_setup_storage_profile
+  wait_demo:
+    image: alpine/curl:8.17.0
+    entrypoint: ["sleep"]
+    command: ["infinity"]
+    depends_on:
+      hub_setup_storage_profile:
+        condition: service_completed_successfully

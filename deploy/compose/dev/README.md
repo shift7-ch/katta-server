@@ -11,7 +11,7 @@ Prerequisites:
 
    ```bash
    (cd frontend && pnpm install && pnpm dist)
-   docker build -f backend/src/main/docker/Dockerfile.native -t ghcr.io/cryptomator/hub:native backend
+   docker build -f backend/src/main/docker/Dockerfile.native -t ghcr.io/shift7-ch/katta-server:native backend
    ```
 2. `docker compose -f deploy/compose/dev/compose.yaml up`
 3. Wait until all services are `healthy`, then open Hub at <http://localhost:8080> (`admin` / `admin`, `alice` / `asd`, `bob` / `asd`, … from the dev realm) or the Keycloak admin console at <http://localhost:8180> (`admin` / `admin`).

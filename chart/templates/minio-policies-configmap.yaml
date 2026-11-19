@@ -9,6 +9,9 @@ metadata:
     {{- include "cryptomator-hub.labels" . | nindent 4 }}
     app.kubernetes.io/component: minio-setup
 data:
+  # Keep in sync with deploy/compose/local/minio/policies/katta-{create,access}bucketpolicy.json (bucket prefix fixed to
+  # `katta-` there) and their katta-static* variants.
+
   # Bucket-creation policy. Assigned to the `cryptomator` and `cryptomatorhub`
   # providers, so the SPA and the desktop app can create a vault's bucket. The Resource
   # wildcard scopes creation to buckets whose name starts with the configured prefix.
@@ -54,7 +57,8 @@ data:
             "s3:GetBucketLocation",
             "s3:GetBucketVersioning",
             "s3:ListBucket",
-            "s3:ListBucketMultipartUploads"
+            "s3:ListBucketMultipartUploads",
+            "s3:ListBucketVersions"
           ],
           "Resource": [
             "arn:aws:s3:::{{ $bucketPrefix }}${jwt:client_id}"
