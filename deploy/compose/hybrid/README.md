@@ -42,14 +42,15 @@ Requirements: Docker Compose ≥ 2.23.1, Helm and [yq](https://github.com/mikefa
 
    ```bash
    cd deploy/compose/hybrid
-   { grep -v -E '^(HUB_KEYCLOAK_PUBLIC_URL|HUB_KEYCLOAK_REALM|HUB_KEYCLOAK_SYSTEM_CLIENT_SECRET|HUB_KEYCLOAK_OIDC_CRYPTOMATOR_VAULTS_CLIENT_SECRET)=' .env.template
+   rm -f .env  # recreated owner-only (umask 077): the file holds both client secrets
+   (umask 077; { grep -v -E '^(HUB_KEYCLOAK_PUBLIC_URL|HUB_KEYCLOAK_REALM|HUB_KEYCLOAK_SYSTEM_CLIENT_SECRET|HUB_KEYCLOAK_OIDC_CRYPTOMATOR_VAULTS_CLIENT_SECRET)=' .env.template
      cat <<EOF
    HUB_KEYCLOAK_PUBLIC_URL=$KC_URL
    HUB_KEYCLOAK_REALM=$REALM
    HUB_KEYCLOAK_SYSTEM_CLIENT_SECRET=$SYSTEM_CLIENT_SECRET
    HUB_KEYCLOAK_OIDC_CRYPTOMATOR_VAULTS_CLIENT_SECRET=$VAULTS_CLIENT_SECRET
    EOF
-   } > .env
+   } > .env)
    ```
 
    Add the S3 and STS endpoints of your storage profiles to `CSP_CONNECT_SRC_EXTRA` in `.env`, since the browser talks to them directly.

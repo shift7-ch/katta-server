@@ -1,6 +1,6 @@
 # Katta Server and PostgreSQL on this machine, connected to a Keycloak (and storage) that already runs elsewhere:
 #
-#   cp .env.template .env   # then fill in the values
+#   install -m 600 .env.template .env   # owner-only, then fill in the values
 #   docker compose up
 #
 # Katta: http://localhost:8280. See README.md in this directory for what the external Keycloak needs.

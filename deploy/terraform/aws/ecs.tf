@@ -1,9 +1,10 @@
 locals {
-  # Every origin the browser talks to directly: AWS S3/STS, the Katta license API, Keycloak,
+  # Every origin the browser talks to directly: AWS S3/STS, Cryptomator's license API, Katta's update check, Keycloak,
   # plus the endpoints of any storage profile not hosted on AWS (var.hub_csp_additional_connect_src).
   hub_csp_connect_src = join(" ", concat([
     "'self'",
     "*.amazonaws.com",
+    "api.cryptomator.org",
     "api.katta.cloud",
     "https://${var.keycloak_prefix}.${terraform.workspace}.${var.dns_suffix}/",
   ], var.hub_csp_additional_connect_src))

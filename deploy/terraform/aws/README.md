@@ -46,7 +46,8 @@ always manage a deployment from the checkout and workspace that created it.
 
 2. Override default Terraform configuration
 
-   Defaults can be found in `terraform.tfvars.template`. Either copy to `terraform.tfvars` (not under version control)
+   Defaults can be found in `terraform.tfvars.template`. Either copy to `terraform.tfvars` (not under version control;
+   `install -m 600 terraform.tfvars.template terraform.tfvars` keeps the secrets you add owner-only)
    or overridden by environment variables:
 
     ```shell
