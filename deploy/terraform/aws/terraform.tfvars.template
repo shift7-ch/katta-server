@@ -1,0 +1,62 @@
+# GitHub Personal Access Token with the read:packages scope, required for the ECR pull-through cache even for public images
+#github_token=
+
+# DNS suffix for service endpoints
+#dns_suffix=
+# The AWS region to create resources
+#region=
+# The CIDR block for the VPC
+#vpc_cidr=
+
+# Keycloak Database Configuration
+# The name of the Keycloak database
+#keycloak_db_name=
+# The username for the Keycloak database
+#keycloak_db_username=
+# The password for the Keycloak database
+#keycloak_db_password=
+
+# Keycloak Admin Configuration
+# The username for the Keycloak admin user
+#keycloak_admin_username=
+# The password for the Keycloak admin user
+#keycloak_admin_password=
+
+# Hub Database Configuration
+# The name of the Hub database
+#hub_db_name=
+# The username for the Hub database
+#hub_db_username=
+# The password for the Hub database
+#hub_db_password=
+
+# Katta Server admin user in the realm
+# The username for the Katta Server admin user
+#hub_admin_username=
+# The initial password for the Katta Server admin user, to be changed on first login
+#hub_admin_password=
+
+# Initial license token and matching Hub ID for Katta Server, defaults to the shared test license, null to start without a license
+#hub_initial_license=
+#hub_initial_id=
+# Common name of the CA issuing the license certificate chain, defaults to the test CA matching the shared test license
+#hub_license_chain_required_cn=
+
+# Setup identity provider and roles in IAM and upload a storage profile for AWS S3 using STS, requires the katta CLI
+#storage_profile_aws_enabled=
+# Prefix of the IAM role names, defaults to "<workspace>-"
+#storage_profile_aws_role_name_prefix=
+# Prefix of the S3 bucket names for vaults, at most 27 characters, defaults to "<project>-<workspace>-"
+#storage_profile_aws_bucket_prefix=
+# Bucket regions in addition to the region to create resources, which is the default,
+# defaults to the regions enabled by default in AWS accounts (not opt-in)
+#storage_profile_aws_regions=["eu-central-1", "eu-west-1"]
+
+# Client secret for client "cryptomatorhub-system"
+# hub_keycloak_system_client_secret=
+# Client secret for client "cryptomatorvaults"
+# hub_keycloak_oidc_cryptomator_vaults_client_secret=
+
+# Additional connect-src sources for the Content-Security-Policy header, e.g. the S3 and STS
+# endpoints of storage profiles outside AWS. AWS endpoints are covered by *.amazonaws.com.
+#hub_csp_additional_connect_src=["https://*.wasabisys.com"]

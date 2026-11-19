@@ -7,13 +7,17 @@ Requirements: Kubernetes ≥ 1.27 with the Traefik ingress controller (K3s, for 
 1. Install the chart with your own values:
 
    ```bash
-   helm install hub oci://ghcr.io/cryptomator/charts/cryptomator-hub --version 2.1.4 \
+   helm install hub oci://ghcr.io/shift7-ch/charts/katta-server --version 0.0.0-f9b88f4 \
      --namespace cryptomator --create-namespace \
      --set urls.hub.public=https://hub.example.com \
      --set urls.kc.public=https://kc.example.com \
      --set ingress.controller=traefik \
      --set ingress.certificate.clusterIssuer=letsencrypt
    ```
+
+   <!-- / start katta extension -->
+   `0.0.0-f9b88f4` pins a `develop` commit, as Katta has no release yet; switch to a release version once Katta tags one.
+   <!-- \ end katta extension -->
 
    | Value | Meaning |
    |---|---|

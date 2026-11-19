@@ -1,5 +1,5 @@
 # Demo values: full stack on a local cluster with nginx ingress, including bundled MinIO
-# and a pre-seeded S3STATIC storage profile. Not intended for production.
+# and pre-seeded storage profiles. Not intended for production.
 #
 # Hostname split (deliberate):
 #   - Hub UI lives on `hub.localhost`, which browsers treat as a "potentially trustworthy
@@ -19,25 +19,7 @@
 # by resolvers before DNS is consulted, defeating the CoreDNS rewrite. The Mountain Duck
 # desktop client also rejects `*.localhost` URLs outright.
 #
-# Prerequisites:
-# - Single-user local cluster (kind, minikube, k3d, Docker Desktop) — installer needs
-#   cluster-admin so the chart can create a Role+RoleBinding in kube-system for the
-#   CoreDNS-patching Job. Don't use these values on a shared or managed cluster.
-# - nginx-ingress addon enabled (`minikube addons enable ingress` etc.).
-#
-# Deploy:
-#   helm install katta chart \
-#     --namespace katta --create-namespace \
-#     -f chart/values-demo.yaml
-#
-# Port-forward — leave running in a separate terminal:
-#   kubectl port-forward -n ingress-nginx svc/ingress-nginx-controller 9090:80
-#
-# After install, in your browser:
-#   - Hub UI:          http://hub.localhost:9090                (admin / admin)
-#   - Keycloak admin:  http://kc.local.katta.cloud:9090         (admin / admin)
-#   - MinIO console:   http://minio.local.katta.cloud:9090      (minioadmin / minioadmin)
-#   - MinIO S3 API:    http://s3.local.katta.cloud:9090         (used by the seeded storage profile)
+# Prerequisites, install steps and URLs: README.md in this directory.
 
 urls:
   hub:
@@ -67,6 +49,14 @@ hub:
     passwordTemporary: false
   metrics:
     enabled: false
+  # Test license with 5 seats. Without a license, Hub stays in setup mode and rejects API
+  # requests with status 402, so the storage-profile seed Job would fail.
+  secrets:
+    initialId: "42"
+    initialLicense: "eyJ4NWMiOlsiTUlJQ0FUQ0NBYk9nQXdJQkFnSVVSc1ZlYUM5cDI5amhKelB4TXExSk13MVR6UWN3QlFZREsyVndNRDh4Q3pBSkJnTlZCQVlUQWtSRk1SWXdGQVlEVlFRS0RBMVRhM2x0WVhScFl5QkhiV0pJTVJnd0ZnWURWUVFEREE5TWFXTmxibk5sSUZKdmIzUWdRMEV3SGhjTk1qWXdOekE1TURnMU9USTVXaGNOTXpZd056QTJNRGcxT1RJNVdqQk1NUXN3Q1FZRFZRUUdFd0pFUlRFV01CUUdBMVVFQ2d3TlUydDViV0YwYVdNZ1IyMWlTREVsTUNNR0ExVUVBd3djU0hWaUlFeHBZMlZ1YzJVZ1NYTnpkV1Z5SUVOQklDaFVaWE4wS1RDQm16QVFCZ2NxaGtqT1BRSUJCZ1VyZ1FRQUl3T0JoZ0FFQVJOQlc5QjZIZ3EzQzRKd1FvbXNJTEhlU0lLN0c3TXBpR1M5Qm45bFluVDBEYmNBQ3RPUCtGVWFEaWhUQnZERHhaTUxxNDNjbXdIaFp2SmUwY0VVZk5iekFMZ0R6UmtneWtCWEpCNTFkcVlEYUtcL0JWMXMxVnRUY0lSa1wvOWxqdEY2a2txcE1lVWYwUDd2U0hYWGFNMlwvT3R2SmZXN2lKRXpycjN6MHRtWEg3UHpLSFRvMEl3UURBZEJnTlZIUTRFRmdRVW1idlI4KytmZ3B5OGV5SVZ6NGlcL0ljemRMd2t3SHdZRFZSMGpCQmd3Rm9BVWFFcFNIU01LMXJiQmZQR3RTVjBnR29IZ0hQY3dCUVlESzJWd0EwRUFNU3hlS2tpRHBpUkVnNmtFTkw5MUhSdUNsWHNCMWZ1MjlIYW5BYVVTSVd0Ynh3cnE5MnJPbE1BazRZejhtTEh5VzhVNTJtRllKRWZ5WkR5UXlQVDBDdz09Il0sImFsZyI6IkVTNTEyIn0.eyJhdWQiOiJDcnlwdG9tYXRvciBIdWIiLCJzdWIiOiJodWJAZXhhbXBsZS5jb20iLCJyZWZyZXNoVXJsIjoiaHR0cDpcL1wvbG9jYWxob3N0OjgwODFcL1wvaHViXC9yZWZyZXNoIiwia2lkIjoiRV9rU2xTOG5tR0wza0oxeHl6UG5TdG1fdVl1NndRX1h4VFFoN2h6T0k2USIsIm9yZy5jcnlwdG9tYXRvci5odWIuZW50aXRsZW1lbnRzIjp7InNlYXRzIjo1LCJzaG93VHJpYWxIaW50IjpmYWxzZSwiYXVkaXRMb2dSZXRlbnRpb25EYXlzIjowLCJlbWVyZ2VuY3lBY2Nlc3NFbmFibGVkIjpmYWxzZSwia2V5Y2xvYWtBY2Nlc3NFbmFibGVkIjp0cnVlfSwiaXNzIjoiaHR0cDpcL1wvbG9jYWxob3N0OjgwODFcLyIsImV4cCI6MzI1MDM2ODAwMDAsImlhdCI6MTc4MzU4ODY0NCwic2VhdHMiOjUsImp0aSI6IjQyIn0.AZrb7lULe-bvea6LyFsTq7dZZBozgXuqEnr8M5nua-3KyM6gZw_hygBVkmAZw-u4NMlG8u0GEpKlK9rmLUPOpF36AaTa3h9WCQIzmiqn30Rm_zRd9T3WrmWXjkmWKnv7YpfufZI_zT-lpcKGasGm1w3YVWu_nSa9gQd_0Pm1r3QSQWTX"
+  license:
+    chain:
+      requiredCn: "Hub License Issuer CA (Test)"
 
 keycloak:
   admin:
@@ -90,3 +80,5 @@ storageProfileSeed:
     enabled: true
   sts:
     enabled: true
+    # Same prefix as the MinIO policies of deploy/compose.
+    bucketPrefix: "katta-"

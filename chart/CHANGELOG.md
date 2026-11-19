@@ -9,6 +9,21 @@
   chart. The Helm release name is independent of the chart name and can stay the same.
 - Helper template names changed from `cryptomator-hub.*` to `katta-server.*`. Affects
   anyone forking or extending the chart with custom templates.
+- `storageProfileSeed.sts.sessionTag` and `storageProfileSeed.sts.durationSeconds` are removed;
+  values files that still set them fail schema validation. The session tag is AWS-only and
+  MinIO ignores it. The STS duration is always MinIO's default.
+- The MinIO policies created by the seed Job are named `katta-createbucketpolicy` and
+  `katta-accessbucketpolicy` (were `katta_create_bucket_policy` and `katta_access_bucket_policy`).
+  A bundled MinIO set up by an earlier chart keeps its old policies, since the seed Job skips
+  the setup once all OIDC providers exist. To switch:
+  1. Remove the `cryptomator`, `cryptomatorhub` and `cryptomatorvaults` providers
+     (`mc idp openid rm <alias> <name>`) and restart MinIO (`mc admin service restart <alias>`).
+  2. Delete the MinIO StatefulSet but keep its pod and volume, since its volume claim labels
+     changed: `kubectl delete statefulset <release>-minio --cascade=orphan`.
+  3. Run `helm upgrade`, keeping the `storageProfileSeed.sts.bucketPrefix` the install used so far
+     (`katta-sts-` for the former demo values).
+
+  The seed Job then registers the providers again with the new policies and the same role ARNs.
 
 ### Added
 
@@ -30,6 +45,11 @@
 - `hub.admin.email`, `hub.admin.firstName` and `hub.admin.lastName` for the realm admin user
   (defaults `admin@localhost`, `Admin`, `Admin`). Keycloak's default user profile requires
   them, so without them the first login fails with "Account is not fully set up".
+- `storageProfileSeed.image`: the seed Job uploads the storage profiles with the Katta Admin
+  CLI (`ghcr.io/shift7-ch/katta-admin-cli:1.0.5-shell`, `katta storageprofile … --skipIfExists`).
+- `s3:ListBucketVersions` in the per-vault MinIO access policy.
+- Test license with 5 seats in the demo values, required since Hub rejects API requests with
+  status 402 until a license is configured.
 - `hub.config.additionalConnectSrc`, a list of extra `connect-src` sources appended to the
   chart's Content-Security-Policy. Required for the S3 and STS endpoints of storage profiles
   the browser talks to directly, which the chart cannot derive. Entries are CSP source
@@ -56,5 +76,11 @@
 - Realm display names and the `cryptomatorhub` / `cryptomatorhub-system` client names
   rebranded to "Katta Server", and the Keycloak realm `loginTheme` set to `katta`
   (the theme shipped in the Katta Keycloak image at `keycloak/themes/katta`).
+- The bundled MinIO's volume claim template carries only labels that don't change with the chart
+  version, so `helm upgrade` no longer fails on the immutable StatefulSet field.
+- The demo values moved from `chart/values-demo.yaml` to `deploy/helm/demo/values-demo.yaml`,
+  together with the demo walkthrough.
+- The chart of the former `katta-helm` repository is consolidated into this chart; it is
+  published from here only.
 - Chart is now published to `oci://ghcr.io/shift7-ch/charts` (was
   `oci://ghcr.io/cryptomator/charts`).

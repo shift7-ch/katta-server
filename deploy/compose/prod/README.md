@@ -16,6 +16,11 @@ Requirements: Docker Compose ≥ 2.23.1, a host reachable from the internet on p
    | `CHANGE-ME-SYSTEM-CLIENT-SECRET` | Secret of the `cryptomatorhub-system` client, used by Hub to sync users and groups | `HUB_KEYCLOAK_SYSTEM_CLIENT_SECRET`, realm |
    | `CHANGE-ME-HUB-DB-PASSWORD` | Password of the `hub` database user | `POSTGRES_PASSWORD`, `QUARKUS_DATASOURCE_PASSWORD` |
    | `CHANGE-ME-KEYCLOAK-DB-PASSWORD` | Password of the `keycloak` database user | `KC_DB_PASSWORD`, `create-keycloak-db` config |
+   | `CHANGE-ME-VAULTS-CLIENT-SECRET` | Secret of the `cryptomatorvaults` client, used by Hub to exchange tokens for vault access | `HUB_KEYCLOAK_OIDC_CRYPTOMATOR_VAULTS_CLIENT_SECRET`, realm |
+
+   <!-- / start katta extension -->
+   Also add the S3 and STS endpoints of your storage profiles to the `connect-src` of Hub's Content Security Policy (`QUARKUS_HTTP_HEADER__CONTENT_SECURITY_POLICY__VALUE`), since the browser talks to them directly.
+   <!-- \ end katta extension -->
 
    Generate secrets with `openssl rand -hex 32`. Use search & replace — most values occur more than once and all occurrences must be identical.
 2. `docker compose up -d`

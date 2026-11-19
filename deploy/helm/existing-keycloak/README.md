@@ -2,12 +2,12 @@
 
 Deploys Hub (and the bundled PostgreSQL) from the published chart, but connects it to a Keycloak instance you already operate — e.g. your organisation's SSO. The chart then does **not** create the Keycloak realm for you: you have to import Hub's `realm.json` into your Keycloak once.
 
-Requirements: Kubernetes ≥ 1.27 with an nginx or Traefik ingress controller, `kubectl`, Helm 3.8+, and admin access to a Keycloak 26.x instance reachable from both the browser and the cluster.
+Requirements: Kubernetes ≥ 1.27 with an nginx or Traefik ingress controller, `kubectl`, Helm 3.8+, and admin access to a Keycloak 26.x instance with Standard Token Exchange (V2) reachable from both the browser and the cluster.
 
 1. Install the chart with your own values:
 
    ```bash
-   helm install hub oci://ghcr.io/cryptomator/charts/cryptomator-hub --version 2.1.4 \
+   helm install hub oci://ghcr.io/shift7-ch/charts/katta-server --version 0.0.0-f9b88f4 \
      --namespace cryptomator --create-namespace \
      --set keycloak.enabled=false \
      --set urls.kc.public=https://sso.example.com \
@@ -36,10 +36,10 @@ Requirements: Kubernetes ≥ 1.27 with an nginx or Traefik ingress controller, `
    kubectl get secret -n cryptomator hub-secrets-kc -o jsonpath='{.data.realm\.json}' | base64 -d > realm.json
    ```
 
-   In the Keycloak admin console, open the realm selector at the top left, click **Create realm**, use **Browse…** to select `realm.json`, and click **Create**. It contains the realm roles `user`, `create-vaults`, `admin`, the clients `cryptomatorhub`, `cryptomator` and `cryptomatorhub-system`, and the `admin` user.
+   In the Keycloak admin console, open the realm selector at the top left, click **Create realm**, use **Browse…** to select `realm.json`, and click **Create**. It contains the realm roles `user`, `create-vaults`, `admin`, the clients `cryptomatorhub`, `cryptomator`, the confidential `cryptomatorvaults` and `cryptomatorhub-system`, and the `admin` user.
 
    > [!WARNING]
-   > `realm.json` contains the `cryptomatorhub-system` client secret and the Hub admin password in clear text. Delete the file after the import.
+   > `realm.json` contains the `cryptomatorhub-system` and `cryptomatorvaults` client secrets and the Hub admin password in clear text. Delete the file after the import.
 3. Wait until the Hub pod is `Running` (`kubectl get pods -n cryptomator -w`), then open `https://hub.example.com` and sign in as `admin`.
 
 For everything else — license, user management, login theme, backups, upgrades — see <https://docs.cryptomator.org/hub/>.
