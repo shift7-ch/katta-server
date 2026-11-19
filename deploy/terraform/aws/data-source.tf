@@ -53,7 +53,7 @@ resource "aws_db_instance" "postgres" {
 resource "aws_db_instance" "hub_db" {
   identifier = "${terraform.workspace}-hub-database"
 
-  allocated_storage      = 5
+  allocated_storage      = 20
   engine                 = "postgres"
   engine_version         = "17"
   instance_class         = "db.t4g.micro"
