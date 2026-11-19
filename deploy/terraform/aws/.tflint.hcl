@@ -7,6 +7,10 @@ plugin "terraform" {
   preset  = "recommended"
 }
 
+rule "terraform_unused_required_providers" {
+  enabled = true
+}
+
 plugin "aws" {
   enabled = true
   version = "0.49.0"

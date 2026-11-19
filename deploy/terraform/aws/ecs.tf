@@ -343,6 +343,11 @@ resource "aws_ecs_service" "keycloak_ecs_service" {
     Environment = terraform.workspace
   }
 
+  # the autoscaling policies own the task count after creation
+  lifecycle {
+    ignore_changes = [desired_count]
+  }
+
   # the target group only gets attached to the ALB by its HTTPS listener
   depends_on = [aws_lb_listener.keycloak_https_listener]
 }
