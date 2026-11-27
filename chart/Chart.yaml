@@ -1,11 +1,11 @@
 apiVersion: v2
 name: katta-server
 home: https://github.com/shift7-ch/katta-server
-icon: https://cryptomator.org/img/logo.png
+icon: https://katta.cloud/katta-logo.png
 description: Helm chart for deploying Katta Server (downstream fork of Cryptomator Hub) with optional Keycloak, PostgreSQL and MinIO
 type: application
 version: "1.0.0"
-appVersion: "2d939d8"
+appVersion: "latest"
 kubeVersion: ">=1.27.0-0"
 sources:
   - https://github.com/shift7-ch/katta-server

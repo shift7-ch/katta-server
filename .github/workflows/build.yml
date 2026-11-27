@@ -109,6 +109,9 @@ jobs:
     outputs:
       digest_amd64: ${{ steps.digest.outputs.digest_amd64 }}
       digest_arm64: ${{ steps.digest.outputs.digest_arm64 }}
+      # / katta start addition
+      tag: ${{ steps.get_tag.outputs.tag }}
+      # \ katta end addition
     permissions:
       contents: read # Required for checkout
       packages: write # Required for pushing the image to GHCR
@@ -213,6 +216,12 @@ jobs:
         uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # v4.1.0
       - name: Determine versions
         id: version
+        # / katta start addition
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          # backend/pom.xml's version on the default branch
+          POM_VERSION: ${{ needs.build-native-image.outputs.tag }}
+        # \ katta end addition
         run: |
           set -euo pipefail
           short_sha="${GITHUB_SHA::7}"
@@ -228,7 +237,14 @@ jobs:
             chart_version="$version"
           else
             app_version="$short_sha"
-            chart_version="0.0.0-${short_sha}"
+            # / katta start modification - of the branches, only pushes to the default branch publish a chart: a preview
+            # that sorts by build number and below the release of the pom version
+            # chart_version="0.0.0-${short_sha}"
+            chart_version=""
+            if [[ "${GITHUB_EVENT_NAME}" == "push" && "${GITHUB_REF_NAME}" == "${DEFAULT_BRANCH}" ]]; then
+              chart_version="${POM_VERSION%-SNAPSHOT}-dev.${GITHUB_RUN_NUMBER}"
+            fi
+            # \ katta end modification
           fi
           echo "short_sha=${short_sha}" >> "$GITHUB_OUTPUT"
           echo "app_version=${app_version}" >> "$GITHUB_OUTPUT"
@@ -280,6 +296,9 @@ jobs:
   publish-helm-chart:
     name: Publish Helm Chart
     needs: multi-arch-image
+    # / katta start addition
+    if: needs.multi-arch-image.outputs.chart_version != ''
+    # \ katta end addition
     uses: ./.github/workflows/helm-chart.yml
     with:
       appVersion: ${{ needs.multi-arch-image.outputs.app_version }}

@@ -1,9 +1,9 @@
-# DEVELOPMENT ONLY — for a standalone, self-contained setup see ../local/compose.yaml.
+# DEVELOPMENT ONLY — for trying Hub see ../local/README.md.
 #
 # Runs Cryptomator Hub from pre-built images, wired up like the Quarkus dev services (`./mvnw quarkus:dev`):
 # Keycloak on http://localhost:8180 (bootstrap admin `admin:admin`, realm seeded from backend/src/main/resources/cryptomator-realm.json),
 # Hub on http://localhost:8080 (dev users e.g. `admin:admin`, `alice:asd` come from the seeded realm).
-# The `hub` service expects a locally built image tagged `ghcr.io/cryptomator/hub:native`, see README.md.
+# The `hub` service expects a locally built image tagged `ghcr.io/shift7-ch/katta-server:native`, see README.md.
 services:
 
   postgres:
@@ -25,7 +25,7 @@ services:
       retries: 12
 
   keycloak:
-    image: ghcr.io/cryptomator/keycloak:26.8.1
+    image: ghcr.io/shift7-ch/keycloak:26.8.1
     command: start --optimized --import-realm
     environment:
       KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
@@ -52,7 +52,7 @@ services:
       retries: 30
 
   hub:
-    image: ghcr.io/cryptomator/hub:native
+    image: ghcr.io/shift7-ch/katta-server:native
     # override the image's fixed `-Xmx24m`: size the heap against the container memory limit instead
     command: ["./application", "-XX:MaximumHeapSizePercent=70", "-XX:+PrintGC"]
     mem_limit: 48m
@@ -69,7 +69,7 @@ services:
       QUARKUS_DATASOURCE_USERNAME: hub
       QUARKUS_DATASOURCE_PASSWORD: hub
       # the image's default CSP only allows same-origin connections, but the SPA must reach Keycloak's OIDC endpoints on localhost:8180:
-      QUARKUS_HTTP_HEADER__CONTENT_SECURITY_POLICY__VALUE: "default-src 'self'; connect-src 'self' api.cryptomator.org localhost:8180; object-src 'none'; child-src 'self'; img-src * data:; frame-ancestors 'none'"
+      QUARKUS_HTTP_HEADER__CONTENT_SECURITY_POLICY__VALUE: "default-src 'self'; connect-src 'self' api.cryptomator.org api.katta.cloud localhost:8180 ${CSP_CONNECT_SRC_EXTRA:-}; object-src 'none'; child-src 'self'; img-src * data:; frame-ancestors 'none'"
     ports:
       - "8080:8080"
     depends_on:

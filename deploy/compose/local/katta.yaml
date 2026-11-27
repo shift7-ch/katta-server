@@ -1,0 +1,84 @@
+# Katta's additions to compose.yaml: the realm rendered from the Helm chart of this checkout, and MinIO as S3 and STS endpoint.
+services:
+
+  # Renders the realm from chart/templates/_realm.tpl into the `keycloak-import` volume, which Keycloak imports on first boot.
+  # ../prod/compose.yaml renders it the same way from the published chart.
+  keycloak-realm:
+    image: alpine/helm:3.19.0
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        set -euo pipefail
+        apk add --no-cache yq-go
+        # written as keycloak.json because of https://github.com/keycloak/keycloak/issues/37569
+        helm template katta /chart \
+          --show-only templates/keycloak-secret.yaml \
+          --set-string urls.hub.public="http://localhost:$$HUB_PORT" \
+          --set-string urls.kc.public="http://localhost:$$HUB_KEYCLOAK_HTTP_PORT" \
+          --set-string hub.config.keycloakRealm="$$HUB_KEYCLOAK_REALM" \
+          --set-string keycloak.realmBootstrap.realmId="$$HUB_KEYCLOAK_REALM" \
+          --set-literal hub.admin.username="$$HUB_ADMIN_USER" \
+          --set-literal hub.admin.password="$$HUB_ADMIN_PASSWORD" \
+          --set hub.admin.passwordTemporary=false \
+          --set-literal hub.secrets.systemClientSecret="$$HUB_KEYCLOAK_SYSTEM_CLIENT_SECRET" \
+          --set-literal hub.secrets.cryptomatorvaultsClientSecret="$$HUB_KEYCLOAK_OIDC_CRYPTOMATOR_VAULTS_CLIENT_SECRET" \
+          | yq '.stringData["realm.json"]' > /import/keycloak.json
+        test -s /import/keycloak.json
+    environment:
+      HUB_PORT: ${HUB_PORT:-8280}
+      HUB_KEYCLOAK_HTTP_PORT: ${HUB_KEYCLOAK_HTTP_PORT:-8380}
+      HUB_KEYCLOAK_REALM: ${HUB_KEYCLOAK_REALM:-cryptomator}
+      HUB_ADMIN_USER: ${HUB_ADMIN_USER:-admin}
+      HUB_ADMIN_PASSWORD: ${HUB_ADMIN_PASSWORD:-admin}
+      HUB_KEYCLOAK_SYSTEM_CLIENT_SECRET: ${HUB_KEYCLOAK_SYSTEM_CLIENT_SECRET:-top-secret}
+      HUB_KEYCLOAK_OIDC_CRYPTOMATOR_VAULTS_CLIENT_SECRET: ${HUB_KEYCLOAK_OIDC_CRYPTOMATOR_VAULTS_CLIENT_SECRET:-top-secret}
+    volumes:
+      - ../../../chart:/chart:ro
+      - keycloak-import:/import
+
+  minio:
+    # community rebuild of the last MinIO community release, pinned by digest; keep in sync with the chart's minio-statefulset.yaml
+    # and the backend's MinioTestResourceLifecycleManager
+    image: docker.io/alpine/minio:RELEASE.2025-10-15T17-29-55Z@sha256:cf23643a6cf9ce159c57643ceb88279e431262282428c9e0bf3a7ef1a97e84b4
+    # the image runs as a non-root user, but Docker creates the empty `minio-data` volume root-owned
+    user: "0:0"
+    command: ["server", "/data", "--address", ":${MINIO_PORT:-9100}", "--console-address", ":${MINIO_CONSOLE_PORT:-9101}"]
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+      # the SPA uploads and downloads vault contents directly
+      MINIO_API_CORS_ALLOW_ORIGIN: http://localhost:${HUB_PORT:-8280}
+    # loopback only: the root login is well known
+    ports:
+      - "127.0.0.1:${MINIO_PORT:-9100}:${MINIO_PORT:-9100}"
+      - "127.0.0.1:${MINIO_CONSOLE_PORT:-9101}:${MINIO_CONSOLE_PORT:-9101}"
+    networks:
+      default:
+        # Hub calls S3/STS server-side at the same endpoint the browser uses, hence the alias and the identical ports inside and outside
+        aliases: ["${MINIO_HOSTNAME:-minio.localhost}"]
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:${MINIO_PORT:-9100}/minio/health/ready"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  # Creates the MinIO policies and registers one OIDC provider per Keycloak client, see minio/setup.sh.
+  minio_setup:
+    image: alpine/curl:8.17.0
+    entrypoint: ["/bin/sh", "/setup/setup.sh"]
+    environment:
+      MINIO_PORT: ${MINIO_PORT:-9100}
+      HUB_KEYCLOAK_REALM: ${HUB_KEYCLOAK_REALM:-cryptomator}
+    volumes:
+      - ./minio:/setup:ro
+    depends_on:
+      minio:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+
+volumes:
+  keycloak-import:
+  minio-data:

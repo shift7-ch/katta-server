@@ -28,7 +28,7 @@ module contains integration tests verifying this setup.
 ## Setup
 
 See [Katta Documentation &rarr; Self-Hosting Guide
- &rarr; Deployment](https://docs.katta.cloud/self-hosting-guide/deployment/).
+ &rarr; Deployment](https://docs.katta.cloud/self-hosting-guide/deployment/) and the deployment examples in [`deploy/`](deploy/README.md).
 
 ## Changelog
 
@@ -61,8 +61,15 @@ Katta Server is a downstream fork of [Cryptomator Hub](https://github.com/crypto
   <!-- \ end katta extension -->
   ```
 
+  ```yaml
+  # / start katta extension
+  ...
+  # \ end katta extension
+  ```
+
   Keep the marked block as small as possible and prefer a call into a `katta` package or file over inline logic.
-- **Helm chart** (`chart/`) is Katta's deployment artifact and has its own `CHANGELOG.md` and version. Upstream's `deploy/` directory (Compose files, upstream Helm READMEs) is kept verbatim from upstream and is not adjusted or used by Katta.
+- **Helm chart** (`chart/`) is Katta's deployment artifact and has its own `CHANGELOG.md`; its versions follow the application version.
+- **Deployment examples** (`deploy/`) are edited in place for Katta with a minimal diff: same paths as upstream, so upstream changes to edited lines conflict on the next merge. `deploy/compose/demo`, `deploy/compose/hybrid`, `deploy/helm/demo`, `deploy/terraform/aws`, `deploy/compose/.gitignore`, `deploy/compose/local/.env.template`, `deploy/compose/local/katta.yaml` and `deploy/compose/local/minio/` are Katta-only.
 
 ### Brand and assets
 
@@ -76,10 +83,10 @@ Upstream is "Cryptomator Hub", Katta is "Katta". The following places are brande
 
 ### Container images, versions and CI
 
-- Images are published as `ghcr.io/shift7-ch/katta-server`, `ghcr.io/shift7-ch/keycloak` and the chart as `ghcr.io/shift7-ch/charts/katta-server`. Upstream's `ghcr.io/cryptomator/hub` and `ghcr.io/cryptomator/keycloak` must not leak into Katta-owned files: check `application.properties` (dev services), `chart/values.yaml` and the workflows in `.github/workflows/` after a merge. Upstream's `deploy/` directory is the exception and keeps upstream images.
-- The application version in `backend/pom.xml` and `frontend/package.json` currently tracks upstream's version; the chart has its own version in `chart/Chart.yaml`.
+- Images are published as `ghcr.io/shift7-ch/katta-server`, `ghcr.io/shift7-ch/keycloak` and the chart as `ghcr.io/shift7-ch/charts/katta-server`. Upstream's `ghcr.io/cryptomator/hub` and `ghcr.io/cryptomator/keycloak` must not leak into Katta-owned files or `deploy/`: check `application.properties` (dev services), `chart/values.yaml`, `deploy/` and the workflows in `.github/workflows/` after a merge.
+- The application version in `backend/pom.xml` and `frontend/package.json` currently tracks upstream's version. CI publishes the chart with that version. A release tag publishes image and chart as the tag's version. Every push to `develop` publishes a chart preview `<pom version without -SNAPSHOT>-dev.<run number>`, and `helm install --devel` picks the newest one. Other branches publish images only. CI overrides `version` and `appVersion` in `chart/Chart.yaml`, so installs from a checkout use `appVersion: latest`, the image of the newest `develop` build at the time it is pulled.
 - `CHANGELOG.md` is upstream's changelog and is merged as-is; chart changes are recorded in `chart/CHANGELOG.md`.
-- The workflows in `.github/workflows/` are Katta's own (build, tag, keycloak image, helm chart). Resolve conflicts there in favor of the Katta version and port upstream changes over deliberately.
+- The workflows in `.github/workflows/` are Katta's own (build, tag, keycloak image, helm chart, terraform). Resolve conflicts there in favor of the Katta version and port upstream changes over deliberately.
 
 ### Database migrations
 
@@ -104,8 +111,12 @@ When merging from upstream:
 
 ### Merge checklist
 
-1. `git fetch upstream && git merge upstream/develop` on a feature branch, resolve conflicts. In files with extension markers, keep the marked blocks; in Katta-owned files (workflows, chart, `katta` packages, `katta/` components) keep the Katta side.
-2. Search the merged tree for upstream brand leftovers: `logo.svg`, `CRYPTOMATOR HUB`, `Cryptomator Hub`, `ghcr.io/cryptomator` outside `deploy/`, and `Hub` in the i18n files.
+1. On a feature branch, `git fetch upstream` and review everything upstream brings to `deploy/` and `chart/` with `git diff HEAD...upstream/develop -- deploy chart`, not only the conflicts: upstream edits to lines Katta left untouched and new upstream files merge silently.
+
+   Then `git merge upstream/develop` and resolve conflicts. In files with extension markers, keep the marked blocks; in Katta-owned files (workflows, chart, `katta` packages, `katta/` components) keep the Katta side.
+
+   Port realm changes from the removed `cryptomator-realm` configs in `deploy/compose/` to `chart/templates/_realm.tpl`, then run `docker compose config` in each `deploy/compose/*` directory (`hybrid` with `--env-file .env.template`).
+2. Search the merged tree for upstream brand leftovers: `logo.svg`, `CRYPTOMATOR HUB`, `Cryptomator Hub` (except upstream prose in `deploy/`, which keeps upstream's name), `ghcr.io/cryptomator`, and `Hub` in the i18n files.
 3. Check new or changed upstream migrations against the rules above, then renumber nothing that is already deployed.
 4. Re-apply Katta behavior that upstream removed or restructured. Upstream may delete a feature or a settings section that Katta still uses; a clean merge of such a deletion silently breaks the Katta UI (e.g. a form whose initialization was removed).
 5. Build and test all modules: `pnpm build` and `pnpm test` in `frontend/`, `./mvnw verify` in `backend/` (needs a container runtime for Postgres, Keycloak and MinIO), the Maven build in `keycloak/`, and `helm lint chart/`.

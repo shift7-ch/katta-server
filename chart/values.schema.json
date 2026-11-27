@@ -123,6 +123,15 @@
           "additionalProperties": false,
           "properties": {
             "hubReadyTimeoutSeconds": { "type": "integer", "minimum": 1 },
+            "image": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "repository": { "type": "string", "minLength": 1 },
+                "tag": { "type": "string", "minLength": 1 },
+                "pullPolicy": { "$ref": "#/definitions/imagePullPolicy" }
+              }
+            },
             "static": {
               "type": "object",
               "additionalProperties": false,
@@ -138,13 +147,7 @@
               "properties": {
                 "enabled": { "type": "boolean" },
                 "profileName": { "type": "string", "minLength": 1 },
-                "bucketPrefix": { "type": "string" },
-                "sessionTag": { "type": "string" },
-                "durationSeconds": {
-                  "type": ["string", "integer"],
-                  "pattern": "^[0-9]*$",
-                  "description": "STS session duration in seconds; empty uses MinIO's default"
-                }
+                "bucketPrefix": { "type": "string" }
               }
             }
           }

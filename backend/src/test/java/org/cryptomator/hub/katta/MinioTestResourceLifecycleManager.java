@@ -16,10 +16,10 @@ import java.util.Map;
  * Starts a throwaway MinIO server for integration tests that need a real S3-compatible backend (see {@code StorageResourceIT}).
  *
  * <p>Replaces the quarkus-minio dev service: MinIO no longer publishes container images (docker.io/minio/minio was deleted and quay.io/minio/minio
- * refuses anonymous pulls since 2026-09, see https://github.com/shift7-ch/katta-compose/issues/22), and the community rebuild used instead runs as
- * a non-root user with a {@code VOLUME /data}. Docker creates that anonymous volume root-owned (it only copies ownership for non-empty image
- * directories; Podman chowns it, which hides the problem locally), so MinIO dies with "file access denied" on CI. The dev service offers no hook
- * for mounts, hence this resource mounts {@code /data} as a tmpfs, which both Docker and Podman create world-writable (mode 1777).
+ * refuses anonymous pulls since 2026-09), and the community rebuild used instead runs as a non-root user with a {@code VOLUME /data}. Docker
+ * creates that anonymous volume root-owned (it only copies ownership for non-empty image directories; Podman chowns it, which hides the problem
+ * locally), so MinIO dies with "file access denied" on CI. The dev service offers no hook for mounts, hence this resource mounts {@code /data} as
+ * a tmpfs, which both Docker and Podman create world-writable (mode 1777).
  *
  * <p>Connection details are injected into fields annotated with {@link InjectMinio} of type {@link Minio} rather than exposed as config, so test
  * classes that do not use this resource are unaffected.
@@ -27,7 +27,7 @@ import java.util.Map;
 public class MinioTestResourceLifecycleManager implements QuarkusTestResourceLifecycleManager {
 
 	// alpine/minio is a community rebuild of the last MinIO community release (RELEASE.2025-10-15T17-29-55Z), not an official artifact,
-	// hence pinned by multi-arch index digest. Keep in sync with the chart's minio-statefulset.yaml and katta-compose.
+	// hence pinned by multi-arch index digest. Keep in sync with the chart's minio-statefulset.yaml and deploy/compose/local/katta.yaml.
 	private static final String MINIO_IMAGE = "docker.io/alpine/minio@sha256:cf23643a6cf9ce159c57643ceb88279e431262282428c9e0bf3a7ef1a97e84b4";
 	private static final int MINIO_API_PORT = 9000;
 	private static final String ROOT_USER = "minioadmin";
