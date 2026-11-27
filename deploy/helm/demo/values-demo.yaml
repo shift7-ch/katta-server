@@ -43,6 +43,8 @@ coredns:
     enabled: true
 
 hub:
+  # installed from the checkout, the image tag is the chart's appVersion `latest`, which moves with every develop build
+  imagePullPolicy: Always
   admin:
     username: admin
     password: admin

@@ -68,7 +68,7 @@ Katta Server is a downstream fork of [Cryptomator Hub](https://github.com/crypto
   ```
 
   Keep the marked block as small as possible and prefer a call into a `katta` package or file over inline logic.
-- **Helm chart** (`chart/`) is Katta's deployment artifact and has its own `CHANGELOG.md` and version.
+- **Helm chart** (`chart/`) is Katta's deployment artifact and has its own `CHANGELOG.md`; its versions follow the application version.
 - **Deployment examples** (`deploy/`) are edited in place for Katta with a minimal diff: same paths as upstream, so upstream changes to edited lines conflict on the next merge. `deploy/compose/demo`, `deploy/compose/hybrid`, `deploy/helm/demo`, `deploy/terraform/aws`, `deploy/compose/.gitignore`, `deploy/compose/local/.env.template`, `deploy/compose/local/katta.yaml` and `deploy/compose/local/minio/` are Katta-only.
 
 ### Brand and assets
@@ -84,7 +84,7 @@ Upstream is "Cryptomator Hub", Katta is "Katta". The following places are brande
 ### Container images, versions and CI
 
 - Images are published as `ghcr.io/shift7-ch/katta-server`, `ghcr.io/shift7-ch/keycloak` and the chart as `ghcr.io/shift7-ch/charts/katta-server`. Upstream's `ghcr.io/cryptomator/hub` and `ghcr.io/cryptomator/keycloak` must not leak into Katta-owned files or `deploy/`: check `application.properties` (dev services), `chart/values.yaml`, `deploy/` and the workflows in `.github/workflows/` after a merge.
-- The application version in `backend/pom.xml` and `frontend/package.json` currently tracks upstream's version; the chart has its own version in `chart/Chart.yaml`.
+- The application version in `backend/pom.xml` and `frontend/package.json` currently tracks upstream's version. CI publishes the chart with that version. A release tag publishes image and chart as the tag's version. Every push to `develop` publishes a chart preview `<pom version without -SNAPSHOT>-dev.<run number>`, and `helm install --devel` picks the newest one. Other branches publish images only. CI overrides `version` and `appVersion` in `chart/Chart.yaml`, so installs from a checkout use `appVersion: latest`, the image of the newest `develop` build at the time it is pulled.
 - `CHANGELOG.md` is upstream's changelog and is merged as-is; chart changes are recorded in `chart/CHANGELOG.md`.
 - The workflows in `.github/workflows/` are Katta's own (build, tag, keycloak image, helm chart, terraform). Resolve conflicts there in favor of the Katta version and port upstream changes over deliberately.
 

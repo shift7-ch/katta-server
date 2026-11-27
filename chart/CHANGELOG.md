@@ -58,6 +58,12 @@
 
 ### Changed
 
+- Chart versions follow the Katta Server version. Release tags publish the chart as the
+  tag's version. Pushes to `develop` publish previews `<next version>-dev.<build number>`,
+  and `helm install --devel` picks the newest one. Other branches no longer publish charts.
+  The `0.0.0-<commit>` versions published so far stay available but get no successors.
+- `appVersion` in `Chart.yaml` is `latest`, so installs from a checkout use the image of the
+  newest `develop` build at the time it is pulled.
 - `values.schema.json` now covers the Katta-only values (`minio`, `storageProfileSeed`,
   `coredns`, `urls.minio`, `urls.s3`, `ingress.controllerService`, `ingress.proxy`,
   `hub.config.additionalConnectSrc`, `hub.admin.{email,firstName,lastName}`,

@@ -48,7 +48,10 @@ jobs:
   publish:
     name: Publish Helm Chart
     needs: lint
-    if: inputs.version && inputs.appVersion || contains(github.event.head_commit.message, '[build chart]')
+    # / katta start modification - no `[build chart]` publishing from branches; build.yml publishes releases and develop previews
+    # if: inputs.version && inputs.appVersion || contains(github.event.head_commit.message, '[build chart]')
+    if: inputs.version && inputs.appVersion
+    # \ katta end modification
     runs-on: ubuntu-latest
     permissions:
       contents: read # Required for checkout
