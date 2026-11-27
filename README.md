@@ -69,7 +69,7 @@ Katta Server is a downstream fork of [Cryptomator Hub](https://github.com/crypto
 
   Keep the marked block as small as possible and prefer a call into a `katta` package or file over inline logic.
 - **Helm chart** (`chart/`) is Katta's deployment artifact and has its own `CHANGELOG.md` and version.
-- **Deployment examples** (`deploy/`) are edited in place for Katta with a minimal diff: same paths as upstream, so upstream changes to edited lines conflict on the next merge. `deploy/compose/demo`, `deploy/compose/hybrid`, `deploy/helm/demo`, `deploy/terraform/aws`, `deploy/compose/local/katta.yaml` and `deploy/compose/local/minio/` are Katta-only.
+- **Deployment examples** (`deploy/`) are edited in place for Katta with a minimal diff: same paths as upstream, so upstream changes to edited lines conflict on the next merge. `deploy/compose/demo`, `deploy/compose/hybrid`, `deploy/helm/demo`, `deploy/terraform/aws`, `deploy/compose/.gitignore`, `deploy/compose/local/.env.template`, `deploy/compose/local/katta.yaml` and `deploy/compose/local/minio/` are Katta-only.
 
 ### Brand and assets
 

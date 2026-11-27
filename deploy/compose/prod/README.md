@@ -19,7 +19,7 @@ Requirements: Docker Compose ≥ 2.23.1, a host reachable from the internet on p
    | `CHANGE-ME-VAULTS-CLIENT-SECRET` | Secret of the `cryptomatorvaults` client, used by Hub to exchange tokens for vault access | `HUB_KEYCLOAK_OIDC_CRYPTOMATOR_VAULTS_CLIENT_SECRET`, realm |
 
    <!-- / start katta extension -->
-   Also add the S3 and STS endpoints of your storage profiles to the `connect-src` of Hub's Content Security Policy (`QUARKUS_HTTP_HEADER__CONTENT_SECURITY_POLICY__VALUE`), since the browser talks to them directly.
+   Also allow the S3 and STS endpoints of your storage profiles in Hub's Content Security Policy, since the browser talks to them directly. Set `CSP_CONNECT_SRC_EXTRA` to them as space-separated CSP sources, in the environment or in a `.env` file next to `compose.yaml`, e.g. `CSP_CONNECT_SRC_EXTRA=https://*.amazonaws.com`.
    <!-- \ end katta extension -->
 
    Generate secrets with `openssl rand -hex 32`. Use search & replace — most values occur more than once and all occurrences must be identical.

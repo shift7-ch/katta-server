@@ -19,15 +19,15 @@ services:
         # service account of client cryptomatorhub-system with realm role admin.
         # A separate assignment, so that set -e catches a failing katta accesstoken.
         ACCESS_TOKEN=$$(katta accesstoken \
-          --tokenUrl http://keycloak:8080/realms/cryptomator/protocol/openid-connect/token \
+          --tokenUrl "http://keycloak:8080/realms/$$HUB_KEYCLOAK_REALM/protocol/openid-connect/token" \
           --clientId cryptomatorhub-system \
-          --clientSecret top-secret)
+          --clientSecret "$$HUB_KEYCLOAK_SYSTEM_CLIENT_SECRET")
 
         # role ARNs of the cryptomator, cryptomatorhub and cryptomatorvaults OIDC providers of MinIO: arn:minio:iam:::role/ + base64url(sha1(client id))
         katta storageprofile minio sts \
           --hubUrl http://hub:8080 --accessToken "$$ACCESS_TOKEN" \
           --name "MinIO S3 STS" \
-          --endpointUrl http://minio.localhost:9100 \
+          --endpointUrl "http://$$MINIO_HOSTNAME:$$MINIO_PORT" \
           --bucketPrefix katta- \
           --region eu-central-1 \
           --regions eu-west-1 --regions eu-west-2 --regions eu-west-3 --regions eu-north-1 \
@@ -40,10 +40,15 @@ services:
         katta storageprofile s3 static \
           --hubUrl http://hub:8080 --accessToken "$$ACCESS_TOKEN" \
           --name "MinIO S3 static" \
-          --endpointUrl http://minio.localhost:9100 \
+          --endpointUrl "http://$$MINIO_HOSTNAME:$$MINIO_PORT" \
           --bucketPrefix katta- \
           --region eu-central-1 \
           --skipIfExists
+    environment:
+      HUB_KEYCLOAK_REALM: ${HUB_KEYCLOAK_REALM:-cryptomator}
+      HUB_KEYCLOAK_SYSTEM_CLIENT_SECRET: ${HUB_KEYCLOAK_SYSTEM_CLIENT_SECRET:-top-secret}
+      MINIO_HOSTNAME: ${MINIO_HOSTNAME:-minio.localhost}
+      MINIO_PORT: ${MINIO_PORT:-9100}
     depends_on:
       minio_setup:
         condition: service_completed_successfully

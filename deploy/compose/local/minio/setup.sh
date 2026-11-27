@@ -10,7 +10,7 @@ set -eu
 MC_VERSION=RELEASE.2025-08-13T08-35-41Z
 MC_SHA256_AMD64=01f866e9c5f9b87c2b09116fa5d7c06695b106242d829a8bb32990c00312e891
 MC_SHA256_ARM64=14c8c9616cfce4636add161304353244e8de383b2e2752c0e9dad01d4c27c12c
-CONFIG_URL=http://keycloak:8080/realms/cryptomator/.well-known/openid-configuration
+CONFIG_URL="http://keycloak:8080/realms/$HUB_KEYCLOAK_REALM/.well-known/openid-configuration"
 PROVIDERS="cryptomator:katta-createbucketpolicy cryptomatorhub:katta-createbucketpolicy cryptomatorvaults:katta-accessbucketpolicy"
 
 case "$(uname -m)" in
@@ -23,7 +23,7 @@ echo "$mc_sha256  /tmp/mc" | sha256sum -c -
 chmod +x /tmp/mc
 mc() { /tmp/mc --config-dir /tmp/.mc "$@"; }
 
-mc alias set local http://minio:9100 minioadmin minioadmin
+mc alias set local "http://minio:$MINIO_PORT" minioadmin minioadmin
 
 for policy in /setup/policies/*.json; do
   mc admin policy create local "$(basename "$policy" .json)" "$policy"

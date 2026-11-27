@@ -150,7 +150,7 @@ services:
       # trust Traefik's X-Forwarded-* headers, so Hub knows it is served via https://
       QUARKUS_HTTP_PROXY_PROXY_ADDRESS_FORWARDING: "true"
       # the image's default CSP only allows same-origin connections, but the SPA must reach Keycloak's OIDC endpoints on the other hostname:
-      QUARKUS_HTTP_HEADER__CONTENT_SECURITY_POLICY__VALUE: "default-src 'self'; connect-src 'self' api.cryptomator.org api.katta.cloud https://kc.example.com; object-src 'none'; child-src 'self'; img-src * data:; frame-ancestors 'none'"
+      QUARKUS_HTTP_HEADER__CONTENT_SECURITY_POLICY__VALUE: "default-src 'self'; connect-src 'self' api.cryptomator.org api.katta.cloud https://kc.example.com ${CSP_CONNECT_SRC_EXTRA:-}; object-src 'none'; child-src 'self'; img-src * data:; frame-ancestors 'none'"
       QUARKUS_OTEL_SDK_DISABLED: "true"
     labels:
       traefik.enable: "true"

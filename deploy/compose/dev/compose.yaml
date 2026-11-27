@@ -69,7 +69,7 @@ services:
       QUARKUS_DATASOURCE_USERNAME: hub
       QUARKUS_DATASOURCE_PASSWORD: hub
       # the image's default CSP only allows same-origin connections, but the SPA must reach Keycloak's OIDC endpoints on localhost:8180:
-      QUARKUS_HTTP_HEADER__CONTENT_SECURITY_POLICY__VALUE: "default-src 'self'; connect-src 'self' api.cryptomator.org api.katta.cloud localhost:8180; object-src 'none'; child-src 'self'; img-src * data:; frame-ancestors 'none'"
+      QUARKUS_HTTP_HEADER__CONTENT_SECURITY_POLICY__VALUE: "default-src 'self'; connect-src 'self' api.cryptomator.org api.katta.cloud localhost:8180 ${CSP_CONNECT_SRC_EXTRA:-}; object-src 'none'; child-src 'self'; img-src * data:; frame-ancestors 'none'"
     ports:
       - "8080:8080"
     depends_on:

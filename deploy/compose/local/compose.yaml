@@ -7,8 +7,7 @@
 #
 # NOT FOR PRODUCTION: well-known passwords, plain HTTP, all services on localhost. See README.md in this directory for details.
 #
-# To change ports or hostnames, update all of these together: the `ports` mappings, `KC_HOSTNAME`, `HUB_KEYCLOAK_PUBLIC_URL`, `QUARKUS_OIDC_TOKEN_ISSUER`,
-# the `connect-src` entry of Hub's Content Security Policy, and in katta.yaml the `urls.*` of `keycloak-realm` and MinIO's `MINIO_API_CORS_ALLOW_ORIGIN`. Note that browsers grant a secure
+# To change ports, the realm or its credentials, set the variables listed in .env.template, e.g. in a .env file next to this one. Note that browsers grant a secure
 # context (required by Hub's client-side crypto) to `localhost` only — any other hostname needs TLS, see ../prod/compose.yaml.
 # / start katta extension
 include:
@@ -45,11 +44,11 @@ services:
       KC_BOOTSTRAP_ADMIN_PASSWORD: admin
       KC_HTTP_ENABLED: "true"
       # issuer/discovery URLs advertise the browser-facing origin; Hub's backchannel requests via http://keycloak:8080 still work:
-      KC_HOSTNAME: http://localhost:8380
+      KC_HOSTNAME: http://localhost:${HUB_KEYCLOAK_HTTP_PORT:-8380}
       KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
       QUARKUS_TRANSACTION_MANAGER_ENABLE_RECOVERY: "false"
     ports:
-      - "8380:8080"  # katta: 8180 is taken by quarkus:dev
+      - "${HUB_KEYCLOAK_HTTP_PORT:-8380}:8080"  # katta: 8180 is taken by quarkus:dev
     # / start katta extension
     volumes:
       # imported on first boot only; `--import-realm` never overwrites an existing realm (run `docker compose down -v` to start over)
@@ -72,29 +71,30 @@ services:
     image: ${KATTA_SERVER_IMAGE:-ghcr.io/shift7-ch/katta-server:latest}
     environment:
       HUB_PUBLIC_ROOT_PATH: /
-      HUB_KEYCLOAK_PUBLIC_URL: http://localhost:8380
+      HUB_KEYCLOAK_PUBLIC_URL: http://localhost:${HUB_KEYCLOAK_HTTP_PORT:-8380}
       HUB_KEYCLOAK_LOCAL_URL: http://keycloak:8080
-      HUB_KEYCLOAK_REALM: cryptomator
+      HUB_KEYCLOAK_REALM: ${HUB_KEYCLOAK_REALM:-cryptomator}
       HUB_KEYCLOAK_SYSTEM_CLIENT_ID: cryptomatorhub-system
-      HUB_KEYCLOAK_SYSTEM_CLIENT_SECRET: top-secret
+      HUB_KEYCLOAK_SYSTEM_CLIENT_SECRET: ${HUB_KEYCLOAK_SYSTEM_CLIENT_SECRET:-top-secret}
       HUB_KEYCLOAK_SYNCER_PERIOD: 1m
-      QUARKUS_OIDC_AUTH_SERVER_URL: http://keycloak:8080/realms/cryptomator
-      QUARKUS_OIDC_TOKEN_ISSUER: http://localhost:8380/realms/cryptomator
+      QUARKUS_OIDC_AUTH_SERVER_URL: http://keycloak:8080/realms/${HUB_KEYCLOAK_REALM:-cryptomator}
+      QUARKUS_OIDC_TOKEN_ISSUER: http://localhost:${HUB_KEYCLOAK_HTTP_PORT:-8380}/realms/${HUB_KEYCLOAK_REALM:-cryptomator}
       QUARKUS_OIDC_CLIENT_ID: cryptomatorhub
       QUARKUS_DATASOURCE_JDBC_URL: jdbc:postgresql://postgres:5432/hub
       QUARKUS_DATASOURCE_USERNAME: hub
       QUARKUS_DATASOURCE_PASSWORD: hub
       # the image's default CSP only allows same-origin connections, but the SPA must reach Keycloak's OIDC endpoints on localhost:8380 and MinIO on minio.localhost:9100:
-      QUARKUS_HTTP_HEADER__CONTENT_SECURITY_POLICY__VALUE: "default-src 'self'; connect-src 'self' api.cryptomator.org api.katta.cloud localhost:8380 minio.localhost:9100; object-src 'none'; child-src 'self'; img-src * data:; frame-ancestors 'none'"
+      QUARKUS_HTTP_HEADER__CONTENT_SECURITY_POLICY__VALUE: "default-src 'self'; connect-src 'self' api.cryptomator.org api.katta.cloud localhost:${HUB_KEYCLOAK_HTTP_PORT:-8380} ${MINIO_HOSTNAME:-minio.localhost}:${MINIO_PORT:-9100} ${CSP_CONNECT_SRC_EXTRA:-}; object-src 'none'; child-src 'self'; img-src * data:; frame-ancestors 'none'"
       QUARKUS_OTEL_SDK_DISABLED: "true"
       # / start katta extension
+      HUB_KEYCLOAK_OIDC_CRYPTOMATOR_VAULTS_CLIENT_SECRET: ${HUB_KEYCLOAK_OIDC_CRYPTOMATOR_VAULTS_CLIENT_SECRET:-top-secret}
       # public test license with 5 seats
-      HUB_INITIAL_ID: "42"
-      HUB_INITIAL_LICENSE: eyJ4NWMiOlsiTUlJQ0FUQ0NBYk9nQXdJQkFnSVVSc1ZlYUM5cDI5amhKelB4TXExSk13MVR6UWN3QlFZREsyVndNRDh4Q3pBSkJnTlZCQVlUQWtSRk1SWXdGQVlEVlFRS0RBMVRhM2x0WVhScFl5QkhiV0pJTVJnd0ZnWURWUVFEREE5TWFXTmxibk5sSUZKdmIzUWdRMEV3SGhjTk1qWXdOekE1TURnMU9USTVXaGNOTXpZd056QTJNRGcxT1RJNVdqQk1NUXN3Q1FZRFZRUUdFd0pFUlRFV01CUUdBMVVFQ2d3TlUydDViV0YwYVdNZ1IyMWlTREVsTUNNR0ExVUVBd3djU0hWaUlFeHBZMlZ1YzJVZ1NYTnpkV1Z5SUVOQklDaFVaWE4wS1RDQm16QVFCZ2NxaGtqT1BRSUJCZ1VyZ1FRQUl3T0JoZ0FFQVJOQlc5QjZIZ3EzQzRKd1FvbXNJTEhlU0lLN0c3TXBpR1M5Qm45bFluVDBEYmNBQ3RPUCtGVWFEaWhUQnZERHhaTUxxNDNjbXdIaFp2SmUwY0VVZk5iekFMZ0R6UmtneWtCWEpCNTFkcVlEYUtcL0JWMXMxVnRUY0lSa1wvOWxqdEY2a2txcE1lVWYwUDd2U0hYWGFNMlwvT3R2SmZXN2lKRXpycjN6MHRtWEg3UHpLSFRvMEl3UURBZEJnTlZIUTRFRmdRVW1idlI4KytmZ3B5OGV5SVZ6NGlcL0ljemRMd2t3SHdZRFZSMGpCQmd3Rm9BVWFFcFNIU01LMXJiQmZQR3RTVjBnR29IZ0hQY3dCUVlESzJWd0EwRUFNU3hlS2tpRHBpUkVnNmtFTkw5MUhSdUNsWHNCMWZ1MjlIYW5BYVVTSVd0Ynh3cnE5MnJPbE1BazRZejhtTEh5VzhVNTJtRllKRWZ5WkR5UXlQVDBDdz09Il0sImFsZyI6IkVTNTEyIn0.eyJhdWQiOiJDcnlwdG9tYXRvciBIdWIiLCJzdWIiOiJodWJAZXhhbXBsZS5jb20iLCJyZWZyZXNoVXJsIjoiaHR0cDpcL1wvbG9jYWxob3N0OjgwODFcL1wvaHViXC9yZWZyZXNoIiwia2lkIjoiRV9rU2xTOG5tR0wza0oxeHl6UG5TdG1fdVl1NndRX1h4VFFoN2h6T0k2USIsIm9yZy5jcnlwdG9tYXRvci5odWIuZW50aXRsZW1lbnRzIjp7InNlYXRzIjo1LCJzaG93VHJpYWxIaW50IjpmYWxzZSwiYXVkaXRMb2dSZXRlbnRpb25EYXlzIjowLCJlbWVyZ2VuY3lBY2Nlc3NFbmFibGVkIjpmYWxzZSwia2V5Y2xvYWtBY2Nlc3NFbmFibGVkIjp0cnVlfSwiaXNzIjoiaHR0cDpcL1wvbG9jYWxob3N0OjgwODFcLyIsImV4cCI6MzI1MDM2ODAwMDAsImlhdCI6MTc4MzU4ODY0NCwic2VhdHMiOjUsImp0aSI6IjQyIn0.AZrb7lULe-bvea6LyFsTq7dZZBozgXuqEnr8M5nua-3KyM6gZw_hygBVkmAZw-u4NMlG8u0GEpKlK9rmLUPOpF36AaTa3h9WCQIzmiqn30Rm_zRd9T3WrmWXjkmWKnv7YpfufZI_zT-lpcKGasGm1w3YVWu_nSa9gQd_0Pm1r3QSQWTX
-      HUB_LICENSE_CHAIN_REQUIRED_CN: Hub License Issuer CA (Test)
+      HUB_INITIAL_ID: ${HUB_INITIAL_ID:-42}
+      HUB_INITIAL_LICENSE: ${HUB_INITIAL_LICENSE:-eyJ4NWMiOlsiTUlJQ0FUQ0NBYk9nQXdJQkFnSVVSc1ZlYUM5cDI5amhKelB4TXExSk13MVR6UWN3QlFZREsyVndNRDh4Q3pBSkJnTlZCQVlUQWtSRk1SWXdGQVlEVlFRS0RBMVRhM2x0WVhScFl5QkhiV0pJTVJnd0ZnWURWUVFEREE5TWFXTmxibk5sSUZKdmIzUWdRMEV3SGhjTk1qWXdOekE1TURnMU9USTVXaGNOTXpZd056QTJNRGcxT1RJNVdqQk1NUXN3Q1FZRFZRUUdFd0pFUlRFV01CUUdBMVVFQ2d3TlUydDViV0YwYVdNZ1IyMWlTREVsTUNNR0ExVUVBd3djU0hWaUlFeHBZMlZ1YzJVZ1NYTnpkV1Z5SUVOQklDaFVaWE4wS1RDQm16QVFCZ2NxaGtqT1BRSUJCZ1VyZ1FRQUl3T0JoZ0FFQVJOQlc5QjZIZ3EzQzRKd1FvbXNJTEhlU0lLN0c3TXBpR1M5Qm45bFluVDBEYmNBQ3RPUCtGVWFEaWhUQnZERHhaTUxxNDNjbXdIaFp2SmUwY0VVZk5iekFMZ0R6UmtneWtCWEpCNTFkcVlEYUtcL0JWMXMxVnRUY0lSa1wvOWxqdEY2a2txcE1lVWYwUDd2U0hYWGFNMlwvT3R2SmZXN2lKRXpycjN6MHRtWEg3UHpLSFRvMEl3UURBZEJnTlZIUTRFRmdRVW1idlI4KytmZ3B5OGV5SVZ6NGlcL0ljemRMd2t3SHdZRFZSMGpCQmd3Rm9BVWFFcFNIU01LMXJiQmZQR3RTVjBnR29IZ0hQY3dCUVlESzJWd0EwRUFNU3hlS2tpRHBpUkVnNmtFTkw5MUhSdUNsWHNCMWZ1MjlIYW5BYVVTSVd0Ynh3cnE5MnJPbE1BazRZejhtTEh5VzhVNTJtRllKRWZ5WkR5UXlQVDBDdz09Il0sImFsZyI6IkVTNTEyIn0.eyJhdWQiOiJDcnlwdG9tYXRvciBIdWIiLCJzdWIiOiJodWJAZXhhbXBsZS5jb20iLCJyZWZyZXNoVXJsIjoiaHR0cDpcL1wvbG9jYWxob3N0OjgwODFcL1wvaHViXC9yZWZyZXNoIiwia2lkIjoiRV9rU2xTOG5tR0wza0oxeHl6UG5TdG1fdVl1NndRX1h4VFFoN2h6T0k2USIsIm9yZy5jcnlwdG9tYXRvci5odWIuZW50aXRsZW1lbnRzIjp7InNlYXRzIjo1LCJzaG93VHJpYWxIaW50IjpmYWxzZSwiYXVkaXRMb2dSZXRlbnRpb25EYXlzIjowLCJlbWVyZ2VuY3lBY2Nlc3NFbmFibGVkIjpmYWxzZSwia2V5Y2xvYWtBY2Nlc3NFbmFibGVkIjp0cnVlfSwiaXNzIjoiaHR0cDpcL1wvbG9jYWxob3N0OjgwODFcLyIsImV4cCI6MzI1MDM2ODAwMDAsImlhdCI6MTc4MzU4ODY0NCwic2VhdHMiOjUsImp0aSI6IjQyIn0.AZrb7lULe-bvea6LyFsTq7dZZBozgXuqEnr8M5nua-3KyM6gZw_hygBVkmAZw-u4NMlG8u0GEpKlK9rmLUPOpF36AaTa3h9WCQIzmiqn30Rm_zRd9T3WrmWXjkmWKnv7YpfufZI_zT-lpcKGasGm1w3YVWu_nSa9gQd_0Pm1r3QSQWTX}
+      HUB_LICENSE_CHAIN_REQUIRED_CN: ${HUB_LICENSE_CHAIN_REQUIRED_CN:-Hub License Issuer CA (Test)}
       # \ end katta extension
     ports:
-      - "8280:8080"  # katta: 8080 is taken by quarkus:dev
+      - "${HUB_PORT:-8280}:8080"  # katta: 8080 is taken by quarkus:dev
     depends_on:
       postgres:
         condition: service_healthy

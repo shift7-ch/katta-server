@@ -16,4 +16,8 @@ Prerequisites:
 2. `docker compose -f deploy/compose/dev/compose.yaml up`
 3. Wait until all services are `healthy`, then open Hub at <http://localhost:8080> (`admin` / `admin`, `alice` / `asd`, `bob` / `asd`, … from the dev realm) or the Keycloak admin console at <http://localhost:8180> (`admin` / `admin`).
 
+<!-- / start katta extension -->
+To create vaults from the browser, set `CSP_CONNECT_SRC_EXTRA` to the S3 and STS endpoints of your storage profiles as space-separated CSP sources (in the environment or in `deploy/compose/dev/.env`), so Hub's Content Security Policy lets the browser reach them.
+<!-- \ end katta extension -->
+
 The `hub` service runs with a 48 MiB memory limit and `-XX:MaximumHeapSizePercent` / `MALLOC_ARENA_MAX` overrides for measuring the native image's footprint; adjust or drop them in `compose.yaml` when you're not interested in memory behaviour. The realm is imported on Keycloak's first boot only — `docker compose -f deploy/compose/dev/compose.yaml down -v` to start over.
